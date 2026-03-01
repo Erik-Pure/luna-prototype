@@ -257,9 +257,14 @@
 }
 
 .userAvatar {
-  width: 24px;
-  height: 24px;
-  font-size: 11px;
+  width: 26px;
+  height: 26px;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.userAvatar :global(img) {
+  object-fit: cover;
 }
 
 .userName {
@@ -845,10 +850,17 @@
 .tableRow {
   min-height: 34px;
   border-bottom: 1px solid #eef1f6;
+  cursor: pointer;
 
   &:hover {
-    background-color: #f9fbff;
+    background-color: var(--color-champagne-10);
   }
+}
+
+.tableRowSelected,
+.tableRowSelected .tableCell,
+.tableRowSelected .stickyMainCell {
+  background-color: var(--color-champagne-20);
 }
 
 .rowCheckbox {
@@ -876,7 +888,7 @@
   font-size: 12px;
   flex: 1;
   min-width: 120px;
-  background-color: #ffffff;
+  background-color: transparent;
   white-space: nowrap;
 }
 
@@ -887,29 +899,32 @@
   border: none;
   background: transparent;
   padding: 0;
-  color: #2c5fcb;
+  color: var(--color-champagne-dark);
   font-size: 12px;
   font-weight: 700;
-  flex: 1;
-  min-width: 120px;
   text-align: left;
   cursor: pointer;
-  background-color: #ffffff;
   white-space: nowrap;
 }
 
 .stickyMainHeaderCell {
   position: sticky;
-  left: 32px;
+  left: 0;
   z-index: 4;
   background-color: #f9fafb;
 }
 
 .stickyMainCell {
   position: sticky;
-  left: 32px;
+  left: 0;
   z-index: 3;
   background-color: #ffffff;
+}
+
+.tableRow:hover .tableCell,
+.tableRow:hover .contractLinkButton,
+.tableRow:hover .stickyMainCell {
+  background-color: var(--color-champagne-10);
 }
 
 .contractDetailPanel {
@@ -978,8 +993,8 @@
 
 .contractSaveButton {
   min-height: 28px;
-  background-color: #cf8f19;
-  border: 1px solid #c28212;
+  background-color: var(--color-champagne);
+  border: 1px solid var(--color-champagne-dark);
   color: #ffffff;
   font-size: 11px;
   text-transform: none;
@@ -1119,6 +1134,17 @@
 .lineItemsRow {
   min-height: 28px;
   border-bottom: 1px solid #eef1f6;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--color-champagne-10);
+  }
+}
+
+.lineItemsRowSelected,
+.lineItemsRowSelected .lineItemsCell,
+.lineItemsRowSelected .stickyLineCell {
+  background-color: var(--color-champagne-20);
 }
 
 .lineItemsHeaderCell {
@@ -1136,7 +1162,7 @@
   font-size: 11px;
   min-width: 120px;
   flex: 1;
-  background-color: #ffffff;
+  background-color: transparent;
   white-space: nowrap;
 }
 
@@ -1152,15 +1178,20 @@
   z-index: 3;
 }
 
+.lineItemsRow:hover .lineItemsCell,
+.lineItemsRow:hover .lineItemLinkButton,
+.lineItemsRow:hover .stickyLineCell {
+  background-color: var(--color-champagne-10);
+}
+
 .lineItemLinkButton {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  min-width: 120px;
-  flex: 1;
   border: none;
-  background: #ffffff;
-  color: #2c5fcb;
+  background: transparent;
+  padding: 0;
+  color: var(--color-champagne-dark);
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
@@ -1251,6 +1282,275 @@
 
 .lineItemOverviewContent .searchFieldControl {
   max-width: none;
+}
+
+.systemSettingsPanel {
+  margin: 16px;
+  padding: 16px;
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+.systemSettingsTitle {
+  color: #2f3743;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.systemSettingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.systemSettingLabel {
+  color: #2f3743;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.systemSettingDescription {
+  color: #5f6774;
+  font-size: 13px;
+}
+
+:global(html[data-color-mode="dark"]) .systemSettingsPanel {
+  border-color: #3a3f4a;
+  background-color: #202229;
+}
+
+:global(html[data-color-mode="dark"]) .systemSettingsTitle,
+:global(html[data-color-mode="dark"]) .systemSettingLabel {
+  color: #f2f4f7;
+}
+
+:global(html[data-color-mode="dark"]) .systemSettingDescription {
+  color: #c7ccd5;
+}
+
+:global(html[data-color-mode="dark"]) .pageRoot {
+  background-color: #1a1b1f;
+}
+
+:global(html[data-color-mode="dark"]) .sidebar,
+:global(html[data-color-mode="dark"]) .topNav,
+:global(html[data-color-mode="dark"]) .contentArea,
+:global(html[data-color-mode="dark"]) .contractDetailPanel,
+:global(html[data-color-mode="dark"]) .tableContainer,
+:global(html[data-color-mode="dark"]) .lineItemsSection {
+  background-color: #202229;
+  border-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .tableHeader,
+:global(html[data-color-mode="dark"]) .lineItemsHeaderRow {
+  background-color: #282c34;
+  border-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .tableRow,
+:global(html[data-color-mode="dark"]) .lineItemsRow,
+:global(html[data-color-mode="dark"]) .tableCell,
+:global(html[data-color-mode="dark"]) .lineItemsCell {
+  border-color: #313641;
+  color: #d8dde6;
+}
+
+:global(html[data-color-mode="dark"]) .tableRow:hover,
+:global(html[data-color-mode="dark"]) .lineItemsRow:hover,
+:global(html[data-color-mode="dark"]) .tableRow:hover .tableCell,
+:global(html[data-color-mode="dark"]) .lineItemsRow:hover .lineItemsCell,
+:global(html[data-color-mode="dark"]) .tableRow:hover .stickyMainCell,
+:global(html[data-color-mode="dark"]) .lineItemsRow:hover .stickyLineCell {
+  background-color: #2b303a;
+}
+
+:global(html[data-color-mode="dark"]) .tableRowSelected,
+:global(html[data-color-mode="dark"]) .tableRowSelected .tableCell,
+:global(html[data-color-mode="dark"]) .tableRowSelected .contractLinkButton,
+:global(html[data-color-mode="dark"]) .lineItemsRowSelected,
+:global(html[data-color-mode="dark"]) .lineItemsRowSelected .lineItemsCell,
+:global(html[data-color-mode="dark"]) .lineItemsRowSelected .lineItemLinkButton {
+  background-color: #343a47;
+}
+
+:global(html[data-color-mode="dark"]) .contractLinkButton,
+:global(html[data-color-mode="dark"]) .lineItemLinkButton {
+  color: var(--color-champagne);
+}
+
+:global(html[data-color-mode="dark"]) .appShell,
+:global(html[data-color-mode="dark"]) .mainPanel {
+  background-color: #202229;
+  border-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .sidebarHeader,
+:global(html[data-color-mode="dark"]) .sidebarFooter,
+:global(html[data-color-mode="dark"]) .topNav,
+:global(html[data-color-mode="dark"]) .collapseButtonWrap {
+  border-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .companySelectorButton,
+:global(html[data-color-mode="dark"]) .companyDropdown,
+:global(html[data-color-mode="dark"]) .companyDropdownItem,
+:global(html[data-color-mode="dark"]) .searchFieldsContainer,
+:global(html[data-color-mode="dark"]) .searchFieldsDropdown,
+:global(html[data-color-mode="dark"]) .columnsDropdown,
+:global(html[data-color-mode="dark"]) .columnsDropdownRow {
+  background-color: #23262f;
+  border-color: #3a3f4a;
+  color: #dbe1ea;
+}
+
+:global(html[data-color-mode="dark"]) .companyDropdownItem:hover,
+:global(html[data-color-mode="dark"]) .companyDropdownItem:focus-visible,
+:global(html[data-color-mode="dark"]) .sidebarItemButton:hover,
+:global(html[data-color-mode="dark"]) .sidebarItemButton:focus-visible,
+:global(html[data-color-mode="dark"]) .topMenuItemActive,
+:global(html[data-color-mode="dark"]) .searchFieldsDropdownRow:hover,
+:global(html[data-color-mode="dark"]) .columnsDropdownRow:hover {
+  background-color: #2d3240;
+}
+
+:global(html[data-color-mode="dark"]) .sidebarItemActive {
+  background-color: #3a2f1a;
+}
+
+:global(html[data-color-mode="dark"]) .sidebarItemButton,
+:global(html[data-color-mode="dark"]) .sidebarItemIcon,
+:global(html[data-color-mode="dark"]) .sidebarItemIcon :global(svg),
+:global(html[data-color-mode="dark"]) .companySelectorButton,
+:global(html[data-color-mode="dark"]) .companySelectorArrow,
+:global(html[data-color-mode="dark"]) .companySelectorHomeIcon,
+:global(html[data-color-mode="dark"]) .topMenuItem,
+:global(html[data-color-mode="dark"]) .topMenuItem :global(svg),
+:global(html[data-color-mode="dark"]) .breadcrumbs,
+:global(html[data-color-mode="dark"]) .breadcrumbMuted,
+:global(html[data-color-mode="dark"]) .breadcrumbArrow,
+:global(html[data-color-mode="dark"]) .breadcrumbActive,
+:global(html[data-color-mode="dark"]) .breadcrumbLinkButton,
+:global(html[data-color-mode="dark"]) .searchFieldLabel,
+:global(html[data-color-mode="dark"]) .searchCheckboxLabel,
+:global(html[data-color-mode="dark"]) .searchFieldsGroupTitle,
+:global(html[data-color-mode="dark"]) .searchFieldsDropdownLabel,
+:global(html[data-color-mode="dark"]) .columnsDropdownLabel,
+:global(html[data-color-mode="dark"]) .actionLabel,
+:global(html[data-color-mode="dark"]) .actionEnabled,
+:global(html[data-color-mode="dark"]) .lineItemsTitle,
+:global(html[data-color-mode="dark"]) .tableHeaderCell,
+:global(html[data-color-mode="dark"]) .lineItemsHeaderCell,
+:global(html[data-color-mode="dark"]) .userName {
+  color: #dbe1ea !important;
+}
+
+:global(html[data-color-mode="dark"]) .userAvatar {
+  border: 1px solid #4a5160;
+}
+
+:global(html[data-color-mode="dark"]) .actionDisabled {
+  color: #6f7785;
+}
+
+:global(html[data-color-mode="dark"]) .searchActionButton,
+:global(html[data-color-mode="dark"]) .columnsButton,
+:global(html[data-color-mode="dark"]) .lineItemsToggleButton,
+:global(html[data-color-mode="dark"]) .dropdownSave,
+:global(html[data-color-mode="dark"]) .dropdownCancel,
+:global(html[data-color-mode="dark"]) .dropdownClear {
+  border-color: #4a5160;
+  color: #dbe1ea;
+}
+
+:global(html[data-color-mode="dark"]) .columnsDropdownFooter {
+  border-color: #3a3f4a;
+  background-color: #1f222a;
+}
+
+:global(html[data-color-mode="dark"]) .searchFieldControl :global(.MuiOutlinedInput-root),
+:global(html[data-color-mode="dark"]) .searchFieldControl :global(.MuiSelect-select),
+:global(html[data-color-mode="dark"]) .lineItemOverviewContent :global(.MuiOutlinedInput-root),
+:global(html[data-color-mode="dark"]) .lineItemOverviewContent :global(.MuiSelect-select) {
+  background-color: #23262f;
+  color: #dbe1ea;
+}
+
+:global(html[data-color-mode="dark"]) .searchFieldControl :global(.MuiOutlinedInput-notchedOutline),
+:global(html[data-color-mode="dark"]) .lineItemOverviewContent :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: #4a5160 !important;
+}
+
+:global(html[data-color-mode="dark"]) .stickyMainHeaderCell,
+:global(html[data-color-mode="dark"]) .stickyLineHeaderCell {
+  background-color: #282c34;
+}
+
+:global(html[data-color-mode="dark"]) .stickyMainCell,
+:global(html[data-color-mode="dark"]) .stickyLineCell {
+  background-color: #202229;
+}
+
+:global(html[data-color-mode="dark"]) .tableFiller {
+  background-color: #202229;
+}
+
+:global(html[data-color-mode="dark"]) .contractTabBar {
+  border-color: #3a3f4a;
+  background-color: #282c34;
+}
+
+:global(html[data-color-mode="dark"]) .contractTabButton {
+  color: #c0c7d2;
+}
+
+:global(html[data-color-mode="dark"]) .contractTabButtonActive {
+  background-color: #202229;
+  color: #f2f4f7;
+  box-shadow: inset 0 0 0 1px #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .contractDetailHeader,
+:global(html[data-color-mode="dark"]) .contractInfoGrid,
+:global(html[data-color-mode="dark"]) .lineItemsHeader {
+  border-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .contractDetailTitle,
+:global(html[data-color-mode="dark"]) .contractInfoValue,
+:global(html[data-color-mode="dark"]) .contractOtherHeading,
+:global(html[data-color-mode="dark"]) .contractTabPlaceholder,
+:global(html[data-color-mode="dark"]) .contractHeaderLink,
+:global(html[data-color-mode="dark"]) .contractHeaderDots {
+  color: #e4e8ef;
+}
+
+:global(html[data-color-mode="dark"]) .contractInfoLabel,
+:global(html[data-color-mode="dark"]) .contractFormItem .searchFieldLabel {
+  color: #aeb6c4;
+}
+
+:global(html[data-color-mode="dark"]) .actionSeparator,
+:global(html[data-color-mode="dark"]) .ruleDivider {
+  background-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .searchFieldControl :global(.MuiOutlinedInput-input),
+:global(html[data-color-mode="dark"]) .searchFieldControl :global(.MuiSelect-select),
+:global(html[data-color-mode="dark"]) .lineItemOverviewContent :global(.MuiOutlinedInput-input),
+:global(html[data-color-mode="dark"]) .lineItemOverviewContent :global(.MuiSelect-select),
+:global(html[data-color-mode="dark"]) .searchFieldControl :global(input::placeholder),
+:global(html[data-color-mode="dark"]) .lineItemOverviewContent :global(input::placeholder) {
+  color: #dbe1ea;
+}
+
+:global(html[data-color-mode="dark"]) .searchFieldControl :global(.MuiSelect-icon),
+:global(html[data-color-mode="dark"]) .lineItemOverviewContent :global(.MuiSelect-icon) {
+  color: #aeb6c4;
 }
 
 .searchFieldControl :global(.MuiOutlinedInput-root),

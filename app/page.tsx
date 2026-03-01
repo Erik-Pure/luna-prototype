@@ -29,6 +29,7 @@ import {
   Menu,
   MenuItem,
   Select,
+  Switch,
   TextField,
   type SelectChangeEvent,
   Typography
@@ -43,6 +44,7 @@ import { LineItemDetailView, type LineItemDetailTab } from "./components/contrac
 import { OverviewTab } from "./components/contract-tabs/OverviewTab";
 import { PrintOptionsTab } from "./components/contract-tabs/PrintOptionsTab";
 import { TermsTab } from "./components/contract-tabs/TermsTab";
+import { useColorMode } from "./providers";
 import styles from "./page.module.scss";
 
 type SectionKey = "marknad" | "produktion" | "leverans" | "rapporter" | "system";
@@ -396,6 +398,7 @@ export default function Home() {
   const selectedLineItemId = lineItemId;
   const isLineItemDetailOpen = Boolean(selectedContractId && selectedLineItemId);
   const isContractListPage = sectionSlug === "marknad" && menuSlug === "kontraktlista";
+  const isSystemPage = sectionSlug === "system";
   const topMenuItems = topMenusBySection[sectionSlug] ?? topMenusBySection.marknad;
   const leftTopMenuItems = topMenuItems.filter((item) => !item.alignRight);
   const rightTopMenuItems = topMenuItems.filter((item) => item.alignRight);
@@ -426,7 +429,7 @@ export default function Home() {
   const [isColumnsMenuOpen, setIsColumnsMenuOpen] = useState(false);
   const [isLineItemsTableVisible, setIsLineItemsTableVisible] = useState(false);
   const [isLineColumnsMenuOpen, setIsLineColumnsMenuOpen] = useState(false);
-  const [selectedRowIds, setSelectedRowIds] = useState<number[]>([]);
+  const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
   const [appliedColumns, setAppliedColumns] = useState<ColumnConfig[]>(defaultColumns);
   const [draftColumns, setDraftColumns] = useState<ColumnConfig[]>(defaultColumns);
   const [appliedLineColumns, setAppliedLineColumns] = useState<LineItemColumnConfig[]>(defaultLineItemColumns);
@@ -439,6 +442,7 @@ export default function Home() {
   const lineColumnsButtonRef = useRef<HTMLButtonElement | null>(null);
   const companyMenuRef = useRef<HTMLDivElement | null>(null);
   const companyButtonRef = useRef<HTMLButtonElement | null>(null);
+  const { mode, toggleMode } = useColorMode();
 
   const handleSearchSelectChange = (key: SearchFieldKey, event: SelectChangeEvent) => {
     setSearchValues((previous) => ({ ...previous, [key]: event.target.value }));
@@ -463,9 +467,7 @@ export default function Home() {
     [appliedLineColumns]
   );
 
-  const hasSelectedRows = selectedRowIds.length > 0;
-  const allRowsSelected = tableRows.length > 0 && selectedRowIds.length === tableRows.length;
-  const someRowsSelected = selectedRowIds.length > 0 && !allRowsSelected;
+  const hasSelectedRows = selectedRowId !== null;
 
   const visibleSearchFields = useMemo(
     () => appliedSearchFields.filter((field) => field.visible),
@@ -672,21 +674,8 @@ export default function Home() {
     setDraftLineColumns(defaultLineItemColumns);
   };
 
-  const toggleRowSelection = (rowIndex: number, checked: boolean) => {
-    setSelectedRowIds((previous) => {
-      if (checked) {
-        return previous.includes(rowIndex) ? previous : [...previous, rowIndex];
-      }
-      return previous.filter((id) => id !== rowIndex);
-    });
-  };
-
-  const toggleSelectAllRows = (checked: boolean) => {
-    if (checked) {
-      setSelectedRowIds(tableRows.map((_, index) => index));
-      return;
-    }
-    setSelectedRowIds([]);
+  const selectMainTableRow = (rowIndex: number) => {
+    setSelectedRowId((previous) => (previous === rowIndex ? null : rowIndex));
   };
 
   const getCellValue = (row: TableRow, columnKey: ColumnKey) => {
@@ -904,7 +893,12 @@ export default function Home() {
 
           <div className={styles.sidebarFooter}>
             <div className={styles.userRow}>
-              <Avatar className={styles.userAvatar}>J</Avatar>
+              <Avatar
+                src="/luna-profile-avatar.png"
+                alt="Jane Doe"
+                variant="rounded"
+                className={styles.userAvatar}
+              />
               {!isSidebarCollapsed ? (
                 <Typography className={styles.userName}>Jane Doe</Typography>
               ) : null}
@@ -1243,13 +1237,6 @@ export default function Home() {
                     <div className={styles.tableScrollWrap}>
                       <div className={styles.tableInner}>
                         <div className={styles.tableHeader}>
-                          <Checkbox
-                            size="small"
-                            className={`${styles.rowCheckbox} ${styles.stickyCheckboxHeader}`}
-                            checked={allRowsSelected}
-                            indeterminate={someRowsSelected}
-                            onChange={(event) => toggleSelectAllRows(event.target.checked)}
-                          />
                           {orderedVisibleColumns.map((column, columnIndex) => (
                             <Typography
                               key={column.key}
@@ -1265,26 +1252,30 @@ export default function Home() {
                         {tableRows.map((row, idx) => (
                           <div
                             key={`${row.kontrakt}-${idx}`}
-                            className={styles.tableRow}
+                            className={`${styles.tableRow} ${
+                              selectedRowId === idx ? styles.tableRowSelected : ""
+                            }`}
+                            onClick={() => selectMainTableRow(idx)}
                           >
-                            <Checkbox
-                              size="small"
-                              className={`${styles.rowCheckbox} ${styles.stickyCheckboxCell}`}
-                              checked={selectedRowIds.includes(idx)}
-                              onChange={(event) => toggleRowSelection(idx, event.target.checked)}
-                            />
                             {orderedVisibleColumns.map((column, columnIndex) =>
                               column.key === "kontrakt" ? (
-                                <button
+                                <Typography
                                   key={column.key}
-                                  type="button"
-                                  className={`${styles.contractLinkButton} ${
+                                  className={`${styles.tableCell} ${
                                     columnIndex === 0 ? styles.stickyMainCell : ""
                                   }`}
-                                  onClick={() => openContractDetail(getCellValue(row, column.key))}
                                 >
-                                  {getCellValue(row, column.key)}
-                                </button>
+                                  <button
+                                    type="button"
+                                    className={styles.contractLinkButton}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      openContractDetail(getCellValue(row, column.key));
+                                    }}
+                                  >
+                                    {getCellValue(row, column.key)}
+                                  </button>
+                                </Typography>
                               ) : (
                                 <Typography
                                   key={column.key}
@@ -1506,6 +1497,46 @@ export default function Home() {
                     {activeContractTabForView === "Utskriftsalternativ" ? <PrintOptionsTab /> : null}
                   </>
                 )}
+              </div>
+            ) : isSystemPage ? (
+              <div className={styles.contractDetailPanel}>
+                <div className={styles.systemSettingsPanel}>
+                  <Typography className={styles.systemSettingsTitle}>Systeminställningar</Typography>
+                  <div className={styles.systemSettingRow}>
+                    <div>
+                      <Typography className={styles.systemSettingLabel}>Dark mode</Typography>
+                      <Typography className={styles.systemSettingDescription}>
+                        Växla mellan ljust och mörkt tema i hela applikationen.
+                      </Typography>
+                    </div>
+                    <Switch
+                      checked={mode === "dark"}
+                      onChange={() => toggleMode()}
+                      color="primary"
+                      inputProps={{ "aria-label": "Aktivera dark mode" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : isSystemPage ? (
+              <div className={styles.contractDetailPanel}>
+                <div className={styles.systemSettingsPanel}>
+                  <Typography className={styles.systemSettingsTitle}>Systeminställningar</Typography>
+                  <div className={styles.systemSettingRow}>
+                    <div>
+                      <Typography className={styles.systemSettingLabel}>Dark mode</Typography>
+                      <Typography className={styles.systemSettingDescription}>
+                        Växla mellan ljust och mörkt tema i hela applikationen.
+                      </Typography>
+                    </div>
+                    <Switch
+                      checked={mode === "dark"}
+                      onChange={toggleMode}
+                      color="primary"
+                      inputProps={{ "aria-label": "Aktivera dark mode" }}
+                    />
+                  </div>
+                </div>
               </div>
             ) : (
               <div className={styles.contractDetailPanel}>

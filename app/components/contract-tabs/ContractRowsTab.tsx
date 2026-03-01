@@ -58,10 +58,8 @@ export function ContractRowsTab({
   onResetColumnChanges,
   onOpenRowDetail
 }: ContractRowsTabProps) {
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
-  const hasSelectedRows = selectedRows.length > 0;
-  const allRowsSelected = rows.length > 0 && selectedRows.length === rows.length;
-  const someRowsSelected = selectedRows.length > 0 && !allRowsSelected;
+  const [selectedRow, setSelectedRow] = useState<number | null>(null);
+  const hasSelectedRows = selectedRow !== null;
 
   const activeActions = useMemo(
     () =>
@@ -72,21 +70,8 @@ export function ContractRowsTab({
     [hasSelectedRows]
   );
 
-  const toggleRow = (rowIndex: number, checked: boolean) => {
-    setSelectedRows((previous) => {
-      if (checked) {
-        return previous.includes(rowIndex) ? previous : [...previous, rowIndex];
-      }
-      return previous.filter((id) => id !== rowIndex);
-    });
-  };
-
-  const toggleAllRows = (checked: boolean) => {
-    if (checked) {
-      setSelectedRows(rows.map((_, index) => index));
-      return;
-    }
-    setSelectedRows([]);
+  const selectRow = (rowIndex: number) => {
+    setSelectedRow((previous) => (previous === rowIndex ? null : rowIndex));
   };
 
   return (
@@ -175,13 +160,6 @@ export function ContractRowsTab({
       <div className={styles.lineItemsTableWrap}>
         <div className={styles.lineItemsTable}>
           <div className={styles.lineItemsHeaderRow}>
-            <Checkbox
-              size="small"
-              className={`${styles.rowCheckbox} ${styles.stickyCheckboxHeader}`}
-              checked={allRowsSelected}
-              indeterminate={someRowsSelected}
-              onChange={(event) => toggleAllRows(event.target.checked)}
-            />
             {visibleColumns.map((column, columnIndex) => (
               <Typography
                 key={column.key}
@@ -195,23 +173,28 @@ export function ContractRowsTab({
           </div>
 
           {rows.map((row, index) => (
-            <div key={`contract-row-${index}`} className={styles.lineItemsRow}>
-              <Checkbox
-                size="small"
-                className={`${styles.rowCheckbox} ${styles.stickyCheckboxCell}`}
-                checked={selectedRows.includes(index)}
-                onChange={(event) => toggleRow(index, event.target.checked)}
-              />
+            <div
+              key={`contract-row-${index}`}
+              className={`${styles.lineItemsRow} ${selectedRow === index ? styles.lineItemsRowSelected : ""}`}
+              onClick={() => selectRow(index)}
+            >
               {visibleColumns.map((column, columnIndex) => (
                 column.key === "idRad" ? (
-                  <button
+                  <Typography
                     key={column.key}
-                    type="button"
-                    className={`${styles.lineItemLinkButton} ${columnIndex === 0 ? styles.stickyLineCell : ""}`}
-                    onClick={() => onOpenRowDetail(row[column.key])}
+                    className={`${styles.lineItemsCell} ${columnIndex === 0 ? styles.stickyLineCell : ""}`}
                   >
-                    {row[column.key]}
-                  </button>
+                    <button
+                      type="button"
+                      className={styles.lineItemLinkButton}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenRowDetail(row[column.key]);
+                      }}
+                    >
+                      {row[column.key]}
+                    </button>
+                  </Typography>
                 ) : (
                   <Typography
                     key={column.key}
