@@ -1,0 +1,1300 @@
+.pageRoot {
+  min-height: 100vh;
+  padding: 6px;
+  background-color: #f1f3f5;
+  overflow-x: auto;
+}
+
+.appShell {
+  display: flex;
+  min-height: calc(100vh - 12px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid #d6d9df;
+  border-radius: 6px;
+  background-color: #ffffff;
+}
+
+.sidebar {
+  display: flex;
+  width: 226px;
+  flex-direction: column;
+  border-right: 1px solid #e1e4e8;
+  background-color: #f7f8fa;
+  transition: width 0.2s ease;
+}
+
+.sidebarCollapsed {
+  width: 74px;
+}
+
+.sidebarHeader {
+  position: relative;
+  padding: 9px;
+  border-bottom: 1px solid #eaedf2;
+}
+
+.companyButton {
+  display: none;
+}
+
+.sidebarMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px;
+}
+
+.sidebarBottomMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding: 0 8px 8px;
+}
+
+.companySelectorButton {
+  display: flex;
+  width: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+  border: 1px solid #d4d9e0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #333333;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.companySelectorText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.companySelectorArrow {
+  color: #333333;
+  font-size: 20px;
+}
+
+.companySelectorHomeIcon {
+  color: #333333;
+  font-size: 18px;
+}
+
+.companySelectorTooltip {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  z-index: 30;
+  padding: 5px 8px;
+  border: 1px solid #d8dce5;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #333333;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+  opacity: 0;
+}
+
+.companyDropdown {
+  position: absolute;
+  top: calc(100% - 1px);
+  left: 9px;
+  right: 9px;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #d7dbe3;
+  border-radius: 6px;
+  background-color: #ffffff;
+  box-shadow: 0 8px 18px rgba(20, 31, 53, 0.14);
+}
+
+.companyDropdownCollapsed {
+  top: 8px;
+  left: calc(100% + 8px);
+  right: auto;
+  width: 220px;
+}
+
+.companyDropdownItem {
+  min-height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-bottom: 1px solid #edf1f5;
+  background: #ffffff;
+  color: #333333;
+  font-size: 11px;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background-color: #f3f6fb;
+  }
+}
+
+.companyDropdownItem:last-child {
+  border-bottom: none;
+}
+
+.companyDropdownItemActive {
+  background-color: #eef2f8;
+  font-weight: 600;
+}
+
+.sidebarItemButton {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #333333;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: #333333;
+    background-color: #eef2f7;
+  }
+}
+
+.sidebarItemActive {
+  background-color: #f2e2bb;
+}
+
+.sidebarItemText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebarItemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #333333;
+}
+
+.sidebarItemIcon :global(svg) {
+  color: #333333;
+  font-size: 24px;
+}
+
+.sidebarItemTooltip {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  z-index: 30;
+  padding: 5px 8px;
+  border: 1px solid #d8dce5;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #333333;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+  opacity: 0;
+}
+
+.sidebarCollapsed .companySelectorButton {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebarCollapsed .companySelectorButton:hover .companySelectorTooltip,
+.sidebarCollapsed .companySelectorButton:focus-visible .companySelectorTooltip {
+  opacity: 1;
+}
+
+.sidebarCollapsed .companySelectorText,
+.sidebarCollapsed .companySelectorArrow {
+  display: none;
+}
+
+.sidebarCollapsed .sidebarItemButton {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebarCollapsed .sidebarItemButton:hover .sidebarItemTooltip,
+.sidebarCollapsed .sidebarItemButton:focus-visible .sidebarItemTooltip {
+  opacity: 1;
+}
+
+.sidebarSpacer {
+  flex: 1;
+}
+
+.sidebarFooter {
+  padding: 11px;
+  border-top: 1px solid #eaedf2;
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.userAvatar {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+}
+
+.userName {
+  color: #2e3339;
+  font-size: 12px;
+}
+
+.mainPanel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  background-color: #ffffff;
+}
+
+.topNav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 48px;
+  padding: 5px 14px;
+  border-bottom: 1px solid #eaedf2;
+}
+
+.collapseButtonWrap {
+  display: flex;
+  align-items: center;
+  margin-right: 6px;
+  padding-right: 10px;
+  border-right: 1px solid #d6dae2;
+}
+
+.topMenuSpacer {
+  flex: 1;
+}
+
+.topMenuRightGroup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.collapseButton {
+  svg {
+    font-size: 18px;
+    color: #c47e12;
+  }
+}
+
+.topMenuItem {
+  position: relative;
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 4px;
+  color: #333333 !important;
+  font-size: 12px;
+  font-weight: 400;
+  font-family: "Poppins", Arial, sans-serif;
+  letter-spacing: normal;
+  text-transform: none !important;
+
+  &:hover,
+  &:focus-visible {
+    color: #333333 !important;
+  }
+
+  :global(.MuiButton-startIcon),
+  :global(.MuiButton-endIcon),
+  :global(svg) {
+    color: #333333 !important;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 3px;
+    background-color: transparent;
+    border-radius: 0;
+  }
+}
+
+.topMenuItemActive {
+  background-color: #fff3df;
+  color: #1f2a3a !important;
+  font-weight: 700;
+  font-family: "Poppins", Arial, sans-serif;
+}
+
+.topMenuItemActive::after {
+  background-color: #c47e12;
+}
+
+.topMenuItemActive :global(.MuiButton-startIcon),
+.topMenuItemActive :global(.MuiButton-endIcon),
+.topMenuItemActive :global(svg) {
+  color: #1f2a3a !important;
+}
+
+.menuArrowIcon {
+  font-size: 17px;
+}
+
+.topMenuDropdownPaper {
+  border: 1px solid #d7dbe3;
+  border-radius: 6px;
+  box-shadow: 0 8px 22px rgba(20, 31, 53, 0.14);
+  margin-top: 4px;
+}
+
+.topMenuDropdownList {
+  padding: 4px;
+}
+
+.topMenuDropdownItem {
+  border-radius: 4px;
+  color: #333333;
+  font-size: 14px;
+}
+
+.topMenuDropdownItemActive {
+  background-color: #f7efe0;
+  font-weight: 600;
+}
+
+.contentArea {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.breadcrumbMuted {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.breadcrumbArrow {
+  color: #949aa4;
+  font-size: 14px;
+}
+
+.breadcrumbActive {
+  color: #2d323a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.breadcrumbLinkButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #4e5a6e;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.filterRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+.searchFieldsPanel {
+  display: flex;
+  min-height: 74px;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0;
+}
+
+.searchFieldsContainer {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e8ecf3;
+  border-radius: 5px;
+  background-color: #fafbfd;
+}
+
+.searchFieldsGrid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 240px));
+  justify-content: flex-start;
+  gap: 5px;
+}
+
+.searchFieldsGroup {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 6px;
+}
+
+.searchFieldsGroup + .searchFieldsGroup {
+  border-top: 1px solid #e8ecf3;
+}
+
+.searchFieldsGroupTitle {
+  color: #4c5565;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.searchFieldItem {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.searchFieldLabel {
+  color: #464d59;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.searchFieldControl {
+  width: 100%;
+}
+
+.searchFieldsPanel .searchFieldControl {
+  max-width: 240px;
+}
+
+.searchCheckboxGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.searchCheckboxItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 26px;
+  padding-right: 6px;
+}
+
+.searchCheckboxLabel {
+  color: #2f343c;
+  font-size: 11px;
+}
+
+.searchFieldsEmpty {
+  padding: 8px 0;
+}
+
+.searchFieldsEmptyGroup {
+  padding: 8px 6px;
+}
+
+.flexSpacer {
+  flex: 1;
+}
+
+.searchMenuWrapper {
+  position: relative;
+}
+
+.searchActionButton {
+  width: 196px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border-color: #c5cad2;
+  color: #333333;
+  font-size: 11px;
+  line-height: 1;
+  text-transform: none;
+
+  &:hover,
+  &:focus-visible {
+    color: #333333;
+  }
+}
+
+.searchActionIcon {
+  font-size: 17px;
+}
+
+.searchFieldsDropdown {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  width: 320px;
+  max-height: 510px;
+  flex-direction: column;
+  border: 1px solid #d7dbe3;
+  border-radius: 6px;
+  background-color: #ffffff;
+  box-shadow: 0 8px 22px rgba(20, 31, 53, 0.14);
+}
+
+.searchFieldsDropdownList {
+  overflow-y: auto;
+}
+
+.searchFieldsDropdownRow {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  border-bottom: 1px solid #ebeff4;
+}
+
+.searchFieldsDropdownName {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  padding: 0 7px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.searchFieldsDropdownLabel {
+  color: #333333;
+  font-size: 12px;
+}
+
+.ruleDivider {
+  height: 1px;
+  background-color: #edf0f4;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+}
+
+.actionItem {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.actionEnabled {
+  color: #333333;
+}
+
+.actionDisabled {
+  color: #bdc3cd;
+}
+
+.actionLabel {
+  font-size: 11.5px;
+  letter-spacing: 0.2px;
+}
+
+.actionSeparator {
+  width: 1px;
+  height: 15px;
+  margin: 0 8px;
+  background-color: #e4e8ee;
+}
+
+.columnsButton {
+  width: 196px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border-color: #c5cad2;
+  color: #333333;
+  font-size: 11px;
+  line-height: 1;
+  text-transform: none;
+
+  &:hover,
+  &:focus-visible {
+    color: #333333;
+  }
+}
+
+.columnsMenuWrapper {
+  position: relative;
+}
+
+.rightControlRail {
+  display: flex;
+  width: 206px;
+  justify-content: flex-end;
+  flex: 0 0 206px;
+  margin-left: auto;
+}
+
+.rightControlGroup {
+  width: auto;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.lineItemsToggleButton {
+  min-height: 28px;
+  border-radius: 6px;
+  border-color: #c5cad2;
+  color: #333333;
+  font-size: 11px;
+  text-transform: none;
+}
+
+.columnsDropdown {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  width: 274px;
+  max-height: 510px;
+  flex-direction: column;
+  border: 1px solid #d7dbe3;
+  border-radius: 6px;
+  background-color: #ffffff;
+  box-shadow: 0 8px 22px rgba(20, 31, 53, 0.14);
+}
+
+.columnsDropdownList {
+  overflow-y: auto;
+}
+
+.columnsDropdownRow {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ebeff4;
+  background-color: #ffffff;
+}
+
+.columnsDropdownName {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  padding: 0 7px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.columnsDropdownLabel {
+  color: #333333;
+  font-size: 12px;
+}
+
+.dropdownCheckbox {
+  padding: 2px;
+}
+
+.columnsDropdownActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+}
+
+.columnsActionIcon {
+  width: 24px;
+  height: 24px;
+  color: #5d6574;
+  font-size: 17px;
+}
+
+.columnsActionPinned {
+  color: #272c35;
+}
+
+.columnsDropdownFooter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-top: 1px solid #ebeff4;
+  background-color: #f8f9fc;
+}
+
+.dropdownSave,
+.dropdownCancel,
+.dropdownClear {
+  min-width: 0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #2f343a;
+  font-size: 11px;
+  text-transform: none;
+}
+
+.dropdownSave {
+  border: 1px solid #c9cfda;
+  background-color: #eef1f7;
+}
+
+.tablesLayout {
+  display: flex;
+  flex-direction: column;
+  min-height: 62vh;
+  gap: 10px;
+}
+
+.tablesLayoutSplit {
+  height: 68vh;
+  min-height: 520px;
+}
+
+.tableContainer {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 62vh;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #d9dee7;
+  border-radius: 6px;
+}
+
+.tableContainerSplit {
+  min-height: 0;
+  flex: 0 0 60%;
+}
+
+.tableScrollWrap {
+  overflow: auto;
+  height: 100%;
+}
+
+.tableInner {
+  width: max-content;
+  min-width: 100%;
+}
+
+.tableHeader,
+.tableRow {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.tableHeader {
+  min-height: 34px;
+  border-bottom: 1px solid #e8ecf2;
+  background-color: #f9fafb;
+}
+
+.tableHeaderCell {
+  color: #2f343b;
+  font-size: 11.5px;
+  font-weight: 600;
+  flex: 1;
+  min-width: 120px;
+  white-space: nowrap;
+}
+
+.tableRow {
+  min-height: 34px;
+  border-bottom: 1px solid #eef1f6;
+
+  &:hover {
+    background-color: #f9fbff;
+  }
+}
+
+.rowCheckbox {
+  padding: 0;
+  flex: 0 0 32px;
+  min-width: 32px;
+}
+
+.stickyCheckboxHeader {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background-color: #f9fafb;
+}
+
+.stickyCheckboxCell {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  background-color: #ffffff;
+}
+
+.tableCell {
+  color: #404753;
+  font-size: 12px;
+  flex: 1;
+  min-width: 120px;
+  background-color: #ffffff;
+  white-space: nowrap;
+}
+
+.contractLinkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #2c5fcb;
+  font-size: 12px;
+  font-weight: 700;
+  flex: 1;
+  min-width: 120px;
+  text-align: left;
+  cursor: pointer;
+  background-color: #ffffff;
+  white-space: nowrap;
+}
+
+.stickyMainHeaderCell {
+  position: sticky;
+  left: 32px;
+  z-index: 4;
+  background-color: #f9fafb;
+}
+
+.stickyMainCell {
+  position: sticky;
+  left: 32px;
+  z-index: 3;
+  background-color: #ffffff;
+}
+
+.contractDetailPanel {
+  display: flex;
+  min-height: 72vh;
+  flex-direction: column;
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+.contractTabBar {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0;
+  margin: 8px 10px 0;
+  padding: 0;
+  border: 1px solid #dfe2e7;
+  border-radius: 4px;
+  background-color: #e8eaee;
+  overflow: hidden;
+}
+
+.contractTabButton {
+  min-height: 26px;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  padding: 0 8px;
+  color: #606874;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.contractTabButtonActive {
+  background-color: #fbfbfc;
+  color: #2f3743;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px #d8dce2;
+}
+
+.contractDetailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.contractDetailTitle {
+  color: #222b36;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.contractDetailHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.contractSaveButton {
+  min-height: 28px;
+  background-color: #cf8f19;
+  border: 1px solid #c28212;
+  color: #ffffff;
+  font-size: 11px;
+  text-transform: none;
+}
+
+.contractHeaderLink {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #323a46;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.contractHeaderDots {
+  border: none;
+  background: transparent;
+  color: #323a46;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.contractInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(170px, 1fr));
+  gap: 14px 24px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.contractInfoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contractInfoLabel {
+  color: #6a7483;
+  font-size: 11px;
+}
+
+.contractInfoValue {
+  color: #2f3743;
+  font-size: 14px;
+}
+
+.contractFormGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px 14px;
+  padding: 16px 18px;
+}
+
+.contractFormItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contractOtherHeading {
+  padding: 8px 18px 0;
+  color: #2f3743;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.contractTabPlaceholder {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  color: #4d5868;
+  font-size: 14px;
+}
+
+.tableFiller {
+  flex: 1;
+  min-height: 180px;
+  background-color: #ffffff;
+}
+
+.lineItemsSection {
+  margin-top: 10px;
+  border: 1px solid #d9dee7;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.lineItemsSectionSplit {
+  margin-top: 0;
+  min-height: 0;
+  flex: 0 0 40%;
+  display: flex;
+  flex-direction: column;
+}
+
+.lineItemsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e8ecf2;
+  background-color: #f9fafb;
+}
+
+.lineItemsTitle {
+  color: #2f343b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lineItemsTableWrap {
+  overflow: auto;
+  flex: 1;
+}
+
+.lineItemsTable {
+  min-width: 1200px;
+  width: max-content;
+}
+
+.lineItemsHeaderRow,
+.lineItemsRow {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.lineItemsHeaderRow {
+  min-height: 30px;
+  border-bottom: 1px solid #e8ecf2;
+  background-color: #f4f6f9;
+}
+
+.lineItemsRow {
+  min-height: 28px;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.lineItemsHeaderCell {
+  color: #2f343b;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 120px;
+  flex: 1;
+  background-color: #f4f6f9;
+  white-space: nowrap;
+}
+
+.lineItemsCell {
+  color: #3f4754;
+  font-size: 11px;
+  min-width: 120px;
+  flex: 1;
+  background-color: #ffffff;
+  white-space: nowrap;
+}
+
+.stickyLineHeaderCell {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+}
+
+.stickyLineCell {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+}
+
+.lineItemLinkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 120px;
+  flex: 1;
+  border: none;
+  background: #ffffff;
+  color: #2c5fcb;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lineItemDetailPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 10px;
+}
+
+.lineItemDetailTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 8px;
+}
+
+.lineItemDetailTitle {
+  color: #2f3743;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.lineItemBackButton {
+  min-height: 28px;
+  border: 1px solid #d4dae3;
+  color: #2f3743;
+  text-transform: none;
+}
+
+.lineItemOverviewContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.lineItemSectionBox {
+  border: 1px solid #d9dee7;
+  background-color: #ffffff;
+}
+
+.lineItemSectionTitle {
+  padding: 4px 8px;
+  border-bottom: 1px solid #e8ecf2;
+  color: #2f3743;
+  font-size: 13px;
+  font-weight: 600;
+  background-color: #f8fafd;
+}
+
+.lineItemGridOne,
+.lineItemGridTwo,
+.lineItemGridThree {
+  display: grid;
+  gap: 8px 10px;
+  padding: 8px;
+}
+
+.lineItemGridOne {
+  grid-template-columns: 1fr;
+}
+
+.lineItemGridTwo {
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+}
+
+.lineItemGridThree {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+.lineItemField,
+.lineItemFieldFull {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lineItemFieldFull {
+  grid-column: 1 / -1;
+}
+
+.lineItemOverviewContent .searchFieldControl {
+  max-width: none;
+}
+
+.searchFieldControl :global(.MuiOutlinedInput-root),
+.searchFieldControl :global(.MuiSelect-select),
+.searchActionButton :global(.MuiButton-startIcon),
+.columnsButton :global(.MuiButton-startIcon) {
+  min-height: 28px;
+}
+
+.searchFieldControl :global(.MuiOutlinedInput-input),
+.searchFieldControl :global(.MuiSelect-select) {
+  padding: 5px 8px;
+  font-size: 14px;
+}
+
+.searchFieldControl :global(.MuiOutlinedInput-root .MuiSelect-icon),
+.searchActionButton :global(svg),
+.columnsButton :global(svg) {
+  font-size: 16px;
+}
+
+.searchActionButton :global(.MuiButton-startIcon),
+.columnsButton :global(.MuiButton-startIcon) {
+  margin-right: 8px;
+  margin-left: 0;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.searchActionButton :global(.MuiButton-startIcon svg),
+.columnsButton :global(.MuiButton-startIcon svg) {
+  transform: translateY(-0.5px);
+}
+
+.pageRoot :global(.MuiTypography-root),
+.pageRoot :global(.MuiButton-root),
+.pageRoot :global(.MuiInputBase-input),
+.pageRoot :global(.MuiSelect-select),
+.pageRoot button,
+.pageRoot input,
+.pageRoot label,
+.pageRoot span,
+.pageRoot p {
+  font-size: 14px !important;
+}
+
