@@ -124,12 +124,12 @@ const topMenusBySection: Record<SectionKey, TopMenuItemDef[]> = {
 };
 
 const actionItems = [
-  { label: "NY", icon: <AddIcon fontSize="small" />, requiresSelection: false },
-  { label: "TA BORT", icon: <DeleteOutlineOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "SKRIV UT", icon: <PrintOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "KOPIERA", icon: <ContentCopyOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "INAKTIVERA", icon: <BlockOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "ÄNDRA PRIS", icon: <EditOutlinedIcon fontSize="small" />, requiresSelection: true }
+  { label: "Ny", icon: <AddIcon fontSize="small" />, requiresSelection: false },
+  { label: "Ta bort", icon: <DeleteOutlineOutlinedIcon fontSize="small" />, requiresSelection: true },
+  { label: "Skriv ut", icon: <PrintOutlinedIcon fontSize="small" />, requiresSelection: true },
+  { label: "Kopiera", icon: <ContentCopyOutlinedIcon fontSize="small" />, requiresSelection: true },
+  { label: "Inaktivera", icon: <BlockOutlinedIcon fontSize="small" />, requiresSelection: true },
+  { label: "Ändra pris", icon: <EditOutlinedIcon fontSize="small" />, requiresSelection: true }
 ];
 
 const fakeCompanies = [
@@ -998,6 +998,8 @@ export default function Home() {
                 <div className={styles.filterRow}>
                   <div className={styles.searchFieldsPanel}>
                     <div className={styles.searchFieldsContainer}>
+                      <div className={styles.searchFieldsTopRow}>
+                        <div className={styles.searchFieldsContent}>
                       {textSearchFields.length > 0 ? (
                         <div className={styles.searchFieldsGroup}>
                           <div className={styles.searchFieldsGrid}>
@@ -1068,61 +1070,64 @@ export default function Home() {
                       checkboxSearchFields.length === 0 ? (
                         <div className={`${styles.searchFieldsGroup} ${styles.searchFieldsEmptyGroup}`}>
                           <Typography className={styles.searchFieldLabel}>
-                            Inga filter valda. Öppna SÖKFÄLT för att visa filter.
+                            Inga filter valda. Öppna Sökfält för att visa filter.
                           </Typography>
                         </div>
                       ) : null}
-                    </div>
-                  </div>
-
-              <div className={`${styles.searchMenuWrapper} ${styles.rightControlRail}`}>
-                <Button
-                  ref={searchButtonRef}
-                  className={styles.searchActionButton}
-                  variant="outlined"
-                  startIcon={<SearchIcon className={styles.searchActionIcon} />}
-                  onClick={isSearchMenuOpen ? cancelSearchFieldChanges : openSearchMenu}
-                >
-                  SÖKFÄLT
-                </Button>
-
-                {isSearchMenuOpen ? (
-                  <div className={styles.searchFieldsDropdown} ref={searchMenuRef}>
-                    <div className={styles.searchFieldsDropdownList}>
-                      {draftSearchFields.map((field) => (
-                        <div key={field.key} className={styles.searchFieldsDropdownRow}>
-                          <button
-                            type="button"
-                            className={styles.searchFieldsDropdownName}
-                            onClick={() => toggleSearchFieldVisibility(field.key)}
-                          >
-                            <Checkbox
-                              size="small"
-                              checked={field.visible}
-                              className={styles.dropdownCheckbox}
-                            />
-                            <Typography className={styles.searchFieldsDropdownLabel}>
-                              {field.label}
-                            </Typography>
-                          </button>
                         </div>
-                      ))}
-                    </div>
+                      <div className={styles.searchFieldsActions}>
+                        <div className={styles.searchMenuWrapper}>
+                          <Button
+                            ref={searchButtonRef}
+                            className={styles.searchActionButton}
+                            variant="outlined"
+                            startIcon={<SearchIcon className={styles.searchActionIcon} />}
+                            onClick={isSearchMenuOpen ? cancelSearchFieldChanges : openSearchMenu}
+                          >
+                            Sökfält
+                          </Button>
 
-                    <div className={styles.columnsDropdownFooter}>
-                      <Button className={styles.dropdownSave} size="small" onClick={saveSearchFieldChanges}>
-                        SPARA
-                      </Button>
-                      <Button className={styles.dropdownCancel} size="small" onClick={cancelSearchFieldChanges}>
-                        AVBRYT
-                      </Button>
-                      <Button className={styles.dropdownClear} size="small" onClick={clearSearchFieldChanges}>
-                        RENSA
-                      </Button>
+                          {isSearchMenuOpen ? (
+                            <div className={styles.searchFieldsDropdown} ref={searchMenuRef}>
+                              <div className={styles.searchFieldsDropdownList}>
+                                {draftSearchFields.map((field) => (
+                                  <div key={field.key} className={styles.searchFieldsDropdownRow}>
+                                    <button
+                                      type="button"
+                                      className={styles.searchFieldsDropdownName}
+                                      onClick={() => toggleSearchFieldVisibility(field.key)}
+                                    >
+                                      <Checkbox
+                                        size="small"
+                                        checked={field.visible}
+                                        className={styles.dropdownCheckbox}
+                                      />
+                                      <Typography className={styles.searchFieldsDropdownLabel}>
+                                        {field.label}
+                                      </Typography>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div className={styles.columnsDropdownFooter}>
+                                <Button className={styles.dropdownSave} size="small" onClick={saveSearchFieldChanges}>
+                                  Spara
+                                </Button>
+                                <Button className={styles.dropdownCancel} size="small" onClick={cancelSearchFieldChanges}>
+                                  Avbryt
+                                </Button>
+                                <Button className={styles.dropdownClear} size="small" onClick={clearSearchFieldChanges}>
+                                  Rensa
+                                </Button>
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                      </div>
                     </div>
                   </div>
-                ) : null}
-              </div>
                 </div>
 
                 <div className={styles.ruleDivider} />
@@ -1147,7 +1152,7 @@ export default function Home() {
                   size="small"
                   onClick={() => setIsLineItemsTableVisible((previous) => !previous)}
                 >
-                  {isLineItemsTableVisible ? "DÖLJ RADER" : "VISA RADER"}
+                  {isLineItemsTableVisible ? "Dölj rader" : "Visa rader"}
                 </Button>
 
                 <div className={styles.columnsMenuWrapper}>
@@ -1159,7 +1164,7 @@ export default function Home() {
                     startIcon={<ViewColumnOutlinedIcon fontSize="small" />}
                     onClick={isColumnsMenuOpen ? cancelColumnChanges : openColumnsMenu}
                   >
-                    KOLUMNER
+                    Kolumner
                   </Button>
 
                   {isColumnsMenuOpen ? (
@@ -1217,13 +1222,13 @@ export default function Home() {
 
                     <div className={styles.columnsDropdownFooter}>
                       <Button className={styles.dropdownSave} size="small" onClick={saveColumnChanges}>
-                        SPARA
+                        Spara
                       </Button>
                       <Button className={styles.dropdownCancel} size="small" onClick={cancelColumnChanges}>
-                        AVBRYT
+                        Avbryt
                       </Button>
                       <Button className={styles.dropdownClear} size="small" onClick={resetColumnChanges}>
-                        RENSA
+                        Rensa
                       </Button>
                     </div>
                     </div>
@@ -1308,7 +1313,7 @@ export default function Home() {
                           startIcon={<ViewColumnOutlinedIcon fontSize="small" />}
                           onClick={isLineColumnsMenuOpen ? cancelLineColumnChanges : openLineColumnsMenu}
                         >
-                          KOLUMNER
+                          Kolumner
                         </Button>
 
                         {isLineColumnsMenuOpen ? (
@@ -1355,13 +1360,13 @@ export default function Home() {
 
                             <div className={styles.columnsDropdownFooter}>
                               <Button className={styles.dropdownSave} size="small" onClick={saveLineColumnChanges}>
-                                SPARA
+                                Spara
                               </Button>
                               <Button className={styles.dropdownCancel} size="small" onClick={cancelLineColumnChanges}>
-                                AVBRYT
+                                Avbryt
                               </Button>
                               <Button className={styles.dropdownClear} size="small" onClick={resetLineColumnChanges}>
-                                RENSA
+                                Rensa
                               </Button>
                             </div>
                           </div>

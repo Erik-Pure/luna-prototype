@@ -18,7 +18,12 @@
 .sidebar {
   display: flex;
   width: 226px;
+  height: calc(100vh - 12px);
+  max-height: calc(100vh - 12px);
   flex-direction: column;
+  align-self: flex-start;
+  overflow-y: auto;
+  overflow-x: hidden;
   border-right: 1px solid #e1e4e8;
   background-color: #f7f8fa;
   transition: width 0.2s ease;
@@ -177,7 +182,25 @@
 }
 
 .sidebarItemActive {
-  background-color: #f2e2bb;
+  background-color: transparent;
+  color: var(--color-champagne);
+}
+
+.sidebarItemActive .sidebarItemIcon,
+.sidebarItemActive .sidebarItemIcon :global(svg),
+.sidebarItemActive .sidebarItemText {
+  color: var(--color-champagne) !important;
+}
+
+.sidebarItemActive::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  right: -8px;
+  width: 3px;
+  border-radius: 2px;
+  background-color: var(--color-champagne);
 }
 
 .sidebarItemText {
@@ -454,10 +477,22 @@
   display: flex;
   width: 100%;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid #e8ecf3;
   border-radius: 5px;
   background-color: #fafbfd;
+}
+
+.searchFieldsTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.searchFieldsContent {
+  min-width: 0;
+  flex: 1;
 }
 
 .searchFieldsGrid {
@@ -509,6 +544,13 @@
   max-width: 240px;
 }
 
+.searchFieldsActions {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  padding: 6px 6px 0 0;
+}
+
 .searchCheckboxGrid {
   display: flex;
   flex-wrap: wrap;
@@ -545,13 +587,14 @@
 }
 
 .searchActionButton {
-  width: 196px;
   min-height: 28px;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 0 10px;
   border-radius: 6px;
-  border-color: #c5cad2;
+  border-color: #333333;
   color: #333333;
   font-size: 11px;
   line-height: 1;
@@ -651,13 +694,14 @@
 }
 
 .columnsButton {
-  width: 196px;
   min-height: 28px;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 0 10px;
   border-radius: 6px;
-  border-color: #c5cad2;
+  border-color: #333333;
   color: #333333;
   font-size: 11px;
   line-height: 1;
@@ -690,7 +734,7 @@
 .lineItemsToggleButton {
   min-height: 28px;
   border-radius: 6px;
-  border-color: #c5cad2;
+  border-color: #333333;
   color: #333333;
   font-size: 11px;
   text-transform: none;
@@ -778,14 +822,14 @@
   min-width: 0;
   padding: 2px 8px;
   border-radius: 4px;
-  color: #2f343a;
+  color: #333333;
   font-size: 11px;
   text-transform: none;
 }
 
 .dropdownSave {
-  border: 1px solid #c9cfda;
-  background-color: #eef1f7;
+  border: 1px solid #333333;
+  background-color: transparent;
 }
 
 .tablesLayout {
@@ -812,7 +856,7 @@
 
 .tableContainerSplit {
   min-height: 0;
-  flex: 0 0 60%;
+  flex: 0 0 50%;
 }
 
 .tableScrollWrap {
@@ -993,9 +1037,9 @@
 
 .contractSaveButton {
   min-height: 28px;
-  background-color: var(--color-champagne);
-  border: 1px solid var(--color-champagne-dark);
-  color: #ffffff;
+  background-color: transparent;
+  border: 1px solid #333333;
+  color: #333333;
   font-size: 11px;
   text-transform: none;
 }
@@ -1088,7 +1132,7 @@
 .lineItemsSectionSplit {
   margin-top: 0;
   min-height: 0;
-  flex: 0 0 40%;
+  flex: 0 0 50%;
   display: flex;
   flex-direction: column;
 }
@@ -1400,6 +1444,7 @@
 :global(html[data-color-mode="dark"]) .companyDropdown,
 :global(html[data-color-mode="dark"]) .companyDropdownItem,
 :global(html[data-color-mode="dark"]) .searchFieldsContainer,
+:global(html[data-color-mode="dark"]) .searchFieldsActions,
 :global(html[data-color-mode="dark"]) .searchFieldsDropdown,
 :global(html[data-color-mode="dark"]) .columnsDropdown,
 :global(html[data-color-mode="dark"]) .columnsDropdownRow {
@@ -1419,7 +1464,8 @@
 }
 
 :global(html[data-color-mode="dark"]) .sidebarItemActive {
-  background-color: #3a2f1a;
+  background-color: transparent;
+  color: var(--color-champagne);
 }
 
 :global(html[data-color-mode="dark"]) .sidebarItemButton,
@@ -1463,7 +1509,12 @@
 :global(html[data-color-mode="dark"]) .dropdownSave,
 :global(html[data-color-mode="dark"]) .dropdownCancel,
 :global(html[data-color-mode="dark"]) .dropdownClear {
-  border-color: #4a5160;
+  border-color: #dbe1ea;
+  color: #dbe1ea;
+}
+
+:global(html[data-color-mode="dark"]) .contractSaveButton {
+  border-color: #dbe1ea;
   color: #dbe1ea;
 }
 
@@ -1596,5 +1647,22 @@
 .pageRoot span,
 .pageRoot p {
   font-size: 14px !important;
+}
+
+.pageRoot :global(.MuiButton-root),
+.pageRoot :global(.MuiIconButton-root),
+.pageRoot button {
+  font-family: "Poppins", Arial, sans-serif !important;
+  text-transform: none !important;
+}
+
+.pageRoot :global(.MuiButton-outlined) {
+  border-color: #333333;
+  color: #333333;
+}
+
+:global(html[data-color-mode="dark"]) .pageRoot :global(.MuiButton-outlined) {
+  border-color: #dbe1ea;
+  color: #dbe1ea;
 }
 

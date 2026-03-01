@@ -35,12 +35,12 @@ type ContractRowsTabProps = {
 };
 
 const tableActionItems = [
-  { label: "NY", icon: <AddIcon fontSize="small" />, requiresSelection: false },
-  { label: "TA BORT", icon: <DeleteOutlineOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "SKRIV UT", icon: <PrintOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "KOPIERA", icon: <ContentCopyOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "INAKTIVERA", icon: <BlockOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "ÄNDRA PRIS", icon: <EditOutlinedIcon fontSize="small" />, requiresSelection: true }
+  { label: "Ny", icon: <AddIcon fontSize="small" />, requiresSelection: false },
+  { label: "Ta bort", icon: <DeleteOutlineOutlinedIcon fontSize="small" />, requiresSelection: true },
+  { label: "Skriv ut", icon: <PrintOutlinedIcon fontSize="small" />, requiresSelection: true },
+  { label: "Kopiera", icon: <ContentCopyOutlinedIcon fontSize="small" />, requiresSelection: true },
+  { label: "Inaktivera", icon: <BlockOutlinedIcon fontSize="small" />, requiresSelection: true },
+  { label: "Ändra pris", icon: <EditOutlinedIcon fontSize="small" />, requiresSelection: true }
 ];
 
 export function ContractRowsTab({
@@ -96,7 +96,7 @@ export function ContractRowsTab({
             startIcon={<ViewColumnOutlinedIcon fontSize="small" />}
             onClick={isColumnsMenuOpen ? onCancelColumnsMenu : onOpenColumnsMenu}
           >
-            KOLUMNER
+            Kolumner
           </Button>
 
           {isColumnsMenuOpen ? (
@@ -143,13 +143,13 @@ export function ContractRowsTab({
 
               <div className={styles.columnsDropdownFooter}>
                 <Button className={styles.dropdownSave} size="small" onClick={onSaveColumnChanges}>
-                  SPARA
+                  Spara
                 </Button>
                 <Button className={styles.dropdownCancel} size="small" onClick={onCancelColumnsMenu}>
-                  AVBRYT
+                  Avbryt
                 </Button>
                 <Button className={styles.dropdownClear} size="small" onClick={onResetColumnChanges}>
-                  RENSA
+                  Rensa
                 </Button>
               </div>
             </div>
