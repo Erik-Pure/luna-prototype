@@ -22,12 +22,21 @@ type ColorModeContextValue = {
 
 const ColorModeContext = createContext<ColorModeContextValue | null>(null);
 
+type UiStateContextValue = {
+  isSidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  toggleSidebarCollapsed: () => void;
+};
+
+const UiStateContext = createContext<UiStateContextValue | null>(null);
+
 type ProvidersProps = {
   children: ReactNode;
 };
 
 export function Providers({ children }: ProvidersProps) {
   const [mode, setMode] = useState<ColorMode>("light");
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     window.localStorage.setItem("luna-color-mode", mode);
@@ -44,14 +53,24 @@ export function Providers({ children }: ProvidersProps) {
   );
 
   const theme = useMemo(() => createLunaTheme(mode), [mode]);
+  const uiStateValue = useMemo<UiStateContextValue>(
+    () => ({
+      isSidebarCollapsed,
+      setSidebarCollapsed,
+      toggleSidebarCollapsed: () => setSidebarCollapsed((previous) => !previous)
+    }),
+    [isSidebarCollapsed]
+  );
 
   return (
     <AppRouterCacheProvider>
       <ColorModeContext.Provider value={colorModeValue}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          {children}
-        </ThemeProvider>
+        <UiStateContext.Provider value={uiStateValue}>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            {children}
+          </ThemeProvider>
+        </UiStateContext.Provider>
       </ColorModeContext.Provider>
     </AppRouterCacheProvider>
   );
@@ -61,6 +80,14 @@ export function useColorMode() {
   const context = useContext(ColorModeContext);
   if (!context) {
     throw new Error("useColorMode must be used within Providers");
+  }
+  return context;
+}
+
+export function useUiState() {
+  const context = useContext(UiStateContext);
+  if (!context) {
+    throw new Error("useUiState must be used within Providers");
   }
   return context;
 }

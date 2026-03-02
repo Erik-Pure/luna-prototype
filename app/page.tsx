@@ -44,7 +44,7 @@ import { LineItemDetailView, type LineItemDetailTab } from "./components/contrac
 import { OverviewTab } from "./components/contract-tabs/OverviewTab";
 import { PrintOptionsTab } from "./components/contract-tabs/PrintOptionsTab";
 import { TermsTab } from "./components/contract-tabs/TermsTab";
-import { useColorMode } from "./providers";
+import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
 type SectionKey = "marknad" | "produktion" | "leverans" | "rapporter" | "system";
@@ -412,7 +412,7 @@ export default function Home() {
     ) ?? topMenuItems[0];
   const currentMenuLabel = currentTopMenuOption?.label ?? currentMenu.label;
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const { isSidebarCollapsed, toggleSidebarCollapsed } = useUiState();
   const [topMenuAnchorEl, setTopMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [topMenuDropdownOwnerSlug, setTopMenuDropdownOwnerSlug] = useState<string | null>(null);
   const [topMenuDropdownOptions, setTopMenuDropdownOptions] = useState<Array<{ slug: string; label: string }>>(
@@ -688,7 +688,7 @@ export default function Home() {
   };
 
   const toggleSidebar = () => {
-    setIsSidebarCollapsed((previous) => !previous);
+    toggleSidebarCollapsed();
   };
 
   const toggleCompanyMenu = () => {
@@ -1431,7 +1431,6 @@ export default function Home() {
                     lineItemId={selectedLineItemId}
                     activeTab={activeLineItemTab}
                     onChangeTab={setActiveLineItemTab}
-                    onBack={closeLineItemDetail}
                   />
                 ) : (
                   <>
