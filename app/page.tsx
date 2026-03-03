@@ -125,7 +125,6 @@ const fakeCompanies = [
 ];
 
 const contractTabs = [
-  "Översikt",
   "Villkor",
   "Leverans",
   "Kontraktsrader",
@@ -404,8 +403,8 @@ export default function Home() {
   const [topMenuDropdownOptions, setTopMenuDropdownOptions] = useState<Array<{ slug: string; label: string }>>(
     []
   );
-  const [activeContractTab, setActiveContractTab] = useState<ContractTab>("Översikt");
-  const [activeLineItemTab, setActiveLineItemTab] = useState<LineItemDetailTab>("Översikt");
+  const [activeContractTab, setActiveContractTab] = useState<ContractTab>("Villkor");
+  const [activeLineItemTab, setActiveLineItemTab] = useState<LineItemDetailTab>("Längdfördelning");
   const [selectedCompany, setSelectedCompany] = useState(fakeCompanies[0]);
   const [isCompanyMenuOpen, setIsCompanyMenuOpen] = useState(false);
   const [searchValues, setSearchValues] = useState<SearchValueMap>(initialSearchValues);
@@ -728,19 +727,19 @@ export default function Home() {
   };
 
   const openContractDetail = (contractId: string) => {
-    setActiveContractTab("Översikt");
-    setActiveLineItemTab("Översikt");
+    setActiveContractTab("Villkor");
+    setActiveLineItemTab("Längdfördelning");
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${contractId}`);
   };
 
   const closeContractDetail = () => {
-    setActiveLineItemTab("Översikt");
+    setActiveLineItemTab("Längdfördelning");
     navigateWithLoading(`/${sectionSlug}/${menuSlug}`);
   };
 
   const openLineItemDetail = (lineItemId: string) => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Översikt");
+    setActiveLineItemTab("Längdfördelning");
     if (!selectedContractId) {
       return;
     }
@@ -749,7 +748,7 @@ export default function Home() {
 
   const openNewLineItem = () => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Översikt");
+    setActiveLineItemTab("Längdfördelning");
     setNewLineItemDraftSeed({});
     setNewLineItemDraftVersion((previous) => previous + 1);
     if (!selectedContractId) {
@@ -760,7 +759,7 @@ export default function Home() {
 
   const saveAndCreateNewLineItem = (draft: NewLineItemDraft) => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Översikt");
+    setActiveLineItemTab("Längdfördelning");
     setNewLineItemDraftSeed(draft);
     setNewLineItemDraftVersion((previous) => previous + 1);
     setIsLineItemToastOpen(true);
@@ -772,7 +771,7 @@ export default function Home() {
 
   const closeLineItemDetail = () => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Översikt");
+    setActiveLineItemTab("Längdfördelning");
     if (!selectedContractId) {
       return;
     }
@@ -783,7 +782,7 @@ export default function Home() {
     setActiveContractTab(tab);
     triggerViewLoading();
     if (tab !== "Kontraktsrader" && isLineItemDetailOpen && selectedContractId) {
-      setActiveLineItemTab("Översikt");
+      setActiveLineItemTab("Längdfördelning");
       navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`);
     }
   };

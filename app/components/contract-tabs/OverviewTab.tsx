@@ -10,33 +10,6 @@ type OverviewTabProps = {
 export function OverviewTab({ contractId }: OverviewTabProps) {
   return (
     <>
-      <div className={styles.contractInfoGrid}>
-        <div className={styles.contractInfoItem}>
-          <Typography className={styles.contractInfoLabel}>Kontraktsnr</Typography>
-          <Typography className={styles.contractInfoValue}>{contractId}</Typography>
-        </div>
-        <div className={styles.contractInfoItem}>
-          <Typography className={styles.contractInfoLabel}>Kontraktstyp</Typography>
-          <Typography className={styles.contractInfoValue}>Försäljningskontrakt</Typography>
-        </div>
-        <div className={styles.contractInfoItem}>
-          <Typography className={styles.contractInfoLabel}>Kopierat från</Typography>
-          <Typography className={styles.contractInfoValue}>-</Typography>
-        </div>
-        <div className={styles.contractInfoItem}>
-          <Typography className={styles.contractInfoLabel}>Prislista</Typography>
-          <Typography className={styles.contractInfoValue}>-</Typography>
-        </div>
-        <div className={styles.contractInfoItem}>
-          <Typography className={styles.contractInfoLabel}>Kategori</Typography>
-          <Typography className={styles.contractInfoValue}>Träindustri</Typography>
-        </div>
-        <div className={styles.contractInfoItem}>
-          <Typography className={styles.contractInfoLabel}>Land</Typography>
-          <Typography className={styles.contractInfoValue}>Sverige</Typography>
-        </div>
-      </div>
-
       <div className={styles.contractFormGrid}>
         <div className={styles.contractFormItem}>
           <Typography className={styles.searchFieldLabel}>Status*</Typography>
@@ -79,6 +52,33 @@ export function OverviewTab({ contractId }: OverviewTabProps) {
         <div className={styles.contractFormItem}>
           <Typography className={styles.searchFieldLabel}>Giltig t.o.m.*</Typography>
           <TextField defaultValue="04/12/2025" size="small" className={styles.searchFieldControl} />
+        </div>
+      </div>
+
+      <div className={styles.contractInfoGrid}>
+        <div className={styles.contractInfoItem}>
+          <Typography className={styles.contractInfoLabel}>Kontraktsnr</Typography>
+          <Typography className={styles.contractInfoValue}>{contractId}</Typography>
+        </div>
+        <div className={styles.contractInfoItem}>
+          <Typography className={styles.contractInfoLabel}>Kontraktstyp</Typography>
+          <Typography className={styles.contractInfoValue}>Försäljningskontrakt</Typography>
+        </div>
+        <div className={styles.contractInfoItem}>
+          <Typography className={styles.contractInfoLabel}>Kopierat från</Typography>
+          <Typography className={styles.contractInfoValue}>-</Typography>
+        </div>
+        <div className={styles.contractInfoItem}>
+          <Typography className={styles.contractInfoLabel}>Prislista</Typography>
+          <Typography className={styles.contractInfoValue}>-</Typography>
+        </div>
+        <div className={styles.contractInfoItem}>
+          <Typography className={styles.contractInfoLabel}>Kategori</Typography>
+          <Typography className={styles.contractInfoValue}>Träindustri</Typography>
+        </div>
+        <div className={styles.contractInfoItem}>
+          <Typography className={styles.contractInfoLabel}>Land</Typography>
+          <Typography className={styles.contractInfoValue}>Sverige</Typography>
         </div>
       </div>
 

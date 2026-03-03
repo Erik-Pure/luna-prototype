@@ -1,14 +1,15 @@
 .pageRoot {
-  min-height: 100vh;
+  height: 100vh;
   padding: 6px;
   background-color: #f1f3f5;
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .appShell {
   display: flex;
-  min-height: calc(100vh - 12px);
-  overflow-x: auto;
+  height: calc(100vh - 12px);
+  min-height: 0;
+  overflow-x: hidden;
   overflow-y: hidden;
   border: 1px solid #d6d9df;
   border-radius: 6px;
@@ -16,14 +17,15 @@
 }
 
 .sidebar {
+  position: relative;
+  z-index: 20;
   display: flex;
   width: 226px;
-  height: calc(100vh - 12px);
-  max-height: calc(100vh - 12px);
+  height: 100%;
+  max-height: 100%;
   flex-direction: column;
   align-self: flex-start;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
   border-right: 1px solid #e1e4e8;
   background-color: #f7f8fa;
   transition: width 0.2s ease;
@@ -298,13 +300,16 @@
 .mainPanel {
   display: flex;
   flex: 1;
+  min-height: 0;
   min-width: 0;
   flex-direction: column;
+  overflow: hidden;
   background-color: #ffffff;
 }
 
 .topNav {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 14px;
   min-height: 48px;
@@ -418,14 +423,26 @@
 .contentArea {
   display: flex;
   flex: 1;
+  min-height: 0;
   min-width: 0;
   flex-direction: column;
   gap: 10px;
   padding: 14px;
+  overflow: hidden;
+}
+
+.contentBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
 }
 
 .breadcrumbs {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 2px;
 }
@@ -984,33 +1001,144 @@
 
 .contractDetailPanel {
   display: flex;
-  min-height: 72vh;
+  flex: 1;
+  min-height: 0;
   flex-direction: column;
   border: 1px solid #d9dee7;
   border-radius: 8px;
   background-color: #ffffff;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .contractTabBar {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  display: flex;
   align-items: stretch;
+  flex: 1;
+  min-width: 0;
   gap: 0;
-  margin: 8px 10px 0;
+  margin: 0;
   padding: 0;
   border: 1px solid #dfe2e7;
   border-radius: 4px;
   background-color: #e8eaee;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.contractDetailTabControlRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 10px 0;
+}
+
+.contractDetailOverviewToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 0;
+  padding: 8px;
+  border: 1px solid #d8dde6;
+  border-radius: 4px;
+  background-color: #f8fafd;
+  color: #2f3743;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.contractDetailContentLayout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 8px 10px 10px;
+  gap: 0;
   overflow: hidden;
 }
 
+.contractDetailOverviewPanel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid #d9dee7;
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  background-color: #fbfcfe;
+  overflow: hidden;
+}
+
+.contractDetailOverviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e8ecf2;
+  background: linear-gradient(180deg, #fafbfd 0%, #f4f7fb 100%);
+}
+
+.contractDetailOverviewTitle {
+  color: #2f3743;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+}
+
+.contractDetailOverviewBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.contractDetailOverviewPanel .contractInfoGrid,
+.contractDetailOverviewPanel .contractFormGrid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.contractDetailOverviewPanel .lineItemRequiredGrid,
+.contractDetailOverviewPanel .lineItemGridTwo,
+.contractDetailOverviewPanel .lineItemGridThree {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.contractDetailOverviewPanel .contractInfoGrid,
+.contractDetailOverviewPanel .contractFormGrid,
+.contractDetailOverviewPanel .lineItemRequiredGrid,
+.contractDetailOverviewPanel .lineItemGridOne,
+.contractDetailOverviewPanel .lineItemGridTwo,
+.contractDetailOverviewPanel .lineItemGridThree {
+  gap: 8px;
+  padding: 8px;
+}
+
+.contractDetailResizeHandle {
+  width: 6px;
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: linear-gradient(90deg, #e7ebf1 0%, #d7dde7 50%, #e7ebf1 100%);
+  border-radius: 0 2px 2px 0;
+}
+
+.contractDetailMainContent {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #d9dee7;
+  border-radius: 0 6px 6px 0;
+  background-color: #ffffff;
+  overflow: auto;
+}
+
 .contractTabButton {
-  min-height: 26px;
+  flex: 0 0 auto;
+  min-width: 130px;
+  min-height: 0;
   border: none;
   border-radius: 0;
   background-color: transparent;
-  padding: 0 8px;
+  padding: 8px;
   color: #606874;
   font-size: 12px;
   font-weight: 500;
@@ -1140,6 +1268,12 @@
   background-color: #ffffff;
 }
 
+.contractDetailMainContent .lineItemsSection {
+  margin-top: 0;
+  border: none;
+  border-radius: 0;
+}
+
 .lineItemsSectionSplit {
   margin-top: 0;
   min-height: 0;
@@ -1261,9 +1395,12 @@
 
 .lineItemDetailPanel {
   display: flex;
+  flex: 1;
+  min-height: 0;
   flex-direction: column;
   gap: 8px;
-  padding-bottom: 10px;
+  padding-bottom: 0;
+  overflow: hidden;
 }
 
 .lineItemDetailTopBar {
@@ -1317,15 +1454,14 @@
 .lineItemOverviewContent {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding: 0 8px;
 }
 
 .lineItemOverviewLayout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  align-items: start;
 }
 
 .lineItemOverviewMain {
@@ -1336,8 +1472,7 @@
 }
 
 .lineItemOverviewSidePanel {
-  position: sticky;
-  top: 8px;
+  position: static;
 }
 
 .lineItemSectionBox {
@@ -1761,6 +1896,12 @@
   background-color: #282c34;
 }
 
+:global(html[data-color-mode="dark"]) .contractDetailOverviewToggle {
+  border-color: #3a3f4a;
+  background-color: #262a32;
+  color: #dbe1ea;
+}
+
 :global(html[data-color-mode="dark"]) .contractTabButton {
   color: #c0c7d2;
 }
@@ -1777,7 +1918,30 @@
   border-color: #3a3f4a;
 }
 
+:global(html[data-color-mode="dark"]) .contractDetailOverviewPanel,
+:global(html[data-color-mode="dark"]) .contractDetailMainContent {
+  border-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .contractDetailOverviewPanel {
+  background-color: #1d2027;
+}
+
+:global(html[data-color-mode="dark"]) .contractDetailOverviewHeader {
+  border-color: #3a3f4a;
+  background: linear-gradient(180deg, #2a2e37 0%, #252932 100%);
+}
+
+:global(html[data-color-mode="dark"]) .contractDetailMainContent {
+  background-color: #202229;
+}
+
+:global(html[data-color-mode="dark"]) .contractDetailResizeHandle {
+  background: linear-gradient(90deg, #323844 0%, #424a59 50%, #323844 100%);
+}
+
 :global(html[data-color-mode="dark"]) .contractDetailTitle,
+:global(html[data-color-mode="dark"]) .contractDetailOverviewTitle,
 :global(html[data-color-mode="dark"]) .contractInfoValue,
 :global(html[data-color-mode="dark"]) .contractOtherHeading,
 :global(html[data-color-mode="dark"]) .contractTabPlaceholder,

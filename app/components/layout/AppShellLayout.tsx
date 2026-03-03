@@ -277,7 +277,7 @@ export function AppShellLayout({
             )}
           </div>
 
-          {children}
+          <div className={styles.contentBody}>{children}</div>
         </div>
       </section>
     </div>
