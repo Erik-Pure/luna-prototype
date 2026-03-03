@@ -22,6 +22,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ViewColumnOutlinedIcon from "@mui/icons-material/ViewColumnOutlined";
 import {
+  Alert,
   Avatar,
   Button,
   Checkbox,
@@ -29,6 +30,7 @@ import {
   Menu,
   MenuItem,
   Select,
+  Snackbar,
   Switch,
   TextField,
   type SelectChangeEvent,
@@ -40,10 +42,15 @@ import { ContractRowsTab } from "./components/contract-tabs/ContractRowsTab";
 import { DeliveryTab } from "./components/contract-tabs/DeliveryTab";
 import { DocumentsTab } from "./components/contract-tabs/DocumentsTab";
 import { FreightTab } from "./components/contract-tabs/FreightTab";
-import { LineItemDetailView, type LineItemDetailTab } from "./components/contract-tabs/LineItemDetailView";
+import {
+  LineItemDetailView,
+  type LineItemDetailTab,
+  type NewLineItemDraft
+} from "./components/contract-tabs/LineItemDetailView";
 import { OverviewTab } from "./components/contract-tabs/OverviewTab";
 import { PrintOptionsTab } from "./components/contract-tabs/PrintOptionsTab";
 import { TermsTab } from "./components/contract-tabs/TermsTab";
+import { DeliveryListView } from "./components/DeliveryListView";
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
@@ -393,11 +400,14 @@ export default function Home() {
   const menuSlug = pathParts[1] ?? sectionConfig.defaultMenuSlug;
   const contractId = pathParts[2] ?? null;
   const lineItemId = pathParts[3] ?? null;
-  const isContractDetailOpen = Boolean(contractId);
-  const selectedContractId = contractId;
-  const selectedLineItemId = lineItemId;
+  const isContractDetailRoute = sectionSlug === "marknad" && menuSlug === "kontraktlista";
+  const isContractDetailOpen = isContractDetailRoute && Boolean(contractId);
+  const selectedContractId = isContractDetailRoute ? contractId : null;
+  const selectedLineItemId = isContractDetailRoute ? lineItemId : null;
+  const isCreatingLineItem = selectedLineItemId === "new";
   const isLineItemDetailOpen = Boolean(selectedContractId && selectedLineItemId);
   const isContractListPage = sectionSlug === "marknad" && menuSlug === "kontraktlista";
+  const isDeliveryListPage = sectionSlug === "marknad" && menuSlug === "leveranslista";
   const isSystemPage = sectionSlug === "system";
   const topMenuItems = topMenusBySection[sectionSlug] ?? topMenusBySection.marknad;
   const leftTopMenuItems = topMenuItems.filter((item) => !item.alignRight);
@@ -434,6 +444,9 @@ export default function Home() {
   const [draftColumns, setDraftColumns] = useState<ColumnConfig[]>(defaultColumns);
   const [appliedLineColumns, setAppliedLineColumns] = useState<LineItemColumnConfig[]>(defaultLineItemColumns);
   const [draftLineColumns, setDraftLineColumns] = useState<LineItemColumnConfig[]>(defaultLineItemColumns);
+  const [newLineItemDraftSeed, setNewLineItemDraftSeed] = useState<Partial<NewLineItemDraft>>({});
+  const [newLineItemDraftVersion, setNewLineItemDraftVersion] = useState(0);
+  const [isLineItemToastOpen, setIsLineItemToastOpen] = useState(false);
   const searchMenuRef = useRef<HTMLDivElement | null>(null);
   const searchButtonRef = useRef<HTMLButtonElement | null>(null);
   const columnsMenuRef = useRef<HTMLDivElement | null>(null);
@@ -730,6 +743,29 @@ export default function Home() {
     router.push(`/${sectionSlug}/${menuSlug}/${selectedContractId}/${lineItemId}`);
   };
 
+  const openNewLineItem = () => {
+    setActiveContractTab("Kontraktsrader");
+    setActiveLineItemTab("Översikt");
+    setNewLineItemDraftSeed({});
+    setNewLineItemDraftVersion((previous) => previous + 1);
+    if (!selectedContractId) {
+      return;
+    }
+    router.push(`/${sectionSlug}/${menuSlug}/${selectedContractId}/new`);
+  };
+
+  const saveAndCreateNewLineItem = (draft: NewLineItemDraft) => {
+    setActiveContractTab("Kontraktsrader");
+    setActiveLineItemTab("Översikt");
+    setNewLineItemDraftSeed(draft);
+    setNewLineItemDraftVersion((previous) => previous + 1);
+    setIsLineItemToastOpen(true);
+    if (!selectedContractId) {
+      return;
+    }
+    router.push(`/${sectionSlug}/${menuSlug}/${selectedContractId}/new`);
+  };
+
   const closeLineItemDetail = () => {
     setActiveContractTab("Kontraktsrader");
     setActiveLineItemTab("Översikt");
@@ -751,6 +787,10 @@ export default function Home() {
     setTopMenuAnchorEl(null);
     setTopMenuDropdownOwnerSlug(null);
     setTopMenuDropdownOptions([]);
+  };
+
+  const closeLineItemToast = () => {
+    setIsLineItemToastOpen(false);
   };
 
   const handleTopMenuClick = (item: TopMenuItemDef, event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -785,7 +825,7 @@ export default function Home() {
     }
 
     if (isLineItemDetailOpen && selectedLineItemId) {
-      deepestBreadcrumb = `Kontraktsrad ${selectedLineItemId}`;
+      deepestBreadcrumb = isCreatingLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${selectedLineItemId}`;
     }
 
     document.title = `${deepestBreadcrumb} (${selectedCompany})`;
@@ -794,7 +834,8 @@ export default function Home() {
     currentMenuLabel,
     selectedContractId,
     isLineItemDetailOpen,
-    selectedLineItemId
+    selectedLineItemId,
+    isCreatingLineItem
   ]);
 
   return (
@@ -981,7 +1022,7 @@ export default function Home() {
                       </button>
                       <ChevronRightIcon className={styles.breadcrumbArrow} />
                       <Typography className={styles.breadcrumbActive}>
-                        Kontraktsrad {selectedLineItemId}
+                        {isCreatingLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${selectedLineItemId}`}
                       </Typography>
                     </>
                   ) : (
@@ -1424,13 +1465,18 @@ export default function Home() {
                 ) : null}
                 </div>
               </>
+            ) : !isContractDetailOpen && isDeliveryListPage ? (
+              <DeliveryListView />
             ) : isContractDetailOpen ? (
               <div className={styles.contractDetailPanel}>
                 {isLineItemDetailOpen ? (
                   <LineItemDetailView
-                    lineItemId={selectedLineItemId}
+                    key={`line-item-detail-${selectedLineItemId ?? "new"}-${newLineItemDraftVersion}`}
+                    lineItemId={selectedLineItemId ?? "new"}
                     activeTab={activeLineItemTab}
                     onChangeTab={setActiveLineItemTab}
+                    newDraftSeed={newLineItemDraftSeed}
+                    onSaveAndCreateNew={saveAndCreateNewLineItem}
                   />
                 ) : (
                   <>
@@ -1493,6 +1539,7 @@ export default function Home() {
                         onSaveColumnChanges={saveLineColumnChanges}
                         onResetColumnChanges={resetLineColumnChanges}
                         onOpenRowDetail={openLineItemDetail}
+                        onCreateRow={openNewLineItem}
                       />
                     ) : null}
                     {activeContractTabForView === "Frakt" ? <FreightTab /> : null}
@@ -1554,6 +1601,16 @@ export default function Home() {
           </div>
         </section>
       </div>
+      <Snackbar
+        open={isLineItemToastOpen}
+        autoHideDuration={2800}
+        onClose={closeLineItemToast}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert onClose={closeLineItemToast} severity="success" variant="filled">
+          Kontraktsrad sparad. Ny rad skapad.
+        </Alert>
+      </Snackbar>
     </main>
   );
 }

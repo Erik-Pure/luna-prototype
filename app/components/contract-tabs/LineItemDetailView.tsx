@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { Button, MenuItem, Select, TextField, Typography } from "@mui/material";
+import { Button, MenuItem, Select, Switch, TextField, Typography } from "@mui/material";
 import styles from "../../page.module.scss";
 
 const lineItemDetailTabs = [
@@ -18,6 +18,62 @@ const lineItemDetailTabs = [
 export type LineItemDetailTab = (typeof lineItemDetailTabs)[number];
 type LineItemOverviewMode = "quick" | "all";
 type LineItemSectionKey = "allmant" | "produkt" | "affar" | "leverans" | "ovrigt";
+export type NewLineItemDraft = {
+  senderCompany: string;
+  senderWarehouse: string;
+  artNr: string;
+  quantity: string;
+  price: string;
+  status: string;
+  deliveryWeek: string;
+  deliveryWindowMin: string;
+  deliveryWindowMax: string;
+  deliverArtNr: string;
+  product: string;
+  packageType: string;
+  length: string;
+  deliveryDay: string;
+  internalComment: string;
+  externalComment: string;
+};
+
+const emptyNewLineItemDraft: NewLineItemDraft = {
+  senderCompany: "",
+  senderWarehouse: "",
+  artNr: "",
+  quantity: "",
+  price: "",
+  status: "",
+  deliveryWeek: "",
+  deliveryWindowMin: "",
+  deliveryWindowMax: "",
+  deliverArtNr: "",
+  product: "",
+  packageType: "",
+  length: "",
+  deliveryDay: "",
+  internalComment: "",
+  externalComment: ""
+};
+
+const existingLineItemDraft: NewLineItemDraft = {
+  senderCompany: "BP Hissmofors Byggprodukter",
+  senderWarehouse: "Krokom",
+  artNr: "2202209500002000",
+  quantity: "1",
+  price: "10,29 SEK/lpm",
+  status: "Aktiv",
+  deliveryWeek: "202550",
+  deliveryWindowMin: "2025-12-05",
+  deliveryWindowMax: "2025-12-10",
+  deliverArtNr: "2202209500002000",
+  product: "22x95 Gran Ytterp",
+  packageType: "Lp",
+  length: "5,400",
+  deliveryDay: "",
+  internalComment: "",
+  externalComment: ""
+};
 const lineItemReadonlyFields = [
   { label: "Kontraktsnr", value: "163352" },
   { label: "ProduktNr", value: "7295:1:5400" },
@@ -33,6 +89,8 @@ type LineItemDetailViewProps = {
   lineItemId: string;
   activeTab: LineItemDetailTab;
   onChangeTab: (tab: LineItemDetailTab) => void;
+  newDraftSeed?: Partial<NewLineItemDraft>;
+  onSaveAndCreateNew?: (draft: NewLineItemDraft) => void;
 };
 
 function LineItemSection({
@@ -70,8 +128,15 @@ function LineItemSection({
 export function LineItemDetailView({
   lineItemId,
   activeTab,
-  onChangeTab
+  onChangeTab,
+  newDraftSeed,
+  onSaveAndCreateNew
 }: LineItemDetailViewProps) {
+  const isNewLineItem = lineItemId === "new";
+  const [newLineItemDraft, setNewLineItemDraft] = useState<NewLineItemDraft>(() => ({
+    ...(isNewLineItem ? emptyNewLineItemDraft : existingLineItemDraft),
+    ...(isNewLineItem ? newDraftSeed : {})
+  }));
   const [overviewMode, setOverviewMode] = useState<LineItemOverviewMode>("quick");
   const [collapsedSections, setCollapsedSections] = useState<Record<LineItemSectionKey, boolean>>({
     allmant: true,
@@ -91,6 +156,22 @@ export function LineItemDetailView({
     }),
     []
   );
+
+  const readonlyFields = useMemo(
+    () =>
+      lineItemReadonlyFields.map((field) => ({
+        ...field,
+        value: isNewLineItem ? "" : field.value
+      })),
+    [isNewLineItem]
+  );
+
+  const updateDraftField = (key: keyof NewLineItemDraft, value: string) => {
+    setNewLineItemDraft((previous) => ({
+      ...previous,
+      [key]: value
+    }));
+  };
 
   const handleToggleSection = (sectionKey: LineItemSectionKey) => {
     setCollapsedSections((previous) => ({
@@ -143,27 +224,31 @@ export function LineItemDetailView({
       </div>
 
       <div className={styles.lineItemDetailTopBar}>
-        <Typography className={styles.lineItemDetailTitle}>Kontraktsrad {lineItemId}</Typography>
+        <Typography className={styles.lineItemDetailTitle}>
+          {isNewLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${lineItemId}`}
+        </Typography>
         <div className={styles.lineItemDetailTopActions}>
-          <div className={styles.lineItemOverviewModeSwitch}>
-            <button
-              type="button"
-              className={`${styles.lineItemOverviewModeButton} ${
-                overviewMode === "quick" ? styles.lineItemOverviewModeButtonActive : ""
+          <div className={styles.lineItemOverviewModeToggle}>
+            <span
+              className={`${styles.lineItemOverviewModeLabel} ${
+                overviewMode === "quick" ? styles.lineItemOverviewModeLabelActive : ""
               }`}
-              onClick={() => handleChangeOverviewMode("quick")}
             >
               Snabbvy
-            </button>
-            <button
-              type="button"
-              className={`${styles.lineItemOverviewModeButton} ${
-                overviewMode === "all" ? styles.lineItemOverviewModeButtonActive : ""
+            </span>
+            <Switch
+              checked={overviewMode === "all"}
+              onChange={(_event, checked) => handleChangeOverviewMode(checked ? "all" : "quick")}
+              size="small"
+              inputProps={{ "aria-label": "Växla mellan snabbvy och alla fält" }}
+            />
+            <span
+              className={`${styles.lineItemOverviewModeLabel} ${
+                overviewMode === "all" ? styles.lineItemOverviewModeLabelActive : ""
               }`}
-              onClick={() => handleChangeOverviewMode("all")}
             >
               Alla fält
-            </button>
+            </span>
           </div>
           <Button className={styles.lineItemBackButton} size="small" disabled>
             Föregående
@@ -171,6 +256,15 @@ export function LineItemDetailView({
           <Button className={styles.lineItemBackButton} size="small" disabled>
             Nästa
           </Button>
+          {isNewLineItem ? (
+            <Button
+              className={styles.lineItemBackButton}
+              size="small"
+              onClick={() => onSaveAndCreateNew?.(newLineItemDraft)}
+            >
+              Spara och skapa ny
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -187,7 +281,8 @@ export function LineItemDetailView({
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>ArtNr</Typography>
                     <TextField
-                      defaultValue="2202209500002000"
+                      value={isNewLineItem ? newLineItemDraft.artNr : "2202209500002000"}
+                      onChange={(event) => updateDraftField("artNr", event.target.value)}
                       size="small"
                       className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
                     />
@@ -195,7 +290,8 @@ export function LineItemDetailView({
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Mängd</Typography>
                     <TextField
-                      defaultValue="1"
+                      value={isNewLineItem ? newLineItemDraft.quantity : "1"}
+                      onChange={(event) => updateDraftField("quantity", event.target.value)}
                       size="small"
                       className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
                     />
@@ -203,7 +299,8 @@ export function LineItemDetailView({
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Pris</Typography>
                     <TextField
-                      defaultValue="10,29 SEK/lpm"
+                      value={isNewLineItem ? newLineItemDraft.price : "10,29 SEK/lpm"}
+                      onChange={(event) => updateDraftField("price", event.target.value)}
                       size="small"
                       className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
                     />
@@ -211,17 +308,20 @@ export function LineItemDetailView({
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Status</Typography>
                     <Select
-                      defaultValue="Aktiv"
+                      value={isNewLineItem ? newLineItemDraft.status : "Aktiv"}
+                      onChange={(event) => updateDraftField("status", event.target.value)}
                       size="small"
                       className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
                     >
+                      <MenuItem value="">-</MenuItem>
                       <MenuItem value="Aktiv">Aktiv</MenuItem>
                     </Select>
                   </div>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Leveransvecka</Typography>
                     <TextField
-                      defaultValue="202550"
+                      value={isNewLineItem ? newLineItemDraft.deliveryWeek : "202550"}
+                      onChange={(event) => updateDraftField("deliveryWeek", event.target.value)}
                       size="small"
                       className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
                     />
@@ -229,7 +329,8 @@ export function LineItemDetailView({
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Lev.fönster min</Typography>
                     <TextField
-                      defaultValue="2025-12-05"
+                      value={isNewLineItem ? newLineItemDraft.deliveryWindowMin : "2025-12-05"}
+                      onChange={(event) => updateDraftField("deliveryWindowMin", event.target.value)}
                       size="small"
                       className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
                     />
@@ -237,7 +338,8 @@ export function LineItemDetailView({
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Lev.fönster max</Typography>
                     <TextField
-                      defaultValue="2025-12-10"
+                      value={isNewLineItem ? newLineItemDraft.deliveryWindowMax : "2025-12-10"}
+                      onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)}
                       size="small"
                       className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
                     />
@@ -245,20 +347,24 @@ export function LineItemDetailView({
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Utsändande bolag</Typography>
                     <Select
-                      defaultValue="BP Hissmofors Byggprodukter"
+                      value={isNewLineItem ? newLineItemDraft.senderCompany : "BP Hissmofors Byggprodukter"}
+                      onChange={(event) => updateDraftField("senderCompany", event.target.value)}
                       size="small"
                       className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
                     >
+                      <MenuItem value="">-</MenuItem>
                       <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
                     </Select>
                   </div>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Utsändande lagerställe</Typography>
                     <Select
-                      defaultValue="Krokom"
+                      value={isNewLineItem ? newLineItemDraft.senderWarehouse : "Krokom"}
+                      onChange={(event) => updateDraftField("senderWarehouse", event.target.value)}
                       size="small"
                       className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
                     >
+                      <MenuItem value="">-</MenuItem>
                       <MenuItem value="Krokom">Krokom</MenuItem>
                     </Select>
                   </div>
@@ -275,13 +381,25 @@ export function LineItemDetailView({
                 <div className={styles.lineItemGridTwo}>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Utsändande bolag</Typography>
-                    <Select defaultValue="BP Hissmofors Byggprodukter" size="small" className={styles.searchFieldControl}>
+                    <Select
+                      value={isNewLineItem ? newLineItemDraft.senderCompany : "BP Hissmofors Byggprodukter"}
+                      onChange={(event) => updateDraftField("senderCompany", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    >
+                      <MenuItem value="">-</MenuItem>
                       <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
                     </Select>
                   </div>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Utsändande lagerställe</Typography>
-                    <Select defaultValue="Krokom" size="small" className={styles.searchFieldControl}>
+                    <Select
+                      value={isNewLineItem ? newLineItemDraft.senderWarehouse : "Krokom"}
+                      onChange={(event) => updateDraftField("senderWarehouse", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    >
+                      <MenuItem value="">-</MenuItem>
                       <MenuItem value="Krokom">Krokom</MenuItem>
                     </Select>
                   </div>
@@ -298,25 +416,51 @@ export function LineItemDetailView({
                 <div className={styles.lineItemGridThree}>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>ArtNr</Typography>
-                    <TextField defaultValue="2202209500002000" size="small" className={styles.searchFieldControl} />
+                    <TextField
+                      value={isNewLineItem ? newLineItemDraft.artNr : "2202209500002000"}
+                      onChange={(event) => updateDraftField("artNr", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    />
                   </div>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Leverera artNr</Typography>
-                    <TextField defaultValue="2202209500002000" size="small" className={styles.searchFieldControl} />
+                    <TextField
+                      value={isNewLineItem ? newLineItemDraft.deliverArtNr : "2202209500002000"}
+                      onChange={(event) => updateDraftField("deliverArtNr", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    />
                   </div>
                   <div className={styles.lineItemFieldFull}>
                     <Typography className={styles.searchFieldLabel}>Produkt</Typography>
-                    <TextField defaultValue="22x95 Gran Ytterp" size="small" className={styles.searchFieldControl} />
+                    <TextField
+                      value={isNewLineItem ? newLineItemDraft.product : "22x95 Gran Ytterp"}
+                      onChange={(event) => updateDraftField("product", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    />
                   </div>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Pakettyp</Typography>
-                    <Select defaultValue="Lp" size="small" className={styles.searchFieldControl}>
+                    <Select
+                      value={isNewLineItem ? newLineItemDraft.packageType : "Lp"}
+                      onChange={(event) => updateDraftField("packageType", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    >
+                      <MenuItem value="">-</MenuItem>
                       <MenuItem value="Lp">Lp</MenuItem>
                     </Select>
                   </div>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Längd</Typography>
-                    <TextField defaultValue="5,400" size="small" className={styles.searchFieldControl} />
+                    <TextField
+                      value={isNewLineItem ? newLineItemDraft.length : "5,400"}
+                      onChange={(event) => updateDraftField("length", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    />
                   </div>
                 </div>
               </LineItemSection>
@@ -331,11 +475,21 @@ export function LineItemDetailView({
                 <div className={styles.lineItemGridTwo}>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Mängd</Typography>
-                    <TextField defaultValue="1" size="small" className={styles.searchFieldControl} />
+                    <TextField
+                      value={isNewLineItem ? newLineItemDraft.quantity : "1"}
+                      onChange={(event) => updateDraftField("quantity", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    />
                   </div>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Pris</Typography>
-                    <TextField defaultValue="10,29 SEK/lpm" size="small" className={styles.searchFieldControl} />
+                    <TextField
+                      value={isNewLineItem ? newLineItemDraft.price : "10,29 SEK/lpm"}
+                      onChange={(event) => updateDraftField("price", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    />
                   </div>
                 </div>
               </LineItemSection>
@@ -350,21 +504,41 @@ export function LineItemDetailView({
                 <div className={styles.lineItemGridTwo}>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Leveransvecka</Typography>
-                    <TextField defaultValue="202550" size="small" className={styles.searchFieldControl} />
+                    <TextField
+                      value={isNewLineItem ? newLineItemDraft.deliveryWeek : "202550"}
+                      onChange={(event) => updateDraftField("deliveryWeek", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    />
                   </div>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Lev.fönster min</Typography>
-                    <TextField defaultValue="2025-12-05" size="small" className={styles.searchFieldControl} />
+                    <TextField
+                      value={isNewLineItem ? newLineItemDraft.deliveryWindowMin : "2025-12-05"}
+                      onChange={(event) => updateDraftField("deliveryWindowMin", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    />
                   </div>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Leveransdag</Typography>
-                    <Select defaultValue="" size="small" className={styles.searchFieldControl}>
+                    <Select
+                      value={isNewLineItem ? newLineItemDraft.deliveryDay : ""}
+                      onChange={(event) => updateDraftField("deliveryDay", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    >
                       <MenuItem value="">-</MenuItem>
                     </Select>
                   </div>
                   <div className={styles.lineItemField}>
                     <Typography className={styles.searchFieldLabel}>Lev.fönster max</Typography>
-                    <TextField defaultValue="2025-12-10" size="small" className={styles.searchFieldControl} />
+                    <TextField
+                      value={isNewLineItem ? newLineItemDraft.deliveryWindowMax : "2025-12-10"}
+                      onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)}
+                      size="small"
+                      className={styles.searchFieldControl}
+                    />
                   </div>
                 </div>
               </LineItemSection>
@@ -380,11 +554,21 @@ export function LineItemDetailView({
                   <div className={styles.lineItemGridOne}>
                     <div className={styles.lineItemFieldFull}>
                       <Typography className={styles.searchFieldLabel}>Intern kommentar</Typography>
-                      <TextField defaultValue="" size="small" className={styles.searchFieldControl} />
+                      <TextField
+                        value={isNewLineItem ? newLineItemDraft.internalComment : ""}
+                        onChange={(event) => updateDraftField("internalComment", event.target.value)}
+                        size="small"
+                        className={styles.searchFieldControl}
+                      />
                     </div>
                     <div className={styles.lineItemFieldFull}>
                       <Typography className={styles.searchFieldLabel}>Extern kommentar</Typography>
-                      <TextField defaultValue="" size="small" className={styles.searchFieldControl} />
+                      <TextField
+                        value={isNewLineItem ? newLineItemDraft.externalComment : ""}
+                        onChange={(event) => updateDraftField("externalComment", event.target.value)}
+                        size="small"
+                        className={styles.searchFieldControl}
+                      />
                     </div>
                   </div>
                 </LineItemSection>
@@ -398,10 +582,10 @@ export function LineItemDetailView({
                   <Typography className={styles.lineItemSectionHeaderMeta}>Automatiskt satta</Typography>
                 </div>
                 <div className={styles.lineItemReadonlyList}>
-                  {lineItemReadonlyFields.map((field) => (
+                  {readonlyFields.map((field) => (
                     <div key={field.label} className={styles.lineItemReadonlyItem}>
                       <Typography className={styles.lineItemReadonlyLabel}>{field.label}</Typography>
-                      <Typography className={styles.lineItemReadonlyValue}>{field.value}</Typography>
+                      <Typography className={styles.lineItemReadonlyValue}>{field.value || "-"}</Typography>
                     </div>
                   ))}
                 </div>

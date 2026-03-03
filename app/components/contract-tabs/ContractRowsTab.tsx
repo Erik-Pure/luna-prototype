@@ -32,6 +32,7 @@ type ContractRowsTabProps = {
   onSaveColumnChanges: () => void;
   onResetColumnChanges: () => void;
   onOpenRowDetail: (rowId: string) => void;
+  onCreateRow: () => void;
 };
 
 const tableActionItems = [
@@ -56,7 +57,8 @@ export function ContractRowsTab({
   onMoveColumn,
   onSaveColumnChanges,
   onResetColumnChanges,
-  onOpenRowDetail
+  onOpenRowDetail,
+  onCreateRow
 }: ContractRowsTabProps) {
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const hasSelectedRows = selectedRow !== null;
@@ -77,16 +79,29 @@ export function ContractRowsTab({
   return (
     <div className={styles.lineItemsSection}>
       <div className={styles.actionRow}>
-        {activeActions.map((item, index) => (
-          <div
-            key={item.label}
-            className={`${styles.actionItem} ${item.enabled ? styles.actionEnabled : styles.actionDisabled}`}
-          >
-            {item.icon}
-            <Typography className={styles.actionLabel}>{item.label}</Typography>
-            {index !== activeActions.length - 1 ? <span className={styles.actionSeparator} /> : null}
-          </div>
-        ))}
+        {activeActions.map((item, index) =>
+          item.label === "Ny" ? (
+            <button
+              key={item.label}
+              type="button"
+              className={`${styles.actionItem} ${styles.actionEnabled} ${styles.actionItemButton}`}
+              onClick={onCreateRow}
+            >
+              {item.icon}
+              <Typography className={styles.actionLabel}>{item.label}</Typography>
+              {index !== activeActions.length - 1 ? <span className={styles.actionSeparator} /> : null}
+            </button>
+          ) : (
+            <div
+              key={item.label}
+              className={`${styles.actionItem} ${item.enabled ? styles.actionEnabled : styles.actionDisabled}`}
+            >
+              {item.icon}
+              <Typography className={styles.actionLabel}>{item.label}</Typography>
+              {index !== activeActions.length - 1 ? <span className={styles.actionSeparator} /> : null}
+            </div>
+          )
+        )}
         <div className={`${styles.columnsMenuWrapper} ${styles.rightControlRail}`}>
           <Button
             ref={columnsButtonRef}
