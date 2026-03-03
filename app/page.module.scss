@@ -871,15 +871,15 @@
 }
 
 .tableInner {
+  display: table;
   width: max-content;
   min-width: 100%;
+  table-layout: auto;
 }
 
 .tableHeader,
 .tableRow {
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
+  display: table-row;
 }
 
 .tableHeader {
@@ -889,11 +889,13 @@
 }
 
 .tableHeaderCell {
+  display: table-cell;
   color: #2f343b;
   font-size: 11.5px;
   font-weight: 600;
-  flex: 0 0 auto;
   min-width: 120px;
+  padding: 0 8px;
+  line-height: 34px;
   white-space: nowrap;
 }
 
@@ -934,12 +936,16 @@
 }
 
 .tableCell {
+  display: table-cell;
   color: #404753;
   font-size: 12px;
-  flex: 0 0 auto;
   min-width: 120px;
   background-color: transparent;
+  padding: 10px 12px;
+  line-height: 34px;
+  vertical-align: middle;
   white-space: nowrap;
+  border-bottom: 1px solid #eef1f6;
 }
 
 .contractLinkButton {
@@ -1163,15 +1169,15 @@
 }
 
 .lineItemsTable {
+  display: table;
   min-width: 1200px;
   width: max-content;
+  table-layout: auto;
 }
 
 .lineItemsHeaderRow,
 .lineItemsRow {
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
+  display: table-row;
 }
 
 .lineItemsHeaderRow {
@@ -1197,22 +1203,28 @@
 }
 
 .lineItemsHeaderCell {
+  display: table-cell;
   color: #2f343b;
   font-size: 11px;
   font-weight: 600;
   min-width: 120px;
-  flex: 0 0 auto;
   background-color: #f4f6f9;
+  padding: 0 8px;
+  line-height: 30px;
   white-space: nowrap;
 }
 
 .lineItemsCell {
+  display: table-cell;
   color: #3f4754;
   font-size: 11px;
   min-width: 120px;
-  flex: 0 0 auto;
   background-color: transparent;
+  padding: 10px 12px;
+  line-height: 28px;
+  vertical-align: middle;
   white-space: nowrap;
+  border-bottom: 1px solid #eef1f6;
 }
 
 .stickyLineHeaderCell {
