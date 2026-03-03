@@ -1881,8 +1881,53 @@
   color: #333333;
 }
 
+:global(.MuiCircularProgress-root).loadingSpinner {
+  color: var(--color-champagne-dark);
+}
+
+.loadingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(17, 23, 34, 0.18);
+  pointer-events: none;
+}
+
+.loadingCard {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 16px rgba(12, 20, 33, 0.16);
+}
+
+.loadingText {
+  color: #2f3743;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 :global(html[data-color-mode="dark"]) .pageRoot :global(.MuiButton-outlined) {
   border-color: #dbe1ea;
   color: #dbe1ea;
+}
+
+:global(html[data-color-mode="dark"]) .loadingOverlay {
+  background-color: rgba(7, 10, 15, 0.4);
+}
+
+:global(html[data-color-mode="dark"]) .loadingCard {
+  border-color: #3a3f4a;
+  background-color: #202229;
+}
+
+:global(html[data-color-mode="dark"]) .loadingText {
+  color: #e4e8ef;
 }
 

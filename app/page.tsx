@@ -4,53 +4,29 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEven
 import AddIcon from "@mui/icons-material/Add";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FactoryOutlinedIcon from "@mui/icons-material/FactoryOutlined";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
-import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
-import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
-import PushPinIcon from "@mui/icons-material/PushPin";
-import SearchIcon from "@mui/icons-material/Search";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
-import ViewColumnOutlinedIcon from "@mui/icons-material/ViewColumnOutlined";
 import {
   Alert,
-  Avatar,
-  Button,
-  Checkbox,
-  IconButton,
-  Menu,
-  MenuItem,
-  Select,
+  CircularProgress,
   Snackbar,
   Switch,
-  TextField,
-  type SelectChangeEvent,
   Typography
 } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
-import { CallOffTab } from "./components/contract-tabs/CallOffTab";
-import { ContractRowsTab } from "./components/contract-tabs/ContractRowsTab";
-import { DeliveryTab } from "./components/contract-tabs/DeliveryTab";
-import { DocumentsTab } from "./components/contract-tabs/DocumentsTab";
-import { FreightTab } from "./components/contract-tabs/FreightTab";
+import { type LineItemDetailTab, type NewLineItemDraft } from "./components/contract-tabs/LineItemDetailView";
 import {
-  LineItemDetailView,
-  type LineItemDetailTab,
-  type NewLineItemDraft
-} from "./components/contract-tabs/LineItemDetailView";
-import { OverviewTab } from "./components/contract-tabs/OverviewTab";
-import { PrintOptionsTab } from "./components/contract-tabs/PrintOptionsTab";
-import { TermsTab } from "./components/contract-tabs/TermsTab";
-import { DeliveryListView } from "./components/DeliveryListView";
+  AppShellLayout,
+  ContractDetailView,
+  ContractListView,
+  DeliveryListView
+} from "./components/views";
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
@@ -447,6 +423,10 @@ export default function Home() {
   const [newLineItemDraftSeed, setNewLineItemDraftSeed] = useState<Partial<NewLineItemDraft>>({});
   const [newLineItemDraftVersion, setNewLineItemDraftVersion] = useState(0);
   const [isLineItemToastOpen, setIsLineItemToastOpen] = useState(false);
+  const [isRouteLoading, setIsRouteLoading] = useState(false);
+  const [isViewLoading, setIsViewLoading] = useState(false);
+  const routeLoadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const viewLoadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchMenuRef = useRef<HTMLDivElement | null>(null);
   const searchButtonRef = useRef<HTMLButtonElement | null>(null);
   const columnsMenuRef = useRef<HTMLDivElement | null>(null);
@@ -457,8 +437,8 @@ export default function Home() {
   const companyButtonRef = useRef<HTMLButtonElement | null>(null);
   const { mode, toggleMode } = useColorMode();
 
-  const handleSearchSelectChange = (key: SearchFieldKey, event: SelectChangeEvent) => {
-    setSearchValues((previous) => ({ ...previous, [key]: event.target.value }));
+  const handleSearchSelectChange = (key: SearchFieldKey, value: string) => {
+    setSearchValues((previous) => ({ ...previous, [key]: value }));
   };
 
   const handleSearchTextChange = (key: SearchFieldKey, value: string) => {
@@ -568,6 +548,7 @@ export default function Home() {
   const saveSearchFieldChanges = () => {
     setAppliedSearchFields(draftSearchFields);
     setIsSearchMenuOpen(false);
+    triggerViewLoading();
   };
 
   const cancelSearchFieldChanges = () => {
@@ -629,6 +610,7 @@ export default function Home() {
   const saveColumnChanges = () => {
     setAppliedColumns(draftColumns);
     setIsColumnsMenuOpen(false);
+    triggerViewLoading();
   };
 
   const cancelColumnChanges = () => {
@@ -676,6 +658,7 @@ export default function Home() {
   const saveLineColumnChanges = () => {
     setAppliedLineColumns(draftLineColumns);
     setIsLineColumnsMenuOpen(false);
+    triggerViewLoading();
   };
 
   const cancelLineColumnChanges = () => {
@@ -704,6 +687,27 @@ export default function Home() {
     toggleSidebarCollapsed();
   };
 
+  const triggerViewLoading = (durationMs = 280) => {
+    if (viewLoadingTimeoutRef.current) {
+      clearTimeout(viewLoadingTimeoutRef.current);
+    }
+    setIsViewLoading(true);
+    viewLoadingTimeoutRef.current = setTimeout(() => {
+      setIsViewLoading(false);
+    }, durationMs);
+  };
+
+  const navigateWithLoading = (targetPath: string) => {
+    if (routeLoadingTimeoutRef.current) {
+      clearTimeout(routeLoadingTimeoutRef.current);
+    }
+    setIsRouteLoading(true);
+    routeLoadingTimeoutRef.current = setTimeout(() => {
+      setIsRouteLoading(false);
+    }, 900);
+    router.push(targetPath);
+  };
+
   const toggleCompanyMenu = () => {
     setIsCompanyMenuOpen((previous) => !previous);
   };
@@ -715,23 +719,23 @@ export default function Home() {
 
   const navigateToSection = (section: SectionKey, defaultMenuSlug: string) => {
     closeTopMenuDropdown();
-    router.push(`/${section}/${defaultMenuSlug}`);
+    navigateWithLoading(`/${section}/${defaultMenuSlug}`);
   };
 
   const navigateToTopMenu = (nextMenuSlug: string) => {
     closeTopMenuDropdown();
-    router.push(`/${sectionSlug}/${nextMenuSlug}`);
+    navigateWithLoading(`/${sectionSlug}/${nextMenuSlug}`);
   };
 
   const openContractDetail = (contractId: string) => {
     setActiveContractTab("Översikt");
     setActiveLineItemTab("Översikt");
-    router.push(`/${sectionSlug}/${menuSlug}/${contractId}`);
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${contractId}`);
   };
 
   const closeContractDetail = () => {
     setActiveLineItemTab("Översikt");
-    router.push(`/${sectionSlug}/${menuSlug}`);
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}`);
   };
 
   const openLineItemDetail = (lineItemId: string) => {
@@ -740,7 +744,7 @@ export default function Home() {
     if (!selectedContractId) {
       return;
     }
-    router.push(`/${sectionSlug}/${menuSlug}/${selectedContractId}/${lineItemId}`);
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/${lineItemId}`);
   };
 
   const openNewLineItem = () => {
@@ -751,7 +755,7 @@ export default function Home() {
     if (!selectedContractId) {
       return;
     }
-    router.push(`/${sectionSlug}/${menuSlug}/${selectedContractId}/new`);
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/new`);
   };
 
   const saveAndCreateNewLineItem = (draft: NewLineItemDraft) => {
@@ -763,7 +767,7 @@ export default function Home() {
     if (!selectedContractId) {
       return;
     }
-    router.push(`/${sectionSlug}/${menuSlug}/${selectedContractId}/new`);
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/new`);
   };
 
   const closeLineItemDetail = () => {
@@ -772,14 +776,15 @@ export default function Home() {
     if (!selectedContractId) {
       return;
     }
-    router.push(`/${sectionSlug}/${menuSlug}/${selectedContractId}`);
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`);
   };
 
   const handleContractTabChange = (tab: ContractTab) => {
     setActiveContractTab(tab);
+    triggerViewLoading();
     if (tab !== "Kontraktsrader" && isLineItemDetailOpen && selectedContractId) {
       setActiveLineItemTab("Översikt");
-      router.push(`/${sectionSlug}/${menuSlug}/${selectedContractId}`);
+      navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`);
     }
   };
 
@@ -838,717 +843,160 @@ export default function Home() {
     isCreatingLineItem
   ]);
 
+  useEffect(() => {
+    if (!isRouteLoading) {
+      return;
+    }
+    const timeoutId = setTimeout(() => setIsRouteLoading(false), 120);
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [pathname, isRouteLoading]);
+
+  useEffect(() => {
+    return () => {
+      if (routeLoadingTimeoutRef.current) {
+        clearTimeout(routeLoadingTimeoutRef.current);
+      }
+      if (viewLoadingTimeoutRef.current) {
+        clearTimeout(viewLoadingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <main className={styles.pageRoot}>
-      <div className={styles.appShell}>
-        <aside className={`${styles.sidebar} ${isSidebarCollapsed ? styles.sidebarCollapsed : ""}`}>
-          <div className={styles.sidebarHeader}>
-            <button
-              type="button"
-              ref={companyButtonRef}
-              className={styles.companySelectorButton}
-              aria-label="BP Hissmofors Byggcor"
-              onClick={toggleCompanyMenu}
-              aria-expanded={isCompanyMenuOpen}
-            >
-              {isSidebarCollapsed ? (
-                <>
-                  <HomeOutlinedIcon className={styles.companySelectorHomeIcon} />
-                  <span className={styles.companySelectorTooltip}>{selectedCompany}</span>
-                </>
-              ) : (
-                <>
-                  <span className={styles.companySelectorText}>{selectedCompany}</span>
-                  <KeyboardArrowDownIcon className={styles.companySelectorArrow} />
-                </>
-              )}
-            </button>
-            {isCompanyMenuOpen ? (
-              <div
-                className={`${styles.companyDropdown} ${
-                  isSidebarCollapsed ? styles.companyDropdownCollapsed : ""
-                }`}
-                ref={companyMenuRef}
-              >
-                {fakeCompanies.map((company) => (
-                  <button
-                    key={company}
-                    type="button"
-                    className={`${styles.companyDropdownItem} ${
-                      selectedCompany === company ? styles.companyDropdownItemActive : ""
-                    }`}
-                    onClick={() => handleCompanySelect(company)}
-                  >
-                    {company}
-                  </button>
-                ))}
-              </div>
-            ) : null}
+      {isRouteLoading || isViewLoading ? (
+        <div className={styles.loadingOverlay} aria-live="polite" aria-busy="true">
+          <div className={styles.loadingCard}>
+            <CircularProgress size={24} className={styles.loadingSpinner} />
+            <Typography className={styles.loadingText}>
+              {isRouteLoading ? "Laddar vy..." : "Laddar data..."}
+            </Typography>
           </div>
-
-          <div className={styles.sidebarMenu}>
-            {sectionDefinitions
-              .filter((section) => section.slug !== "system")
-              .map((section) => (
-              <button
-                type="button"
-                key={section.slug}
-                className={`${styles.sidebarItemButton} ${section.slug === sectionSlug ? styles.sidebarItemActive : ""}`}
-                data-label={section.label}
-                onClick={() => navigateToSection(section.slug, section.defaultMenuSlug)}
-              >
-                <span className={styles.sidebarItemIcon}>{section.icon}</span>
-                {!isSidebarCollapsed ? (
-                  <span className={styles.sidebarItemText}>{section.label}</span>
-                ) : null}
-                {isSidebarCollapsed ? (
-                  <span className={styles.sidebarItemTooltip}>{section.label}</span>
-                ) : null}
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.sidebarSpacer} />
-
-          <div className={styles.sidebarBottomMenu}>
-            {sectionDefinitions
-              .filter((section) => section.slug === "system")
-              .map((section) => (
-                <button
-                  type="button"
-                  key={section.slug}
-                  className={`${styles.sidebarItemButton} ${section.slug === sectionSlug ? styles.sidebarItemActive : ""}`}
-                  data-label={section.label}
-                  onClick={() => navigateToSection(section.slug, section.defaultMenuSlug)}
-                >
-                  <span className={styles.sidebarItemIcon}>{section.icon}</span>
-                  {!isSidebarCollapsed ? (
-                    <span className={styles.sidebarItemText}>{section.label}</span>
-                  ) : null}
-                  {isSidebarCollapsed ? (
-                    <span className={styles.sidebarItemTooltip}>{section.label}</span>
-                  ) : null}
-                </button>
-              ))}
-          </div>
-
-          <div className={styles.sidebarFooter}>
-            <div className={styles.userRow}>
-              <Avatar
-                src="/luna-profile-avatar.png"
-                alt="Jane Doe"
-                variant="rounded"
-                className={styles.userAvatar}
-              />
-              {!isSidebarCollapsed ? (
-                <Typography className={styles.userName}>Jane Doe</Typography>
-              ) : null}
-            </div>
-          </div>
-        </aside>
-
-        <section className={styles.mainPanel}>
-          <div className={styles.topNav}>
-            <div className={styles.collapseButtonWrap}>
-              <IconButton size="small" className={styles.collapseButton} onClick={toggleSidebar}>
-                <MenuOpenIcon />
-              </IconButton>
-            </div>
-            {leftTopMenuItems.map((item) => (
-              <Button
-                key={item.slug}
-                className={`${styles.topMenuItem} ${isTopMenuItemActive(item) ? styles.topMenuItemActive : ""}`}
-                endIcon={item.hasMenu ? <KeyboardArrowDownIcon className={styles.menuArrowIcon} /> : undefined}
-                aria-current={isTopMenuItemActive(item) ? "page" : undefined}
-                onClick={(event) => handleTopMenuClick(item, event)}
-              >
-                {item.label}
-              </Button>
-            ))}
-            <div className={styles.topMenuSpacer} />
-            <div className={styles.topMenuRightGroup}>
-              {rightTopMenuItems.map((item) => (
-                <Button
-                  key={item.slug}
-                  className={`${styles.topMenuItem} ${isTopMenuItemActive(item) ? styles.topMenuItemActive : ""}`}
-                  endIcon={<KeyboardArrowDownIcon className={styles.menuArrowIcon} />}
-                  aria-current={isTopMenuItemActive(item) ? "page" : undefined}
-                  onClick={(event) => handleTopMenuClick(item, event)}
-                >
-                  {item.label}
-                </Button>
-              ))}
-            </div>
-
-            <Menu
-              anchorEl={topMenuAnchorEl}
-              open={Boolean(topMenuAnchorEl)}
-              onClose={closeTopMenuDropdown}
-              slotProps={{ paper: { className: styles.topMenuDropdownPaper } }}
-              MenuListProps={{ className: styles.topMenuDropdownList }}
-            >
-              {topMenuDropdownOptions.map((option) => (
-                <MenuItem
-                  key={option.slug}
-                  className={`${styles.topMenuDropdownItem} ${
-                    option.slug === menuSlug && topMenuDropdownOwnerSlug ? styles.topMenuDropdownItemActive : ""
-                  }`}
-                  onClick={() => handleTopMenuOptionSelect(option.slug)}
-                >
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Menu>
-          </div>
-
-          <div className={styles.contentArea}>
-            <div className={styles.breadcrumbs}>
-              <Typography className={styles.breadcrumbMuted}>
-                {currentSection.label.charAt(0) + currentSection.label.slice(1).toLowerCase()}
-              </Typography>
-              <ChevronRightIcon className={styles.breadcrumbArrow} />
-              {!isContractDetailOpen ? (
-                <Typography className={styles.breadcrumbActive}>{currentMenuLabel}</Typography>
-              ) : (
-                <>
-                  <button type="button" className={styles.breadcrumbLinkButton} onClick={closeContractDetail}>
-                    {currentMenuLabel}
-                  </button>
-                  <ChevronRightIcon className={styles.breadcrumbArrow} />
-                  {isLineItemDetailOpen ? (
-                    <>
-                      <button type="button" className={styles.breadcrumbLinkButton} onClick={closeLineItemDetail}>
-                        Kontrakt {selectedContractId}
-                      </button>
-                      <ChevronRightIcon className={styles.breadcrumbArrow} />
-                      <Typography className={styles.breadcrumbActive}>
-                        {isCreatingLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${selectedLineItemId}`}
-                      </Typography>
-                    </>
-                  ) : (
-                    <Typography className={styles.breadcrumbActive}>
-                      Kontrakt {selectedContractId}
-                    </Typography>
-                  )}
-                </>
-              )}
-            </div>
+        </div>
+      ) : null}
+      <AppShellLayout
+        isSidebarCollapsed={isSidebarCollapsed}
+        selectedCompany={selectedCompany}
+        isCompanyMenuOpen={isCompanyMenuOpen}
+        fakeCompanies={fakeCompanies}
+        sectionSlug={sectionSlug}
+        sectionDefinitions={sectionDefinitions}
+        companyButtonRef={companyButtonRef}
+        companyMenuRef={companyMenuRef}
+        onToggleCompanyMenu={toggleCompanyMenu}
+        onCompanySelect={handleCompanySelect}
+        onNavigateSection={(section, defaultMenuSlug) => navigateToSection(section as SectionKey, defaultMenuSlug)}
+        onToggleSidebar={toggleSidebar}
+        leftTopMenuItems={leftTopMenuItems}
+        rightTopMenuItems={rightTopMenuItems}
+        isTopMenuItemActive={isTopMenuItemActive}
+        onTopMenuClick={(item, event) => handleTopMenuClick(item as TopMenuItemDef, event)}
+        topMenuAnchorEl={topMenuAnchorEl}
+        onCloseTopMenuDropdown={closeTopMenuDropdown}
+        topMenuDropdownOptions={topMenuDropdownOptions}
+        topMenuDropdownOwnerSlug={topMenuDropdownOwnerSlug}
+        menuSlug={menuSlug}
+        onTopMenuOptionSelect={handleTopMenuOptionSelect}
+        currentSectionLabel={currentSection.label.charAt(0) + currentSection.label.slice(1).toLowerCase()}
+        currentMenuLabel={currentMenuLabel}
+        isContractDetailOpen={isContractDetailOpen}
+        isLineItemDetailOpen={isLineItemDetailOpen}
+        selectedContractId={selectedContractId}
+        selectedLineItemId={selectedLineItemId}
+        isCreatingLineItem={isCreatingLineItem}
+        onCloseContractDetail={closeContractDetail}
+        onCloseLineItemDetail={closeLineItemDetail}
+      >
 
             {!isContractDetailOpen && isContractListPage ? (
-              <>
-                <div className={styles.filterRow}>
-                  <div className={styles.searchFieldsPanel}>
-                    <div className={styles.searchFieldsContainer}>
-                      <div className={styles.searchFieldsTopRow}>
-                        <div className={styles.searchFieldsContent}>
-                      {textSearchFields.length > 0 ? (
-                        <div className={styles.searchFieldsGroup}>
-                          <div className={styles.searchFieldsGrid}>
-                            {textSearchFields.map((field) => (
-                              <div key={field.key} className={styles.searchFieldItem}>
-                                <Typography className={styles.searchFieldLabel}>{field.label}</Typography>
-                                <TextField
-                                  size="small"
-                                  className={styles.searchFieldControl}
-                                  value={String(searchValues[field.key] ?? "")}
-                                  onChange={(event) => handleSearchTextChange(field.key, event.target.value)}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {selectSearchFields.length > 0 ? (
-                        <div className={styles.searchFieldsGroup}>
-                          <div className={styles.searchFieldsGrid}>
-                            {selectSearchFields.map((field) => (
-                              <div key={field.key} className={styles.searchFieldItem}>
-                                <Typography className={styles.searchFieldLabel}>{field.label}</Typography>
-                                <Select
-                                  size="small"
-                                  className={styles.searchFieldControl}
-                                  value={String(searchValues[field.key] ?? "")}
-                                  onChange={(event) => handleSearchSelectChange(field.key, event)}
-                                  IconComponent={KeyboardArrowDownIcon}
-                                >
-                                  <MenuItem value="">-</MenuItem>
-                                  {getSelectOptions(field.key).map((option) => (
-                                    <MenuItem key={`${field.key}-${option}`} value={option}>
-                                      {option}
-                                    </MenuItem>
-                                  ))}
-                                </Select>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {checkboxSearchFields.length > 0 ? (
-                        <div className={styles.searchFieldsGroup}>
-                          <div className={styles.searchCheckboxGrid}>
-                            {checkboxSearchFields.map((field) => (
-                              <label key={field.key} className={styles.searchCheckboxItem}>
-                                <Checkbox
-                                  size="small"
-                                  checked={Boolean(searchValues[field.key])}
-                                  onChange={(event) =>
-                                    handleSearchCheckboxChange(field.key, event.target.checked)
-                                  }
-                                />
-                                <Typography className={styles.searchCheckboxLabel}>
-                                  {field.label}
-                                </Typography>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {textSearchFields.length === 0 &&
-                      selectSearchFields.length === 0 &&
-                      checkboxSearchFields.length === 0 ? (
-                        <div className={`${styles.searchFieldsGroup} ${styles.searchFieldsEmptyGroup}`}>
-                          <Typography className={styles.searchFieldLabel}>
-                            Inga filter valda. Öppna Sökfält för att visa filter.
-                          </Typography>
-                        </div>
-                      ) : null}
-                        </div>
-                      <div className={styles.searchFieldsActions}>
-                        <div className={styles.searchMenuWrapper}>
-                          <Button
-                            ref={searchButtonRef}
-                            className={styles.searchActionButton}
-                            variant="outlined"
-                            startIcon={<SearchIcon className={styles.searchActionIcon} />}
-                            onClick={isSearchMenuOpen ? cancelSearchFieldChanges : openSearchMenu}
-                          >
-                            Sökfält
-                          </Button>
-
-                          {isSearchMenuOpen ? (
-                            <div className={styles.searchFieldsDropdown} ref={searchMenuRef}>
-                              <div className={styles.searchFieldsDropdownList}>
-                                {draftSearchFields.map((field) => (
-                                  <div key={field.key} className={styles.searchFieldsDropdownRow}>
-                                    <button
-                                      type="button"
-                                      className={styles.searchFieldsDropdownName}
-                                      onClick={() => toggleSearchFieldVisibility(field.key)}
-                                    >
-                                      <Checkbox
-                                        size="small"
-                                        checked={field.visible}
-                                        className={styles.dropdownCheckbox}
-                                      />
-                                      <Typography className={styles.searchFieldsDropdownLabel}>
-                                        {field.label}
-                                      </Typography>
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-
-                              <div className={styles.columnsDropdownFooter}>
-                                <Button className={styles.dropdownSave} size="small" onClick={saveSearchFieldChanges}>
-                                  Spara
-                                </Button>
-                                <Button className={styles.dropdownCancel} size="small" onClick={cancelSearchFieldChanges}>
-                                  Avbryt
-                                </Button>
-                                <Button className={styles.dropdownClear} size="small" onClick={clearSearchFieldChanges}>
-                                  Rensa
-                                </Button>
-                              </div>
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={styles.ruleDivider} />
-
-                <div className={styles.actionRow}>
-              {actionItems.map((item, index) => (
-                <div
-                  key={item.label}
-                  className={`${styles.actionItem} ${
-                    item.requiresSelection && !hasSelectedRows ? styles.actionDisabled : styles.actionEnabled
-                  }`}
-                >
-                  {item.icon}
-                  <Typography className={styles.actionLabel}>{item.label}</Typography>
-                  {index !== actionItems.length - 1 ? <span className={styles.actionSeparator} /> : null}
-                </div>
-              ))}
-              <div className={`${styles.rightControlRail} ${styles.rightControlGroup}`}>
-                <Button
-                  className={styles.lineItemsToggleButton}
-                  variant="outlined"
-                  size="small"
-                  onClick={() => setIsLineItemsTableVisible((previous) => !previous)}
-                >
-                  {isLineItemsTableVisible ? "Dölj rader" : "Visa rader"}
-                </Button>
-
-                <div className={styles.columnsMenuWrapper}>
-                  <Button
-                    ref={columnsButtonRef}
-                    className={styles.columnsButton}
-                    variant="outlined"
-                    size="small"
-                    startIcon={<ViewColumnOutlinedIcon fontSize="small" />}
-                    onClick={isColumnsMenuOpen ? cancelColumnChanges : openColumnsMenu}
-                  >
-                    Kolumner
-                  </Button>
-
-                  {isColumnsMenuOpen ? (
-                    <div className={styles.columnsDropdown} ref={columnsMenuRef}>
-                    <div className={styles.columnsDropdownList}>
-                      {draftColumns.map((column, index) => (
-                        <div key={column.key} className={styles.columnsDropdownRow}>
-                          <button
-                            type="button"
-                            className={styles.columnsDropdownName}
-                            onClick={() => toggleColumnVisibility(column.key)}
-                          >
-                            <Checkbox
-                              size="small"
-                              checked={column.visible}
-                              className={styles.dropdownCheckbox}
-                            />
-                            <Typography className={styles.columnsDropdownLabel}>
-                              {column.label}
-                            </Typography>
-                          </button>
-
-                          <div className={styles.columnsDropdownActions}>
-                            <IconButton
-                              size="small"
-                              onClick={() => toggleColumnPin(column.key)}
-                              className={`${styles.columnsActionIcon} ${column.pinned ? styles.columnsActionPinned : ""}`}
-                            >
-                              {column.pinned ? (
-                                <PushPinIcon fontSize="inherit" />
-                              ) : (
-                                <PushPinOutlinedIcon fontSize="inherit" />
-                              )}
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              className={styles.columnsActionIcon}
-                              onClick={() => moveColumn(column.key, "up")}
-                              disabled={index === 0}
-                            >
-                              <KeyboardArrowUpIcon fontSize="inherit" />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              className={styles.columnsActionIcon}
-                              onClick={() => moveColumn(column.key, "down")}
-                              disabled={index === draftColumns.length - 1}
-                            >
-                              <KeyboardArrowDownIcon fontSize="inherit" />
-                            </IconButton>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className={styles.columnsDropdownFooter}>
-                      <Button className={styles.dropdownSave} size="small" onClick={saveColumnChanges}>
-                        Spara
-                      </Button>
-                      <Button className={styles.dropdownCancel} size="small" onClick={cancelColumnChanges}>
-                        Avbryt
-                      </Button>
-                      <Button className={styles.dropdownClear} size="small" onClick={resetColumnChanges}>
-                        Rensa
-                      </Button>
-                    </div>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-                </div>
-
-                <div className={`${styles.tablesLayout} ${isLineItemsTableVisible ? styles.tablesLayoutSplit : ""}`}>
-                  <div className={`${styles.tableContainer} ${isLineItemsTableVisible ? styles.tableContainerSplit : ""}`}>
-                    <div className={styles.tableScrollWrap}>
-                      <div className={styles.tableInner}>
-                        <div className={styles.tableHeader}>
-                          {orderedVisibleColumns.map((column, columnIndex) => (
-                            <Typography
-                              key={column.key}
-                              className={`${styles.tableHeaderCell} ${
-                                columnIndex === 0 ? styles.stickyMainHeaderCell : ""
-                              }`}
-                            >
-                              {column.label}
-                            </Typography>
-                          ))}
-                        </div>
-
-                        {tableRows.map((row, idx) => (
-                          <div
-                            key={`${row.kontrakt}-${idx}`}
-                            className={`${styles.tableRow} ${
-                              selectedRowId === idx ? styles.tableRowSelected : ""
-                            }`}
-                            onClick={() => selectMainTableRow(idx)}
-                          >
-                            {orderedVisibleColumns.map((column, columnIndex) =>
-                              column.key === "kontrakt" ? (
-                                <Typography
-                                  key={column.key}
-                                  className={`${styles.tableCell} ${
-                                    columnIndex === 0 ? styles.stickyMainCell : ""
-                                  }`}
-                                >
-                                  <button
-                                    type="button"
-                                    className={styles.contractLinkButton}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      openContractDetail(getCellValue(row, column.key));
-                                    }}
-                                  >
-                                    {getCellValue(row, column.key)}
-                                  </button>
-                                </Typography>
-                              ) : (
-                                <Typography
-                                  key={column.key}
-                                  className={`${styles.tableCell} ${
-                                    columnIndex === 0 ? styles.stickyMainCell : ""
-                                  }`}
-                                >
-                                  {getCellValue(row, column.key)}
-                                </Typography>
-                              )
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {!isLineItemsTableVisible ? <div className={styles.tableFiller} /> : null}
-                  </div>
-
-                  {isLineItemsTableVisible ? (
-                    <div className={`${styles.lineItemsSection} ${styles.lineItemsSectionSplit}`}>
-                    <div className={styles.lineItemsHeader}>
-                      <Typography className={styles.lineItemsTitle}>Kontraktsrader</Typography>
-                      <div className={styles.columnsMenuWrapper}>
-                        <Button
-                          ref={lineColumnsButtonRef}
-                          className={styles.columnsButton}
-                          variant="outlined"
-                          size="small"
-                          startIcon={<ViewColumnOutlinedIcon fontSize="small" />}
-                          onClick={isLineColumnsMenuOpen ? cancelLineColumnChanges : openLineColumnsMenu}
-                        >
-                          Kolumner
-                        </Button>
-
-                        {isLineColumnsMenuOpen ? (
-                          <div className={styles.columnsDropdown} ref={lineColumnsMenuRef}>
-                            <div className={styles.columnsDropdownList}>
-                              {draftLineColumns.map((column, index) => (
-                                <div key={column.key} className={styles.columnsDropdownRow}>
-                                  <button
-                                    type="button"
-                                    className={styles.columnsDropdownName}
-                                    onClick={() => toggleLineColumnVisibility(column.key)}
-                                  >
-                                    <Checkbox
-                                      size="small"
-                                      checked={column.visible}
-                                      className={styles.dropdownCheckbox}
-                                    />
-                                    <Typography className={styles.columnsDropdownLabel}>
-                                      {column.label}
-                                    </Typography>
-                                  </button>
-
-                                  <div className={styles.columnsDropdownActions}>
-                                    <IconButton
-                                      size="small"
-                                      className={styles.columnsActionIcon}
-                                      onClick={() => moveLineColumn(column.key, "up")}
-                                      disabled={index === 0}
-                                    >
-                                      <KeyboardArrowUpIcon fontSize="inherit" />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      className={styles.columnsActionIcon}
-                                      onClick={() => moveLineColumn(column.key, "down")}
-                                      disabled={index === draftLineColumns.length - 1}
-                                    >
-                                      <KeyboardArrowDownIcon fontSize="inherit" />
-                                    </IconButton>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-
-                            <div className={styles.columnsDropdownFooter}>
-                              <Button className={styles.dropdownSave} size="small" onClick={saveLineColumnChanges}>
-                                Spara
-                              </Button>
-                              <Button className={styles.dropdownCancel} size="small" onClick={cancelLineColumnChanges}>
-                                Avbryt
-                              </Button>
-                              <Button className={styles.dropdownClear} size="small" onClick={resetLineColumnChanges}>
-                                Rensa
-                              </Button>
-                            </div>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div className={styles.lineItemsTableWrap}>
-                      <div className={styles.lineItemsTable}>
-                        <div className={styles.lineItemsHeaderRow}>
-                          {visibleLineColumns.map((column, columnIndex) => (
-                            <Typography
-                              key={column.key}
-                              className={`${styles.lineItemsHeaderCell} ${
-                                columnIndex === 0 ? styles.stickyLineHeaderCell : ""
-                              }`}
-                            >
-                              {column.label}
-                            </Typography>
-                          ))}
-                        </div>
-
-                        {lineItemRows.map((row, index) => (
-                          <div key={`line-item-${index}`} className={styles.lineItemsRow}>
-                            {visibleLineColumns.map((column, columnIndex) => (
-                              column.key === "idRad" ? (
-                                <button
-                                  key={column.key}
-                                  type="button"
-                                  className={`${styles.lineItemLinkButton} ${
-                                    columnIndex === 0 ? styles.stickyLineCell : ""
-                                  }`}
-                                  onClick={() => {
-                                    return;
-                                  }}
-                                >
-                                  {row[column.key]}
-                                </button>
-                              ) : (
-                                <Typography
-                                  key={column.key}
-                                  className={`${styles.lineItemsCell} ${
-                                    columnIndex === 0 ? styles.stickyLineCell : ""
-                                  }`}
-                                >
-                                  {row[column.key]}
-                                </Typography>
-                              )
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    </div>
-                ) : null}
-                </div>
-              </>
+              <ContractListView
+                textFields={textSearchFields}
+                selectFields={selectSearchFields}
+                checkboxFields={checkboxSearchFields}
+                searchValues={searchValues as Record<string, string | boolean>}
+                isSearchMenuOpen={isSearchMenuOpen}
+                draftSearchFields={draftSearchFields}
+                searchButtonRef={searchButtonRef}
+                searchMenuRef={searchMenuRef}
+                getSelectOptions={(key) => getSelectOptions(key as SearchFieldKey)}
+                onOpenSearchMenu={openSearchMenu}
+                onCancelSearchMenu={cancelSearchFieldChanges}
+                onToggleSearchFieldVisibility={(key) => toggleSearchFieldVisibility(key as SearchFieldKey)}
+                onSaveSearchFieldChanges={saveSearchFieldChanges}
+                onClearSearchFieldChanges={clearSearchFieldChanges}
+                onSearchTextChange={(key, value) => handleSearchTextChange(key as SearchFieldKey, value)}
+                onSearchSelectChange={(key, value) => handleSearchSelectChange(key as SearchFieldKey, value)}
+                onSearchCheckboxChange={(key, checked) =>
+                  handleSearchCheckboxChange(key as SearchFieldKey, checked)
+                }
+                actionItems={actionItems}
+                hasSelectedRows={hasSelectedRows}
+                isLineItemsTableVisible={isLineItemsTableVisible}
+                onToggleLineItemsTable={() => setIsLineItemsTableVisible((previous) => !previous)}
+                isColumnsMenuOpen={isColumnsMenuOpen}
+                draftColumns={draftColumns}
+                columnsMenuRef={columnsMenuRef}
+                columnsButtonRef={columnsButtonRef}
+                onOpenColumnsMenu={openColumnsMenu}
+                onCancelColumnsMenu={cancelColumnChanges}
+                onToggleColumnVisibility={(key) => toggleColumnVisibility(key as ColumnKey)}
+                onMoveColumn={(key, direction) => moveColumn(key as ColumnKey, direction)}
+                onSaveColumnChanges={saveColumnChanges}
+                onResetColumnChanges={resetColumnChanges}
+                onToggleColumnPin={(key) => toggleColumnPin(key as ColumnKey)}
+                orderedVisibleColumns={orderedVisibleColumns}
+                tableRows={tableRows as Array<Record<string, string | undefined>>}
+                selectedRowId={selectedRowId}
+                onSelectMainTableRow={selectMainTableRow}
+                getCellValue={(row, columnKey) => getCellValue(row as TableRow, columnKey as ColumnKey)}
+                onOpenContractDetail={openContractDetail}
+                isLineColumnsMenuOpen={isLineColumnsMenuOpen}
+                draftLineColumns={draftLineColumns}
+                lineColumnsMenuRef={lineColumnsMenuRef}
+                lineColumnsButtonRef={lineColumnsButtonRef}
+                onOpenLineColumnsMenu={openLineColumnsMenu}
+                onCancelLineColumnsMenu={cancelLineColumnChanges}
+                onToggleLineColumnVisibility={(key) => toggleLineColumnVisibility(key as LineItemColumnKey)}
+                onMoveLineColumn={(key, direction) => moveLineColumn(key as LineItemColumnKey, direction)}
+                onSaveLineColumnChanges={saveLineColumnChanges}
+                onResetLineColumnChanges={resetLineColumnChanges}
+                visibleLineColumns={visibleLineColumns}
+                lineItemRows={lineItemRows}
+              />
             ) : !isContractDetailOpen && isDeliveryListPage ? (
               <DeliveryListView />
             ) : isContractDetailOpen ? (
-              <div className={styles.contractDetailPanel}>
-                {isLineItemDetailOpen ? (
-                  <LineItemDetailView
-                    key={`line-item-detail-${selectedLineItemId ?? "new"}-${newLineItemDraftVersion}`}
-                    lineItemId={selectedLineItemId ?? "new"}
-                    activeTab={activeLineItemTab}
-                    onChangeTab={setActiveLineItemTab}
-                    newDraftSeed={newLineItemDraftSeed}
-                    onSaveAndCreateNew={saveAndCreateNewLineItem}
-                  />
-                ) : (
-                  <>
-                    <div className={styles.contractTabBar}>
-                      {contractTabs.map((tab) => (
-                        <button
-                          key={tab}
-                          type="button"
-                          className={`${styles.contractTabButton} ${
-                            activeContractTabForView === tab ? styles.contractTabButtonActive : ""
-                          }`}
-                          onClick={() => handleContractTabChange(tab)}
-                        >
-                          {tab}
-                        </button>
-                      ))}
-                    </div>
-
-                    {activeContractTabForView !== "Kontraktsrader" ? (
-                      <div className={styles.contractDetailHeader}>
-                        <Typography className={styles.contractDetailTitle}>
-                          Kontrakt {selectedContractId}
-                        </Typography>
-                        <div className={styles.contractDetailHeaderActions}>
-                          <Button className={styles.contractSaveButton} size="small">
-                            Spara
-                          </Button>
-                          <button type="button" className={styles.contractHeaderLink}>
-                            Granska kontrakt
-                          </button>
-                          <button type="button" className={styles.contractHeaderLink}>
-                            Orderbekräftelse
-                          </button>
-                          <button type="button" className={styles.contractHeaderDots}>
-                            ...
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {activeContractTabForView === "Översikt" ? <OverviewTab contractId={selectedContractId ?? "163311"} /> : null}
-                    {activeContractTabForView === "Villkor" ? <TermsTab /> : null}
-                    {activeContractTabForView === "Leverans" ? <DeliveryTab /> : null}
-                    {activeContractTabForView === "Kontraktsrader" ? (
-                      <ContractRowsTab
-                        visibleColumns={visibleLineColumns}
-                        rows={lineItemRows}
-                        draftColumns={draftLineColumns}
-                        isColumnsMenuOpen={isLineColumnsMenuOpen}
-                        columnsMenuRef={lineColumnsMenuRef}
-                        columnsButtonRef={lineColumnsButtonRef}
-                        onOpenColumnsMenu={openLineColumnsMenu}
-                        onCancelColumnsMenu={cancelLineColumnChanges}
-                        onToggleColumnVisibility={(key) =>
-                          toggleLineColumnVisibility(key as LineItemColumnKey)
-                        }
-                        onMoveColumn={(key, direction) =>
-                          moveLineColumn(key as LineItemColumnKey, direction)
-                        }
-                        onSaveColumnChanges={saveLineColumnChanges}
-                        onResetColumnChanges={resetLineColumnChanges}
-                        onOpenRowDetail={openLineItemDetail}
-                        onCreateRow={openNewLineItem}
-                      />
-                    ) : null}
-                    {activeContractTabForView === "Frakt" ? <FreightTab /> : null}
-                    {activeContractTabForView === "Avrop" ? <CallOffTab /> : null}
-                    {activeContractTabForView === "Dokument" ? <DocumentsTab /> : null}
-                    {activeContractTabForView === "Utskriftsalternativ" ? <PrintOptionsTab /> : null}
-                  </>
-                )}
-              </div>
+              <ContractDetailView
+                isLineItemDetailOpen={isLineItemDetailOpen}
+                selectedLineItemId={selectedLineItemId}
+                newLineItemDraftVersion={newLineItemDraftVersion}
+                activeLineItemTab={activeLineItemTab}
+                onChangeLineItemTab={setActiveLineItemTab}
+                newLineItemDraftSeed={newLineItemDraftSeed}
+                onSaveAndCreateNewLineItem={saveAndCreateNewLineItem}
+                contractTabs={contractTabs}
+                activeContractTabForView={activeContractTabForView}
+                onChangeContractTab={(tab) => handleContractTabChange(tab as ContractTab)}
+                selectedContractId={selectedContractId}
+                visibleLineColumns={visibleLineColumns}
+                lineItemRows={lineItemRows}
+                draftLineColumns={draftLineColumns}
+                isLineColumnsMenuOpen={isLineColumnsMenuOpen}
+                lineColumnsMenuRef={lineColumnsMenuRef}
+                lineColumnsButtonRef={lineColumnsButtonRef}
+                onOpenLineColumnsMenu={openLineColumnsMenu}
+                onCancelLineColumnsMenu={cancelLineColumnChanges}
+                onToggleLineColumnVisibility={(key) => toggleLineColumnVisibility(key as LineItemColumnKey)}
+                onMoveLineColumn={(key, direction) =>
+                  moveLineColumn(key as LineItemColumnKey, direction)
+                }
+                onSaveLineColumnChanges={saveLineColumnChanges}
+                onResetLineColumnChanges={resetLineColumnChanges}
+                onOpenLineItemDetail={openLineItemDetail}
+                onCreateLineItem={openNewLineItem}
+              />
             ) : isSystemPage ? (
               <div className={styles.contractDetailPanel}>
                 <div className={styles.systemSettingsPanel}>
@@ -1569,26 +1017,6 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            ) : isSystemPage ? (
-              <div className={styles.contractDetailPanel}>
-                <div className={styles.systemSettingsPanel}>
-                  <Typography className={styles.systemSettingsTitle}>Systeminställningar</Typography>
-                  <div className={styles.systemSettingRow}>
-                    <div>
-                      <Typography className={styles.systemSettingLabel}>Dark mode</Typography>
-                      <Typography className={styles.systemSettingDescription}>
-                        Växla mellan ljust och mörkt tema i hela applikationen.
-                      </Typography>
-                    </div>
-                    <Switch
-                      checked={mode === "dark"}
-                      onChange={toggleMode}
-                      color="primary"
-                      inputProps={{ "aria-label": "Aktivera dark mode" }}
-                    />
-                  </div>
-                </div>
-              </div>
             ) : (
               <div className={styles.contractDetailPanel}>
                 <div className={styles.contractTabPlaceholder}>
@@ -1598,9 +1026,7 @@ export default function Home() {
                 </div>
               </div>
             )}
-          </div>
-        </section>
-      </div>
+      </AppShellLayout>
       <Snackbar
         open={isLineItemToastOpen}
         autoHideDuration={2800}
