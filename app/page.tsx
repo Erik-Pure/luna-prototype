@@ -866,13 +866,16 @@ export default function Home() {
 
   return (
     <main className={styles.pageRoot}>
-      {isRouteLoading || isViewLoading ? (
+      {isRouteLoading ? (
+        <div className={styles.topProgressRail} aria-live="polite" aria-busy="true">
+          <div className={styles.topProgressBar} />
+        </div>
+      ) : null}
+      {isViewLoading ? (
         <div className={styles.loadingOverlay} aria-live="polite" aria-busy="true">
           <div className={styles.loadingCard}>
             <CircularProgress size={24} className={styles.loadingSpinner} />
-            <Typography className={styles.loadingText}>
-              {isRouteLoading ? "Laddar vy..." : "Laddar data..."}
-            </Typography>
+            <Typography className={styles.loadingText}>Laddar data...</Typography>
           </div>
         </div>
       ) : null}
