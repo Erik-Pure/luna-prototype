@@ -342,6 +342,18 @@
   }
 }
 
+.mainMenuToggleIcon {
+  transition: transform 0.18s ease;
+}
+
+.mainMenuToggleIconOpen {
+  transform: rotate(0deg);
+}
+
+.mainMenuToggleIconClosed {
+  transform: rotate(180deg);
+}
+
 .topMenuItem {
   position: relative;
   min-height: 34px;
@@ -1046,6 +1058,18 @@
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.overviewToggleIcon {
+  transition: transform 0.18s ease;
+}
+
+.overviewToggleIconOpen {
+  transform: rotate(0deg);
+}
+
+.overviewToggleIconClosed {
+  transform: rotate(180deg);
 }
 
 .contractDetailContentLayout {

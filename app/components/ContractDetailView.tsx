@@ -1,7 +1,6 @@
 "use client";
 
-import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
-import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import { Button, Typography } from "@mui/material";
 import { useEffect, useState, type RefObject } from "react";
 import { CallOffTab } from "./contract-tabs/CallOffTab";
@@ -147,7 +146,12 @@ export function ContractDetailView({
               onClick={() => setIsOverviewOpen((previous) => !previous)}
               aria-expanded={isOverviewOpen}
             >
-              {isOverviewOpen ? <KeyboardArrowLeftIcon fontSize="small" /> : <KeyboardArrowRightIcon fontSize="small" />}
+              <MenuOpenIcon
+                className={`${styles.overviewToggleIcon} ${
+                  isOverviewOpen ? styles.overviewToggleIconOpen : styles.overviewToggleIconClosed
+                }`}
+                fontSize="small"
+              />
               <span>Översikt</span>
             </button>
             <div className={styles.contractTabBar}>

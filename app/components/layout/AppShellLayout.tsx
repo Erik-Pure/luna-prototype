@@ -198,7 +198,11 @@ export function AppShellLayout({
         <div className={styles.topNav}>
           <div className={styles.collapseButtonWrap}>
             <IconButton size="small" className={styles.collapseButton} onClick={onToggleSidebar}>
-              <MenuOpenIcon />
+              <MenuOpenIcon
+                className={`${styles.mainMenuToggleIcon} ${
+                  isSidebarCollapsed ? styles.mainMenuToggleIconClosed : styles.mainMenuToggleIconOpen
+                }`}
+              />
             </IconButton>
           </div>
           {leftTopMenuItems.map((item) => (

@@ -1,7 +1,6 @@
 "use client";
 
-import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
-import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button, MenuItem, Select, Switch, TextField, Typography } from "@mui/material";
 import styles from "../../page.module.scss";
@@ -268,7 +267,12 @@ export function LineItemDetailView({
           onClick={() => setIsOverviewOpen((previous) => !previous)}
           aria-expanded={isOverviewOpen}
         >
-          {isOverviewOpen ? <KeyboardArrowLeftIcon fontSize="small" /> : <KeyboardArrowRightIcon fontSize="small" />}
+          <MenuOpenIcon
+            className={`${styles.overviewToggleIcon} ${
+              isOverviewOpen ? styles.overviewToggleIconOpen : styles.overviewToggleIconClosed
+            }`}
+            fontSize="small"
+          />
           <span>Översikt</span>
         </button>
         <div className={styles.contractTabBar}>
