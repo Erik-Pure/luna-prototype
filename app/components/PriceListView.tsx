@@ -7,6 +7,7 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { ActionRow } from "./shared/ActionRow";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
 import { DataTable } from "./shared/DataTable";
@@ -83,7 +84,7 @@ const priceListRows: PriceListRow[] = Array.from({ length: 26 }).map((_, idx) =>
 }));
 
 const priceListActionItems = ["Ny", "Ta bort", "Skriv ut", "Kopiera", "Inaktivera", "Ändra pris"];
-const priceListActionIcons: Record<string, JSX.Element> = {
+const priceListActionIcons: Record<string, ReactNode> = {
   Ny: <AddIcon fontSize="small" />,
   "Ta bort": <DeleteOutlineOutlinedIcon fontSize="small" />,
   "Skriv ut": <PrintOutlinedIcon fontSize="small" />,
