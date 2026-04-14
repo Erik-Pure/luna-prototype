@@ -77,7 +77,8 @@ export function ContractDetailView({
   onOpenLineItemDetail,
   onCreateLineItem
 }: ContractDetailViewProps) {
-  const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant"]);
+  const isNewContract = selectedContractId === "new";
+  const [expandedPanels, setExpandedPanels] = useState<string[]>(isNewContract ? [] : ["allmant"]);
 
   const togglePanel = (panel: string) => {
     setExpandedPanels((previous) =>
@@ -132,117 +133,122 @@ export function ContractDetailView({
             </div>
           </div>
 
-          <div className={styles.contractModernAccordionWrap}>
-            <Accordion
-              expanded={expandedPanels.includes("allmant")}
-              onChange={() => togglePanel("allmant")}
-              className={styles.contractModernAccordion}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                <div className={styles.contractModernAccordionTitleRow}>
-                  <TableChartOutlinedIcon className={styles.contractModernAccordionIcon} />
-                  <Typography className={styles.contractModernAccordionTitle}>Allmänt</Typography>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <div className={styles.contractModernFormGrid}>
-                  <TextField label="Kund" size="small" defaultValue="Acme AB" />
-                  <TextField label="Kontraktsnr" size="small" defaultValue={selectedContractId ?? "163311"} />
-                  <TextField label="Prislista" size="small" defaultValue="Standard" />
-                </div>
-              </AccordionDetails>
-            </Accordion>
-            <Accordion
-              expanded={expandedPanels.includes("villkor")}
-              onChange={() => togglePanel("villkor")}
-              className={styles.contractModernAccordion}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                <div className={styles.contractModernAccordionTitleRow}>
-                  <GavelOutlinedIcon className={styles.contractModernAccordionIcon} />
-                  <Typography className={styles.contractModernAccordionTitle}>Villkor</Typography>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <div className={styles.contractModernFormGrid}>
-                  <TextField label="Betalningsvillkor" size="small" defaultValue="30 dagar netto" />
-                  <TextField label="Leveransvillkor" size="small" defaultValue="Fritt lager" />
-                </div>
-              </AccordionDetails>
-            </Accordion>
-            <Accordion
-              expanded={expandedPanels.includes("leverans")}
-              onChange={() => togglePanel("leverans")}
-              className={styles.contractModernAccordion}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                <div className={styles.contractModernAccordionTitleRow}>
-                  <LocalShippingOutlinedIcon className={styles.contractModernAccordionIcon} />
-                  <Typography className={styles.contractModernAccordionTitle}>Leverans</Typography>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <DeliveryTab />
-              </AccordionDetails>
-            </Accordion>
-            <Accordion
-              expanded={expandedPanels.includes("dokument")}
-              onChange={() => togglePanel("dokument")}
-              className={styles.contractModernAccordion}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                <div className={styles.contractModernAccordionTitleRow}>
-                  <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
-                  <Typography className={styles.contractModernAccordionTitle}>Dokument</Typography>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <DocumentsTab />
-              </AccordionDetails>
-            </Accordion>
-          </div>
-
-          <div className={styles.contractModernAdditionsWrap}>
-            <Typography className={styles.contractModernAdditionsTitle}>Kontraktstillägg</Typography>
-            <div className={styles.contractTabBar}>
-              {contractTabs.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  className={`${styles.contractTabButton} ${
-                    activeContractTabForView === tab ? styles.contractTabButtonActive : ""
-                  }`}
-                  onClick={() => onChangeContractTab(tab)}
+          <div className={styles.detailTwoColumnLayout}>
+            <div className={styles.detailFormColumn}>
+              <div className={styles.contractModernAccordionWrap}>
+                <Accordion
+                  expanded={expandedPanels.includes("allmant")}
+                  onChange={() => togglePanel("allmant")}
+                  className={styles.contractModernAccordion}
                 >
-                  {tab}
-                </button>
-              ))}
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+                    <div className={styles.contractModernAccordionTitleRow}>
+                      <TableChartOutlinedIcon className={styles.contractModernAccordionIcon} />
+                      <Typography className={styles.contractModernAccordionTitle}>Allmänt</Typography>
+                    </div>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <div className={styles.contractModernFormGrid}>
+                      <TextField label="Kund" size="small" defaultValue="Acme AB" />
+                      <TextField label="Kontraktsnr" size="small" defaultValue={selectedContractId ?? "163311"} />
+                      <TextField label="Prislista" size="small" defaultValue="Standard" />
+                    </div>
+                  </AccordionDetails>
+                </Accordion>
+                <Accordion
+                  expanded={expandedPanels.includes("villkor")}
+                  onChange={() => togglePanel("villkor")}
+                  className={styles.contractModernAccordion}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+                    <div className={styles.contractModernAccordionTitleRow}>
+                      <GavelOutlinedIcon className={styles.contractModernAccordionIcon} />
+                      <Typography className={styles.contractModernAccordionTitle}>Villkor</Typography>
+                    </div>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <div className={styles.contractModernFormGrid}>
+                      <TextField label="Betalningsvillkor" size="small" defaultValue="30 dagar netto" />
+                      <TextField label="Leveransvillkor" size="small" defaultValue="Fritt lager" />
+                    </div>
+                  </AccordionDetails>
+                </Accordion>
+                <Accordion
+                  expanded={expandedPanels.includes("leverans")}
+                  onChange={() => togglePanel("leverans")}
+                  className={styles.contractModernAccordion}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+                    <div className={styles.contractModernAccordionTitleRow}>
+                      <LocalShippingOutlinedIcon className={styles.contractModernAccordionIcon} />
+                      <Typography className={styles.contractModernAccordionTitle}>Leverans</Typography>
+                    </div>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <DeliveryTab />
+                  </AccordionDetails>
+                </Accordion>
+                <Accordion
+                  expanded={expandedPanels.includes("dokument")}
+                  onChange={() => togglePanel("dokument")}
+                  className={styles.contractModernAccordion}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+                    <div className={styles.contractModernAccordionTitleRow}>
+                      <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
+                      <Typography className={styles.contractModernAccordionTitle}>Dokument</Typography>
+                    </div>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <DocumentsTab />
+                  </AccordionDetails>
+                </Accordion>
+              </div>
             </div>
-            <div className={styles.contractDetailMainContent}>
-              {activeContractTabForView === "Kontraktsrader" ? (
-                <ContractRowsTab
-                  visibleColumns={visibleLineColumns}
-                  rows={lineItemRows}
-                  draftColumns={draftLineColumns}
-                  isColumnsMenuOpen={isLineColumnsMenuOpen}
-                  columnsMenuRef={lineColumnsMenuRef}
-                  columnsButtonRef={lineColumnsButtonRef}
-                  onOpenColumnsMenu={onOpenLineColumnsMenu}
-                  onCancelColumnsMenu={onCancelLineColumnsMenu}
-                  onToggleColumnVisibility={onToggleLineColumnVisibility}
-                  onMoveColumn={onMoveLineColumn}
-                  onSaveColumnChanges={onSaveLineColumnChanges}
-                  onResetColumnChanges={onResetLineColumnChanges}
-                  onOpenRowDetail={onOpenLineItemDetail}
-                  onCreateRow={onCreateLineItem}
-                />
-              ) : null}
-              {activeContractTabForView === "Frakt" ? <FreightTab /> : null}
-              {activeContractTabForView === "Avrop" ? <CallOffTab /> : null}
-              {activeContractTabForView === "Dokument" ? <TermsTab /> : null}
-              {activeContractTabForView === "Utskriftsalternativ" ? <PrintOptionsTab /> : null}
-              {activeContractTabForView === "Villkor" ? <TermsTab /> : null}
-              {activeContractTabForView === "Leverans" ? <DeliveryTab /> : null}
+            <div className={styles.detailTabsColumn}>
+              <div className={styles.contractModernAdditionsWrap}>
+                <Typography className={styles.contractModernAdditionsTitle}>Kontraktstillägg</Typography>
+                <div className={styles.contractTabBar}>
+                  {contractTabs.map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      className={`${styles.contractTabButton} ${
+                        activeContractTabForView === tab ? styles.contractTabButtonActive : ""
+                      }`}
+                      onClick={() => onChangeContractTab(tab)}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+                <div className={styles.contractDetailMainContent}>
+                  {activeContractTabForView === "Kontraktsrader" ? (
+                    <ContractRowsTab
+                      visibleColumns={visibleLineColumns}
+                      rows={lineItemRows}
+                      draftColumns={draftLineColumns}
+                      isColumnsMenuOpen={isLineColumnsMenuOpen}
+                      columnsMenuRef={lineColumnsMenuRef}
+                      columnsButtonRef={lineColumnsButtonRef}
+                      onOpenColumnsMenu={onOpenLineColumnsMenu}
+                      onCancelColumnsMenu={onCancelLineColumnsMenu}
+                      onToggleColumnVisibility={onToggleLineColumnVisibility}
+                      onMoveColumn={onMoveLineColumn}
+                      onSaveColumnChanges={onSaveLineColumnChanges}
+                      onResetColumnChanges={onResetLineColumnChanges}
+                      onOpenRowDetail={onOpenLineItemDetail}
+                      onCreateRow={onCreateLineItem}
+                    />
+                  ) : null}
+                  {activeContractTabForView === "Frakt" ? <FreightTab /> : null}
+                  {activeContractTabForView === "Avrop" ? <CallOffTab /> : null}
+                  {activeContractTabForView === "Dokument" ? <TermsTab /> : null}
+                  {activeContractTabForView === "Utskriftsalternativ" ? <PrintOptionsTab /> : null}
+                  {activeContractTabForView === "Villkor" ? <TermsTab /> : null}
+                  {activeContractTabForView === "Leverans" ? <DeliveryTab /> : null}
+                </div>
+              </div>
             </div>
           </div>
         </>

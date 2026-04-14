@@ -27,6 +27,7 @@ type ContractListViewProps = {
   onSearchSelectChange: (key: string, value: string) => void;
   onSearchCheckboxChange: (key: string, checked: boolean) => void;
   actionItems: Array<{ label: string; icon: ReactNode; requiresSelection: boolean }>;
+  onCreateContract: () => void;
   hasSelectedRows: boolean;
   isLineItemsTableVisible: boolean;
   onToggleLineItemsTable: () => void;
@@ -80,6 +81,7 @@ export function ContractListView({
   onSearchSelectChange,
   onSearchCheckboxChange,
   actionItems,
+  onCreateContract,
   hasSelectedRows,
   isLineItemsTableVisible,
   onToggleLineItemsTable,
@@ -141,7 +143,8 @@ export function ContractListView({
         items={actionItems.map((item) => ({
           label: item.label,
           icon: item.icon,
-          enabled: !item.requiresSelection || hasSelectedRows
+          enabled: !item.requiresSelection || hasSelectedRows,
+          onClick: item.label === "Ny" ? onCreateContract : undefined
         }))}
         rightSlot={
           <>

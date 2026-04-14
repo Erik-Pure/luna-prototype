@@ -25,7 +25,10 @@ import {
   AppShellLayout,
   ContractDetailView,
   ContractListView,
-  DeliveryListView
+  DeliveryListView,
+  PriceListDetailView,
+  PriceListRowDetailView,
+  PriceListView
 } from "./components/views";
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
@@ -372,13 +375,20 @@ export default function Home() {
   const contractId = pathParts[2] ?? null;
   const lineItemId = pathParts[3] ?? null;
   const isContractDetailRoute = sectionSlug === "marknad" && menuSlug === "kontraktlista";
+  const isPriceListRoute = sectionSlug === "marknad" && menuSlug === "prislistor";
   const isContractDetailOpen = isContractDetailRoute && Boolean(contractId);
+  const isPriceListDetailOpen = isPriceListRoute && Boolean(contractId);
   const selectedContractId = isContractDetailRoute ? contractId : null;
+  const selectedPriceListId = isPriceListRoute ? contractId : null;
+  const selectedPriceRowId = isPriceListRoute ? lineItemId : null;
   const selectedLineItemId = isContractDetailRoute ? lineItemId : null;
   const isCreatingLineItem = selectedLineItemId === "new";
   const isLineItemDetailOpen = Boolean(selectedContractId && selectedLineItemId);
+  const isPriceListRowDetailOpen = Boolean(selectedPriceListId && selectedPriceRowId);
+  const isCreatingPriceRow = selectedPriceRowId === "new";
   const isContractListPage = sectionSlug === "marknad" && menuSlug === "kontraktlista";
   const isDeliveryListPage = sectionSlug === "marknad" && menuSlug === "leveranslista";
+  const isPriceListPage = sectionSlug === "marknad" && menuSlug === "prislistor";
   const isSystemPage = sectionSlug === "system";
   const topMenuItems = topMenusBySection[sectionSlug] ?? topMenusBySection.marknad;
   const leftTopMenuItems = topMenuItems.filter((item) => !item.alignRight);
@@ -728,9 +738,48 @@ export default function Home() {
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${contractId}`);
   };
 
+  const openNewContract = () => {
+    setActiveContractTab("Kontraktsrader");
+    setActiveLineItemTab("Längdfördelning");
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/new`);
+  };
+
+  const openPriceListDetail = (priceListId: string) => {
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${priceListId}`);
+  };
+
+  const openNewPriceList = () => {
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/new`);
+  };
+
+  const openPriceRowDetail = (priceRowId: string) => {
+    if (!selectedPriceListId) {
+      return;
+    }
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}/${priceRowId}`);
+  };
+
+  const openNewPriceRow = () => {
+    if (!selectedPriceListId) {
+      return;
+    }
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}/new`);
+  };
+
   const closeContractDetail = () => {
     setActiveLineItemTab("Längdfördelning");
     navigateWithLoading(`/${sectionSlug}/${menuSlug}`);
+  };
+
+  const closePriceListDetail = () => {
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}`);
+  };
+
+  const closePriceListRowDetail = () => {
+    if (!selectedPriceListId) {
+      return;
+    }
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}`);
   };
 
   const openLineItemDetail = (lineItemId: string) => {
@@ -828,6 +877,14 @@ export default function Home() {
       deepestBreadcrumb = isCreatingLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${selectedLineItemId}`;
     }
 
+    if (isPriceListDetailOpen && selectedPriceListId) {
+      deepestBreadcrumb = selectedPriceListId === "new" ? "Ny prislista" : `Prislista ${selectedPriceListId}`;
+    }
+
+    if (isPriceListRowDetailOpen && selectedPriceRowId) {
+      deepestBreadcrumb = isCreatingPriceRow ? "Ny prislistrad" : `Prislistrad ${selectedPriceRowId}`;
+    }
+
     document.title = `${deepestBreadcrumb} (${selectedCompany})`;
   }, [
     selectedCompany,
@@ -835,7 +892,12 @@ export default function Home() {
     selectedContractId,
     isLineItemDetailOpen,
     selectedLineItemId,
-    isCreatingLineItem
+    isCreatingLineItem,
+    isPriceListDetailOpen,
+    selectedPriceListId,
+    isPriceListRowDetailOpen,
+    selectedPriceRowId,
+    isCreatingPriceRow
   ]);
 
   useEffect(() => {
@@ -906,6 +968,13 @@ export default function Home() {
         isCreatingLineItem={isCreatingLineItem}
         onCloseContractDetail={closeContractDetail}
         onCloseLineItemDetail={closeLineItemDetail}
+        isPriceListDetailOpen={isPriceListDetailOpen}
+        selectedPriceListId={selectedPriceListId}
+        onClosePriceListDetail={closePriceListDetail}
+        isPriceListRowDetailOpen={isPriceListRowDetailOpen}
+        selectedPriceRowId={selectedPriceRowId}
+        isCreatingPriceRow={isCreatingPriceRow}
+        onClosePriceListRowDetail={closePriceListRowDetail}
       >
 
             {!isContractDetailOpen && isContractListPage ? (
@@ -930,6 +999,7 @@ export default function Home() {
                   handleSearchCheckboxChange(key as SearchFieldKey, checked)
                 }
                 actionItems={actionItems}
+                onCreateContract={openNewContract}
                 hasSelectedRows={hasSelectedRows}
                 isLineItemsTableVisible={isLineItemsTableVisible}
                 onToggleLineItemsTable={() => setIsLineItemsTableVisible((previous) => !previous)}
@@ -965,6 +1035,18 @@ export default function Home() {
               />
             ) : !isContractDetailOpen && isDeliveryListPage ? (
               <DeliveryListView />
+            ) : !isPriceListDetailOpen && !isContractDetailOpen && isPriceListPage ? (
+              <PriceListView onOpenPriceListDetail={openPriceListDetail} onCreatePriceList={openNewPriceList} />
+            ) : isPriceListDetailOpen && selectedPriceListId ? (
+              isPriceListRowDetailOpen && selectedPriceRowId ? (
+                <PriceListRowDetailView priceListId={selectedPriceListId} priceRowId={selectedPriceRowId} />
+              ) : (
+                <PriceListDetailView
+                  selectedPriceListId={selectedPriceListId}
+                  onOpenPriceRowDetail={openPriceRowDetail}
+                  onCreatePriceRow={openNewPriceRow}
+                />
+              )
             ) : isContractDetailOpen ? (
               <ContractDetailView
                 isLineItemDetailOpen={isLineItemDetailOpen}

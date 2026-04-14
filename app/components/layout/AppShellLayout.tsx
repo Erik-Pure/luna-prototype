@@ -60,6 +60,13 @@ type AppShellLayoutProps = {
   isCreatingLineItem: boolean;
   onCloseContractDetail: () => void;
   onCloseLineItemDetail: () => void;
+  isPriceListDetailOpen: boolean;
+  selectedPriceListId: string | null;
+  onClosePriceListDetail: () => void;
+  isPriceListRowDetailOpen: boolean;
+  selectedPriceRowId: string | null;
+  isCreatingPriceRow: boolean;
+  onClosePriceListRowDetail: () => void;
   children: ReactNode;
 };
 
@@ -95,6 +102,13 @@ export function AppShellLayout({
   isCreatingLineItem,
   onCloseContractDetail,
   onCloseLineItemDetail,
+  isPriceListDetailOpen,
+  selectedPriceListId,
+  onClosePriceListDetail,
+  isPriceListRowDetailOpen,
+  selectedPriceRowId,
+  isCreatingPriceRow,
+  onClosePriceListRowDetail,
   children
 }: AppShellLayoutProps) {
   return (
@@ -256,8 +270,30 @@ export function AppShellLayout({
           <div className={styles.breadcrumbs}>
             <Typography className={styles.breadcrumbMuted}>{currentSectionLabel}</Typography>
             <ChevronRightIcon className={styles.breadcrumbArrow} />
-            {!isContractDetailOpen ? (
+            {!isContractDetailOpen && !isPriceListDetailOpen ? (
               <Typography className={styles.breadcrumbActive}>{currentMenuLabel}</Typography>
+            ) : isPriceListDetailOpen ? (
+              <>
+                <button type="button" className={styles.breadcrumbLinkButton} onClick={onClosePriceListDetail}>
+                  {currentMenuLabel}
+                </button>
+                <ChevronRightIcon className={styles.breadcrumbArrow} />
+                {isPriceListRowDetailOpen ? (
+                  <>
+                    <button type="button" className={styles.breadcrumbLinkButton} onClick={onClosePriceListRowDetail}>
+                      {selectedPriceListId === "new" ? "Ny prislista" : `Prislista ${selectedPriceListId}`}
+                    </button>
+                    <ChevronRightIcon className={styles.breadcrumbArrow} />
+                    <Typography className={styles.breadcrumbActive}>
+                      {isCreatingPriceRow ? "Ny prislistrad" : `Prislistrad ${selectedPriceRowId}`}
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography className={styles.breadcrumbActive}>
+                    {selectedPriceListId === "new" ? "Ny prislista" : `Prislista ${selectedPriceListId}`}
+                  </Typography>
+                )}
+              </>
             ) : (
               <>
                 <button type="button" className={styles.breadcrumbLinkButton} onClick={onCloseContractDetail}>
