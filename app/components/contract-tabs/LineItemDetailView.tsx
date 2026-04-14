@@ -1,14 +1,13 @@
 "use client";
 
-import MenuOpenIcon from "@mui/icons-material/MenuOpen";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Button, MenuItem, Select, Switch, TextField, Typography } from "@mui/material";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
+import { useState } from "react";
+import { Accordion, AccordionDetails, AccordionSummary, Button, MenuItem, Select, TextField, Typography } from "@mui/material";
 import styles from "../../page.module.scss";
-
-const LINE_ITEM_OVERVIEW_OPEN_KEY = "luna:lineitem-overview-open";
-const LINE_ITEM_OVERVIEW_WIDTH_KEY = "luna:lineitem-overview-width";
-const LINE_ITEM_OVERVIEW_MIN_WIDTH = 250;
-const LINE_ITEM_OVERVIEW_MAX_WIDTH = 1100;
 
 const lineItemDetailTabs = [
   "Längdfördelning",
@@ -16,13 +15,10 @@ const lineItemDetailTabs = [
   "Nettolager",
   "Avropsrad",
   "Produktionsplanering",
-  "Leveransbokade paket",
-  "Dokument"
+  "Leveransbokade paket"
 ] as const;
 
 export type LineItemDetailTab = (typeof lineItemDetailTabs)[number];
-type LineItemOverviewMode = "quick" | "all";
-type LineItemSectionKey = "allmant" | "produkt" | "affar" | "leverans" | "ovrigt";
 export type NewLineItemDraft = {
   senderCompany: string;
   senderWarehouse: string;
@@ -43,18 +39,18 @@ export type NewLineItemDraft = {
 };
 
 const emptyNewLineItemDraft: NewLineItemDraft = {
-  senderCompany: "",
-  senderWarehouse: "",
+  senderCompany: "BP Hissmofors Byggprodukter",
+  senderWarehouse: "Krokom",
   artNr: "",
   quantity: "",
   price: "",
-  status: "",
+  status: "Aktiv",
   deliveryWeek: "",
   deliveryWindowMin: "",
   deliveryWindowMax: "",
   deliverArtNr: "",
   product: "",
-  packageType: "",
+  packageType: "Lp",
   length: "",
   deliveryDay: "",
   internalComment: "",
@@ -98,125 +94,19 @@ type LineItemDetailViewProps = {
   onSaveAndCreateNew?: (draft: NewLineItemDraft) => void;
 };
 
-function LineItemSection({
-  sectionKey,
-  title,
-  meta,
-  isCollapsed,
-  onToggle,
-  children
-}: {
-  sectionKey: LineItemSectionKey;
-  title: string;
-  meta: string;
-  isCollapsed: boolean;
-  onToggle: (sectionKey: LineItemSectionKey) => void;
-  children: ReactNode;
-}) {
-  return (
-    <section className={styles.lineItemSectionBox}>
-      <button
-        type="button"
-        className={styles.lineItemSectionToggle}
-        onClick={() => onToggle(sectionKey)}
-        aria-expanded={!isCollapsed}
-      >
-        <span className={styles.lineItemSectionToggleTitle}>{title}</span>
-        <span className={styles.lineItemSectionToggleMeta}>{meta}</span>
-        <span className={styles.lineItemSectionToggleChevron}>{isCollapsed ? "▸" : "▾"}</span>
-      </button>
-      {!isCollapsed ? children : null}
-    </section>
-  );
-}
-
 export function LineItemDetailView({
   lineItemId,
   activeTab,
   onChangeTab,
-  newDraftSeed,
+  newDraftSeed = {},
   onSaveAndCreateNew
 }: LineItemDetailViewProps) {
   const isNewLineItem = lineItemId === "new";
-  const [newLineItemDraft, setNewLineItemDraft] = useState<NewLineItemDraft>(() => ({
+  const [newLineItemDraft, setNewLineItemDraft] = useState<NewLineItemDraft>({
     ...(isNewLineItem ? emptyNewLineItemDraft : existingLineItemDraft),
-    ...(isNewLineItem ? newDraftSeed : {})
-  }));
-  const [overviewMode, setOverviewMode] = useState<LineItemOverviewMode>("quick");
-  const [collapsedSections, setCollapsedSections] = useState<Record<LineItemSectionKey, boolean>>({
-    allmant: true,
-    produkt: true,
-    affar: true,
-    leverans: true,
-    ovrigt: true
+    ...newDraftSeed
   });
-  const [isOverviewOpen, setIsOverviewOpen] = useState(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
-    return localStorage.getItem(LINE_ITEM_OVERVIEW_OPEN_KEY) !== "0";
-  });
-  const [overviewWidth, setOverviewWidth] = useState(() => {
-    if (typeof window === "undefined") {
-      return 280;
-    }
-    const savedWidth = Number(localStorage.getItem(LINE_ITEM_OVERVIEW_WIDTH_KEY));
-    if (Number.isNaN(savedWidth)) {
-      return 280;
-    }
-    return Math.min(LINE_ITEM_OVERVIEW_MAX_WIDTH, Math.max(LINE_ITEM_OVERVIEW_MIN_WIDTH, savedWidth));
-  });
-  const [isResizing, setIsResizing] = useState(false);
-
-  useEffect(() => {
-    localStorage.setItem(LINE_ITEM_OVERVIEW_OPEN_KEY, isOverviewOpen ? "1" : "0");
-  }, [isOverviewOpen]);
-
-  useEffect(() => {
-    localStorage.setItem(LINE_ITEM_OVERVIEW_WIDTH_KEY, String(overviewWidth));
-  }, [overviewWidth]);
-
-  const sectionMeta = useMemo(
-    () => ({
-      allmant: "2/2 ifyllda",
-      produkt: "1/1 obligatoriska ifyllda",
-      affar: "2/2 obligatoriska ifyllda",
-      leverans: "3/3 obligatoriska ifyllda",
-      ovrigt: "0 obligatoriska fält"
-    }),
-    []
-  );
-
-  const readonlyFields = useMemo(
-    () =>
-      lineItemReadonlyFields.map((field) => ({
-        ...field,
-        value: isNewLineItem ? "" : field.value
-      })),
-    [isNewLineItem]
-  );
-
-  useEffect(() => {
-    if (!isResizing) {
-      return;
-    }
-
-    const handleMouseMove = (event: MouseEvent) => {
-      const nextWidth = Math.min(LINE_ITEM_OVERVIEW_MAX_WIDTH, Math.max(LINE_ITEM_OVERVIEW_MIN_WIDTH, event.clientX - 16));
-      setOverviewWidth(nextWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isResizing]);
+  const [expandedPanels, setExpandedPanels] = useState<string[]>(isNewLineItem ? ["obligatoriska", "allmant"] : ["allmant"]);
 
   const updateDraftField = (key: keyof NewLineItemDraft, value: string) => {
     setNewLineItemDraft((previous) => ({
@@ -225,77 +115,21 @@ export function LineItemDetailView({
     }));
   };
 
-  const handleToggleSection = (sectionKey: LineItemSectionKey) => {
-    setCollapsedSections((previous) => ({
-      ...previous,
-      [sectionKey]: !previous[sectionKey]
-    }));
-  };
-
-  const handleChangeOverviewMode = (nextMode: LineItemOverviewMode) => {
-    if (nextMode === overviewMode) {
-      return;
-    }
-
-    setOverviewMode(nextMode);
-    if (nextMode === "quick") {
-      setCollapsedSections({
-        allmant: true,
-        produkt: true,
-        affar: true,
-        leverans: true,
-        ovrigt: true
-      });
-      return;
-    }
-
-    setCollapsedSections({
-      allmant: false,
-      produkt: false,
-      affar: false,
-      leverans: false,
-      ovrigt: false
-    });
+  const togglePanel = (panel: string) => {
+    setExpandedPanels((previous) =>
+      previous.includes(panel) ? previous.filter((item) => item !== panel) : [...previous, panel]
+    );
   };
 
   return (
     <div className={styles.lineItemDetailPanel}>
-      <div className={styles.contractDetailTabControlRow}>
-        <button
-          type="button"
-          className={styles.contractDetailOverviewToggle}
-          onClick={() => setIsOverviewOpen((previous) => !previous)}
-          aria-expanded={isOverviewOpen}
-        >
-          <MenuOpenIcon
-            className={`${styles.overviewToggleIcon} ${
-              isOverviewOpen ? styles.overviewToggleIconOpen : styles.overviewToggleIconClosed
-            }`}
-            fontSize="small"
-          />
-          <span>Översikt</span>
-        </button>
-        <div className={styles.contractTabBar}>
-          {lineItemDetailTabs.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              className={`${styles.contractTabButton} ${
-                activeTab === tab ? styles.contractTabButtonActive : ""
-              }`}
-              onClick={() => onChangeTab(tab)}
-            >
-              {tab}
-            </button>
-          ))}
+      <div className={styles.contractModernTopRow}>
+        <div className={styles.contractModernTitleWrap}>
+          <Typography className={styles.contractModernTitle}>
+            {isNewLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${lineItemId}`}
+          </Typography>
         </div>
-      </div>
-
-      <div className={styles.lineItemDetailTopBar}>
-        <Typography className={styles.lineItemDetailTitle}>
-          {isNewLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${lineItemId}`}
-        </Typography>
-        <div className={styles.lineItemDetailTopActions}>
+        <div className={styles.contractModernTopActions}>
           <Button className={styles.lineItemBackButton} size="small" disabled>
             Föregående
           </Button>
@@ -303,388 +137,350 @@ export function LineItemDetailView({
             Nästa
           </Button>
           {isNewLineItem ? (
-            <Button
-              className={styles.lineItemBackButton}
-              size="small"
-              onClick={() => onSaveAndCreateNew?.(newLineItemDraft)}
-            >
+            <Button className={styles.lineItemBackButton} size="small" onClick={() => onSaveAndCreateNew?.(newLineItemDraft)}>
               Spara och skapa ny
             </Button>
           ) : null}
         </div>
       </div>
 
-      <div className={styles.contractDetailContentLayout}>
-        {isOverviewOpen ? (
-          <aside
-            className={styles.contractDetailOverviewPanel}
-            style={{ width: `${overviewWidth}px`, flexBasis: `${overviewWidth}px` }}
+      <div className={styles.contractModernAccordionWrap}>
+        {isNewLineItem ? (
+          <Accordion
+            expanded={expandedPanels.includes("obligatoriska")}
+            onChange={() => togglePanel("obligatoriska")}
+            className={`${styles.contractModernAccordion} ${styles.lineItemRequiredSection}`}
           >
-            <div className={styles.contractDetailOverviewHeader}>
-              <Typography className={styles.contractDetailOverviewTitle}>Översikt</Typography>
-              <div className={styles.lineItemOverviewModeToggle}>
-                <span
-                  className={`${styles.lineItemOverviewModeLabel} ${
-                    overviewMode === "quick" ? styles.lineItemOverviewModeLabelActive : ""
-                  }`}
-                >
-                  Snabbvy
-                </span>
-                <Switch
-                  checked={overviewMode === "quick"}
-                  onChange={(_event, checked) => handleChangeOverviewMode(checked ? "quick" : "all")}
+            <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+              <div className={styles.contractModernAccordionTitleRow}>
+                <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
+                <Typography className={styles.contractModernAccordionTitle}>Obligatoriska fält</Typography>
+              </div>
+            </AccordionSummary>
+            <AccordionDetails>
+              <div className={styles.lineItemRequiredGrid}>
+                <div className={styles.lineItemField}>
+                  <Typography className={styles.searchFieldLabel}>ArtNr *</Typography>
+                  <TextField
+                    value={newLineItemDraft.artNr}
+                    onChange={(event) => updateDraftField("artNr", event.target.value)}
+                    size="small"
+                    className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
+                  />
+                </div>
+                <div className={styles.lineItemField}>
+                  <Typography className={styles.searchFieldLabel}>Mängd *</Typography>
+                  <TextField
+                    value={newLineItemDraft.quantity}
+                    onChange={(event) => updateDraftField("quantity", event.target.value)}
+                    size="small"
+                    className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
+                  />
+                </div>
+                <div className={styles.lineItemField}>
+                  <Typography className={styles.searchFieldLabel}>Pris *</Typography>
+                  <TextField
+                    value={newLineItemDraft.price}
+                    onChange={(event) => updateDraftField("price", event.target.value)}
+                    size="small"
+                    className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
+                  />
+                </div>
+                <div className={styles.lineItemField}>
+                  <Typography className={styles.searchFieldLabel}>Status *</Typography>
+                  <Select
+                    value={newLineItemDraft.status}
+                    onChange={(event) => updateDraftField("status", String(event.target.value))}
+                    size="small"
+                    className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
+                  >
+                    <MenuItem value="Aktiv">Aktiv</MenuItem>
+                  </Select>
+                </div>
+                <div className={styles.lineItemField}>
+                  <Typography className={styles.searchFieldLabel}>Leveransvecka *</Typography>
+                  <TextField
+                    value={newLineItemDraft.deliveryWeek}
+                    onChange={(event) => updateDraftField("deliveryWeek", event.target.value)}
+                    size="small"
+                    className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
+                  />
+                </div>
+                <div className={styles.lineItemField}>
+                  <Typography className={styles.searchFieldLabel}>Lev.fönster min *</Typography>
+                  <TextField
+                    value={newLineItemDraft.deliveryWindowMin}
+                    onChange={(event) => updateDraftField("deliveryWindowMin", event.target.value)}
+                    size="small"
+                    className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
+                  />
+                </div>
+                <div className={styles.lineItemField}>
+                  <Typography className={styles.searchFieldLabel}>Lev.fönster max *</Typography>
+                  <TextField
+                    value={newLineItemDraft.deliveryWindowMax}
+                    onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)}
+                    size="small"
+                    className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
+                  />
+                </div>
+                <div className={styles.lineItemField}>
+                  <Typography className={styles.searchFieldLabel}>Utsändande bolag *</Typography>
+                  <Select
+                    value={newLineItemDraft.senderCompany}
+                    onChange={(event) => updateDraftField("senderCompany", String(event.target.value))}
+                    size="small"
+                    className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
+                  >
+                    <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
+                  </Select>
+                </div>
+                <div className={styles.lineItemField}>
+                  <Typography className={styles.searchFieldLabel}>Utsändande lagerställe *</Typography>
+                  <Select
+                    value={newLineItemDraft.senderWarehouse}
+                    onChange={(event) => updateDraftField("senderWarehouse", String(event.target.value))}
+                    size="small"
+                    className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
+                  >
+                    <MenuItem value="Krokom">Krokom</MenuItem>
+                  </Select>
+                </div>
+              </div>
+            </AccordionDetails>
+          </Accordion>
+        ) : null}
+
+        <Accordion
+          expanded={expandedPanels.includes("allmant")}
+          onChange={() => togglePanel("allmant")}
+          className={styles.contractModernAccordion}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+            <div className={styles.contractModernAccordionTitleRow}>
+              <TableChartOutlinedIcon className={styles.contractModernAccordionIcon} />
+              <Typography className={styles.contractModernAccordionTitle}>Allmänt</Typography>
+            </div>
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className={styles.contractModernFormGrid}>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Utsändande bolag</Typography>
+                <Select
+                  value={newLineItemDraft.senderCompany}
+                  onChange={(event) => updateDraftField("senderCompany", String(event.target.value))}
                   size="small"
-                  inputProps={{ "aria-label": "Växla snabbvy" }}
+                  className={styles.searchFieldControl}
+                >
+                  <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
+                </Select>
+              </div>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Utsändande lagerställe</Typography>
+                <Select
+                  value={newLineItemDraft.senderWarehouse}
+                  onChange={(event) => updateDraftField("senderWarehouse", String(event.target.value))}
+                  size="small"
+                  className={styles.searchFieldControl}
+                >
+                  <MenuItem value="Krokom">Krokom</MenuItem>
+                </Select>
+              </div>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Status</Typography>
+                <Select
+                  value={newLineItemDraft.status}
+                  onChange={(event) => updateDraftField("status", String(event.target.value))}
+                  size="small"
+                  className={styles.searchFieldControl}
+                >
+                  <MenuItem value="Aktiv">Aktiv</MenuItem>
+                </Select>
+              </div>
+            </div>
+          </AccordionDetails>
+        </Accordion>
+
+        <Accordion
+          expanded={expandedPanels.includes("produkt")}
+          onChange={() => togglePanel("produkt")}
+          className={styles.contractModernAccordion}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+            <div className={styles.contractModernAccordionTitleRow}>
+              <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
+              <Typography className={styles.contractModernAccordionTitle}>Produkt</Typography>
+            </div>
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className={styles.lineItemRequiredGrid}>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Leverera artNr</Typography>
+                <TextField
+                  value={newLineItemDraft.deliverArtNr}
+                  onChange={(event) => updateDraftField("deliverArtNr", event.target.value)}
+                  size="small"
+                  className={styles.searchFieldControl}
+                />
+              </div>
+              <div className={styles.lineItemFieldFull}>
+                <Typography className={styles.searchFieldLabel}>Produkt</Typography>
+                <TextField
+                  value={newLineItemDraft.product}
+                  onChange={(event) => updateDraftField("product", event.target.value)}
+                  size="small"
+                  className={styles.searchFieldControl}
+                />
+              </div>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Pakettyp</Typography>
+                <Select
+                  value={newLineItemDraft.packageType}
+                  onChange={(event) => updateDraftField("packageType", String(event.target.value))}
+                  size="small"
+                  className={styles.searchFieldControl}
+                >
+                  <MenuItem value="Lp">Lp</MenuItem>
+                </Select>
+              </div>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Längd</Typography>
+                <TextField
+                  value={newLineItemDraft.length}
+                  onChange={(event) => updateDraftField("length", event.target.value)}
+                  size="small"
+                  className={styles.searchFieldControl}
                 />
               </div>
             </div>
-            <div className={styles.contractDetailOverviewBody}>
-              <div className={styles.lineItemOverviewContent}>
-                <div className={styles.lineItemOverviewLayout}>
-                  <div className={styles.lineItemOverviewMain}>
-                  <section className={`${styles.lineItemSectionBox} ${styles.lineItemRequiredSection}`}>
-                    <div className={styles.lineItemSectionHeaderRow}>
-                      <Typography className={styles.lineItemSectionTitle}>Obligatoriskt att fylla i</Typography>
-                      <Typography className={styles.lineItemSectionHeaderMeta}>9/9 ifyllda</Typography>
-                    </div>
-                    <div className={styles.lineItemRequiredGrid}>
-                      <div className={styles.lineItemField}>
-                        <Typography className={styles.searchFieldLabel}>ArtNr</Typography>
-                        <TextField
-                          value={isNewLineItem ? newLineItemDraft.artNr : "2202209500002000"}
-                          onChange={(event) => updateDraftField("artNr", event.target.value)}
-                          size="small"
-                          className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
-                        />
-                      </div>
-                      <div className={styles.lineItemField}>
-                        <Typography className={styles.searchFieldLabel}>Mängd</Typography>
-                        <TextField
-                          value={isNewLineItem ? newLineItemDraft.quantity : "1"}
-                          onChange={(event) => updateDraftField("quantity", event.target.value)}
-                          size="small"
-                          className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
-                        />
-                      </div>
-                      <div className={styles.lineItemField}>
-                        <Typography className={styles.searchFieldLabel}>Pris</Typography>
-                        <TextField
-                          value={isNewLineItem ? newLineItemDraft.price : "10,29 SEK/lpm"}
-                          onChange={(event) => updateDraftField("price", event.target.value)}
-                          size="small"
-                          className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
-                        />
-                      </div>
-                      <div className={styles.lineItemField}>
-                        <Typography className={styles.searchFieldLabel}>Status</Typography>
-                        <Select
-                          value={isNewLineItem ? newLineItemDraft.status : "Aktiv"}
-                          onChange={(event) => updateDraftField("status", event.target.value)}
-                          size="small"
-                          className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
-                        >
-                          <MenuItem value="">-</MenuItem>
-                          <MenuItem value="Aktiv">Aktiv</MenuItem>
-                        </Select>
-                      </div>
-                      <div className={styles.lineItemField}>
-                        <Typography className={styles.searchFieldLabel}>Leveransvecka</Typography>
-                        <TextField
-                          value={isNewLineItem ? newLineItemDraft.deliveryWeek : "202550"}
-                          onChange={(event) => updateDraftField("deliveryWeek", event.target.value)}
-                          size="small"
-                          className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
-                        />
-                      </div>
-                      <div className={styles.lineItemField}>
-                        <Typography className={styles.searchFieldLabel}>Lev.fönster min</Typography>
-                        <TextField
-                          value={isNewLineItem ? newLineItemDraft.deliveryWindowMin : "2025-12-05"}
-                          onChange={(event) => updateDraftField("deliveryWindowMin", event.target.value)}
-                          size="small"
-                          className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
-                        />
-                      </div>
-                      <div className={styles.lineItemField}>
-                        <Typography className={styles.searchFieldLabel}>Lev.fönster max</Typography>
-                        <TextField
-                          value={isNewLineItem ? newLineItemDraft.deliveryWindowMax : "2025-12-10"}
-                          onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)}
-                          size="small"
-                          className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
-                        />
-                      </div>
-                      <div className={styles.lineItemField}>
-                        <Typography className={styles.searchFieldLabel}>Utsändande bolag</Typography>
-                        <Select
-                          value={isNewLineItem ? newLineItemDraft.senderCompany : "BP Hissmofors Byggprodukter"}
-                          onChange={(event) => updateDraftField("senderCompany", event.target.value)}
-                          size="small"
-                          className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
-                        >
-                          <MenuItem value="">-</MenuItem>
-                          <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
-                        </Select>
-                      </div>
-                      <div className={styles.lineItemField}>
-                        <Typography className={styles.searchFieldLabel}>Utsändande lagerställe</Typography>
-                        <Select
-                          value={isNewLineItem ? newLineItemDraft.senderWarehouse : "Krokom"}
-                          onChange={(event) => updateDraftField("senderWarehouse", event.target.value)}
-                          size="small"
-                          className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}
-                        >
-                          <MenuItem value="">-</MenuItem>
-                          <MenuItem value="Krokom">Krokom</MenuItem>
-                        </Select>
-                      </div>
-                    </div>
-                  </section>
+          </AccordionDetails>
+        </Accordion>
 
-                  {overviewMode === "all" ? (
-                    <>
-                      <LineItemSection
-                        sectionKey="allmant"
-                        title="Allmänt"
-                        meta={sectionMeta.allmant}
-                        isCollapsed={collapsedSections.allmant}
-                        onToggle={handleToggleSection}
-                      >
-                        <div className={styles.lineItemGridTwo}>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Utsändande bolag</Typography>
-                            <Select
-                              value={isNewLineItem ? newLineItemDraft.senderCompany : "BP Hissmofors Byggprodukter"}
-                              onChange={(event) => updateDraftField("senderCompany", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            >
-                              <MenuItem value="">-</MenuItem>
-                              <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
-                            </Select>
-                          </div>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Utsändande lagerställe</Typography>
-                            <Select
-                              value={isNewLineItem ? newLineItemDraft.senderWarehouse : "Krokom"}
-                              onChange={(event) => updateDraftField("senderWarehouse", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            >
-                              <MenuItem value="">-</MenuItem>
-                              <MenuItem value="Krokom">Krokom</MenuItem>
-                            </Select>
-                          </div>
-                        </div>
-                      </LineItemSection>
-
-                      <LineItemSection
-                        sectionKey="produkt"
-                        title="Produkt"
-                        meta={sectionMeta.produkt}
-                        isCollapsed={collapsedSections.produkt}
-                        onToggle={handleToggleSection}
-                      >
-                        <div className={styles.lineItemGridThree}>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>ArtNr</Typography>
-                            <TextField
-                              value={isNewLineItem ? newLineItemDraft.artNr : "2202209500002000"}
-                              onChange={(event) => updateDraftField("artNr", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            />
-                          </div>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Leverera artNr</Typography>
-                            <TextField
-                              value={isNewLineItem ? newLineItemDraft.deliverArtNr : "2202209500002000"}
-                              onChange={(event) => updateDraftField("deliverArtNr", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            />
-                          </div>
-                          <div className={styles.lineItemFieldFull}>
-                            <Typography className={styles.searchFieldLabel}>Produkt</Typography>
-                            <TextField
-                              value={isNewLineItem ? newLineItemDraft.product : "22x95 Gran Ytterp"}
-                              onChange={(event) => updateDraftField("product", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            />
-                          </div>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Pakettyp</Typography>
-                            <Select
-                              value={isNewLineItem ? newLineItemDraft.packageType : "Lp"}
-                              onChange={(event) => updateDraftField("packageType", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            >
-                              <MenuItem value="">-</MenuItem>
-                              <MenuItem value="Lp">Lp</MenuItem>
-                            </Select>
-                          </div>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Längd</Typography>
-                            <TextField
-                              value={isNewLineItem ? newLineItemDraft.length : "5,400"}
-                              onChange={(event) => updateDraftField("length", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            />
-                          </div>
-                        </div>
-                      </LineItemSection>
-
-                      <LineItemSection
-                        sectionKey="affar"
-                        title="Affär"
-                        meta={sectionMeta.affar}
-                        isCollapsed={collapsedSections.affar}
-                        onToggle={handleToggleSection}
-                      >
-                        <div className={styles.lineItemGridTwo}>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Mängd</Typography>
-                            <TextField
-                              value={isNewLineItem ? newLineItemDraft.quantity : "1"}
-                              onChange={(event) => updateDraftField("quantity", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            />
-                          </div>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Pris</Typography>
-                            <TextField
-                              value={isNewLineItem ? newLineItemDraft.price : "10,29 SEK/lpm"}
-                              onChange={(event) => updateDraftField("price", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            />
-                          </div>
-                        </div>
-                      </LineItemSection>
-
-                      <LineItemSection
-                        sectionKey="leverans"
-                        title="Leverans"
-                        meta={sectionMeta.leverans}
-                        isCollapsed={collapsedSections.leverans}
-                        onToggle={handleToggleSection}
-                      >
-                        <div className={styles.lineItemGridTwo}>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Leveransvecka</Typography>
-                            <TextField
-                              value={isNewLineItem ? newLineItemDraft.deliveryWeek : "202550"}
-                              onChange={(event) => updateDraftField("deliveryWeek", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            />
-                          </div>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Lev.fönster min</Typography>
-                            <TextField
-                              value={isNewLineItem ? newLineItemDraft.deliveryWindowMin : "2025-12-05"}
-                              onChange={(event) => updateDraftField("deliveryWindowMin", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            />
-                          </div>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Leveransdag</Typography>
-                            <Select
-                              value={isNewLineItem ? newLineItemDraft.deliveryDay : ""}
-                              onChange={(event) => updateDraftField("deliveryDay", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            >
-                              <MenuItem value="">-</MenuItem>
-                            </Select>
-                          </div>
-                          <div className={styles.lineItemField}>
-                            <Typography className={styles.searchFieldLabel}>Lev.fönster max</Typography>
-                            <TextField
-                              value={isNewLineItem ? newLineItemDraft.deliveryWindowMax : "2025-12-10"}
-                              onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)}
-                              size="small"
-                              className={styles.searchFieldControl}
-                            />
-                          </div>
-                        </div>
-                      </LineItemSection>
-
-                    <LineItemSection
-                      sectionKey="ovrigt"
-                      title="Övrigt"
-                      meta={sectionMeta.ovrigt}
-                      isCollapsed={collapsedSections.ovrigt}
-                      onToggle={handleToggleSection}
-                    >
-                      <div className={styles.lineItemGridOne}>
-                        <div className={styles.lineItemFieldFull}>
-                          <Typography className={styles.searchFieldLabel}>Intern kommentar</Typography>
-                          <TextField
-                            value={isNewLineItem ? newLineItemDraft.internalComment : ""}
-                            onChange={(event) => updateDraftField("internalComment", event.target.value)}
-                            size="small"
-                            className={styles.searchFieldControl}
-                          />
-                        </div>
-                        <div className={styles.lineItemFieldFull}>
-                          <Typography className={styles.searchFieldLabel}>Extern kommentar</Typography>
-                          <TextField
-                            value={isNewLineItem ? newLineItemDraft.externalComment : ""}
-                            onChange={(event) => updateDraftField("externalComment", event.target.value)}
-                            size="small"
-                            className={styles.searchFieldControl}
-                          />
-                        </div>
-                      </div>
-                    </LineItemSection>
-                    </>
-                  ) : null}
+        <Accordion
+          expanded={expandedPanels.includes("affar")}
+          onChange={() => togglePanel("affar")}
+          className={styles.contractModernAccordion}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+            <div className={styles.contractModernAccordionTitleRow}>
+              <GavelOutlinedIcon className={styles.contractModernAccordionIcon} />
+              <Typography className={styles.contractModernAccordionTitle}>Affär</Typography>
+            </div>
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className={styles.contractModernFormGrid}>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Mängd</Typography>
+                <TextField
+                  value={newLineItemDraft.quantity}
+                  onChange={(event) => updateDraftField("quantity", event.target.value)}
+                  size="small"
+                  className={styles.searchFieldControl}
+                />
+              </div>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Pris</Typography>
+                <TextField
+                  value={newLineItemDraft.price}
+                  onChange={(event) => updateDraftField("price", event.target.value)}
+                  size="small"
+                  className={styles.searchFieldControl}
+                />
+              </div>
+              {lineItemReadonlyFields.slice(0, 2).map((field) => (
+                <div key={field.label} className={styles.lineItemReadonlyItem}>
+                  <Typography className={styles.lineItemReadonlyLabel}>{field.label}</Typography>
+                  <Typography className={styles.lineItemReadonlyValue}>{field.value}</Typography>
                 </div>
+              ))}
+            </div>
+          </AccordionDetails>
+        </Accordion>
 
-                  {overviewMode === "all" ? (
-                    <aside className={styles.lineItemOverviewSidePanel}>
-                      <section className={styles.lineItemSectionBox}>
-                        <div className={styles.lineItemSectionHeaderRow}>
-                          <Typography className={styles.lineItemSectionTitle}>Systemfält (read-only)</Typography>
-                          <Typography className={styles.lineItemSectionHeaderMeta}>Automatiskt satta</Typography>
-                        </div>
-                        <div className={styles.lineItemReadonlyList}>
-                          {readonlyFields.map((field) => (
-                            <div key={field.label} className={styles.lineItemReadonlyItem}>
-                              <Typography className={styles.lineItemReadonlyLabel}>{field.label}</Typography>
-                              <Typography className={styles.lineItemReadonlyValue}>{field.value || "-"}</Typography>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    </aside>
-                  ) : null}
-                </div>
+        <Accordion
+          expanded={expandedPanels.includes("leverans")}
+          onChange={() => togglePanel("leverans")}
+          className={styles.contractModernAccordion}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+            <div className={styles.contractModernAccordionTitleRow}>
+              <LocalShippingOutlinedIcon className={styles.contractModernAccordionIcon} />
+              <Typography className={styles.contractModernAccordionTitle}>Leverans</Typography>
+            </div>
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className={styles.contractModernFormGrid}>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Leveransvecka</Typography>
+                <TextField
+                  value={newLineItemDraft.deliveryWeek}
+                  onChange={(event) => updateDraftField("deliveryWeek", event.target.value)}
+                  size="small"
+                  className={styles.searchFieldControl}
+                />
+              </div>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Lev.fönster min</Typography>
+                <TextField
+                  value={newLineItemDraft.deliveryWindowMin}
+                  onChange={(event) => updateDraftField("deliveryWindowMin", event.target.value)}
+                  size="small"
+                  className={styles.searchFieldControl}
+                />
+              </div>
+              <div className={styles.lineItemField}>
+                <Typography className={styles.searchFieldLabel}>Lev.fönster max</Typography>
+                <TextField
+                  value={newLineItemDraft.deliveryWindowMax}
+                  onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)}
+                  size="small"
+                  className={styles.searchFieldControl}
+                />
               </div>
             </div>
-          </aside>
-        ) : null}
-        {isOverviewOpen ? (
-          <div
-            className={styles.contractDetailResizeHandle}
-            onMouseDown={() => setIsResizing(true)}
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Justera panelbredd"
-          />
-        ) : null}
-        <div className={styles.contractDetailMainContent}>
-        <div className={styles.contractTabPlaceholder}>
-          <Typography className={styles.contractInfoValue}>
-            {activeTab} - innehållsvy för kontraktsrad.
-          </Typography>
+          </AccordionDetails>
+        </Accordion>
+
+        <Accordion
+          expanded={expandedPanels.includes("dokument")}
+          onChange={() => togglePanel("dokument")}
+          className={styles.contractModernAccordion}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+            <div className={styles.contractModernAccordionTitleRow}>
+              <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
+              <Typography className={styles.contractModernAccordionTitle}>Dokument</Typography>
+            </div>
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className={styles.contractModernFormGrid}>
+              <div className={styles.lineItemReadonlyItem}>
+                <Typography className={styles.lineItemReadonlyLabel}>Dokumentstatus</Typography>
+                <Typography className={styles.lineItemReadonlyValue}>Inga dokument uppladdade</Typography>
+              </div>
+            </div>
+          </AccordionDetails>
+        </Accordion>
+      </div>
+
+      <div className={styles.contractModernAdditionsWrap}>
+        <Typography className={styles.contractModernAdditionsTitle}>Kontraktsradstillägg</Typography>
+        <div className={styles.contractTabBar}>
+          {lineItemDetailTabs.map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              className={`${styles.contractTabButton} ${activeTab === tab ? styles.contractTabButtonActive : ""}`}
+              onClick={() => onChangeTab(tab)}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
+        <div className={styles.contractDetailMainContent}>
+          <div className={styles.contractTabPlaceholder}>
+            <Typography className={styles.contractInfoValue}>{activeTab} - tabell-/detaljvy för kontraktsrad.</Typography>
+          </div>
         </div>
       </div>
     </div>

@@ -125,13 +125,9 @@ const fakeCompanies = [
 ];
 
 const contractTabs = [
-  "Villkor",
-  "Leverans",
   "Kontraktsrader",
   "Frakt",
-  "Avrop",
-  "Dokument",
-  "Utskriftsalternativ"
+  "Avrop"
 ] as const;
 
 type ContractTab = (typeof contractTabs)[number];
@@ -403,7 +399,7 @@ export default function Home() {
   const [topMenuDropdownOptions, setTopMenuDropdownOptions] = useState<Array<{ slug: string; label: string }>>(
     []
   );
-  const [activeContractTab, setActiveContractTab] = useState<ContractTab>("Villkor");
+  const [activeContractTab, setActiveContractTab] = useState<ContractTab>("Kontraktsrader");
   const [activeLineItemTab, setActiveLineItemTab] = useState<LineItemDetailTab>("Längdfördelning");
   const [selectedCompany, setSelectedCompany] = useState(fakeCompanies[0]);
   const [isCompanyMenuOpen, setIsCompanyMenuOpen] = useState(false);
@@ -727,7 +723,7 @@ export default function Home() {
   };
 
   const openContractDetail = (contractId: string) => {
-    setActiveContractTab("Villkor");
+    setActiveContractTab("Kontraktsrader");
     setActiveLineItemTab("Längdfördelning");
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${contractId}`);
   };

@@ -1025,7 +1025,8 @@
 .contractTabBar {
   display: flex;
   align-items: stretch;
-  flex: 1;
+  flex: 0 0 auto;
+  width: 100%;
   min-width: 0;
   gap: 0;
   margin: 0;
@@ -1035,6 +1036,10 @@
   background-color: #e8eaee;
   overflow-x: auto;
   overflow-y: hidden;
+}
+
+.contractDetailTabControlRow .contractTabBar {
+  flex: 1 1 auto;
 }
 
 .contractDetailTabControlRow {
@@ -1184,6 +1189,158 @@
   justify-content: space-between;
   padding: 12px 18px;
   border-bottom: 1px solid #edf1f5;
+}
+
+.contractModernTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 4px 10px;
+}
+
+.contractModernTitleWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contractModernTitle {
+  color: #14181f;
+  font-size: 28px !important;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.contractModernTopActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contractModernAlertChip {
+  background-color: #f4d8db !important;
+  color: #7e2b30 !important;
+  border-radius: 999px;
+}
+
+.contractModernAlertChip :global(.MuiChip-label) {
+  font-size: 12px !important;
+  font-weight: 500;
+}
+
+.contractModernStatusChip {
+  background-color: #e4f1e1 !important;
+  color: #2f6a35 !important;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.contractModernStatusChip :global(.MuiChip-label) {
+  font-size: 12px !important;
+}
+
+.contractModernSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.contractModernSummaryCard {
+  border: 1px solid #dde1e8;
+  border-radius: 8px;
+  background-color: #fafbfd;
+  padding: 10px 12px;
+}
+
+.contractModernAccordionWrap {
+  padding: 0 12px;
+}
+
+.contractModernAccordion {
+  border: 1px solid #e0e4ea;
+  border-radius: 8px !important;
+  margin-bottom: 8px;
+  box-shadow: none !important;
+  background-color: #fbfcfd;
+}
+
+.contractModernAccordion :global(.MuiAccordionSummary-expandIconWrapper) {
+  color: #434a58;
+}
+
+.contractModernAccordion :global(.MuiAccordionDetails-root) {
+  padding: 10px 14px 14px;
+}
+
+.contractModernAccordion :global(.MuiAccordion-root)::before,
+.contractModernAccordion::before {
+  display: none;
+}
+
+.contractModernAccordionSummary {
+  min-height: 52px !important;
+  padding: 0 14px !important;
+}
+
+.contractModernAccordionTitle {
+  font-size: 24px !important;
+  font-weight: 600;
+  color: #232935;
+}
+
+.contractModernAccordionTitleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contractModernAccordionIcon {
+  color: #343c49;
+  font-size: 22px !important;
+}
+
+.contractModernFormGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.contractModernAdditionsWrap {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 12px 10px;
+}
+
+.contractModernAdditionsTitle {
+  color: #202631;
+  font-size: 26px !important;
+  font-weight: 600;
+}
+
+.contractModernAdditionsWrap .contractTabBar {
+  border-color: #dfe2e7;
+  border-radius: 8px;
+  background-color: #eceef1;
+  overflow: hidden;
+}
+
+.contractModernAdditionsWrap .contractTabButton {
+  min-width: 0;
+  flex: 1 1 0;
+  color: #5b6472;
+  font-size: 13px !important;
+  font-weight: 500;
+}
+
+.contractModernAdditionsWrap .contractTabButtonActive {
+  background-color: #ffffff;
+  color: #2a313c;
+  box-shadow: inset 0 0 0 1px #d9dce2;
 }
 
 .contractDetailTitle {
@@ -2142,6 +2299,116 @@
   color: #2f3743;
   font-size: 13px;
   font-weight: 600;
+}
+
+.requiredFieldsModalGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.requiredFieldControl :global(.MuiOutlinedInput-root) {
+  background-color: #fff7d6;
+}
+
+.lineItemCreatePage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 8px 12px;
+}
+
+.lineItemCreateTitle {
+  color: #232935;
+  font-size: 24px !important;
+  font-weight: 700;
+}
+
+.lineItemRequiredCard {
+  border: 1px solid #dfe3ea;
+  border-radius: 10px;
+  background-color: #ffffff;
+  padding: 10px;
+}
+
+.lineItemRequiredCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.lineItemRequiredCardTitleWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lineItemRequiredCardIcon {
+  color: #2f3743;
+  font-size: 18px !important;
+}
+
+.lineItemRequiredCardTitle {
+  color: #2f3743;
+  font-size: 18px !important;
+  font-weight: 700;
+}
+
+.lineItemRequiredCardMeta {
+  color: #586170;
+  font-size: 13px !important;
+}
+
+.lineItemRequiredGroup {
+  margin-top: 10px;
+}
+
+.lineItemRequiredGroupLabel {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #f5e5cc;
+  color: #8c5c11;
+  font-size: 12px !important;
+  font-weight: 600;
+}
+
+.lineItemRequiredFormGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.lineItemRequiredInput,
+.lineItemRequiredInputWide {
+  width: 100%;
+}
+
+.lineItemRequiredInputWide {
+  grid-column: span 2;
+}
+
+.lineItemOptionalTitle {
+  margin-top: 8px;
+  color: #2f3743;
+  font-size: 20px !important;
+  font-weight: 600;
+}
+
+.lineItemOptionalAccordionTitle {
+  color: #2f3743;
+  font-size: 18px !important;
+  font-weight: 600;
+}
+
+.lineItemCreateActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
 }
 
 :global(html[data-color-mode="dark"]) .pageRoot :global(.MuiButton-outlined) {

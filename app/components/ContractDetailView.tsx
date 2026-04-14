@@ -1,8 +1,13 @@
 "use client";
 
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
-import { Button, Typography } from "@mui/material";
-import { useEffect, useState, type RefObject } from "react";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
+import { Accordion, AccordionDetails, AccordionSummary, Button, Chip, TextField, Typography } from "@mui/material";
+import { useState, type RefObject } from "react";
 import { CallOffTab } from "./contract-tabs/CallOffTab";
 import { ContractRowsTab } from "./contract-tabs/ContractRowsTab";
 import { DeliveryTab } from "./contract-tabs/DeliveryTab";
@@ -13,15 +18,9 @@ import {
   type LineItemDetailTab,
   type NewLineItemDraft
 } from "./contract-tabs/LineItemDetailView";
-import { OverviewTab } from "./contract-tabs/OverviewTab";
 import { PrintOptionsTab } from "./contract-tabs/PrintOptionsTab";
 import { TermsTab } from "./contract-tabs/TermsTab";
 import styles from "../page.module.scss";
-
-const CONTRACT_OVERVIEW_OPEN_KEY = "luna:contract-overview-open";
-const CONTRACT_OVERVIEW_WIDTH_KEY = "luna:contract-overview-width";
-const CONTRACT_OVERVIEW_MIN_WIDTH = 240;
-const CONTRACT_OVERVIEW_MAX_WIDTH = 980;
 
 type ContractDetailViewProps = {
   isLineItemDetailOpen: boolean;
@@ -78,53 +77,13 @@ export function ContractDetailView({
   onOpenLineItemDetail,
   onCreateLineItem
 }: ContractDetailViewProps) {
-  const [isOverviewOpen, setIsOverviewOpen] = useState(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
-    return localStorage.getItem(CONTRACT_OVERVIEW_OPEN_KEY) !== "0";
-  });
-  const [overviewWidth, setOverviewWidth] = useState(() => {
-    if (typeof window === "undefined") {
-      return 280;
-    }
-    const savedWidth = Number(localStorage.getItem(CONTRACT_OVERVIEW_WIDTH_KEY));
-    if (Number.isNaN(savedWidth)) {
-      return 280;
-    }
-    return Math.min(CONTRACT_OVERVIEW_MAX_WIDTH, Math.max(CONTRACT_OVERVIEW_MIN_WIDTH, savedWidth));
-  });
-  const [isResizing, setIsResizing] = useState(false);
+  const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant"]);
 
-  useEffect(() => {
-    localStorage.setItem(CONTRACT_OVERVIEW_OPEN_KEY, isOverviewOpen ? "1" : "0");
-  }, [isOverviewOpen]);
-
-  useEffect(() => {
-    localStorage.setItem(CONTRACT_OVERVIEW_WIDTH_KEY, String(overviewWidth));
-  }, [overviewWidth]);
-
-  useEffect(() => {
-    if (!isResizing) {
-      return;
-    }
-
-    const handleMouseMove = (event: MouseEvent) => {
-      const nextWidth = Math.min(CONTRACT_OVERVIEW_MAX_WIDTH, Math.max(CONTRACT_OVERVIEW_MIN_WIDTH, event.clientX - 16));
-      setOverviewWidth(nextWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isResizing]);
+  const togglePanel = (panel: string) => {
+    setExpandedPanels((previous) =>
+      previous.includes(panel) ? previous.filter((item) => item !== panel) : [...previous, panel]
+    );
+  };
 
   return (
     <div className={styles.contractDetailPanel}>
@@ -139,21 +98,112 @@ export function ContractDetailView({
         />
       ) : (
         <>
-          <div className={styles.contractDetailTabControlRow}>
-            <button
-              type="button"
-              className={styles.contractDetailOverviewToggle}
-              onClick={() => setIsOverviewOpen((previous) => !previous)}
-              aria-expanded={isOverviewOpen}
+          <div className={styles.contractModernTopRow}>
+            <div className={styles.contractModernTitleWrap}>
+              <Typography className={styles.contractModernTitle}>Kontrakt {selectedContractId}</Typography>
+              <Chip label="Kunden har överskriden limit" size="small" className={styles.contractModernAlertChip} />
+            </div>
+            <div className={styles.contractModernTopActions}>
+              <Button className={styles.contractSaveButton} size="small" startIcon={<MenuOpenIcon fontSize="small" />}>
+                Redigera
+              </Button>
+              <button type="button" className={styles.contractHeaderDots}>
+                ...
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.contractModernSummaryGrid}>
+            <div className={styles.contractModernSummaryCard}>
+              <Typography className={styles.contractInfoLabel}>Kund</Typography>
+              <Typography className={styles.contractInfoValue}>Acme AB</Typography>
+            </div>
+            <div className={styles.contractModernSummaryCard}>
+              <Typography className={styles.contractInfoLabel}>Kontraktsdatum</Typography>
+              <Typography className={styles.contractInfoValue}>2026-03-27</Typography>
+            </div>
+            <div className={styles.contractModernSummaryCard}>
+              <Typography className={styles.contractInfoLabel}>Upprättat av</Typography>
+              <Typography className={styles.contractInfoValue}>Alex Wahlroos</Typography>
+            </div>
+            <div className={styles.contractModernSummaryCard}>
+              <Typography className={styles.contractInfoLabel}>Status</Typography>
+              <Chip label="Aktivt kontrakt" size="small" className={styles.contractModernStatusChip} />
+            </div>
+          </div>
+
+          <div className={styles.contractModernAccordionWrap}>
+            <Accordion
+              expanded={expandedPanels.includes("allmant")}
+              onChange={() => togglePanel("allmant")}
+              className={styles.contractModernAccordion}
             >
-              <MenuOpenIcon
-                className={`${styles.overviewToggleIcon} ${
-                  isOverviewOpen ? styles.overviewToggleIconOpen : styles.overviewToggleIconClosed
-                }`}
-                fontSize="small"
-              />
-              <span>Översikt</span>
-            </button>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+                <div className={styles.contractModernAccordionTitleRow}>
+                  <TableChartOutlinedIcon className={styles.contractModernAccordionIcon} />
+                  <Typography className={styles.contractModernAccordionTitle}>Allmänt</Typography>
+                </div>
+              </AccordionSummary>
+              <AccordionDetails>
+                <div className={styles.contractModernFormGrid}>
+                  <TextField label="Kund" size="small" defaultValue="Acme AB" />
+                  <TextField label="Kontraktsnr" size="small" defaultValue={selectedContractId ?? "163311"} />
+                  <TextField label="Prislista" size="small" defaultValue="Standard" />
+                </div>
+              </AccordionDetails>
+            </Accordion>
+            <Accordion
+              expanded={expandedPanels.includes("villkor")}
+              onChange={() => togglePanel("villkor")}
+              className={styles.contractModernAccordion}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+                <div className={styles.contractModernAccordionTitleRow}>
+                  <GavelOutlinedIcon className={styles.contractModernAccordionIcon} />
+                  <Typography className={styles.contractModernAccordionTitle}>Villkor</Typography>
+                </div>
+              </AccordionSummary>
+              <AccordionDetails>
+                <div className={styles.contractModernFormGrid}>
+                  <TextField label="Betalningsvillkor" size="small" defaultValue="30 dagar netto" />
+                  <TextField label="Leveransvillkor" size="small" defaultValue="Fritt lager" />
+                </div>
+              </AccordionDetails>
+            </Accordion>
+            <Accordion
+              expanded={expandedPanels.includes("leverans")}
+              onChange={() => togglePanel("leverans")}
+              className={styles.contractModernAccordion}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+                <div className={styles.contractModernAccordionTitleRow}>
+                  <LocalShippingOutlinedIcon className={styles.contractModernAccordionIcon} />
+                  <Typography className={styles.contractModernAccordionTitle}>Leverans</Typography>
+                </div>
+              </AccordionSummary>
+              <AccordionDetails>
+                <DeliveryTab />
+              </AccordionDetails>
+            </Accordion>
+            <Accordion
+              expanded={expandedPanels.includes("dokument")}
+              onChange={() => togglePanel("dokument")}
+              className={styles.contractModernAccordion}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+                <div className={styles.contractModernAccordionTitleRow}>
+                  <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
+                  <Typography className={styles.contractModernAccordionTitle}>Dokument</Typography>
+                </div>
+              </AccordionSummary>
+              <AccordionDetails>
+                <DocumentsTab />
+              </AccordionDetails>
+            </Accordion>
+          </div>
+
+          <div className={styles.contractModernAdditionsWrap}>
+            <Typography className={styles.contractModernAdditionsTitle}>Kontraktstillägg</Typography>
             <div className={styles.contractTabBar}>
               {contractTabs.map((tab) => (
                 <button
@@ -168,54 +218,7 @@ export function ContractDetailView({
                 </button>
               ))}
             </div>
-          </div>
-
-          <div className={styles.contractDetailContentLayout}>
-            {isOverviewOpen ? (
-              <aside
-                className={styles.contractDetailOverviewPanel}
-                style={{ width: `${overviewWidth}px`, flexBasis: `${overviewWidth}px` }}
-              >
-                <div className={styles.contractDetailOverviewHeader}>
-                  <Typography className={styles.contractDetailOverviewTitle}>Översikt</Typography>
-                </div>
-                <div className={styles.contractDetailOverviewBody}>
-                  <OverviewTab contractId={selectedContractId ?? "163311"} />
-                </div>
-              </aside>
-            ) : null}
-            {isOverviewOpen ? (
-              <div
-                className={styles.contractDetailResizeHandle}
-                onMouseDown={() => setIsResizing(true)}
-                role="separator"
-                aria-orientation="vertical"
-                aria-label="Justera panelbredd"
-              />
-            ) : null}
             <div className={styles.contractDetailMainContent}>
-              {activeContractTabForView !== "Kontraktsrader" ? (
-                <div className={styles.contractDetailHeader}>
-                  <Typography className={styles.contractDetailTitle}>Kontrakt {selectedContractId}</Typography>
-                  <div className={styles.contractDetailHeaderActions}>
-                    <Button className={styles.contractSaveButton} size="small">
-                      Spara
-                    </Button>
-                    <button type="button" className={styles.contractHeaderLink}>
-                      Granska kontrakt
-                    </button>
-                    <button type="button" className={styles.contractHeaderLink}>
-                      Orderbekräftelse
-                    </button>
-                    <button type="button" className={styles.contractHeaderDots}>
-                      ...
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-
-              {activeContractTabForView === "Villkor" ? <TermsTab /> : null}
-              {activeContractTabForView === "Leverans" ? <DeliveryTab /> : null}
               {activeContractTabForView === "Kontraktsrader" ? (
                 <ContractRowsTab
                   visibleColumns={visibleLineColumns}
@@ -236,8 +239,10 @@ export function ContractDetailView({
               ) : null}
               {activeContractTabForView === "Frakt" ? <FreightTab /> : null}
               {activeContractTabForView === "Avrop" ? <CallOffTab /> : null}
-              {activeContractTabForView === "Dokument" ? <DocumentsTab /> : null}
+              {activeContractTabForView === "Dokument" ? <TermsTab /> : null}
               {activeContractTabForView === "Utskriftsalternativ" ? <PrintOptionsTab /> : null}
+              {activeContractTabForView === "Villkor" ? <TermsTab /> : null}
+              {activeContractTabForView === "Leverans" ? <DeliveryTab /> : null}
             </div>
           </div>
         </>
