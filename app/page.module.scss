@@ -5,6 +5,85 @@
   overflow: hidden;
 }
 
+.homeStartPage {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(196, 121, 0, 0.2) 0%, #ffffff 62%);
+  border-radius: 10px;
+  padding-top: 72px;
+}
+
+.homeStartContent {
+  display: flex;
+  width: min(920px, 92%);
+  flex-direction: column;
+  gap: 14px;
+}
+
+.homeStartGreeting {
+  color: #1b212c;
+  font-size: 72px !important;
+  line-height: 1.02;
+  font-weight: 700 !important;
+}
+
+.homeStartDate {
+  color: #303846;
+  font-size: 22px !important;
+  font-weight: 500 !important;
+  text-transform: capitalize;
+}
+
+.homeStartSearch :global(.MuiOutlinedInput-root) {
+  background-color: #ffffff;
+  border-radius: 14px;
+}
+
+.homeStartSearch :global(.MuiOutlinedInput-input) {
+  padding: 18px 16px;
+  font-size: 24px;
+}
+
+.homeStartRecentSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.homeStartRecentTitle {
+  color: #222b38;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+}
+
+.homeStartRecentGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.homeStartRecentLink {
+  min-height: 54px;
+  border: 1px solid #d7dce5;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.86);
+  color: #1f2936;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.homeStartRecentLink:hover {
+  border-color: var(--color-champagne-dark);
+  background-color: #ffffff;
+}
+
 .appShell {
   display: flex;
   height: calc(100vh - 12px);
@@ -1352,6 +1431,7 @@
   min-width: 420px;
   max-width: 960px;
   width: 100%;
+  margin-inline: auto;
 }
 
 .detailTabsColumn {
@@ -1829,7 +1909,7 @@
   max-width: none;
 }
 
-@media (min-width: 1460px) {
+@media (min-width: 1720px) {
   .detailTwoColumnLayout {
     display: grid;
     grid-template-columns: 420px minmax(0, 1fr);
@@ -1841,6 +1921,7 @@
     width: 420px;
     max-width: 420px;
     min-width: 420px;
+    margin-inline: 0;
   }
 
   .detailNoAsideLayout .detailFormColumn {
@@ -2326,6 +2407,17 @@
 .pageRoot button {
   font-family: "Poppins", Arial, sans-serif !important;
   text-transform: none !important;
+}
+
+.homeStartPage .homeStartGreeting {
+  font-size: 44px !important;
+  line-height: 1.02 !important;
+  font-weight: 700 !important;
+}
+
+.homeStartPage .homeStartDate {
+  font-size: 22px !important;
+  font-weight: 500 !important;
 }
 
 .pageRoot :global(.MuiButton-outlined) {

@@ -1,12 +1,11 @@
 "use client";
 
-import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
-import { Accordion, AccordionDetails, AccordionSummary, Button, Chip, TextField, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Chip, TextField, Typography } from "@mui/material";
 import { useState, type RefObject } from "react";
 import { CallOffTab } from "./contract-tabs/CallOffTab";
 import { ContractRowsTab } from "./contract-tabs/ContractRowsTab";
@@ -104,14 +103,7 @@ export function ContractDetailView({
               <Typography className={styles.contractModernTitle}>Kontrakt {selectedContractId}</Typography>
               <Chip label="Kunden har överskriden limit" size="small" className={styles.contractModernAlertChip} />
             </div>
-            <div className={styles.contractModernTopActions}>
-              <Button className={styles.contractSaveButton} size="small" startIcon={<MenuOpenIcon fontSize="small" />}>
-                Redigera
-              </Button>
-              <button type="button" className={styles.contractHeaderDots}>
-                ...
-              </button>
-            </div>
+            <div className={styles.contractModernTopActions} />
           </div>
 
           <div className={styles.contractModernSummaryGrid}>

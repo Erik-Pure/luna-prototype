@@ -8,6 +8,7 @@ import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FactoryOutlinedIcon from "@mui/icons-material/FactoryOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
@@ -17,6 +18,7 @@ import {
   CircularProgress,
   Snackbar,
   Switch,
+  TextField,
   Typography
 } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
@@ -33,7 +35,7 @@ import {
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
-type SectionKey = "marknad" | "produktion" | "leverans" | "rapporter" | "system";
+type SectionKey = "start" | "marknad" | "produktion" | "leverans" | "rapporter" | "system";
 
 type TopMenuItemDef = {
   slug: string;
@@ -49,6 +51,7 @@ const sectionDefinitions: Array<{
   icon: ReactNode;
   defaultMenuSlug: string;
 }> = [
+  { slug: "start", label: "Startsida", icon: <HomeOutlinedIcon fontSize="small" />, defaultMenuSlug: "start" },
   { slug: "marknad", label: "Marknad", icon: <StorefrontOutlinedIcon fontSize="small" />, defaultMenuSlug: "kontraktlista" },
   { slug: "produktion", label: "Produktion", icon: <FactoryOutlinedIcon fontSize="small" />, defaultMenuSlug: "oversikt" },
   { slug: "leverans", label: "Leverans", icon: <LocalShippingOutlinedIcon fontSize="small" />, defaultMenuSlug: "planering" },
@@ -57,6 +60,7 @@ const sectionDefinitions: Array<{
 ];
 
 const topMenusBySection: Record<SectionKey, TopMenuItemDef[]> = {
+  start: [],
   marknad: [
     { slug: "kundlista", label: "Kundlista" },
     { slug: "prislistor", label: "Prislistor" },
@@ -364,11 +368,14 @@ export default function Home() {
   const router = useRouter();
   const pathname = usePathname();
   const pathParts = pathname.split("/").filter(Boolean);
+  const isHomePage = pathParts.length === 0;
   const pathSection = pathParts[0] as SectionKey | undefined;
   const sectionSlug: SectionKey =
-    pathSection && sectionDefinitions.some((section) => section.slug === pathSection)
-      ? pathSection
-      : "marknad";
+    isHomePage
+      ? "start"
+      : pathSection && sectionDefinitions.some((section) => section.slug === pathSection)
+        ? pathSection
+        : "marknad";
   const sectionConfig =
     sectionDefinitions.find((section) => section.slug === sectionSlug) ?? sectionDefinitions[0];
   const menuSlug = pathParts[1] ?? sectionConfig.defaultMenuSlug;
@@ -400,8 +407,9 @@ export default function Home() {
   const currentMenu =
     topMenuItems.find(
       (menu) => menu.slug === menuSlug || menu.options?.some((option) => option.slug === menuSlug)
-    ) ?? topMenuItems[0];
-  const currentMenuLabel = currentTopMenuOption?.label ?? currentMenu.label;
+    ) ?? topMenuItems[0] ?? null;
+  const currentMenuLabel = currentTopMenuOption?.label ?? currentMenu?.label ?? "Startsida";
+  const currentMenuLabelForView = isHomePage ? "Start" : currentMenuLabel;
 
   const { isSidebarCollapsed, toggleSidebarCollapsed } = useUiState();
   const [topMenuAnchorEl, setTopMenuAnchorEl] = useState<HTMLElement | null>(null);
@@ -441,6 +449,23 @@ export default function Home() {
   const companyMenuRef = useRef<HTMLDivElement | null>(null);
   const companyButtonRef = useRef<HTMLButtonElement | null>(null);
   const { mode, toggleMode } = useColorMode();
+  const now = new Date();
+  const hour = now.getHours();
+  const dayGreeting = hour < 10 ? "God morgon" : hour < 18 ? "God dag" : "God kväll";
+  const todayLabel = new Intl.DateTimeFormat("sv-SE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(now);
+  const recentWorkItems = [
+    { label: "Prislista 17611", path: "/marknad/prislistor/17611" },
+    { label: "Prislistrad 220229503108", path: "/marknad/prislistor/17611/220229503108" },
+    { label: "Kontrakt 163311", path: "/marknad/kontraktlista/163311" },
+    { label: "Ny prislistrad", path: "/marknad/prislistor/17611/new" },
+    { label: "Leveranslista", path: "/marknad/leveranslista" },
+    { label: "Systeminställningar", path: "/system/installningar" }
+  ];
 
   const handleSearchSelectChange = (key: SearchFieldKey, value: string) => {
     setSearchValues((previous) => ({ ...previous, [key]: value }));
@@ -724,6 +749,10 @@ export default function Home() {
 
   const navigateToSection = (section: SectionKey, defaultMenuSlug: string) => {
     closeTopMenuDropdown();
+    if (section === "start") {
+      navigateWithLoading("/");
+      return;
+    }
     navigateWithLoading(`/${section}/${defaultMenuSlug}`);
   };
 
@@ -867,7 +896,7 @@ export default function Home() {
   const activeContractTabForView: ContractTab = isLineItemDetailOpen ? "Kontraktsrader" : activeContractTab;
 
   useEffect(() => {
-    let deepestBreadcrumb = currentMenuLabel;
+    let deepestBreadcrumb = currentMenuLabelForView;
 
     if (selectedContractId) {
       deepestBreadcrumb = `Kontrakt ${selectedContractId}`;
@@ -888,7 +917,7 @@ export default function Home() {
     document.title = `${deepestBreadcrumb} (${selectedCompany})`;
   }, [
     selectedCompany,
-    currentMenuLabel,
+    currentMenuLabelForView,
     selectedContractId,
     isLineItemDetailOpen,
     selectedLineItemId,
@@ -937,47 +966,75 @@ export default function Home() {
         </div>
       ) : null}
       <AppShellLayout
-        isSidebarCollapsed={isSidebarCollapsed}
-        selectedCompany={selectedCompany}
-        isCompanyMenuOpen={isCompanyMenuOpen}
-        fakeCompanies={fakeCompanies}
-        sectionSlug={sectionSlug}
-        sectionDefinitions={sectionDefinitions}
-        companyButtonRef={companyButtonRef}
-        companyMenuRef={companyMenuRef}
-        onToggleCompanyMenu={toggleCompanyMenu}
-        onCompanySelect={handleCompanySelect}
-        onNavigateSection={(section, defaultMenuSlug) => navigateToSection(section as SectionKey, defaultMenuSlug)}
-        onToggleSidebar={toggleSidebar}
-        leftTopMenuItems={leftTopMenuItems}
-        rightTopMenuItems={rightTopMenuItems}
-        isTopMenuItemActive={isTopMenuItemActive}
-        onTopMenuClick={(item, event) => handleTopMenuClick(item as TopMenuItemDef, event)}
-        topMenuAnchorEl={topMenuAnchorEl}
-        onCloseTopMenuDropdown={closeTopMenuDropdown}
-        topMenuDropdownOptions={topMenuDropdownOptions}
-        topMenuDropdownOwnerSlug={topMenuDropdownOwnerSlug}
-        menuSlug={menuSlug}
-        onTopMenuOptionSelect={handleTopMenuOptionSelect}
-        currentSectionLabel={currentSection.label.charAt(0) + currentSection.label.slice(1).toLowerCase()}
-        currentMenuLabel={currentMenuLabel}
-        isContractDetailOpen={isContractDetailOpen}
-        isLineItemDetailOpen={isLineItemDetailOpen}
-        selectedContractId={selectedContractId}
-        selectedLineItemId={selectedLineItemId}
-        isCreatingLineItem={isCreatingLineItem}
-        onCloseContractDetail={closeContractDetail}
-        onCloseLineItemDetail={closeLineItemDetail}
-        isPriceListDetailOpen={isPriceListDetailOpen}
-        selectedPriceListId={selectedPriceListId}
-        onClosePriceListDetail={closePriceListDetail}
-        isPriceListRowDetailOpen={isPriceListRowDetailOpen}
-        selectedPriceRowId={selectedPriceRowId}
-        isCreatingPriceRow={isCreatingPriceRow}
-        onClosePriceListRowDetail={closePriceListRowDetail}
-      >
+            isSidebarCollapsed={isSidebarCollapsed}
+            selectedCompany={selectedCompany}
+            isCompanyMenuOpen={isCompanyMenuOpen}
+            fakeCompanies={fakeCompanies}
+            sectionSlug={sectionSlug}
+            sectionDefinitions={sectionDefinitions}
+            companyButtonRef={companyButtonRef}
+            companyMenuRef={companyMenuRef}
+            onToggleCompanyMenu={toggleCompanyMenu}
+            onCompanySelect={handleCompanySelect}
+            onNavigateSection={(section, defaultMenuSlug) => navigateToSection(section as SectionKey, defaultMenuSlug)}
+            onToggleSidebar={toggleSidebar}
+            leftTopMenuItems={leftTopMenuItems}
+            rightTopMenuItems={rightTopMenuItems}
+            isTopMenuItemActive={isTopMenuItemActive}
+            onTopMenuClick={(item, event) => handleTopMenuClick(item as TopMenuItemDef, event)}
+            topMenuAnchorEl={topMenuAnchorEl}
+            onCloseTopMenuDropdown={closeTopMenuDropdown}
+            topMenuDropdownOptions={topMenuDropdownOptions}
+            topMenuDropdownOwnerSlug={topMenuDropdownOwnerSlug}
+            menuSlug={menuSlug}
+            onTopMenuOptionSelect={handleTopMenuOptionSelect}
+            currentSectionLabel={currentSection.label.charAt(0) + currentSection.label.slice(1).toLowerCase()}
+            currentMenuLabel={currentMenuLabelForView}
+            isContractDetailOpen={isContractDetailOpen}
+            isLineItemDetailOpen={isLineItemDetailOpen}
+            selectedContractId={selectedContractId}
+            selectedLineItemId={selectedLineItemId}
+            isCreatingLineItem={isCreatingLineItem}
+            onCloseContractDetail={closeContractDetail}
+            onCloseLineItemDetail={closeLineItemDetail}
+            isPriceListDetailOpen={isPriceListDetailOpen}
+            selectedPriceListId={selectedPriceListId}
+            onClosePriceListDetail={closePriceListDetail}
+            isPriceListRowDetailOpen={isPriceListRowDetailOpen}
+            selectedPriceRowId={selectedPriceRowId}
+            isCreatingPriceRow={isCreatingPriceRow}
+            onClosePriceListRowDetail={closePriceListRowDetail}
+          >
 
-            {!isContractDetailOpen && isContractListPage ? (
+            {isHomePage ? (
+              <div className={styles.homeStartPage}>
+                <div className={styles.homeStartContent}>
+                  <Typography className={styles.homeStartGreeting}>{`${dayGreeting} Jane`}</Typography>
+                  <Typography className={styles.homeStartDate}>{todayLabel}</Typography>
+                  <TextField
+                    fullWidth
+                    placeholder="Sök..."
+                    className={styles.homeStartSearch}
+                    inputProps={{ "aria-label": "Global sökning" }}
+                  />
+                  <div className={styles.homeStartRecentSection}>
+                    <Typography className={styles.homeStartRecentTitle}>Senast arbetat på</Typography>
+                    <div className={styles.homeStartRecentGrid}>
+                      {recentWorkItems.map((item) => (
+                        <button
+                          key={item.path}
+                          type="button"
+                          className={styles.homeStartRecentLink}
+                          onClick={() => navigateWithLoading(item.path)}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : !isContractDetailOpen && isContractListPage ? (
               <ContractListView
                 textFields={textSearchFields}
                 selectFields={selectSearchFields}
