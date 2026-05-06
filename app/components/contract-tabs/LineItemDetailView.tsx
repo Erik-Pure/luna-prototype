@@ -483,6 +483,10 @@ function FieldLabel({
       <button
         type="button"
         className={`${styles.fieldPinButton} ${isPinned ? styles.fieldPinButtonActive : ""}`}
+        tabIndex={-1}
+        aria-pressed={isPinned}
+        aria-label={isPinned ? `Frånkoppla: ${label}` : `Fäst: ${label}`}
+        onMouseDown={(event) => event.preventDefault()}
         onClick={() => onTogglePinnedField(fieldKey)}
         title={isPinned ? `Frånkoppla: ${label}` : `Fäst: ${label}`}
       >
@@ -511,6 +515,32 @@ function LabeledSelect({ label, value, size = "small", className, onChange, chil
     </FormControl>
   );
 }
+
+const REQUIRED_FIELD_DEFS: { key: keyof NewLineItemDraft; label: string }[] = [
+  { key: "senderCompany", label: "Utlastande bolag" },
+  { key: "senderWarehouse", label: "Utlastande lagerställe" },
+  { key: "status", label: "Status" },
+  { key: "responsibleCompany", label: "Ansvarigt bolag" },
+  { key: "artNr", label: "ArtNr" },
+  { key: "packageType", label: "Pakettyp" },
+  { key: "quantity", label: "Mängd" },
+  { key: "volume", label: "Volym" },
+  { key: "price", label: "Pris" },
+  { key: "orderedUnit", label: "Beställd enhet" },
+  { key: "invoiceUnit", label: "Faktura enhet" },
+  { key: "salesType", label: "Säljtyp" },
+  { key: "deliveryWindowMin", label: "Lev. fönster min" },
+  { key: "deliveryWindowMax", label: "Lev. fönster max" },
+  { key: "callOffStatus", label: "Avropsradsstatus" },
+];
+
+const REVIEW_HIGHLIGHT_KEYS: Array<keyof NewLineItemDraft> = [
+  "senderCompany",
+  "senderWarehouse",
+  "artNr",
+  "quantity",
+  "price",
+];
 
 export function LineItemDetailView({
   lineItemId,
@@ -561,6 +591,8 @@ export function LineItemDetailView({
   const [expandedPanels, setExpandedPanels] = useState<string[]>(isNewLineItem ? ["obligatoriska"] : ["allmant"]);
   const [formColumnWidth, setFormColumnWidth] = useState<number | null>(null);
   const [createStep, setCreateStep] = useState<0 | 1>(0);
+  const [showStepErrors, setShowStepErrors] = useState(false);
+  const [showAllReviewFields, setShowAllReviewFields] = useState(false);
 
   const startResizeFormColumn = (mouseDownEvent: MouseEvent) => {
     mouseDownEvent.preventDefault();
@@ -600,6 +632,44 @@ export function LineItemDetailView({
       }
     }
     onSaveAndCreateNew?.(seedDraft);
+  };
+
+  const missingRequiredKeys = isNewLineItem
+    ? REQUIRED_FIELD_DEFS
+      .filter(({ key }) => {
+        const val = newLineItemDraft[key];
+        return typeof val === "string" ? val.trim() === "" : !val;
+      })
+      .map(({ key }) => key)
+    : [];
+  const canProceedToStep2 = missingRequiredKeys.length === 0;
+  const highlightedReviewFields = REQUIRED_FIELD_DEFS.filter(({ key }) => REVIEW_HIGHLIGHT_KEYS.includes(key));
+  const remainingReviewFields = REQUIRED_FIELD_DEFS.filter(({ key }) => !REVIEW_HIGHLIGHT_KEYS.includes(key));
+
+  const renderReviewField = ({ key, label }: { key: keyof NewLineItemDraft; label: string }) => {
+    const val = newLineItemDraft[key];
+    const displayVal = typeof val === "boolean" ? (val ? "Ja" : "Nej") : (String(val || "") || "—");
+
+    return (
+      <TextField
+        key={key}
+        size="small"
+        label={label}
+        value={displayVal}
+        InputProps={{ readOnly: true }}
+        className={styles.lineItemWizardReviewField}
+      />
+    );
+  };
+
+  const handleNextStep = () => {
+    if (!canProceedToStep2) {
+      setShowStepErrors(true);
+      setExpandedPanels((prev) => (prev.includes("obligatoriska") ? prev : [...prev, "obligatoriska"]));
+    } else {
+      setShowStepErrors(false);
+      setCreateStep(1);
+    }
   };
 
   const handleSave = () => {
@@ -1081,7 +1151,7 @@ export function LineItemDetailView({
                   size="small"
                   variant="contained"
                   title="Ctrl+→"
-                  onClick={() => setCreateStep(1)}
+                  onClick={handleNextStep}
                 >
                   Nästa
                 </Button>
@@ -1131,13 +1201,13 @@ export function LineItemDetailView({
             onClick={() => setCreateStep(0)}
           >
             <span className={styles.lineItemWizardStepDot}>1</span>
-            <span className={styles.lineItemWizardStepLabel}>Raduppgifter</span>
+            <span className={styles.lineItemWizardStepLabel}>Kontraktsradshuvud</span>
           </button>
           <div className={styles.lineItemWizardConnector} />
           <button
             type="button"
-            className={`${styles.lineItemWizardStep} ${createStep === 1 ? styles.lineItemWizardStepActive : ""}`}
-            onClick={() => setCreateStep(1)}
+            className={`${styles.lineItemWizardStep} ${createStep === 1 ? styles.lineItemWizardStepActive : ""} ${!canProceedToStep2 ? styles.lineItemWizardStepLocked : ""}`}
+            onClick={handleNextStep}
           >
             <span className={styles.lineItemWizardStepDot}>2</span>
             <span className={styles.lineItemWizardStepLabel}>Distribution & planering</span>
@@ -1157,6 +1227,17 @@ export function LineItemDetailView({
             <div className={styles.contractSectionsResizeHandle} onMouseDown={startResizeFormColumn} />
           ) : null}
           <div className={styles.contractModernAccordionWrap}>
+            {isNewLineItem && showStepErrors && missingRequiredKeys.length > 0 ? (
+              <Alert severity="error" className={styles.lineItemStepErrorAlert}>
+                Fyll i alla obligatoriska fält innan du går vidare:{" "}
+                <strong>
+                  {missingRequiredKeys
+                    .map((k) => REQUIRED_FIELD_DEFS.find((d) => d.key === k)?.label)
+                    .filter(Boolean)
+                    .join(", ")}
+                </strong>
+              </Alert>
+            ) : null}
             {isNewLineItem ? (
               <Accordion
                 expanded={expandedPanels.includes("obligatoriska")}
@@ -1273,7 +1354,7 @@ export function LineItemDetailView({
 
                   <hr className={styles.contractFlatDivider} />
                   <Typography className={styles.contractSectionChip}>Övrigt</Typography>
-                  <div className={styles.lineItemSectionGridOne}>
+                  <div className={styles.lineItemSectionGrid3}>
                     <div className={styles.lineItemField}>
                       <FieldLabel fieldKey="callOffStatus" label="Avropsradsstatus *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                       <LabeledSelect label="Avropsradsstatus *" value={newLineItemDraft.callOffStatus} onChange={(v) => updateDraftField("callOffStatus", v)} className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}>
@@ -1282,6 +1363,57 @@ export function LineItemDetailView({
                         <MenuItem value="Load planned">Load planned</MenuItem>
                       </LabeledSelect>
                     </div>
+                  </div>
+
+                  <Typography className={styles.contractSectionChip}>Kommentar</Typography>
+                  <div className={styles.lineItemSectionGrid3}>
+                    <div className={styles.lineItemField}>
+                      <TextField
+                        label="Intern kommentar"
+                        value={newLineItemDraft.internalComment}
+                        size="small"
+                        className={styles.searchFieldControl}
+                        multiline
+                        rows={3}
+                        InputProps={{ readOnly: true }}
+                      />
+                    </div>
+                    <div className={styles.lineItemField}>
+                      <TextField
+                        label="Extern kommentar"
+                        value={newLineItemDraft.externalComment}
+                        size="small"
+                        className={styles.searchFieldControl}
+                        multiline
+                        rows={3}
+                        InputProps={{ readOnly: true }}
+                      />
+                    </div>
+                    <div className={styles.lineItemField}>
+                      <TextField
+                        label="Kundkommentar"
+                        value={newLineItemDraft.customerComment}
+                        size="small"
+                        className={styles.searchFieldControl}
+                        multiline
+                        rows={3}
+                        InputProps={{ readOnly: true }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.lineItemWizardInlineNextRow}>
+                    <div className={styles.lineItemWizardInlineNextText}>
+                      Klar med de obligatoriska uppgifterna? Gå vidare direkt eller fortsätt med valfria fält nedan.
+                    </div>
+                    <Button
+                      className={styles.lineItemWizardInlineNextButton}
+                      size="small"
+                      variant="contained"
+                      onClick={handleNextStep}
+                    >
+                      Nästa
+                    </Button>
                   </div>
                 </AccordionDetails>
               </Accordion>
@@ -1378,7 +1510,7 @@ export function LineItemDetailView({
                     <TextField label="Leverera ArtNr" value={newLineItemDraft.deliverArtNr} onChange={(event) => updateDraftField("deliverArtNr", event.target.value)} size="small" className={styles.searchFieldControl} />
                   </div>
                 </div>
-                <div className={styles.lineItemSectionGrid2}>
+                <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="product" label="Produkt" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Produkt" value={newLineItemDraft.product} onChange={(event) => updateDraftField("product", event.target.value)} size="small" className={styles.searchFieldControl} />
@@ -1387,8 +1519,6 @@ export function LineItemDetailView({
                     <FieldLabel fieldKey="deliverProduct" label="Leverera produkt" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Leverera produkt" value={newLineItemDraft.deliverProduct} onChange={(event) => updateDraftField("deliverProduct", event.target.value)} size="small" className={styles.searchFieldControl} />
                   </div>
-                </div>
-                <div className={styles.lineItemSectionGridOne}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="invoiceText" label="Fakturatext" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Fakturatext" value={newLineItemDraft.invoiceText} onChange={(event) => updateDraftField("invoiceText", event.target.value)} size="small" className={styles.searchFieldControl} />
@@ -1555,7 +1685,7 @@ export function LineItemDetailView({
                     <TextField label="Lev. fönster max" value={newLineItemDraft.deliveryWindowMax} onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)} size="small" className={styles.searchFieldControl} />
                   </div>
                 </div>
-                <div className={styles.lineItemSectionGridOne}>
+                <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="deliveryPeriodDocument" label="Leveransperiod kunddokument" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Leveransperiod kunddokument" value={newLineItemDraft.deliveryPeriodDocument} onChange={(event) => updateDraftField("deliveryPeriodDocument", event.target.value)} size="small" className={styles.searchFieldControl} />
@@ -1576,29 +1706,25 @@ export function LineItemDetailView({
                 </div>
               </AccordionSummary>
               <AccordionDetails>
-                <div className={styles.lineItemSectionGrid2}>
+                <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="internalComment" label="Intern kommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Intern kommentar" value={newLineItemDraft.internalComment} onChange={(event) => updateDraftField("internalComment", event.target.value)} size="small" className={styles.searchFieldControl} multiline rows={4} />
+                    <TextField label="Intern kommentar" value={newLineItemDraft.internalComment} onChange={(event) => updateDraftField("internalComment", event.target.value)} size="small" className={styles.searchFieldControl} multiline rows={3} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="externalComment" label="Extern kommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Extern kommentar" value={newLineItemDraft.externalComment} onChange={(event) => updateDraftField("externalComment", event.target.value)} size="small" className={styles.searchFieldControl} multiline rows={4} />
-                  </div>
-                </div>
-                <div className={styles.lineItemSectionGrid2}>
-                  <div className={styles.lineItemCheckboxBlock}>
-                    <label className={styles.lineItemCheckboxRow}>
-                      <Checkbox size="small" checked={Boolean(newLineItemDraft.showOnInvoice)} onChange={(event) => updateDraftField("showOnInvoice", event.target.checked)} />
-                      <Typography className={styles.searchFieldLabel}>Visa på följesedel och faktura</Typography>
-                    </label>
+                    <TextField label="Extern kommentar" value={newLineItemDraft.externalComment} onChange={(event) => updateDraftField("externalComment", event.target.value)} size="small" className={styles.searchFieldControl} multiline rows={3} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="customerComment" label="Kundkommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Kundkommentar" value={newLineItemDraft.customerComment} onChange={(event) => updateDraftField("customerComment", event.target.value)} size="small" className={styles.searchFieldControl} multiline rows={4} />
+                    <TextField label="Kundkommentar" value={newLineItemDraft.customerComment} onChange={(event) => updateDraftField("customerComment", event.target.value)} size="small" className={styles.searchFieldControl} multiline rows={3} />
                   </div>
                 </div>
-                <div className={styles.lineItemSectionGrid2}>
+                <label className={styles.lineItemCheckboxRow}>
+                  <Checkbox size="small" checked={Boolean(newLineItemDraft.showOnInvoice)} onChange={(event) => updateDraftField("showOnInvoice", event.target.checked)} />
+                  <Typography className={styles.searchFieldLabel}>Visa på följesedel och faktura</Typography>
+                </label>
+                <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="customerBrand" label="Kundens märke" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Kundens märke" value={newLineItemDraft.customerBrand} onChange={(event) => updateDraftField("customerBrand", event.target.value)} size="small" className={styles.searchFieldControl} />
@@ -1607,8 +1733,6 @@ export function LineItemDetailView({
                     <FieldLabel fieldKey="recipientBrand" label="Godsmottagarens märke" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Godsmottagarens märke" value={newLineItemDraft.recipientBrand} onChange={(event) => updateDraftField("recipientBrand", event.target.value)} size="small" className={styles.searchFieldControl} />
                   </div>
-                </div>
-                <div className={styles.lineItemSectionGridOne}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="callOffStatus" label="Avropsradstatus" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <LabeledSelect label="Avropsradstatus" value={newLineItemDraft.callOffStatus} onChange={(v) => updateDraftField("callOffStatus", v)} className={styles.searchFieldControl}>
@@ -1625,51 +1749,32 @@ export function LineItemDetailView({
         <div className={styles.detailTabsColumn}>
           <div className={styles.contractModernAdditionsWrap}>
             {isNewLineItem ? (
-              <div className={styles.lineItemWizardSummaryBar}>
-                <div className={styles.lineItemWizardSummaryContent}>
-                  {newLineItemDraft.artNr ? (
-                    <span className={styles.lineItemWizardSummaryChip}>
-                      <span className={styles.lineItemWizardSummaryKey}>ArtNr</span>
-                      <span className={styles.lineItemWizardSummaryVal}>{newLineItemDraft.artNr}</span>
-                    </span>
-                  ) : null}
-                  {newLineItemDraft.product ? (
-                    <span className={styles.lineItemWizardSummaryChip}>
-                      <span className={styles.lineItemWizardSummaryKey}>Produkt</span>
-                      <span className={styles.lineItemWizardSummaryVal}>{newLineItemDraft.product}</span>
-                    </span>
-                  ) : null}
-                  {newLineItemDraft.packageType ? (
-                    <span className={styles.lineItemWizardSummaryChip}>
-                      <span className={styles.lineItemWizardSummaryKey}>Pakettyp</span>
-                      <span className={styles.lineItemWizardSummaryVal}>{newLineItemDraft.packageType}</span>
-                    </span>
-                  ) : null}
-                  {newLineItemDraft.quantity ? (
-                    <span className={styles.lineItemWizardSummaryChip}>
-                      <span className={styles.lineItemWizardSummaryKey}>Mängd</span>
-                      <span className={styles.lineItemWizardSummaryVal}>{newLineItemDraft.quantity}</span>
-                    </span>
-                  ) : null}
-                  {newLineItemDraft.volume ? (
-                    <span className={styles.lineItemWizardSummaryChip}>
-                      <span className={styles.lineItemWizardSummaryKey}>Volym</span>
-                      <span className={styles.lineItemWizardSummaryVal}>{newLineItemDraft.volume}</span>
-                    </span>
-                  ) : null}
-                  {newLineItemDraft.price ? (
-                    <span className={styles.lineItemWizardSummaryChip}>
-                      <span className={styles.lineItemWizardSummaryKey}>Pris</span>
-                      <span className={styles.lineItemWizardSummaryVal}>{newLineItemDraft.price}</span>
-                    </span>
-                  ) : null}
-                  {newLineItemDraft.status ? (
-                    <span className={styles.lineItemWizardSummaryChip}>
-                      <span className={styles.lineItemWizardSummaryKey}>Status</span>
-                      <span className={styles.lineItemWizardSummaryVal}>{newLineItemDraft.status}</span>
-                    </span>
-                  ) : null}
+              <div className={styles.lineItemWizardReviewCard}>
+                <div className={styles.lineItemWizardReviewHeader}>
+                  <span className={styles.lineItemWizardReviewTitle}>Uppgifter från kontraktsradshuvud</span>
                 </div>
+                <div className={styles.lineItemWizardReviewFields}>
+                  {highlightedReviewFields.map(renderReviewField)}
+                </div>
+                {remainingReviewFields.length > 0 ? (
+                  <>
+                    {showAllReviewFields ? (
+                      <div className={styles.lineItemWizardReviewFieldsExtra}>
+                        <div className={styles.lineItemWizardReviewFields}>
+                          {remainingReviewFields.map(renderReviewField)}
+                        </div>
+                      </div>
+                    ) : null}
+                    <Button
+                      type="button"
+                      size="small"
+                      className={styles.lineItemWizardReviewToggleBtn}
+                      onClick={() => setShowAllReviewFields((previous) => !previous)}
+                    >
+                      {showAllReviewFields ? "Visa färre" : "Visa alla"}
+                    </Button>
+                  </>
+                ) : null}
               </div>
             ) : null}
             <div className={styles.contractMudTabBar}>

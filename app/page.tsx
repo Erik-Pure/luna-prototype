@@ -130,7 +130,7 @@ const topMenusBySection: Record<SectionKey, TopMenuItemDef[]> = {
 };
 
 const actionItems = [
-  { label: "Ny", icon: <AddIcon fontSize="small" />, requiresSelection: false },
+  { label: "Nytt kontrakt", icon: <AddIcon fontSize="small" />, requiresSelection: false },
   { label: "Ta bort", icon: <DeleteOutlineOutlinedIcon fontSize="small" />, requiresSelection: true },
   { label: "Skriv ut", icon: <PrintOutlinedIcon fontSize="small" />, requiresSelection: true },
   { label: "Kopiera", icon: <ContentCopyOutlinedIcon fontSize="small" />, requiresSelection: true },

@@ -2937,6 +2937,27 @@
   line-height: 1.3;
 }
 
+.lineItemCreatePanel .searchFieldControl :global(.MuiInputBase-root:not(.MuiInputBase-multiline)) {
+  height: 42px;
+}
+
+.lineItemCreatePanel .searchFieldControl :global(.MuiOutlinedInput-root.MuiInputBase-multiline) {
+  min-height: 0;
+  height: auto;
+  align-items: flex-start;
+}
+
+.lineItemCreatePanel .searchFieldControl :global(.MuiInputBase-input:not(textarea)) {
+  box-sizing: border-box;
+}
+
+.lineItemCreatePanel .searchFieldControl :global(.MuiSelect-select) {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
 
 .lineItemCreatePanel .contractModernAccordionSummary {
   background-color: #f7f8fa;
@@ -3303,6 +3324,26 @@
   color: #5e6775;
 }
 
+.lineItemWizardInlineNextRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 18px 0 4px;
+  padding-top: 12px;
+  border-top: 1px solid #e7ebf1;
+}
+
+.lineItemWizardInlineNextText {
+  color: #617086;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.lineItemWizardInlineNextButton {
+  flex-shrink: 0;
+}
+
 .lineItemOverviewContent .searchFieldControl {
   max-width: none;
 }
@@ -3489,6 +3530,193 @@
   font-size: 14px;
   line-height: 1.3;
   word-break: break-word;
+}
+
+// ── Step 2 review card ──────────────────────────────────────
+.lineItemWizardReviewCard {
+  padding: 22px 28px 22px;
+  background-color: #fff;
+  border: none;
+  border-radius: 14px;
+  box-shadow: none;
+  flex-shrink: 0;
+  margin-bottom: 18px;
+  position: relative;
+  @media (max-width: 600px) {
+    padding: 12px 6px 14px;
+    border-radius: 8px;
+  }
+}
+
+.lineItemWizardReviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding-bottom: 6px;
+  border-bottom: none;
+}
+
+.lineItemWizardReviewTitle {
+  font-size: 1.13rem;
+  font-weight: 600;
+  color: #2f3743;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.lineItemWizardReviewFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 18px 18px;
+  align-items: flex-start;
+  margin-top: 8px;
+}
+
+.lineItemWizardReviewFieldsExtra {
+  margin-top: 16px;
+}
+
+.lineItemWizardReviewField {
+  min-width: 0;
+  width: 100%;
+  :global(.MuiInputBase-root) {
+    background-color: #f8fafc;
+    border-radius: 7px;
+    cursor: default;
+    transition: background-color 0.15s ease-in-out;
+    box-shadow: 0 1px 2px 0 rgba(30,41,59,0.03);
+    min-height: 44px;
+  }
+  :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: #e3e8f0 !important;
+    transition: border-color 0.15s ease-in-out;
+  }
+  :global(.MuiInputBase-input) {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #232b36 !important;
+    cursor: default;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    caret-color: transparent;
+    letter-spacing: 0.2px;
+    background: none;
+  }
+  :global(.MuiInputLabel-root) {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #8a94a6 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  :global(.MuiInputLabel-shrink) {
+    font-size: 12px !important;
+    color: #6b7585 !important;
+  }
+  @media (max-width: 600px) {
+    :global(.MuiInputBase-root) {
+      min-height: 36px;
+    }
+    :global(.MuiInputBase-input) {
+      font-size: 12px !important;
+      padding-top: 7px !important;
+      padding-bottom: 7px !important;
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+    }
+    :global(.MuiInputLabel-root) {
+      font-size: 10px !important;
+    }
+  }
+}
+
+.lineItemWizardReviewToggleBtn {
+  margin-top: 16px !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  align-self: flex-start;
+  color: #41566f !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  text-transform: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+
+  &:hover {
+    background: transparent !important;
+    color: #24364b !important;
+  }
+}
+
+// Locked (incomplete required fields) wizard step button
+.lineItemWizardStepLocked {
+  opacity: 0.38;
+  cursor: not-allowed !important;
+}
+
+// Validation error banner above step 1 accordions
+.lineItemStepErrorAlert {
+  margin: 0 0 10px;
+
+  :global(.MuiAlert-message) {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+}
+
+// ── Dark mode overrides ─────────────────────────────────────
+:global(html[data-color-mode="dark"]) .lineItemWizardReviewCard {
+  background-color: #232733;
+  border-bottom-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemWizardReviewCard {
+  background-color: #232733;
+  border-color: #2e333d;
+  box-shadow: 0 4px 18px 0 rgba(30, 41, 59, 0.28), 0 1.5px 4px 0 rgba(30, 41, 59, 0.10);
+}
+
+:global(html[data-color-mode="dark"]) .lineItemWizardReviewHeader {
+  border-bottom: none;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemWizardReviewTitle {
+  color: #e0e5ed;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemWizardReviewField {
+  :global(.MuiInputBase-root) {
+    background-color: #232733;
+  }
+  :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: #353c4a !important;
+  }
+  :global(.MuiInputBase-input) {
+    color: #d4dae5 !important;
+  }
+  :global(.MuiInputLabel-root) {
+    color: #8c96a6 !important;
+  }
+}
+
+:global(html[data-color-mode="dark"]) .lineItemWizardReviewToggleBtn {
+  color: #aeb8c8 !important;
+
+  &:hover {
+    color: #e0e5ed !important;
+  }
 }
 
 .lineItemDetailPanel .freightTabContent {
@@ -3948,6 +4176,11 @@
   .lineItemSectionGrid4 {
     grid-template-columns: 1fr;
   }
+
+  .lineItemWizardInlineNextRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 .systemSettingsPanel {
@@ -4148,6 +4381,14 @@
 :global(html[data-color-mode="dark"]) .lineItemSectionToggleMeta,
 :global(html[data-color-mode="dark"]) .lineItemSectionToggleChevron {
   color: #c7ccd5;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemWizardInlineNextRow {
+  border-top-color: #313847;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemWizardInlineNextText {
+  color: #9ca8ba;
 }
 
 :global(html[data-color-mode="dark"]) .lineItemOverviewModeLabelActive {

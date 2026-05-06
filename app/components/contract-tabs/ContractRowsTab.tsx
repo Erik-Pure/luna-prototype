@@ -36,7 +36,7 @@ type ContractRowsTabProps = {
 };
 
 const tableActionItems = [
-  { label: "Ny", icon: <AddIcon fontSize="small" />, requiresSelection: false },
+  { label: "Ny kontraktsrad", icon: <AddIcon fontSize="small" />, requiresSelection: false },
   { label: "Ändra pris", icon: <EditOutlinedIcon fontSize="small" />, requiresSelection: false },
 ];
 
