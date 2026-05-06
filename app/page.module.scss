@@ -1636,6 +1636,54 @@
   overflow: hidden;
 }
 
+.customerDetailPanel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+.customerDetailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.customerDetailTitle {
+  color: #2f3743;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+}
+
+.customerDetailSubtitle {
+  margin-top: 4px !important;
+  color: #6b7585;
+  font-size: 13px !important;
+}
+
+.customerDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.customerDetailCard,
+.customerDetailCommentCard {
+  padding: 16px 18px;
+  border: 1px solid #e4e9f1;
+  border-radius: 10px;
+  background: #fbfcfe;
+}
+
+.customerDetailCommentCard {
+  min-height: 104px;
+}
+
 .contractTabBar {
   display: flex;
   align-items: stretch;
@@ -2824,6 +2872,7 @@
 .lineItemsRowSelected,
 .lineItemsRowSelected .lineItemsCell,
 .lineItemsRowSelected .stickyLineCell,
+.lineItemsRowSelected .lineItemsFillerCell,
 .lineItemsRowSelected .stickyRightCell {
   background-color: var(--color-champagne-20);
 }
@@ -2854,6 +2903,24 @@
   border-bottom: 1px solid #eef1f6;
 }
 
+.lineItemsHeaderFillerCell {
+  display: table-cell;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  background-color: #f4f6f9;
+  border-bottom: 1px solid #e8ecf2;
+}
+
+.lineItemsFillerCell {
+  display: table-cell;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  background-color: transparent;
+  border-bottom: 1px solid #eef1f6;
+}
+
 .stickyLineHeaderCell {
   position: sticky;
   left: 0;
@@ -2869,8 +2936,13 @@
 .lineItemsRow:hover .lineItemsCell,
 .lineItemsRow:hover .lineItemLinkButton,
 .lineItemsRow:hover .stickyLineCell,
+.lineItemsRow:hover .lineItemsFillerCell,
 .lineItemsRow:hover .stickyRightCell {
   background-color: var(--color-champagne-10);
+}
+
+.lineItemsRow:hover .lineItemLinkButton {
+  text-decoration: underline;
 }
 
 .lineItemLinkButton {
@@ -2885,6 +2957,10 @@
   text-align: left;
   cursor: pointer;
   vertical-align: top;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .lineItemDetailPanel {
@@ -3230,6 +3306,207 @@
   border-color: #e5cd8c;
 }
 
+.lineItemFastTrackBar {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  border: 1px solid #dfe5ec;
+  border-radius: 10px;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+.lineItemFastTrackMain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+}
+
+.lineItemFastTrackTitle {
+  color: #2f3743;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.lineItemFastTrackDivider {
+  color: #c0cad5;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.lineItemFastTrackText {
+  flex: 1;
+  min-width: 0;
+  color: #617086;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lineItemFastTrackChipsPanel {
+  display: grid;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid #dfe5ec;
+  background: #fff;
+}
+
+.lineItemFastTrackChipGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.lineItemFastTrackChipGroupTitle {
+  color: #5d6a7d;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lineItemFastTrackChipGroupItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.lineItemFastTrackOptionalChip {
+  border: 1px solid #d2dae4;
+  background: #ffffff;
+  color: #526278;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1.2;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #bac6d6;
+    color: #314259;
+    background: #f3f7fb;
+  }
+}
+
+.lineItemFastTrackOptionalChipActive {
+  border-color: #c47900;
+  color: #8d5a00;
+  background: #fff3df;
+}
+
+.lineItemFastTrackMoreButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  border: 1px solid #d7dee7;
+  background: #ffffff;
+  color: #4a576a;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 5px 9px;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: #b9c4d2;
+    background: #f6f8fb;
+    color: #2f3c4f;
+  }
+}
+
+.lineItemFastTrackMoreButtonActive {
+  border-color: #cfd7e2;
+  background: #eef2f7;
+  color: #253244;
+}
+
+.lineItemFastTrackButton {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  text-transform: none !important;
+  white-space: nowrap;
+  margin-left: 4px;
+  padding: 4px 8px !important;
+  border: 1px solid #d7dee7 !important;
+  border-radius: 999px !important;
+  background: #ffffff !important;
+  color: #2f3c4f !important;
+  min-width: auto !important;
+}
+
+.lineItemFastTrackButtonActive {
+  box-shadow: none !important;
+  border-color: #c47900 !important;
+  background: #fff3df !important;
+  color: #8d5a00 !important;
+}
+
+.lineItemFastTrackButtonIndicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #98a5b5;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.lineItemFastTrackButtonActive .lineItemFastTrackButtonIndicator {
+  background: #c47900;
+}
+
+.lineItemFastTrackButtonLabelWrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.lineItemFastTrackButtonLabel {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.lineItemFastTrackButtonState {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #748195;
+}
+
+.lineItemFastTrackButtonActive .lineItemFastTrackButtonState {
+  color: #8d5a00;
+}
+
+.lineItemFastTrackControl :global(.MuiInputBase-root) {
+  box-shadow: inset 0 0 0 1px rgba(196, 121, 0, 0.18);
+}
+
+.lineItemFastTrackControl {
+  border-radius: 8px;
+}
+
+.lineItemCheckboxRow.lineItemFastTrackControl {
+  padding: 6px 8px;
+  background: rgba(196, 121, 0, 0.06);
+}
+
+.lineItemAccordionFooterAction {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 4px;
+}
+
 .lineItemGridOne,
 .lineItemGridTwo,
 .lineItemGridThree {
@@ -3552,10 +3829,18 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 18px;
   padding-bottom: 6px;
   border-bottom: none;
+}
+
+.lineItemWizardReviewHeaderDivider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 24px;
+  background-color: #d7dde7;
 }
 
 .lineItemWizardReviewTitle {
@@ -3571,9 +3856,9 @@
 }
 
 .lineItemWizardReviewFields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 18px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
   align-items: flex-start;
   margin-top: 8px;
 }
@@ -3583,8 +3868,9 @@
 }
 
 .lineItemWizardReviewField {
+  flex: 0 0 170px;
+  width: 170px;
   min-width: 0;
-  width: 100%;
   :global(.MuiInputBase-root) {
     background-color: #f8fafc;
     border-radius: 7px;
@@ -3656,6 +3942,33 @@
     background: transparent !important;
     color: #24364b !important;
   }
+}
+
+.lineItemWizardReviewToggleBtnInline {
+  padding: 0 !important;
+  min-width: 0 !important;
+  color: #41566f !important;
+  gap: 2px !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  text-transform: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+
+  &:hover {
+    background: transparent !important;
+    color: #24364b !important;
+  }
+}
+
+.lineItemWizardReviewToggleIcon {
+  font-size: 18px !important;
+  transition: transform 0.18s ease;
+}
+
+.lineItemWizardReviewToggleIconOpen {
+  transform: rotate(180deg);
 }
 
 // Locked (incomplete required fields) wizard step button
@@ -4177,6 +4490,10 @@
     grid-template-columns: 1fr;
   }
 
+  .lineItemFastTrackMain {
+    flex-wrap: wrap;
+  }
+
   .lineItemWizardInlineNextRow {
     align-items: flex-start;
     flex-direction: column;
@@ -4249,6 +4566,15 @@
 :global(html[data-color-mode="dark"]) .lineItemsHeaderRow {
   background-color: #282c34;
   border-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemsTableFrame::before {
+  background: #282c34;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemsTableFrame .lineItemsHeaderRow,
+:global(html[data-color-mode="dark"]) .lineItemsTableFrame .lineItemsHeaderCell {
+  background: transparent;
 }
 
 :global(html[data-color-mode="dark"]) .tableRow,
@@ -4389,6 +4715,104 @@
 
 :global(html[data-color-mode="dark"]) .lineItemWizardInlineNextText {
   color: #9ca8ba;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackBar {
+  border-color: #313847;
+  background: #222833;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackTitle {
+  color: #e0e5ed;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackDivider {
+  color: #454e60;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackText {
+  color: #9ca8ba;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackChipsPanel {
+  border-color: #313847;
+  background: #1a1f28;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackChipGroupTitle {
+  color: #aab6c8;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackOptionalChip {
+  border-color: #3c4658;
+  background: #1f2530;
+  color: #9fb0c8;
+
+  &:hover {
+    border-color: #526078;
+    color: #d3deee;
+    background: #262f3d;
+  }
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackOptionalChipActive {
+  border-color: #c47900;
+  color: #f2c46e;
+  background: rgba(196, 121, 0, 0.2);
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackMoreButton {
+  border-color: #3b4658;
+  background: #1f2530;
+  color: #c5d0df;
+
+  &:hover {
+    border-color: #526078;
+    background: #262f3d;
+    color: #e1e9f5;
+  }
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackMoreButtonActive {
+  border-color: #4a5568;
+  background: #2b3341;
+  color: #eef3fb;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackButton {
+  border-color: #3b4658 !important;
+  background: #1f2530 !important;
+  color: #e0e5ed !important;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackButtonActive {
+  border-color: #c47900 !important;
+  background: rgba(196, 121, 0, 0.18) !important;
+  color: #f2c46e !important;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackButtonIndicator {
+  background: #74839a;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackButtonActive .lineItemFastTrackButtonIndicator {
+  background: #f0b94f;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackButtonState {
+  color: #9ca8ba;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackButtonActive .lineItemFastTrackButtonState {
+  color: #f2c46e;
+}
+
+:global(html[data-color-mode="dark"]) .lineItemFastTrackControl :global(.MuiInputBase-root) {
+  box-shadow: inset 0 0 0 1px rgba(196, 121, 0, 0.26);
+}
+
+:global(html[data-color-mode="dark"]) .lineItemCheckboxRow.lineItemFastTrackControl {
+  background: rgba(196, 121, 0, 0.12);
 }
 
 :global(html[data-color-mode="dark"]) .lineItemOverviewModeLabelActive {
@@ -5171,6 +5595,46 @@
   overflow: auto;
 }
 
+.lineItemsTableFrame {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 37px;
+    background: #f4f6f9;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .freightTableWrap {
+    position: relative;
+    z-index: 1;
+  }
+
+  .lineItemsHeaderRow {
+    background: transparent;
+  }
+
+  .lineItemsHeaderCell {
+    background: transparent;
+  }
+
+  .freightTable {
+    width: 100%;
+    min-width: max-content;
+  }
+
+  .freightActionCell {
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 .freightTable {
   display: table;
   width: 100%;
@@ -5243,6 +5707,18 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.kundCellLink {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-champagne-dark);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 }
 
 .kundStatusDotError {

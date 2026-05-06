@@ -63,7 +63,7 @@ const SNITT_ROWS: FreightRow[] = [
   { lastbare: "Trailer (30 ton)", valutakod: "SEK", snittvolym: "52", hammerdal: "-", krokom: "-", kage: "-", savar: "-" },
 ];
 
-const VIRKE_COLUMNS: Array<{ key: VirkeColumnKey; label: string }> = [
+const VIRKE_COLUMNS: Array<{ key: VirkeColumnKey; label: string; pinnedRight?: boolean }> = [
   { key: "typ", label: "Typ" },
   { key: "bolag", label: "Bolag" },
   { key: "avtalsrutt", label: "Avtalsrutt" },
@@ -72,7 +72,7 @@ const VIRKE_COLUMNS: Array<{ key: VirkeColumnKey; label: string }> = [
   { key: "sjofrakt", label: "Sjöfrakt" },
   { key: "haulage", label: "Haulage" },
   { key: "totalFraktkostnad", label: "Total fraktkostnad" },
-  { key: "_actions", label: "" },
+  { key: "_actions", label: "", pinnedRight: true },
 ];
 
 const emptyVirkeRow = (): VirkeRow => ({
@@ -89,9 +89,22 @@ const emptyVirkeRow = (): VirkeRow => ({
   haulageCurrency: DEFAULT_CURRENCY,
 });
 
+const emptyStröproduktRow = (): VirkeRow => ({
+  typ: "Ströprodukt",
+  bolag: "",
+  avtalsrutt: "",
+  frakt: "0",
+  fraktCurrency: DEFAULT_CURRENCY,
+  sped: "0",
+  spedCurrency: DEFAULT_CURRENCY,
+  sjofrakt: "0",
+  sjofraktCurrency: DEFAULT_CURRENCY,
+  haulage: "0",
+  haulageCurrency: DEFAULT_CURRENCY,
+});
+
 const LEGACY_INITIAL_VIRKE_ROWS: Array<Partial<VirkeRow>> = [
-  { typ: "Virke", bolag: "NT Hissmofors Såg", avtalsrutt: "Krokom - Mariestad", frakt: "123 SEK", sped: "123 SEK", sjofrakt: "123 SEK", haulage: "123 SEK" },
-  { typ: "Ströprodukt", bolag: "NT Hissmofors Såg", avtalsrutt: "Krokom - Mariestad", frakt: "123 SEK", sped: "123 SEK", sjofrakt: "123 SEK", haulage: "123 SEK" },
+  { typ: "Virke", bolag: "NT Hissmofors Såg", avtalsrutt: "Krokom - Mariestad", frakt: "123 SEK", sped: "0 SEK", sjofrakt: "0 SEK", haulage: "0 SEK" },
 ];
 
 const isCurrencyCode = (value: string | undefined): value is CurrencyCode =>
@@ -198,11 +211,12 @@ export function FreightTab() {
   const [lastFreightDraft, setLastFreightDraft] = useState<VirkeRow | null>(null);
   const [createFeedback, setCreateFeedback] = useState({ open: false, key: 0 });
 
-  const openAdd = () => {
-    const initialDraft = keepDialogValues && lastFreightDraft ? lastFreightDraft : emptyVirkeRow();
+  const openAddStröprodukt = () => {
+    const initialDraft = keepDialogValues && lastFreightDraft ? { ...lastFreightDraft, typ: "Ströprodukt" as ProductType } : emptyStröproduktRow();
     setForm({ mode: "add", draft: initialDraft });
     setSelectedVirkeRow(null);
   };
+
 
   const openEdit = (index: number) => {
     setForm({ mode: "edit", index, draft: normalizeVirkeRow(virkeRows[index]) });
@@ -285,9 +299,9 @@ export function FreightTab() {
           <Button
             className={styles.freightNewButton}
             startIcon={<AddIcon />}
-            onClick={openAdd}
+            onClick={openAddStröprodukt}
           >
-            Ny
+            Ny ströprodukt
           </Button>
         </div>
 
@@ -302,6 +316,7 @@ export function FreightTab() {
               onRowClick={(index) => setSelectedVirkeRow((prev) => (prev === index ? null : index))}
               renderCell={(row, column, rowIndex) => {
                 if (column.key === "_actions") {
+                  const virkeRow = row as VirkeRow;
                   return (
                     <span className={styles.freightActionCell}>
                       <IconButton
@@ -314,16 +329,18 @@ export function FreightTab() {
                       >
                         <EditOutlinedIcon className={styles.freightActionIcon} />
                       </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          openClone(rowIndex);
-                        }}
-                        title="Klona rad"
-                      >
-                        <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
-                      </IconButton>
+                      {virkeRow.typ === "Ströprodukt" ? (
+                        <IconButton
+                          size="small"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openClone(rowIndex);
+                          }}
+                          title="Duplicera rad"
+                        >
+                          <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
+                        </IconButton>
+                      ) : null}
                       <IconButton
                         size="small"
                         onClick={(event) => {
@@ -358,7 +375,7 @@ export function FreightTab() {
         >
           <DialogTitle className={styles.freightDialogTitle}>
             <div className={styles.freightDialogTitleRow}>
-              <span>{form.mode === "add" ? "Ny frakt" : "Redigera frakt"}</span>
+              <span>{form.mode === "add" ? "Ny Ströprodukt" : "Redigera frakt"}</span>
               {form.mode === "add" ? (
                 <div className={styles.freightDialogToggles}>
                   <label className={styles.freightDialogKeepOpen}>
@@ -394,6 +411,7 @@ export function FreightTab() {
                     value={draft.typ}
                     onChange={(e) => setDraftField("typ", e.target.value as ProductType)}
                     className={styles.freightFormInput}
+                    disabled={form.mode === "add"}
                   >
                     <MenuItem value="Virke">Virke</MenuItem>
                     <MenuItem value="Ströprodukt">Ströprodukt</MenuItem>

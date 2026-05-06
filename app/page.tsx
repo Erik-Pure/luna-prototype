@@ -21,6 +21,7 @@ import {
   Typography
 } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
+import { type NewContractDraft } from "./components/ContractCreateView";
 import { type LineItemDetailTab, type NewLineItemDraft } from "./components/contract-tabs/LineItemDetailView";
 import {
   AppShellLayout,
@@ -32,6 +33,7 @@ import {
   PriceListRowDetailView,
   PriceListView
 } from "./components/views";
+import { CustomerDetailView, type CustomerDetailData } from "./components/CustomerDetailView";
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
@@ -176,7 +178,8 @@ type ColumnKey =
   | "prislistaNr"
   | "utlastningssparr"
   | "tillhor"
-  | "limit";
+  | "limit"
+  | keyof NewContractDraft;
 
 type ColumnConfig = {
   key: ColumnKey;
@@ -202,7 +205,8 @@ type LineItemColumnKey =
   | "prisOrt"
   | "transport"
   | "nettoSek"
-  | "radKommentar";
+  | "radKommentar"
+  | keyof NewLineItemDraft;
 
 type LineItemColumnConfig = {
   key: LineItemColumnKey;
@@ -211,7 +215,7 @@ type LineItemColumnConfig = {
   pinned: boolean;
 };
 
-type LineItemRow = Record<LineItemColumnKey, string>;
+type LineItemRow = Record<string, string>;
 
 type TableRow = {
   kontrakt: string;
@@ -234,7 +238,7 @@ type TableRow = {
   tillhor?: string;
   limit?: string;
   limitStatus?: "ok" | "warning" | "error";
-};
+} & Partial<Record<keyof NewContractDraft, string>>;
 
 type SearchFieldKey =
   | "typ"
@@ -325,7 +329,56 @@ const initialSearchValues: SearchValueMap = {
   cLoad: false
 };
 
-const defaultColumns: ColumnConfig[] = [
+const CONTRACT_CREATE_FIELD_COLUMNS: Array<{ key: keyof NewContractDraft; label: string }> = [
+  { key: "customer", label: "Kund (skapafält)" },
+  { key: "status", label: "Status (skapafält)" },
+  { key: "createdBy", label: "Skapad av" },
+  { key: "contractDate", label: "Kontraktsdatum (skapafält)" },
+  { key: "language", label: "Språk" },
+  { key: "currency", label: "Valuta" },
+  { key: "paymentTerms", label: "Betalningsvillkor" },
+  { key: "certification", label: "Certifiering (skapafält)" },
+  { key: "contractForm", label: "Kontraktsform" },
+  { key: "deliveryMethod", label: "Leveransmetod" },
+  { key: "deliveryTerms", label: "Leveransvillkor" },
+  { key: "deliveryTermsCity", label: "Leveransvillkor ort" },
+  { key: "agent1", label: "Agent 1" },
+  { key: "agent1Pct", label: "Agent 1 %" },
+  { key: "deliveryLocation", label: "Leveransort (skapafält)" },
+  { key: "deliveryLocationPostalCode", label: "Leveransort postnr" },
+  { key: "customerRef", label: "Kundreferens" },
+  { key: "priceList", label: "Prislista (skapafält)" },
+  { key: "externalContractNumber", label: "Externt kontraktsnr (skapafält)" },
+  { key: "priceAdjustPct", label: "Prisjustering %" },
+  { key: "category", label: "Kategori (skapafält)" },
+  { key: "country", label: "Land (skapafält)" },
+  { key: "contractType", label: "Kontraktstyp" },
+  { key: "validUntil", label: "Giltig t.o.m. (skapafält)" },
+  { key: "miscNote", label: "Extern notering" },
+  { key: "internalNote", label: "Intern notering" },
+  { key: "exchangeRateDate", label: "Valutakursdatum" },
+  { key: "vat", label: "Moms %" },
+  { key: "exchangeRate", label: "Valutakurs" },
+  { key: "paymentTermsDays", label: "Betalningsvillkor dagar" },
+  { key: "cashDiscount", label: "Kassarabatt" },
+  { key: "bonus", label: "Bonus" },
+  { key: "bonusBase", label: "Bonusgrund" },
+  { key: "pickingSurchargeMin", label: "Plocktillägg min" },
+  { key: "pickingSurchargePct", label: "Plocktillägg %" },
+  { key: "paintingSurcharge", label: "Målningstillägg" },
+  { key: "paintingSurchargeThreshold", label: "Målningstillägg tröskel" },
+  { key: "importFee", label: "Importavgift" },
+  { key: "consignmentStock", label: "Konsignationslager" },
+  { key: "receiverCountry", label: "Mottagarland (skapafält)" },
+  { key: "deliveryPeriod", label: "Leveransperiod (skapafält)" },
+  { key: "deliveryAddress", label: "Leveransadress (skapafält)" },
+  { key: "unloadingPhone", label: "Telefon lossning" },
+  { key: "unloadingHours", label: "Öppettider lossning" },
+  { key: "notificationPhone", label: "Aviseringstelefon" },
+  { key: "notificationInfo", label: "Aviseringsinformation" },
+];
+
+const baseContractColumns: ColumnConfig[] = [
   { key: "kontrakt", label: "Kontraktsnr", visible: true, pinned: false },
   { key: "externNr", label: "Externt kontraktsnr", visible: true, pinned: false },
   { key: "belopp", label: "Belopp SEK", visible: true, pinned: false },
@@ -345,6 +398,13 @@ const defaultColumns: ColumnConfig[] = [
   { key: "utlastningssparr", label: "Utlastningsspärr", visible: true, pinned: false },
   { key: "tillhor", label: "Tillhör", visible: true, pinned: false },
   { key: "limit", label: "Limit", visible: true, pinned: false }
+];
+
+const defaultColumns: ColumnConfig[] = [
+  ...baseContractColumns,
+  ...CONTRACT_CREATE_FIELD_COLUMNS
+    .filter(({ key }) => !baseContractColumns.some((column) => column.key === key))
+    .map(({ key, label }) => ({ key, label, visible: false, pinned: false })),
 ];
 
 const LIMIT_DATA: Array<{ limit: string; limitStatus: "ok" | "warning" | "error" }> = [
@@ -367,6 +427,107 @@ const CONTRACT_CUSTOMERS = [
   "Skandinavisk Industriservice"
 ] as const;
 
+const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
+  "Acme AB": {
+    customerNumber: "K-1001",
+    organizationNumber: "556101-1001",
+    country: "SE",
+    city: "Stockholm",
+    primaryContact: "Anna Ek",
+    accountManager: "Jane Doe",
+    email: "inkop@acme.se",
+    phone: "08-120 45 100",
+    activeContracts: "14",
+    priceList: "PL-202600",
+    creditLimit: "500 000 SEK",
+    limitStatus: "ok",
+    comment: "Strategisk kund med löpande projektleveranser och hög prognosprecision."
+  },
+  "Globex Corp": {
+    customerNumber: "K-1002",
+    organizationNumber: "556101-1002",
+    country: "NO",
+    city: "Oslo",
+    primaryContact: "Martin Holm",
+    accountManager: "Erik Andersson",
+    email: "procurement@globex.no",
+    phone: "+47 22 44 10 20",
+    activeContracts: "9",
+    priceList: "PL-202601",
+    creditLimit: "1 200 000 SEK",
+    limitStatus: "ok",
+    comment: "Kräver engelska dokument och samlad avisering inför varje delleverans."
+  },
+  "Initech HB": {
+    customerNumber: "K-1003",
+    organizationNumber: "969701-1003",
+    country: "FI",
+    city: "Vasa",
+    primaryContact: "Sara Lind",
+    accountManager: "Jane Doe",
+    email: "orders@initech.fi",
+    phone: "+358 10 320 4400",
+    activeContracts: "6",
+    priceList: "PL-202602",
+    creditLimit: "350 000 SEK",
+    limitStatus: "error",
+    comment: "Limitöverskridande kund. Kontrollera godkännande innan ny order släpps vidare."
+  },
+  "Nordic Sten & Mark AB": {
+    customerNumber: "K-1004",
+    organizationNumber: "556101-1004",
+    country: "SE",
+    city: "Östersund",
+    primaryContact: "Per Lund",
+    accountManager: "Erik Andersson",
+    email: "bestallning@nordicstenmark.se",
+    phone: "063-440 18 00",
+    activeContracts: "11",
+    priceList: "PL-202603",
+    creditLimit: "800 000 SEK",
+    limitStatus: "warning",
+    comment: "Föredrar leveransfönster tisdag till torsdag och avisering senast dagen före."
+  },
+  "Luna Infrastruktur AB": {
+    customerNumber: "K-1005",
+    organizationNumber: "556101-1005",
+    country: "SE",
+    city: "Sundsvall",
+    primaryContact: "Elin Nyberg",
+    accountManager: "Jane Doe",
+    email: "inkop@lunainfra.se",
+    phone: "060-220 45 10",
+    activeContracts: "18",
+    priceList: "PL-202604",
+    creditLimit: "2 100 000 SEK",
+    limitStatus: "ok",
+    comment: "Stor kund med flera parallella projekt. Samordna prislista och kontraktsförlängningar."
+  },
+  "Skandinavisk Industriservice": {
+    customerNumber: "K-1006",
+    organizationNumber: "556101-1006",
+    country: "DK",
+    city: "Aarhus",
+    primaryContact: "Mikkel Bredahl",
+    accountManager: "Erik Andersson",
+    email: "orders@skandiservice.dk",
+    phone: "+45 86 11 42 30",
+    activeContracts: "7",
+    priceList: "PL-202605",
+    creditLimit: "660 000 SEK",
+    limitStatus: "warning",
+    comment: "Kund med tät uppföljning på leveransprecision och månatlig avstämning av limit."
+  }
+};
+
+function decodePathSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 const tableRows: TableRow[] = Array.from({ length: 6 }).map((_, idx) => ({
   kontrakt: CONTRACT_IDS[idx % CONTRACT_IDS.length],
   externNr: `2026/${String(idx + 1).padStart(2, "0")} REG ${idx + 2}`,
@@ -388,9 +549,107 @@ const tableRows: TableRow[] = Array.from({ length: 6 }).map((_, idx) => ({
   tillhor: idx % 2 === 0 ? "Marknad Nord" : "Marknad Syd",
   limit: LIMIT_DATA[idx % LIMIT_DATA.length].limit,
   limitStatus: LIMIT_DATA[idx % LIMIT_DATA.length].limitStatus,
+  customer: CONTRACT_CUSTOMERS[idx % CONTRACT_CUSTOMERS.length],
+  createdBy: idx % 2 === 0 ? "Jane Doe" : "Erik Andersson",
+  contractDate: `2026-0${(idx % 5) + 1}-0${(idx % 7) + 1}`,
+  language: idx % 2 === 0 ? "Svenska" : "English",
+  currency: idx % 3 === 0 ? "SEK" : idx % 3 === 1 ? "EUR" : "NOK",
+  paymentTerms: idx % 2 === 0 ? "30 dagar netto" : "14 dagar netto",
+  certification: idx % 2 === 0 ? "FSC" : "PEFC",
+  contractForm: "Standard",
+  deliveryMethod: idx % 2 === 0 ? "Hämta" : "Leverans",
+  deliveryTerms: "FCA",
+  deliveryTermsCity: ["Krokom", "Göteborg", "Stockholm"][idx % 3],
+  agent1: idx % 2 === 0 ? "Nordic Agent AB" : "",
+  agent1Pct: idx % 2 === 0 ? "2" : "0",
+  deliveryLocation: ["Krokom", "Sävar", "Kåge"][idx % 3],
+  deliveryLocationPostalCode: ["835 32", "918 32", "934 32"][idx % 3],
+  customerRef: `REF-${idx + 1}`,
+  priceList: `PL-${202600 + idx}`,
+  externalContractNumber: `EXT-${2026}${String(idx + 1).padStart(3, "0")}`,
+  priceAdjustPct: idx % 2 === 0 ? "0" : "1.5",
+  category: idx % 2 === 0 ? "Bygghandel" : "Industri",
+  country: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
+  contractType: "Försäljningskontrakt",
+  validUntil: `2026-12-${String(10 + idx).padStart(2, "0")}`,
+  miscNote: idx === 0 ? "Prioriterad kund" : "",
+  internalNote: idx === 3 ? "Kreditkontroll krävs" : "",
+  exchangeRateDate: "2026-01-01",
+  vat: "25",
+  exchangeRate: idx % 3 === 0 ? "1" : idx % 3 === 1 ? "11.35" : "10.05",
+  paymentTermsDays: idx % 2 === 0 ? "30" : "14",
+  cashDiscount: "",
+  bonus: "",
+  bonusBase: "Bruttovärde",
+  pickingSurchargeMin: "",
+  pickingSurchargePct: "",
+  paintingSurcharge: "",
+  paintingSurchargeThreshold: "",
+  importFee: "",
+  consignmentStock: idx % 2 === 0 ? "Nej" : "Ja",
+  receiverCountry: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
+  deliveryPeriod: idx % 3 === 0 ? "Q1-Q2" : idx % 3 === 1 ? "Q2-Q3" : "Q3-Q4",
+  deliveryAddress: [
+    "Industrigatan 12, 835 32 Krokom",
+    "Hamnvägen 1, 918 32 Sävar",
+    "Terminalvägen 2, 934 32 Kåge",
+  ][idx % 3],
+  unloadingPhone: "063-000 00 00",
+  unloadingHours: "07:00-16:00",
+  notificationPhone: "070-000 00 00",
+  notificationInfo: "Avisera 24h innan leverans",
 }));
 
-const defaultLineItemColumns: LineItemColumnConfig[] = [
+const LINE_ITEM_CREATE_FIELD_COLUMNS: Array<{ key: keyof NewLineItemDraft; label: string }> = [
+  { key: "senderCompany", label: "Säljande bolag" },
+  { key: "senderWarehouse", label: "Säljande lager" },
+  { key: "responsibleCompany", label: "Ansvarigt bolag" },
+  { key: "priceList", label: "Prislista (rad)" },
+  { key: "certification", label: "Certifiering (rad)" },
+  { key: "contractNumber", label: "Kontraktsnummer (rad)" },
+  { key: "comboPackageNumber", label: "Kombipaketnummer" },
+  { key: "nobbNumber", label: "NOBB-nummer" },
+  { key: "artNr", label: "Art.nr" },
+  { key: "deliverArtNr", label: "Leverera art.nr" },
+  { key: "product", label: "Produkt (rad)" },
+  { key: "deliverProduct", label: "Leverera produkt" },
+  { key: "invoiceText", label: "Fakturatext" },
+  { key: "packageType", label: "Pakettyp" },
+  { key: "deliverPackageType", label: "Leverera pakettyp" },
+  { key: "length", label: "Längd (rad)" },
+  { key: "packaging", label: "Emballage" },
+  { key: "bundle", label: "Bunt" },
+  { key: "vflGroup", label: "VFL-grupp" },
+  { key: "quantity", label: "Mängd (rad)" },
+  { key: "volume", label: "Volym (rad)" },
+  { key: "orderedUnit", label: "Beställd enhet" },
+  { key: "finalVolume", label: "Slutlig volym" },
+  { key: "invoiceUnit", label: "Fakturaenhet" },
+  { key: "adjustedPrice", label: "Justerat pris" },
+  { key: "price", label: "Pris (rad)" },
+  { key: "amount", label: "Belopp (rad)" },
+  { key: "sponsorship", label: "Sponsring" },
+  { key: "sponsoredAmount", label: "Sponsrat belopp" },
+  { key: "caneaAgreementNumber", label: "CANEA-avtalsnummer" },
+  { key: "pickingSurchargeEnabled", label: "Plocktillägg aktivt" },
+  { key: "pickingSurchargeQuantity", label: "Plocktillägg kvantitet" },
+  { key: "salesType", label: "Säljtyp" },
+  { key: "status", label: "Status (rad)" },
+  { key: "deliveryWeek", label: "Leveransvecka (rad)" },
+  { key: "deliveryDay", label: "Leveransdag" },
+  { key: "deliveryPeriodDocument", label: "Leveransperiod dokument" },
+  { key: "deliveryWindowMin", label: "Lev tidigast" },
+  { key: "deliveryWindowMax", label: "Lev senast" },
+  { key: "internalComment", label: "Intern kommentar (rad)" },
+  { key: "externalComment", label: "Extern kommentar (rad)" },
+  { key: "showOnInvoice", label: "Visa på faktura" },
+  { key: "customerComment", label: "Kundkommentar" },
+  { key: "customerBrand", label: "Kundens märke" },
+  { key: "recipientBrand", label: "Godsmottagarens märke" },
+  { key: "callOffStatus", label: "Avropsstatus" },
+];
+
+const baseLineItemColumns: LineItemColumnConfig[] = [
   { key: "idRad", label: "ID-rad", visible: true, pinned: true },
   { key: "status", label: "Status", visible: true, pinned: false },
   { key: "underkonto", label: "Underkonto", visible: true, pinned: false },
@@ -410,6 +669,13 @@ const defaultLineItemColumns: LineItemColumnConfig[] = [
   { key: "radKommentar", label: "Radkommentar", visible: false, pinned: false }
 ];
 
+const defaultLineItemColumns: LineItemColumnConfig[] = [
+  ...baseLineItemColumns,
+  ...LINE_ITEM_CREATE_FIELD_COLUMNS
+    .filter(({ key }) => !baseLineItemColumns.some((column) => column.key === key))
+    .map(({ key, label }) => ({ key, label, visible: false, pinned: false })),
+];
+
 const lineItemRows: LineItemRow[] = Array.from({ length: 12 }).map((_, idx) => ({
   idRad: `RAD-${1001 + idx}`,
   status: "Aktiv",
@@ -427,7 +693,52 @@ const lineItemRows: LineItemRow[] = Array.from({ length: 12 }).map((_, idx) => (
   prisOrt: "SE-Norr",
   transport: ["Eget", "Speditör"][idx % 2],
   nettoSek: `${9200 + idx * 380}`,
-  radKommentar: idx % 3 === 0 ? "Extra kap tillägg" : "-"
+  radKommentar: idx % 3 === 0 ? "Extra kap tillägg" : "-",
+  senderCompany: "BP Hissmofors Byggprodukter",
+  senderWarehouse: ["Krokom", "Sävar", "Kåge"][idx % 3],
+  responsibleCompany: "BP Hissmofors Byggprodukter",
+  priceList: `PL-${202600 + (idx % 6)}`,
+  certification: idx % 2 === 0 ? "FSC" : "Ocertifierat",
+  contractNumber: CONTRACT_IDS[idx % CONTRACT_IDS.length],
+  comboPackageNumber: "",
+  nobbNumber: `NOBB-${700000 + idx}`,
+  artNr: `22${120 + idx}`,
+  deliverArtNr: `22${120 + idx}`,
+  product: ["Gran flisad spå", "Furu hyvlad", "Gran v-styrp"][idx % 3],
+  deliverProduct: "",
+  invoiceText: "",
+  packageType: "Lp",
+  deliverPackageType: "",
+  length: ["4.2", "5.1", "3.6"][idx % 3],
+  packaging: "",
+  bundle: "",
+  vflGroup: "",
+  quantity: `${(idx + 2) * 2}`,
+  volume: `${(idx + 1) * 0.8}`,
+  orderedUnit: "m3 nominell",
+  finalVolume: `${((idx + 1) * 0.8 * 0.9).toFixed(2)}`,
+  invoiceUnit: "m3 nominell",
+  adjustedPrice: "0",
+  price: `${(8 + idx * 0.7).toFixed(2)} SEK`,
+  amount: `${9200 + idx * 380}`,
+  sponsorship: "",
+  sponsoredAmount: "0",
+  caneaAgreementNumber: "",
+  pickingSurchargeEnabled: idx % 3 === 0 ? "Ja" : "Nej",
+  pickingSurchargeQuantity: idx % 3 === 0 ? "1" : "0",
+  salesType: "Eget virke",
+  deliveryWeek: "2025/50",
+  deliveryDay: "",
+  deliveryPeriodDocument: "",
+  deliveryWindowMin: "2025-12-05",
+  deliveryWindowMax: "2025-12-10",
+  internalComment: "",
+  externalComment: "",
+  showOnInvoice: "Nej",
+  customerComment: "",
+  customerBrand: "",
+  recipientBrand: "",
+  callOffStatus: "Sales planned",
 }));
 
 export default function Home() {
@@ -445,10 +756,13 @@ export default function Home() {
   const contractId = pathParts[2] ?? null;
   const lineItemId = pathParts[3] ?? null;
   const isContractDetailRoute = sectionSlug === "marknad" && menuSlug === "kontraktlista";
+  const isCustomerDetailRoute = sectionSlug === "marknad" && menuSlug === "kundlista";
   const isPriceListRoute = sectionSlug === "marknad" && menuSlug === "prislistor";
   const isContractDetailOpen = isContractDetailRoute && Boolean(contractId);
+  const isCustomerDetailOpen = isCustomerDetailRoute && Boolean(contractId);
   const isPriceListDetailOpen = isPriceListRoute && Boolean(contractId);
   const selectedContractId = isContractDetailRoute ? contractId : null;
+  const selectedCustomerName = isCustomerDetailRoute && contractId ? decodePathSegment(contractId) : null;
   const selectedPriceListId = isPriceListRoute ? contractId : null;
   const selectedPriceRowId = isPriceListRoute ? lineItemId : null;
   const selectedLineItemId = isContractDetailRoute ? lineItemId : null;
@@ -473,6 +787,7 @@ export default function Home() {
       (menu) => menu.slug === menuSlug || menu.options?.some((option) => option.slug === menuSlug)
     ) ?? topMenuItems[0];
   const currentMenuLabel = currentTopMenuOption?.label ?? currentMenu.label;
+  const selectedCustomerDetail = selectedCustomerName ? CUSTOMER_DETAILS[selectedCustomerName] ?? null : null;
 
   const { isSidebarCollapsed, toggleSidebarCollapsed } = useUiState();
   const [topMenuAnchorEl, setTopMenuAnchorEl] = useState<HTMLElement | null>(null);
@@ -999,21 +1314,7 @@ export default function Home() {
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}/new`);
   };
 
-  const closeContractDetail = () => {
-    setActiveLineItemTab("Längdfördelning");
-    navigateWithLoading(`/${sectionSlug}/${menuSlug}`);
-  };
-
-  const closePriceListDetail = () => {
-    navigateWithLoading(`/${sectionSlug}/${menuSlug}`);
-  };
-
-  const closePriceListRowDetail = () => {
-    if (!selectedPriceListId) {
-      return;
-    }
-    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}`);
-  };
+  const getCustomerDetailHref = (customerName: string) => `/marknad/kundlista/${encodeURIComponent(customerName)}`;
 
   const openLineItemDetail = (lineItemId: string) => {
     setActiveContractTab("Kontraktsrader");
@@ -1120,6 +1421,10 @@ export default function Home() {
   useEffect(() => {
     let deepestBreadcrumb = currentMenuLabel;
 
+    if (isCustomerDetailOpen && selectedCustomerName) {
+      deepestBreadcrumb = selectedCustomerName;
+    }
+
     if (selectedContractId) {
       deepestBreadcrumb = `Kontrakt ${selectedContractId}`;
     }
@@ -1140,6 +1445,8 @@ export default function Home() {
   }, [
     selectedCompany,
     currentMenuLabel,
+    isCustomerDetailOpen,
+    selectedCustomerName,
     selectedContractId,
     isLineItemDetailOpen,
     selectedLineItemId,
@@ -1212,20 +1519,23 @@ export default function Home() {
         onTopMenuOptionSelect={handleTopMenuOptionSelect}
         currentSectionLabel={currentSection.label.charAt(0) + currentSection.label.slice(1).toLowerCase()}
         currentMenuLabel={currentMenuLabel}
+        isCustomerDetailOpen={isCustomerDetailOpen}
+        selectedCustomerName={selectedCustomerName}
         isContractDetailOpen={isContractDetailOpen}
         isLineItemDetailOpen={isLineItemDetailOpen}
         selectedContractId={selectedContractId}
         selectedLineItemId={selectedLineItemId}
         isCreatingLineItem={isCreatingLineItem}
-        onCloseContractDetail={closeContractDetail}
-        onCloseLineItemDetail={closeLineItemDetail}
+        contractListHref={`/${sectionSlug}/${menuSlug}`}
+        contractDetailHref={selectedContractId ? `/${sectionSlug}/${menuSlug}/${selectedContractId}` : null}
         isPriceListDetailOpen={isPriceListDetailOpen}
         selectedPriceListId={selectedPriceListId}
-        onClosePriceListDetail={closePriceListDetail}
+        priceListHref={`/${sectionSlug}/${menuSlug}`}
         isPriceListRowDetailOpen={isPriceListRowDetailOpen}
         selectedPriceRowId={selectedPriceRowId}
         isCreatingPriceRow={isCreatingPriceRow}
-        onClosePriceListRowDetail={closePriceListRowDetail}
+        priceListDetailHref={selectedPriceListId ? `/${sectionSlug}/${menuSlug}/${selectedPriceListId}` : null}
+        customerListHref="/marknad/kundlista"
       >
 
         {isHomePage ? (
@@ -1287,6 +1597,7 @@ export default function Home() {
             onSelectMainTableRow={selectMainTableRow}
             getCellValue={(row, columnKey) => getCellValue(row as TableRow, columnKey as ColumnKey)}
             onOpenContractDetail={openContractDetail}
+            getCustomerDetailHref={getCustomerDetailHref}
             isLineColumnsMenuOpen={isLineColumnsMenuOpen}
             draftLineColumns={draftLineColumns}
             lineColumnsMenuRef={lineColumnsMenuRef}
@@ -1301,6 +1612,8 @@ export default function Home() {
             visibleLineColumns={visibleLineColumns}
             lineItemRows={lineItemRows}
           />
+        ) : isCustomerDetailOpen && selectedCustomerName ? (
+          <CustomerDetailView customerName={selectedCustomerName} detail={selectedCustomerDetail} />
         ) : !isContractDetailOpen && isDeliveryListPage ? (
           <DeliveryListView />
         ) : !isPriceListDetailOpen && !isContractDetailOpen && isPriceListPage ? (

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -77,20 +78,23 @@ type AppShellLayoutProps = {
   onTopMenuOptionSelect: (option: TopMenuOption) => void;
   currentSectionLabel: string;
   currentMenuLabel: string;
+  isCustomerDetailOpen: boolean;
+  selectedCustomerName: string | null;
   isContractDetailOpen: boolean;
   isLineItemDetailOpen: boolean;
   selectedContractId: string | null;
   selectedLineItemId: string | null;
   isCreatingLineItem: boolean;
-  onCloseContractDetail: () => void;
-  onCloseLineItemDetail: () => void;
+  contractListHref: string;
+  contractDetailHref: string | null;
   isPriceListDetailOpen: boolean;
   selectedPriceListId: string | null;
-  onClosePriceListDetail: () => void;
+  priceListHref: string;
   isPriceListRowDetailOpen: boolean;
   selectedPriceRowId: string | null;
   isCreatingPriceRow: boolean;
-  onClosePriceListRowDetail: () => void;
+  priceListDetailHref: string | null;
+  customerListHref: string;
   children: ReactNode;
 };
 
@@ -119,20 +123,23 @@ export function AppShellLayout({
   onTopMenuOptionSelect,
   currentSectionLabel,
   currentMenuLabel,
+  isCustomerDetailOpen,
+  selectedCustomerName,
   isContractDetailOpen,
   isLineItemDetailOpen,
   selectedContractId,
   selectedLineItemId,
   isCreatingLineItem,
-  onCloseContractDetail,
-  onCloseLineItemDetail,
+  contractListHref,
+  contractDetailHref,
   isPriceListDetailOpen,
   selectedPriceListId,
-  onClosePriceListDetail,
+  priceListHref,
   isPriceListRowDetailOpen,
   selectedPriceRowId,
   isCreatingPriceRow,
-  onClosePriceListRowDetail,
+  priceListDetailHref,
+  customerListHref,
   children
 }: AppShellLayoutProps) {
   return (
@@ -306,19 +313,19 @@ export function AppShellLayout({
           <div className={styles.breadcrumbs}>
             <Typography className={styles.breadcrumbMuted}>{currentSectionLabel}</Typography>
             <ChevronRightIcon className={styles.breadcrumbArrow} />
-            {!isContractDetailOpen && !isPriceListDetailOpen ? (
+            {!isContractDetailOpen && !isPriceListDetailOpen && !isCustomerDetailOpen ? (
               <Typography className={styles.breadcrumbActive}>{currentMenuLabel}</Typography>
             ) : isPriceListDetailOpen ? (
               <>
-                <button type="button" className={styles.breadcrumbLinkButton} onClick={onClosePriceListDetail}>
+                <Typography component={Link} href={priceListHref} className={styles.breadcrumbLinkButton}>
                   {currentMenuLabel}
-                </button>
+                </Typography>
                 <ChevronRightIcon className={styles.breadcrumbArrow} />
                 {isPriceListRowDetailOpen ? (
                   <>
-                    <button type="button" className={styles.breadcrumbLinkButton} onClick={onClosePriceListRowDetail}>
+                    <Typography component={Link} href={priceListDetailHref ?? priceListHref} className={styles.breadcrumbLinkButton}>
                       {selectedPriceListId === "new" ? "Ny prislista" : `Prislista ${selectedPriceListId}`}
-                    </button>
+                    </Typography>
                     <ChevronRightIcon className={styles.breadcrumbArrow} />
                     <Typography className={styles.breadcrumbActive}>
                       {isCreatingPriceRow ? "Ny prislistrad" : `Prislistrad ${selectedPriceRowId}`}
@@ -332,15 +339,17 @@ export function AppShellLayout({
               </>
             ) : (
               <>
-                <button type="button" className={styles.breadcrumbLinkButton} onClick={onCloseContractDetail}>
+                <Typography component={Link} href={isCustomerDetailOpen ? customerListHref : contractListHref} className={styles.breadcrumbLinkButton}>
                   {currentMenuLabel}
-                </button>
+                </Typography>
                 <ChevronRightIcon className={styles.breadcrumbArrow} />
-                {isLineItemDetailOpen ? (
+                {isCustomerDetailOpen ? (
+                  <Typography className={styles.breadcrumbActive}>{selectedCustomerName}</Typography>
+                ) : isLineItemDetailOpen ? (
                   <>
-                    <button type="button" className={styles.breadcrumbLinkButton} onClick={onCloseLineItemDetail}>
+                    <Typography component={Link} href={contractDetailHref ?? contractListHref} className={styles.breadcrumbLinkButton}>
                       Kontrakt {selectedContractId}
-                    </button>
+                    </Typography>
                     <ChevronRightIcon className={styles.breadcrumbArrow} />
                     <Typography className={styles.breadcrumbActive}>
                       {isCreatingLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${selectedLineItemId}`}

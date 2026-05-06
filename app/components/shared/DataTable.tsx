@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import styles from "../../page.module.scss";
 
 type DataTableColumn = {
@@ -20,6 +20,7 @@ type DataTableProps<TRow extends Record<string, string | undefined>> = {
   selectedRowIndex: number | null;
   onRowClick: (index: number) => void;
   renderCell?: (row: TRow, column: DataTableColumn, rowIndex: number, columnIndex: number) => ReactNode;
+  fillRemainingSpace?: boolean;
 };
 
 export function DataTable<TRow extends Record<string, string | undefined>>({
@@ -29,7 +30,8 @@ export function DataTable<TRow extends Record<string, string | undefined>>({
   rowKey,
   selectedRowIndex,
   onRowClick,
-  renderCell
+  renderCell,
+  fillRemainingSpace = false
 }: DataTableProps<TRow>) {
   const headerClass = variant === "main" ? styles.tableHeader : styles.lineItemsHeaderRow;
   const rowClass = variant === "main" ? styles.tableRow : styles.lineItemsRow;
@@ -40,7 +42,11 @@ export function DataTable<TRow extends Record<string, string | undefined>>({
   const stickyCellClass = variant === "main" ? styles.stickyMainCell : styles.stickyLineCell;
   const stickyRightHeaderClass = styles.stickyRightHeaderCell;
   const stickyRightCellClass = styles.stickyRightCell;
+  const fillerHeaderCellClass = variant === "main" ? styles.tableHeaderFillerCell : styles.lineItemsHeaderFillerCell;
+  const fillerCellClass = variant === "main" ? styles.tableFillerCell : styles.lineItemsFillerCell;
   const STICKY_COLUMN_WIDTH = 120;
+  const firstPinnedRightIndex = columns.findIndex((column) => Boolean(column.pinnedRight));
+  const shouldRenderFiller = fillRemainingSpace;
 
   const stickyMeta = columns.reduce<Array<{ isSticky: boolean; left: number; order: number }>>(
     (acc, column, columnIndex) => {
@@ -84,31 +90,38 @@ export function DataTable<TRow extends Record<string, string | undefined>>({
     <>
       <div className={headerClass}>
         {columns.map((column, columnIndex) => (
-          <div
-            key={column.key}
-            className={`${headerCellClass} ${stickyMeta[columnIndex]?.isSticky ? stickyHeaderClass : ""} ${stickyRightMeta[columnIndex]?.isSticky ? stickyRightHeaderClass : ""}`}
-            style={
-              stickyMeta[columnIndex]?.isSticky || stickyRightMeta[columnIndex]?.isSticky
-                ? {
-                  ...(stickyMeta[columnIndex]?.isSticky
-                    ? {
-                      left: `${stickyMeta[columnIndex].left}px`,
-                      zIndex: 20 - stickyMeta[columnIndex].order,
-                    }
-                    : {}),
-                  ...(stickyRightMeta[columnIndex]?.isSticky
-                    ? {
-                      right: `${stickyRightMeta[columnIndex].right}px`,
-                      zIndex: 30 - stickyRightMeta[columnIndex].order,
-                    }
-                    : {}),
-                }
-                : undefined
-            }
-          >
-            {column.label}
-          </div>
+          <Fragment key={column.key}>
+            {shouldRenderFiller && firstPinnedRightIndex >= 0 && columnIndex === firstPinnedRightIndex ? (
+              <div className={fillerHeaderCellClass} aria-hidden="true" />
+            ) : null}
+            <div
+              className={`${headerCellClass} ${stickyMeta[columnIndex]?.isSticky ? stickyHeaderClass : ""} ${stickyRightMeta[columnIndex]?.isSticky ? stickyRightHeaderClass : ""}`}
+              style={
+                stickyMeta[columnIndex]?.isSticky || stickyRightMeta[columnIndex]?.isSticky
+                  ? {
+                    ...(stickyMeta[columnIndex]?.isSticky
+                      ? {
+                        left: `${stickyMeta[columnIndex].left}px`,
+                        zIndex: 20 - stickyMeta[columnIndex].order,
+                      }
+                      : {}),
+                    ...(stickyRightMeta[columnIndex]?.isSticky
+                      ? {
+                        right: `${stickyRightMeta[columnIndex].right}px`,
+                        zIndex: 30 - stickyRightMeta[columnIndex].order,
+                      }
+                      : {}),
+                  }
+                  : undefined
+              }
+            >
+              {column.label}
+            </div>
+          </Fragment>
         ))}
+        {shouldRenderFiller && firstPinnedRightIndex < 0 ? (
+          <div className={fillerHeaderCellClass} aria-hidden="true" />
+        ) : null}
       </div>
 
       {rows.map((row, rowIndex) => (
@@ -118,31 +131,36 @@ export function DataTable<TRow extends Record<string, string | undefined>>({
           onClick={() => onRowClick(rowIndex)}
         >
           {columns.map((column, columnIndex) => (
-            <div
-              key={`${rowKey(row, rowIndex)}-${column.key}`}
-              className={`${cellClass} ${stickyMeta[columnIndex]?.isSticky ? stickyCellClass : ""} ${stickyRightMeta[columnIndex]?.isSticky ? stickyRightCellClass : ""}`}
-              style={
-                stickyMeta[columnIndex]?.isSticky || stickyRightMeta[columnIndex]?.isSticky
-                  ? {
-                    ...(stickyMeta[columnIndex]?.isSticky
-                      ? {
-                        left: `${stickyMeta[columnIndex].left}px`,
-                        zIndex: 10 - stickyMeta[columnIndex].order,
-                      }
-                      : {}),
-                    ...(stickyRightMeta[columnIndex]?.isSticky
-                      ? {
-                        right: `${stickyRightMeta[columnIndex].right}px`,
-                        zIndex: 15 - stickyRightMeta[columnIndex].order,
-                      }
-                      : {}),
-                  }
-                  : undefined
-              }
-            >
-              {renderCell ? renderCell(row, column, rowIndex, columnIndex) : row[column.key]}
-            </div>
+            <Fragment key={`${rowKey(row, rowIndex)}-${column.key}`}>
+              {shouldRenderFiller && firstPinnedRightIndex >= 0 && columnIndex === firstPinnedRightIndex ? (
+                <div className={fillerCellClass} aria-hidden="true" />
+              ) : null}
+              <div
+                className={`${cellClass} ${stickyMeta[columnIndex]?.isSticky ? stickyCellClass : ""} ${stickyRightMeta[columnIndex]?.isSticky ? stickyRightCellClass : ""}`}
+                style={
+                  stickyMeta[columnIndex]?.isSticky || stickyRightMeta[columnIndex]?.isSticky
+                    ? {
+                      ...(stickyMeta[columnIndex]?.isSticky
+                        ? {
+                          left: `${stickyMeta[columnIndex].left}px`,
+                          zIndex: 10 - stickyMeta[columnIndex].order,
+                        }
+                        : {}),
+                      ...(stickyRightMeta[columnIndex]?.isSticky
+                        ? {
+                          right: `${stickyRightMeta[columnIndex].right}px`,
+                          zIndex: 15 - stickyRightMeta[columnIndex].order,
+                        }
+                        : {}),
+                    }
+                    : undefined
+                }
+              >
+                {renderCell ? renderCell(row, column, rowIndex, columnIndex) : row[column.key]}
+              </div>
+            </Fragment>
           ))}
+          {shouldRenderFiller && firstPinnedRightIndex < 0 ? <div className={fillerCellClass} aria-hidden="true" /> : null}
         </div>
       ))}
     </>

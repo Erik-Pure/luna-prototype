@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Button, Chip, Typography } from "@mui/material";
 import type { ReactNode, RefObject } from "react";
 import { ActionRow } from "./shared/ActionRow";
@@ -56,6 +57,7 @@ type ContractListViewProps = {
   onSelectMainTableRow: (rowIndex: number) => void;
   getCellValue: (row: Record<string, string | undefined>, columnKey: string) => string;
   onOpenContractDetail: (contractId: string) => void;
+  getCustomerDetailHref: (customerName: string) => string;
   isLineColumnsMenuOpen: boolean;
   draftLineColumns: Array<{ key: string; label: string; visible: boolean }>;
   lineColumnsMenuRef: RefObject<HTMLDivElement | null>;
@@ -119,6 +121,7 @@ export function ContractListView({
   onSelectMainTableRow,
   getCellValue,
   onOpenContractDetail,
+  getCustomerDetailHref,
   isLineColumnsMenuOpen,
   draftLineColumns,
   lineColumnsMenuRef,
@@ -212,7 +215,7 @@ export function ContractListView({
                 rowKey={(row, idx) => `${row.kontrakt}-${idx}`}
                 selectedRowIndex={selectedRowId}
                 onRowClick={onSelectMainTableRow}
-                renderCell={(row, column, rowIndex) => {
+                renderCell={(row, column) => {
                   if (column.key === "kontrakt") {
                     return (
                       <button
@@ -230,15 +233,22 @@ export function ContractListView({
 
                   if (column.key === "kund") {
                     const limitStatus = row["limitStatus"];
+                    const customerName = getCellValue(row, column.key);
                     return (
-                      <span className={styles.kundCell}>
-                        {limitStatus === "error" ? (
-                          <span className={styles.kundStatusDotError} />
-                        ) : limitStatus === "warning" ? (
-                          <span className={styles.kundStatusDotWarning} />
-                        ) : null}
-                        {getCellValue(row, column.key)}
-                      </span>
+                      <Link
+                        href={getCustomerDetailHref(customerName)}
+                        className={styles.kundCellLink}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <span className={styles.kundCell}>
+                          {limitStatus === "error" ? (
+                            <span className={styles.kundStatusDotError} />
+                          ) : limitStatus === "warning" ? (
+                            <span className={styles.kundStatusDotWarning} />
+                          ) : null}
+                          {customerName}
+                        </span>
+                      </Link>
                     );
                   }
 

@@ -11,7 +11,7 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, TextField, Typography } from "@mui/material";
 import { DataTable } from "../shared/DataTable";
 import styles from "../../page.module.scss";
@@ -245,21 +245,21 @@ type NettolagerRow = {
   volym: string;
 };
 
-const PERIODISERING_COLUMNS: Array<{ key: PeriodiseringColumnKey; label: string }> = [
+const PERIODISERING_COLUMNS: Array<{ key: PeriodiseringColumnKey; label: string; pinnedRight?: boolean }> = [
   { key: "leveransvecka", label: "Leveransvecka" },
   { key: "mangd", label: "Mängd" },
   { key: "enhet", label: "Enhet" },
   { key: "avropsradsstatus", label: "Avropsradsstatus" },
   { key: "kundensMarke", label: "Kundens märke" },
   { key: "godsmottagarensMarke", label: "Godsmottagarens märke" },
-  { key: "_actions", label: "" },
+  { key: "_actions", label: "", pinnedRight: true },
 ];
 
-const LENGTH_DISTRIBUTION_COLUMNS: Array<{ key: LengthDistributionColumnKey; label: string }> = [
+const LENGTH_DISTRIBUTION_COLUMNS: Array<{ key: LengthDistributionColumnKey; label: string; pinnedRight?: boolean }> = [
   { key: "langd", label: "Längd" },
   { key: "mangd", label: "Mängd" },
   { key: "enhet", label: "Enhet" },
-  { key: "_actions", label: "" },
+  { key: "_actions", label: "", pinnedRight: true },
 ];
 
 const CALLOFF_COLUMNS: Array<{ key: CallOffColumnKey; label: string; pinnedRight?: boolean }> = [
@@ -278,14 +278,14 @@ const CALLOFF_COLUMNS: Array<{ key: CallOffColumnKey; label: string; pinnedRight
   { key: "_actions", label: "", pinnedRight: true },
 ];
 
-const PRODUCTION_PLANNING_COLUMNS: Array<{ key: ProductionPlanningColumnKey; label: string }> = [
+const PRODUCTION_PLANNING_COLUMNS: Array<{ key: ProductionPlanningColumnKey; label: string; pinnedRight?: boolean }> = [
   { key: "producerandeBolag", label: "Producerande bolag" },
   { key: "produktionsstalle", label: "Produktionsställe" },
   { key: "produktionslinje", label: "Produktionslinje" },
   { key: "kommentarProduktion", label: "Kommentar produktion" },
   { key: "farg", label: "Färg" },
   { key: "pigmentering", label: "Pigmentering" },
-  { key: "_actions", label: "" },
+  { key: "_actions", label: "", pinnedRight: true },
 ];
 
 const emptyCallOffRow = (): Omit<CallOffRow, "id"> => ({
@@ -532,7 +532,71 @@ const REQUIRED_FIELD_DEFS: { key: keyof NewLineItemDraft; label: string }[] = [
   { key: "deliveryWindowMin", label: "Lev. fönster min" },
   { key: "deliveryWindowMax", label: "Lev. fönster max" },
   { key: "callOffStatus", label: "Avropsradsstatus" },
+  { key: "packaging", label: "Emballage" },
 ];
+
+const REQUIRED_STEP_PANEL_IDS = ["allmant", "produkt", "affar", "leverans", "ovrigt"] as const;
+const REQUIRED_FIELD_KEYS = new Set<keyof NewLineItemDraft>(REQUIRED_FIELD_DEFS.map(({ key }) => key));
+const OPTIONAL_FAST_TRACK_GROUPS: Array<{
+  title: string;
+  fields: Array<{ key: keyof NewLineItemDraft; label: string }>;
+}> = [
+    {
+      title: "Allmänt",
+      fields: [
+        { key: "contractNumber", label: "KontraktsNr" },
+        { key: "comboPackageNumber", label: "KombipaketNr" },
+        { key: "priceList", label: "Prislista" },
+        { key: "certification", label: "Certifiering" },
+      ],
+    },
+    {
+      title: "Produkt",
+      fields: [
+        { key: "product", label: "Produkt" },
+        { key: "deliverProduct", label: "Leverera produkt" },
+        { key: "nobbNumber", label: "NOBBnr" },
+        { key: "deliverArtNr", label: "Leverera ArtNr" },
+        { key: "invoiceText", label: "Fakturatext" },
+        { key: "deliverPackageType", label: "Leverera pakettyp" },
+        { key: "length", label: "Längd" },
+        { key: "bundle", label: "Bunt" },
+        { key: "vflGroup", label: "VFL grupp" },
+      ],
+    },
+    {
+      title: "Affär",
+      fields: [
+        { key: "finalVolume", label: "Slutvolym" },
+        { key: "adjustedPrice", label: "Prisjusterad" },
+        { key: "amount", label: "Belopp" },
+        { key: "sponsorship", label: "Sponsring" },
+        { key: "sponsoredAmount", label: "Belopp spons" },
+        { key: "caneaAgreementNumber", label: "Avtalsnr i Canea" },
+        { key: "pickingSurchargeEnabled", label: "Plocktillägg" },
+        { key: "pickingSurchargeQuantity", label: "Plocktillägg antal" },
+      ],
+    },
+    {
+      title: "Leverans",
+      fields: [
+        { key: "deliveryWeek", label: "Leveransvecka" },
+        { key: "deliveryDay", label: "Leveransdag" },
+        { key: "deliveryPeriodDocument", label: "Leveransperiod kunddokument" },
+      ],
+    },
+    {
+      title: "Övrigt",
+      fields: [
+        { key: "internalComment", label: "Intern kommentar" },
+        { key: "externalComment", label: "Extern kommentar" },
+        { key: "customerComment", label: "Kundkommentar" },
+        { key: "showOnInvoice", label: "Visa på följesedel och faktura" },
+        { key: "customerBrand", label: "Kundens märke" },
+        { key: "recipientBrand", label: "Godsmottagarens märke" },
+      ],
+    },
+  ];
 
 const REVIEW_HIGHLIGHT_KEYS: Array<keyof NewLineItemDraft> = [
   "senderCompany",
@@ -555,6 +619,7 @@ export function LineItemDetailView({
   onSaveAndClose
 }: LineItemDetailViewProps) {
   const isNewLineItem = lineItemId === "new";
+  const accordionWrapRef = useRef<HTMLDivElement | null>(null);
   const [lengthDistributionRows, setLengthDistributionRows] = useState<LengthDistributionRow[]>(initialLengthDistributionRows);
   const [selectedLengthDistributionRow, setSelectedLengthDistributionRow] = useState<number | null>(null);
   const [lengthDistributionForm, setLengthDistributionForm] = useState<LengthDistributionFormState>({ mode: "closed" });
@@ -588,28 +653,13 @@ export function LineItemDetailView({
     ...(isNewLineItem ? emptyNewLineItemDraft : existingLineItemDraft),
     ...newDraftSeed
   });
-  const [expandedPanels, setExpandedPanels] = useState<string[]>(isNewLineItem ? ["obligatoriska"] : ["allmant"]);
-  const [formColumnWidth, setFormColumnWidth] = useState<number | null>(null);
+  const [expandedPanels, setExpandedPanels] = useState<string[]>(isNewLineItem ? [...REQUIRED_STEP_PANEL_IDS] : ["allmant"]);
   const [createStep, setCreateStep] = useState<0 | 1>(0);
   const [showStepErrors, setShowStepErrors] = useState(false);
   const [showAllReviewFields, setShowAllReviewFields] = useState(false);
-
-  const startResizeFormColumn = (mouseDownEvent: MouseEvent) => {
-    mouseDownEvent.preventDefault();
-    const startX = mouseDownEvent.clientX;
-    const startWidth = formColumnWidth ?? 480;
-    const onMouseMove = (e: globalThis.MouseEvent) => {
-      // Handle is on the left edge of the right panel; drag left = widen
-      const delta = startX - e.clientX;
-      setFormColumnWidth(Math.max(280, Math.min(900, startWidth + delta)));
-    };
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  };
+  const [fastTrackEnabled, setFastTrackEnabled] = useState(false);
+  const [optionalFastTrackKeys, setOptionalFastTrackKeys] = useState<Set<keyof NewLineItemDraft>>(new Set());
+  const [showAllOptionalFields, setShowAllOptionalFields] = useState(false);
 
   const updateDraftField = (key: keyof NewLineItemDraft, value: string | boolean) => {
     setNewLineItemDraft((previous) => ({
@@ -622,6 +672,10 @@ export function LineItemDetailView({
     setExpandedPanels((previous) =>
       previous.includes(panel) ? previous.filter((item) => item !== panel) : [...previous, panel]
     );
+  };
+
+  const openRequiredPanels = () => {
+    setExpandedPanels((previous) => Array.from(new Set([...previous, ...REQUIRED_STEP_PANEL_IDS])));
   };
 
   const handleSaveAndCreateNew = () => {
@@ -645,6 +699,98 @@ export function LineItemDetailView({
   const canProceedToStep2 = missingRequiredKeys.length === 0;
   const highlightedReviewFields = REQUIRED_FIELD_DEFS.filter(({ key }) => REVIEW_HIGHLIGHT_KEYS.includes(key));
   const remainingReviewFields = REQUIRED_FIELD_DEFS.filter(({ key }) => !REVIEW_HIGHLIGHT_KEYS.includes(key));
+  const isFastTrackField = (key: keyof NewLineItemDraft) =>
+    REQUIRED_FIELD_KEYS.has(key) || optionalFastTrackKeys.has(key);
+
+  const getFieldLabel = (key: keyof NewLineItemDraft, label: string) =>
+    isNewLineItem && REQUIRED_FIELD_KEYS.has(key) ? `${label} *` : label;
+  const getFieldControlClassName = (key: keyof NewLineItemDraft, baseClass = styles.searchFieldControl) => {
+    const classNames = [baseClass];
+    if (REQUIRED_FIELD_KEYS.has(key)) {
+      classNames.push(styles.lineItemRequiredControl);
+    }
+    if (isNewLineItem && isFastTrackField(key)) {
+      classNames.push(styles.lineItemFastTrackControl);
+    }
+
+    return classNames.join(" ");
+  };
+
+  const getFastTrackFocusableElements = (container: HTMLElement) =>
+    [
+      ...Array.from(container.querySelectorAll<HTMLElement>(`.${styles.lineItemFastTrackControl} .MuiInputBase-root`))
+        .map((inputBaseRoot) =>
+          inputBaseRoot.querySelector<HTMLElement>("[role='combobox'], input:not([type='hidden']), textarea")
+        ),
+      ...Array.from(container.querySelectorAll<HTMLElement>(`.${styles.lineItemFastTrackControl} input[type='checkbox']`)),
+      ...Array.from(container.querySelectorAll<HTMLElement>(`.${styles.lineItemFastTrackTerminalAction}`)),
+    ]
+      .filter((element): element is HTMLElement => {
+        if (!element) {
+          return false;
+        }
+        const isDisabled = (element as HTMLInputElement).disabled || element.getAttribute("aria-disabled") === "true";
+        return !isDisabled && element.getClientRects().length > 0;
+      });
+
+  const handleFastTrackKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!fastTrackEnabled || !isNewLineItem || createStep !== 0 || event.key !== "Tab") {
+      return;
+    }
+
+    const focusableRequiredControls = getFastTrackFocusableElements(event.currentTarget);
+    if (focusableRequiredControls.length === 0) {
+      return;
+    }
+
+    const activeElement = document.activeElement as HTMLElement | null;
+    const currentIndex = focusableRequiredControls.findIndex(
+      (element) => element === activeElement || element.contains(activeElement)
+    );
+
+    event.preventDefault();
+
+    if (currentIndex === -1) {
+      focusableRequiredControls[0]?.focus();
+      return;
+    }
+
+    const nextIndex = event.shiftKey
+      ? (currentIndex - 1 + focusableRequiredControls.length) % focusableRequiredControls.length
+      : (currentIndex + 1) % focusableRequiredControls.length;
+
+    focusableRequiredControls[nextIndex]?.focus();
+  };
+
+  const handleToggleFastTrack = () => {
+    setFastTrackEnabled((previous) => {
+      const nextValue = !previous;
+
+      if (nextValue) {
+        openRequiredPanels();
+        requestAnimationFrame(() => {
+          const firstRequiredControl = accordionWrapRef.current
+            ? getFastTrackFocusableElements(accordionWrapRef.current)[0]
+            : null;
+          firstRequiredControl?.focus();
+        });
+      }
+
+      return nextValue;
+    });
+  };
+
+  const toggleOptionalFastTrackField = (key: keyof NewLineItemDraft) => {
+    setOptionalFastTrackKeys((previous) => {
+      const next = new Set(previous);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
 
   const renderReviewField = ({ key, label }: { key: keyof NewLineItemDraft; label: string }) => {
     const val = newLineItemDraft[key];
@@ -665,7 +811,7 @@ export function LineItemDetailView({
   const handleNextStep = () => {
     if (!canProceedToStep2) {
       setShowStepErrors(true);
-      setExpandedPanels((prev) => (prev.includes("obligatoriska") ? prev : [...prev, "obligatoriska"]));
+      openRequiredPanels();
     } else {
       setShowStepErrors(false);
       setCreateStep(1);
@@ -1096,7 +1242,7 @@ export function LineItemDetailView({
   const isProductionPlanningDialogOpen = productionPlanningDraft !== null;
 
   return (
-    <div className={`${styles.lineItemDetailPanel} ${isNewLineItem ? styles.lineItemCreatePanel : ""}`}>
+    <div className={`${styles.lineItemDetailPanel} ${styles.lineItemCreatePanel}`}>
       <div className={styles.contractModernTopRow}>
         <div className={styles.contractModernTitleWrap}>
           <Typography className={styles.contractModernTitle}>
@@ -1153,7 +1299,7 @@ export function LineItemDetailView({
                   title="Ctrl+→"
                   onClick={handleNextStep}
                 >
-                  Nästa
+                  Spara och gå vidare
                 </Button>
               </>
             ) : (
@@ -1193,40 +1339,35 @@ export function LineItemDetailView({
         </div>
       </div>
 
-      {isNewLineItem ? (
-        <div className={styles.lineItemWizardBar}>
-          <button
-            type="button"
-            className={`${styles.lineItemWizardStep} ${createStep === 0 ? styles.lineItemWizardStepActive : ""}`}
-            onClick={() => setCreateStep(0)}
-          >
-            <span className={styles.lineItemWizardStepDot}>1</span>
-            <span className={styles.lineItemWizardStepLabel}>Kontraktsradshuvud</span>
-          </button>
-          <div className={styles.lineItemWizardConnector} />
-          <button
-            type="button"
-            className={`${styles.lineItemWizardStep} ${createStep === 1 ? styles.lineItemWizardStepActive : ""} ${!canProceedToStep2 ? styles.lineItemWizardStepLocked : ""}`}
-            onClick={handleNextStep}
-          >
-            <span className={styles.lineItemWizardStepDot}>2</span>
-            <span className={styles.lineItemWizardStepLabel}>Distribution & planering</span>
-          </button>
-        </div>
-      ) : null}
+      <div className={styles.lineItemWizardBar}>
+        <button
+          type="button"
+          className={`${styles.lineItemWizardStep} ${createStep === 0 ? styles.lineItemWizardStepActive : ""}`}
+          onClick={() => setCreateStep(0)}
+        >
+          <span className={styles.lineItemWizardStepDot}>1</span>
+          <span className={styles.lineItemWizardStepLabel}>Kontraktsradshuvud</span>
+        </button>
+        <div className={styles.lineItemWizardConnector} />
+        <button
+          type="button"
+          className={`${styles.lineItemWizardStep} ${createStep === 1 ? styles.lineItemWizardStepActive : ""} ${isNewLineItem && !canProceedToStep2 ? styles.lineItemWizardStepLocked : ""}`}
+          onClick={isNewLineItem ? handleNextStep : () => setCreateStep(1)}
+        >
+          <span className={styles.lineItemWizardStepDot}>2</span>
+          <span className={styles.lineItemWizardStepLabel}>Distribution & planering</span>
+        </button>
+      </div>
 
       <div
-        className={`${styles.detailTwoColumnLayout} ${isNewLineItem ? (createStep === 0 ? styles.lineItemWizardStep0Layout : styles.lineItemWizardStep1Layout) : styles.lineItemContractLikeLayout}`}
-        style={!isNewLineItem && formColumnWidth ? { gridTemplateColumns: `minmax(0, 1fr) ${formColumnWidth}px` } : undefined}
+        className={`${styles.detailTwoColumnLayout} ${createStep === 0 ? styles.lineItemWizardStep0Layout : styles.lineItemWizardStep1Layout}`}
       >
-        <div
-          className={styles.detailFormColumn}
-          style={!isNewLineItem && formColumnWidth ? { width: formColumnWidth, maxWidth: formColumnWidth } : undefined}
-        >
-          {!isNewLineItem ? (
-            <div className={styles.contractSectionsResizeHandle} onMouseDown={startResizeFormColumn} />
-          ) : null}
-          <div className={styles.contractModernAccordionWrap}>
+        <div className={styles.detailFormColumn}>
+          <div
+            ref={accordionWrapRef}
+            className={styles.contractModernAccordionWrap}
+            onKeyDownCapture={handleFastTrackKeyDown}
+          >
             {isNewLineItem && showStepErrors && missingRequiredKeys.length > 0 ? (
               <Alert severity="error" className={styles.lineItemStepErrorAlert}>
                 Fyll i alla obligatoriska fält innan du går vidare:{" "}
@@ -1238,185 +1379,67 @@ export function LineItemDetailView({
                 </strong>
               </Alert>
             ) : null}
-            {isNewLineItem ? (
-              <Accordion
-                expanded={expandedPanels.includes("obligatoriska")}
-                onChange={() => togglePanel("obligatoriska")}
-                className={`${styles.contractModernAccordion} ${styles.lineItemRequiredSection}`}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                  <div className={styles.contractModernAccordionTitleRow}>
-                    <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
-                    <Typography className={styles.contractModernAccordionTitle}>Obligatoriska fält</Typography>
-                  </div>
-                </AccordionSummary>
-                <AccordionDetails>
-                  <Typography className={styles.contractSectionChip}>Allmänt</Typography>
-                  <div className={styles.lineItemSectionGrid3}>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="senderCompany" label="Utlastande bolag *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <LabeledSelect label="Utlastande bolag *" value={newLineItemDraft.senderCompany} onChange={(v) => updateDraftField("senderCompany", v)} className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}>
-                        <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
-                        <MenuItem value="Moelven">Moelven</MenuItem>
-                      </LabeledSelect>
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="senderWarehouse" label="Utlastande lagerställe *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <LabeledSelect label="Utlastande lagerställe *" value={newLineItemDraft.senderWarehouse} onChange={(v) => updateDraftField("senderWarehouse", v)} className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}>
-                        <MenuItem value="Krokom">Krokom</MenuItem>
-                        <MenuItem value="Hissmofors">Hissmofors</MenuItem>
-                      </LabeledSelect>
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="status" label="Status *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <LabeledSelect label="Status *" value={newLineItemDraft.status} onChange={(v) => updateDraftField("status", v)} className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}>
-                        <MenuItem value="Aktiv">Aktiv</MenuItem>
-                        <MenuItem value="Pausad">Pausad</MenuItem>
-                      </LabeledSelect>
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="responsibleCompany" label="Ansvarigt bolag *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <LabeledSelect label="Ansvarigt bolag *" value={newLineItemDraft.responsibleCompany} onChange={(v) => updateDraftField("responsibleCompany", v)} className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}>
-                        <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
-                        <MenuItem value="Moelven">Moelven</MenuItem>
-                      </LabeledSelect>
-                    </div>
-                  </div>
+            {isNewLineItem && createStep === 0 ? (
+              <div className={styles.lineItemFastTrackBar}>
+                <div className={styles.lineItemFastTrackMain}>
+                  <span className={styles.lineItemFastTrackTitle}>Snabbspår</span>
+                  <span className={styles.lineItemFastTrackDivider} aria-hidden="true">-</span>
+                  <span className={styles.lineItemFastTrackText}>
+                    Tabba endast mellan obligatoriska fält i kontraktsradshuvudet
+                  </span>
+                  <button
+                    type="button"
+                    className={`${styles.lineItemFastTrackMoreButton} ${showAllOptionalFields ? styles.lineItemFastTrackMoreButtonActive : ""}`}
+                    onClick={() => setShowAllOptionalFields(!showAllOptionalFields)}
+                    aria-expanded={showAllOptionalFields}
+                    title={showAllOptionalFields ? "Dölj valfria fält" : "Välj valfria fält att ta med i snabbspåret"}
+                  >
+                    Välj egna
+                    <ExpandMoreIcon style={{ fontSize: 14, transition: "transform 0.2s", transform: showAllOptionalFields ? "rotate(180deg)" : "none", marginLeft: 2 }} />
+                  </button>
+                  <Button
+                    type="button"
+                    size="small"
+                    variant="text"
+                    className={`${styles.lineItemFastTrackButton} ${fastTrackEnabled ? styles.lineItemFastTrackButtonActive : ""}`}
+                    onClick={handleToggleFastTrack}
+                    aria-pressed={fastTrackEnabled}
+                  >
+                    <span className={styles.lineItemFastTrackButtonIndicator} aria-hidden="true" />
+                    <span className={styles.lineItemFastTrackButtonLabelWrap}>
+                      <span className={styles.lineItemFastTrackButtonLabel}>Snabbspår</span>
+                      <span className={styles.lineItemFastTrackButtonState}>{fastTrackEnabled ? "På" : "Av"}</span>
+                    </span>
+                  </Button>
+                </div>
+                {showAllOptionalFields ? (
+                  <div className={styles.lineItemFastTrackChipsPanel}>
+                    {OPTIONAL_FAST_TRACK_GROUPS.map(({ title, fields }) => (
+                      <div key={title} className={styles.lineItemFastTrackChipGroup}>
+                        <div className={styles.lineItemFastTrackChipGroupTitle}>{title}</div>
+                        <div className={styles.lineItemFastTrackChipGroupItems}>
+                          {fields.map(({ key, label }) => {
+                            const isSelected = optionalFastTrackKeys.has(key);
 
-                  <hr className={styles.contractFlatDivider} />
-                  <Typography className={styles.contractSectionChip}>Produkt</Typography>
-                  <div className={styles.lineItemSectionGrid2}>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="artNr" label="ArtNr *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <TextField label="ArtNr *" value={newLineItemDraft.artNr} onChange={(event) => updateDraftField("artNr", event.target.value)} size="small" className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`} />
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="packageType" label="Pakettyp *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <LabeledSelect label="Pakettyp *" value={newLineItemDraft.packageType} onChange={(v) => updateDraftField("packageType", v)} className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}>
-                        <MenuItem value="Lp">Lp</MenuItem>
-                        <MenuItem value="Paket">Paket</MenuItem>
-                      </LabeledSelect>
-                    </div>
+                            return (
+                              <button
+                                key={key}
+                                type="button"
+                                className={`${styles.lineItemFastTrackOptionalChip} ${isSelected ? styles.lineItemFastTrackOptionalChipActive : ""}`}
+                                onClick={() => toggleOptionalFastTrackField(key)}
+                                aria-pressed={isSelected}
+                                title={isSelected ? `${label} ingår i snabbspår` : `Lägg till ${label} i snabbspår`}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-
-                  <hr className={styles.contractFlatDivider} />
-                  <Typography className={styles.contractSectionChip}>Affär</Typography>
-                  <div className={styles.lineItemSectionGrid3}>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="quantity" label="Mängd *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <TextField label="Mängd *" value={newLineItemDraft.quantity} onChange={(event) => updateDraftField("quantity", event.target.value)} size="small" className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`} />
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="volume" label="Volym *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <TextField label="Volym *" value={newLineItemDraft.volume} onChange={(event) => updateDraftField("volume", event.target.value)} size="small" className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="price" label="Pris *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <TextField label="Pris *" value={newLineItemDraft.price} onChange={(event) => updateDraftField("price", event.target.value)} size="small" className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`} InputProps={{ endAdornment: <InputAdornment position="end">USD/m3 nomin</InputAdornment> }} />
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="orderedUnit" label="Beställd enhet *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <LabeledSelect label="Beställd enhet *" value={newLineItemDraft.orderedUnit} onChange={(v) => updateDraftField("orderedUnit", v)} className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}>
-                        <MenuItem value="m3 nominell">m3 nominell</MenuItem>
-                        <MenuItem value="m3 fast">m3 fast</MenuItem>
-                        <MenuItem value="lpm">lpm</MenuItem>
-                      </LabeledSelect>
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="invoiceUnit" label="Faktura enhet *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <LabeledSelect label="Faktura enhet *" value={newLineItemDraft.invoiceUnit} onChange={(v) => updateDraftField("invoiceUnit", v)} className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}>
-                        <MenuItem value="m3 nominell">m3 nominell</MenuItem>
-                        <MenuItem value="m3 fast">m3 fast</MenuItem>
-                        <MenuItem value="lpm">lpm</MenuItem>
-                      </LabeledSelect>
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="salesType" label="Säljtyp *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <LabeledSelect label="Säljtyp *" value={newLineItemDraft.salesType} onChange={(v) => updateDraftField("salesType", v)} className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}>
-                        <MenuItem value="Eget virke">Eget virke</MenuItem>
-                        <MenuItem value="Handelsvara">Handelsvara</MenuItem>
-                      </LabeledSelect>
-                    </div>
-                  </div>
-
-                  <hr className={styles.contractFlatDivider} />
-                  <Typography className={styles.contractSectionChip}>Leverans</Typography>
-                  <div className={styles.lineItemSectionGrid2}>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="deliveryWindowMin" label="Lev. fönster min *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <TextField label="Lev. fönster min *" value={newLineItemDraft.deliveryWindowMin} onChange={(event) => updateDraftField("deliveryWindowMin", event.target.value)} size="small" className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`} />
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="deliveryWindowMax" label="Lev. fönster max *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <TextField label="Lev. fönster max *" value={newLineItemDraft.deliveryWindowMax} onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)} size="small" className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`} />
-                    </div>
-                  </div>
-
-                  <hr className={styles.contractFlatDivider} />
-                  <Typography className={styles.contractSectionChip}>Övrigt</Typography>
-                  <div className={styles.lineItemSectionGrid3}>
-                    <div className={styles.lineItemField}>
-                      <FieldLabel fieldKey="callOffStatus" label="Avropsradsstatus *" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                      <LabeledSelect label="Avropsradsstatus *" value={newLineItemDraft.callOffStatus} onChange={(v) => updateDraftField("callOffStatus", v)} className={`${styles.searchFieldControl} ${styles.lineItemRequiredControl}`}>
-                        <MenuItem value="Customer planned">Customer planned</MenuItem>
-                        <MenuItem value="Sales planned">Sales planned</MenuItem>
-                        <MenuItem value="Load planned">Load planned</MenuItem>
-                      </LabeledSelect>
-                    </div>
-                  </div>
-
-                  <Typography className={styles.contractSectionChip}>Kommentar</Typography>
-                  <div className={styles.lineItemSectionGrid3}>
-                    <div className={styles.lineItemField}>
-                      <TextField
-                        label="Intern kommentar"
-                        value={newLineItemDraft.internalComment}
-                        size="small"
-                        className={styles.searchFieldControl}
-                        multiline
-                        rows={3}
-                        InputProps={{ readOnly: true }}
-                      />
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <TextField
-                        label="Extern kommentar"
-                        value={newLineItemDraft.externalComment}
-                        size="small"
-                        className={styles.searchFieldControl}
-                        multiline
-                        rows={3}
-                        InputProps={{ readOnly: true }}
-                      />
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <TextField
-                        label="Kundkommentar"
-                        value={newLineItemDraft.customerComment}
-                        size="small"
-                        className={styles.searchFieldControl}
-                        multiline
-                        rows={3}
-                        InputProps={{ readOnly: true }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className={styles.lineItemWizardInlineNextRow}>
-                    <div className={styles.lineItemWizardInlineNextText}>
-                      Klar med de obligatoriska uppgifterna? Gå vidare direkt eller fortsätt med valfria fält nedan.
-                    </div>
-                    <Button
-                      className={styles.lineItemWizardInlineNextButton}
-                      size="small"
-                      variant="contained"
-                      onClick={handleNextStep}
-                    >
-                      Nästa
-                    </Button>
-                  </div>
-                </AccordionDetails>
-              </Accordion>
+                ) : null}
+              </div>
             ) : null}
 
             <Accordion
@@ -1433,48 +1456,48 @@ export function LineItemDetailView({
               <AccordionDetails>
                 <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="senderCompany" label="Utlastande bolag" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Utlastande bolag" value={newLineItemDraft.senderCompany} onChange={(v) => updateDraftField("senderCompany", v)} className={styles.searchFieldControl}>
+                    <FieldLabel fieldKey="senderCompany" label={getFieldLabel("senderCompany", "Utlastande bolag")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("senderCompany", "Utlastande bolag")} value={newLineItemDraft.senderCompany} onChange={(v) => updateDraftField("senderCompany", v)} className={getFieldControlClassName("senderCompany")}>
                       <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
                       <MenuItem value="Moelven">Moelven</MenuItem>
                     </LabeledSelect>
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="senderWarehouse" label="Utlastande lagerställe" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Utlastande lagerställe" value={newLineItemDraft.senderWarehouse} onChange={(v) => updateDraftField("senderWarehouse", v)} className={styles.searchFieldControl}>
+                    <FieldLabel fieldKey="senderWarehouse" label={getFieldLabel("senderWarehouse", "Utlastande lagerställe")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("senderWarehouse", "Utlastande lagerställe")} value={newLineItemDraft.senderWarehouse} onChange={(v) => updateDraftField("senderWarehouse", v)} className={getFieldControlClassName("senderWarehouse")}>
                       <MenuItem value="Krokom">Krokom</MenuItem>
                       <MenuItem value="Hissmofors">Hissmofors</MenuItem>
                     </LabeledSelect>
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="contractNumber" label="KontraktsNr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="KontraktsNr" value={newLineItemDraft.contractNumber} onChange={(event) => updateDraftField("contractNumber", event.target.value)} size="small" className={styles.searchFieldControl} InputProps={{ readOnly: !isNewLineItem }} />
+                    <TextField label="KontraktsNr" value={newLineItemDraft.contractNumber} onChange={(event) => updateDraftField("contractNumber", event.target.value)} size="small" className={getFieldControlClassName("contractNumber")} InputProps={{ readOnly: !isNewLineItem }} />
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="responsibleCompany" label="Ansvarigt bolag" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Ansvarigt bolag" value={newLineItemDraft.responsibleCompany} onChange={(v) => updateDraftField("responsibleCompany", v)} className={styles.searchFieldControl}>
+                    <FieldLabel fieldKey="responsibleCompany" label={getFieldLabel("responsibleCompany", "Ansvarigt bolag")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("responsibleCompany", "Ansvarigt bolag")} value={newLineItemDraft.responsibleCompany} onChange={(v) => updateDraftField("responsibleCompany", v)} className={getFieldControlClassName("responsibleCompany")}>
                       <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
                       <MenuItem value="Moelven">Moelven</MenuItem>
                     </LabeledSelect>
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="comboPackageNumber" label="KombipaketNr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="KombipaketNr" value={newLineItemDraft.comboPackageNumber} onChange={(event) => updateDraftField("comboPackageNumber", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="KombipaketNr" value={newLineItemDraft.comboPackageNumber} onChange={(event) => updateDraftField("comboPackageNumber", event.target.value)} size="small" className={getFieldControlClassName("comboPackageNumber")} />
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="status" label="Status" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Status" value={newLineItemDraft.status} onChange={(v) => updateDraftField("status", v)} className={styles.searchFieldControl}>
+                    <FieldLabel fieldKey="status" label={getFieldLabel("status", "Status")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("status", "Status")} value={newLineItemDraft.status} onChange={(v) => updateDraftField("status", v)} className={getFieldControlClassName("status")}>
                       <MenuItem value="Aktiv">Aktiv</MenuItem>
                       <MenuItem value="Pausad">Pausad</MenuItem>
                     </LabeledSelect>
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="priceList" label="Prislista" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Prislista" value={newLineItemDraft.priceList} onChange={(event) => updateDraftField("priceList", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="Prislista" value={newLineItemDraft.priceList} onChange={(event) => updateDraftField("priceList", event.target.value)} size="small" className={getFieldControlClassName("priceList")} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="certification" label="Certifiering" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Certifiering" value={newLineItemDraft.certification} onChange={(v) => updateDraftField("certification", v)} className={styles.searchFieldControl}>
+                    <LabeledSelect label="Certifiering" value={newLineItemDraft.certification} onChange={(v) => updateDraftField("certification", v)} className={getFieldControlClassName("certification")}>
                       <MenuItem value="Ocertifierat">Ocertifierat</MenuItem>
                       <MenuItem value="FSC">FSC</MenuItem>
                       <MenuItem value="PEFC">PEFC</MenuItem>
@@ -1499,42 +1522,42 @@ export function LineItemDetailView({
                 <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="nobbNumber" label="NOBBnr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="NOBBnr" value={newLineItemDraft.nobbNumber} onChange={(event) => updateDraftField("nobbNumber", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="NOBBnr" value={newLineItemDraft.nobbNumber} onChange={(event) => updateDraftField("nobbNumber", event.target.value)} size="small" className={getFieldControlClassName("nobbNumber")} />
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="artNr" label="ArtNr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="ArtNr" value={newLineItemDraft.artNr} onChange={(event) => updateDraftField("artNr", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <FieldLabel fieldKey="artNr" label={getFieldLabel("artNr", "ArtNr")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label={getFieldLabel("artNr", "ArtNr")} value={newLineItemDraft.artNr} onChange={(event) => updateDraftField("artNr", event.target.value)} size="small" className={getFieldControlClassName("artNr")} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="deliverArtNr" label="Leverera ArtNr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Leverera ArtNr" value={newLineItemDraft.deliverArtNr} onChange={(event) => updateDraftField("deliverArtNr", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="Leverera ArtNr" value={newLineItemDraft.deliverArtNr} onChange={(event) => updateDraftField("deliverArtNr", event.target.value)} size="small" className={getFieldControlClassName("deliverArtNr")} />
                   </div>
                 </div>
                 <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="product" label="Produkt" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Produkt" value={newLineItemDraft.product} onChange={(event) => updateDraftField("product", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="Produkt" value={newLineItemDraft.product} onChange={(event) => updateDraftField("product", event.target.value)} size="small" className={getFieldControlClassName("product")} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="deliverProduct" label="Leverera produkt" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Leverera produkt" value={newLineItemDraft.deliverProduct} onChange={(event) => updateDraftField("deliverProduct", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="Leverera produkt" value={newLineItemDraft.deliverProduct} onChange={(event) => updateDraftField("deliverProduct", event.target.value)} size="small" className={getFieldControlClassName("deliverProduct")} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="invoiceText" label="Fakturatext" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Fakturatext" value={newLineItemDraft.invoiceText} onChange={(event) => updateDraftField("invoiceText", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="Fakturatext" value={newLineItemDraft.invoiceText} onChange={(event) => updateDraftField("invoiceText", event.target.value)} size="small" className={getFieldControlClassName("invoiceText")} />
                   </div>
                 </div>
                 <div className={styles.lineItemSectionGrid2}>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="packageType" label="Pakettyp" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Pakettyp" value={newLineItemDraft.packageType} onChange={(v) => updateDraftField("packageType", v)} className={styles.searchFieldControl}>
+                    <FieldLabel fieldKey="packageType" label={getFieldLabel("packageType", "Pakettyp")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("packageType", "Pakettyp")} value={newLineItemDraft.packageType} onChange={(v) => updateDraftField("packageType", v)} className={getFieldControlClassName("packageType")}>
                       <MenuItem value="Lp">Lp</MenuItem>
                       <MenuItem value="Paket">Paket</MenuItem>
                     </LabeledSelect>
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="deliverPackageType" label="Leverera pakettyp" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Leverera pakettyp" value={newLineItemDraft.deliverPackageType} onChange={(v) => updateDraftField("deliverPackageType", v)} className={styles.searchFieldControl}>
+                    <LabeledSelect label="Leverera pakettyp" value={newLineItemDraft.deliverPackageType} onChange={(v) => updateDraftField("deliverPackageType", v)} className={getFieldControlClassName("deliverPackageType")}>
                       <MenuItem value="">-</MenuItem>
                       <MenuItem value="Lp">Lp</MenuItem>
                       <MenuItem value="Paket">Paket</MenuItem>
@@ -1544,19 +1567,24 @@ export function LineItemDetailView({
                 <div className={styles.lineItemSectionGrid4}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="length" label="Längd" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Längd" value={newLineItemDraft.length} onChange={(event) => updateDraftField("length", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="Längd" value={newLineItemDraft.length} onChange={(event) => updateDraftField("length", event.target.value)} size="small" className={getFieldControlClassName("length")} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="packaging" label="Emballage" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Emballage" value={newLineItemDraft.packaging} onChange={(event) => updateDraftField("packaging", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <LabeledSelect label="Emballage" value={newLineItemDraft.packaging} onChange={(v) => updateDraftField("packaging", v)} className={getFieldControlClassName("packaging")}>
+                      <MenuItem value="">-</MenuItem>
+                      <MenuItem value="Standard">Standard</MenuItem>
+                      <MenuItem value="Skydd">Skydd</MenuItem>
+                      <MenuItem value="Export">Export</MenuItem>
+                    </LabeledSelect>
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="bundle" label="Bunt" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Bunt" value={newLineItemDraft.bundle} onChange={(event) => updateDraftField("bundle", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="Bunt" value={newLineItemDraft.bundle} onChange={(event) => updateDraftField("bundle", event.target.value)} size="small" className={getFieldControlClassName("bundle")} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="vflGroup" label="VFL grupp" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="VFL grupp" value={newLineItemDraft.vflGroup} onChange={(event) => updateDraftField("vflGroup", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="VFL grupp" value={newLineItemDraft.vflGroup} onChange={(event) => updateDraftField("vflGroup", event.target.value)} size="small" className={getFieldControlClassName("vflGroup")} />
                   </div>
                 </div>
               </AccordionDetails>
@@ -1576,16 +1604,16 @@ export function LineItemDetailView({
               <AccordionDetails>
                 <div className={styles.lineItemSectionGrid4}>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="quantity" label="Mängd" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Mängd" value={newLineItemDraft.quantity} onChange={(event) => updateDraftField("quantity", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <FieldLabel fieldKey="quantity" label={getFieldLabel("quantity", "Mängd")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label={getFieldLabel("quantity", "Mängd")} value={newLineItemDraft.quantity} onChange={(event) => updateDraftField("quantity", event.target.value)} size="small" className={getFieldControlClassName("quantity")} />
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="volume" label="Volym" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Volym" value={newLineItemDraft.volume} onChange={(event) => updateDraftField("volume", event.target.value)} size="small" className={styles.searchFieldControl} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
+                    <FieldLabel fieldKey="volume" label={getFieldLabel("volume", "Volym")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label={getFieldLabel("volume", "Volym")} value={newLineItemDraft.volume} onChange={(event) => updateDraftField("volume", event.target.value)} size="small" className={getFieldControlClassName("volume")} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="orderedUnit" label="Beställd enhet" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Beställd enhet" value={newLineItemDraft.orderedUnit} onChange={(v) => updateDraftField("orderedUnit", v)} className={styles.searchFieldControl}>
+                    <FieldLabel fieldKey="orderedUnit" label={getFieldLabel("orderedUnit", "Beställd enhet")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("orderedUnit", "Beställd enhet")} value={newLineItemDraft.orderedUnit} onChange={(v) => updateDraftField("orderedUnit", v)} className={getFieldControlClassName("orderedUnit")}>
                       <MenuItem value="m3 nominell">m3 nominell</MenuItem>
                       <MenuItem value="m3 fast">m3 fast</MenuItem>
                       <MenuItem value="lpm">lpm</MenuItem>
@@ -1593,13 +1621,13 @@ export function LineItemDetailView({
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="finalVolume" label="Slutvolym" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Slutvolym" value={newLineItemDraft.finalVolume} onChange={(event) => updateDraftField("finalVolume", event.target.value)} size="small" className={styles.searchFieldControl} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
+                    <TextField label="Slutvolym" value={newLineItemDraft.finalVolume} onChange={(event) => updateDraftField("finalVolume", event.target.value)} size="small" className={getFieldControlClassName("finalVolume")} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
                   </div>
                 </div>
                 <div className={styles.lineItemSectionGrid4}>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="invoiceUnit" label="Faktura enhet" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Faktura enhet" value={newLineItemDraft.invoiceUnit} onChange={(v) => updateDraftField("invoiceUnit", v)} className={styles.searchFieldControl}>
+                    <FieldLabel fieldKey="invoiceUnit" label={getFieldLabel("invoiceUnit", "Faktura enhet")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("invoiceUnit", "Faktura enhet")} value={newLineItemDraft.invoiceUnit} onChange={(v) => updateDraftField("invoiceUnit", v)} className={getFieldControlClassName("invoiceUnit")}>
                       <MenuItem value="m3 nominell">m3 nominell</MenuItem>
                       <MenuItem value="m3 fast">m3 fast</MenuItem>
                       <MenuItem value="lpm">lpm</MenuItem>
@@ -1607,42 +1635,42 @@ export function LineItemDetailView({
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="adjustedPrice" label="Prisjusterad" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Prisjusterad" value={newLineItemDraft.adjustedPrice} onChange={(event) => updateDraftField("adjustedPrice", event.target.value)} size="small" className={styles.searchFieldControl} InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
+                    <TextField label="Prisjusterad" value={newLineItemDraft.adjustedPrice} onChange={(event) => updateDraftField("adjustedPrice", event.target.value)} size="small" className={getFieldControlClassName("adjustedPrice")} InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="price" label="Pris" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Pris" value={newLineItemDraft.price} onChange={(event) => updateDraftField("price", event.target.value)} size="small" className={styles.searchFieldControl} InputProps={{ endAdornment: <InputAdornment position="end">USD/m3 nomin</InputAdornment> }} />
+                    <FieldLabel fieldKey="price" label={getFieldLabel("price", "Pris")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label={getFieldLabel("price", "Pris")} value={newLineItemDraft.price} onChange={(event) => updateDraftField("price", event.target.value)} size="small" className={getFieldControlClassName("price")} InputProps={{ endAdornment: <InputAdornment position="end">USD/m3 nomin</InputAdornment> }} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="amount" label="Belopp" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Belopp" value={newLineItemDraft.amount} onChange={(event) => updateDraftField("amount", event.target.value)} size="small" className={styles.searchFieldControl} InputProps={{ endAdornment: <InputAdornment position="end">SEK</InputAdornment> }} />
+                    <TextField label="Belopp" value={newLineItemDraft.amount} onChange={(event) => updateDraftField("amount", event.target.value)} size="small" className={getFieldControlClassName("amount")} InputProps={{ endAdornment: <InputAdornment position="end">SEK</InputAdornment> }} />
                   </div>
                 </div>
                 <div className={styles.lineItemSectionGrid4}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="sponsorship" label="Sponsring" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Sponsring" value={newLineItemDraft.sponsorship} onChange={(event) => updateDraftField("sponsorship", event.target.value)} size="small" className={styles.searchFieldControl} InputProps={{ endAdornment: <InputAdornment position="end">USD/m3 nomin</InputAdornment> }} />
+                    <TextField label="Sponsring" value={newLineItemDraft.sponsorship} onChange={(event) => updateDraftField("sponsorship", event.target.value)} size="small" className={getFieldControlClassName("sponsorship")} InputProps={{ endAdornment: <InputAdornment position="end">USD/m3 nomin</InputAdornment> }} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="sponsoredAmount" label="Belopp spons" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Belopp spons" value={newLineItemDraft.sponsoredAmount} onChange={(event) => updateDraftField("sponsoredAmount", event.target.value)} size="small" className={styles.searchFieldControl} InputProps={{ endAdornment: <InputAdornment position="end">SEK</InputAdornment> }} />
+                    <TextField label="Belopp spons" value={newLineItemDraft.sponsoredAmount} onChange={(event) => updateDraftField("sponsoredAmount", event.target.value)} size="small" className={getFieldControlClassName("sponsoredAmount")} InputProps={{ endAdornment: <InputAdornment position="end">SEK</InputAdornment> }} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="caneaAgreementNumber" label="Avtalsnr i Canea" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Avtalsnr i Canea" value={newLineItemDraft.caneaAgreementNumber} onChange={(event) => updateDraftField("caneaAgreementNumber", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="Avtalsnr i Canea" value={newLineItemDraft.caneaAgreementNumber} onChange={(event) => updateDraftField("caneaAgreementNumber", event.target.value)} size="small" className={getFieldControlClassName("caneaAgreementNumber")} />
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="salesType" label="Säljtyp" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Säljtyp" value={newLineItemDraft.salesType} onChange={(v) => updateDraftField("salesType", v)} className={styles.searchFieldControl}>
+                    <FieldLabel fieldKey="salesType" label={getFieldLabel("salesType", "Säljtyp")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("salesType", "Säljtyp")} value={newLineItemDraft.salesType} onChange={(v) => updateDraftField("salesType", v)} className={getFieldControlClassName("salesType")}>
                       <MenuItem value="Eget virke">Eget virke</MenuItem>
                       <MenuItem value="Handelsvara">Handelsvara</MenuItem>
                     </LabeledSelect>
                   </div>
                 </div>
-                <label className={styles.lineItemCheckboxRow}>
+                <label className={getFieldControlClassName("pickingSurchargeEnabled", styles.lineItemCheckboxRow)}>
                   <Checkbox size="small" checked={Boolean(newLineItemDraft.pickingSurchargeEnabled)} onChange={(event) => updateDraftField("pickingSurchargeEnabled", event.target.checked)} />
                   <Typography className={styles.searchFieldLabel}>Plocktillägg</Typography>
-                  <TextField value={newLineItemDraft.pickingSurchargeQuantity} onChange={(event) => updateDraftField("pickingSurchargeQuantity", event.target.value)} size="small" className={styles.lineItemSmallInlineInput} />
+                  <TextField value={newLineItemDraft.pickingSurchargeQuantity} onChange={(event) => updateDraftField("pickingSurchargeQuantity", event.target.value)} size="small" className={getFieldControlClassName("pickingSurchargeQuantity", styles.lineItemSmallInlineInput)} />
                   <Typography className={styles.lineItemInlineHint}>st vilket ger 15 % minst 300 SEK</Typography>
                 </label>
               </AccordionDetails>
@@ -1663,11 +1691,11 @@ export function LineItemDetailView({
                 <div className={styles.lineItemSectionGrid4}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="deliveryWeek" label="Leveransvecka" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Leveransvecka" value={newLineItemDraft.deliveryWeek} onChange={(event) => updateDraftField("deliveryWeek", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="Leveransvecka" value={newLineItemDraft.deliveryWeek} onChange={(event) => updateDraftField("deliveryWeek", event.target.value)} size="small" className={getFieldControlClassName("deliveryWeek")} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="deliveryDay" label="Leveransdag" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Leveransdag" value={newLineItemDraft.deliveryDay} onChange={(v) => updateDraftField("deliveryDay", v)} className={styles.searchFieldControl}>
+                    <LabeledSelect label="Leveransdag" value={newLineItemDraft.deliveryDay} onChange={(v) => updateDraftField("deliveryDay", v)} className={getFieldControlClassName("deliveryDay")}>
                       <MenuItem value="">-</MenuItem>
                       <MenuItem value="Måndag">Måndag</MenuItem>
                       <MenuItem value="Tisdag">Tisdag</MenuItem>
@@ -1677,18 +1705,18 @@ export function LineItemDetailView({
                     </LabeledSelect>
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="deliveryWindowMin" label="Lev. fönster min" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Lev. fönster min" value={newLineItemDraft.deliveryWindowMin} onChange={(event) => updateDraftField("deliveryWindowMin", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <FieldLabel fieldKey="deliveryWindowMin" label={getFieldLabel("deliveryWindowMin", "Lev. fönster min")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label={getFieldLabel("deliveryWindowMin", "Lev. fönster min")} value={newLineItemDraft.deliveryWindowMin} onChange={(event) => updateDraftField("deliveryWindowMin", event.target.value)} size="small" className={getFieldControlClassName("deliveryWindowMin")} />
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="deliveryWindowMax" label="Lev. fönster max" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Lev. fönster max" value={newLineItemDraft.deliveryWindowMax} onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <FieldLabel fieldKey="deliveryWindowMax" label={getFieldLabel("deliveryWindowMax", "Lev. fönster max")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label={getFieldLabel("deliveryWindowMax", "Lev. fönster max")} value={newLineItemDraft.deliveryWindowMax} onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)} size="small" className={getFieldControlClassName("deliveryWindowMax")} />
                   </div>
                 </div>
                 <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="deliveryPeriodDocument" label="Leveransperiod kunddokument" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Leveransperiod kunddokument" value={newLineItemDraft.deliveryPeriodDocument} onChange={(event) => updateDraftField("deliveryPeriodDocument", event.target.value)} size="small" className={styles.searchFieldControl} />
+                    <TextField label="Leveransperiod kunddokument" value={newLineItemDraft.deliveryPeriodDocument} onChange={(event) => updateDraftField("deliveryPeriodDocument", event.target.value)} size="small" className={getFieldControlClassName("deliveryPeriodDocument")} />
                   </div>
                 </div>
               </AccordionDetails>
@@ -1708,50 +1736,85 @@ export function LineItemDetailView({
               <AccordionDetails>
                 <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="internalComment" label="Intern kommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Intern kommentar" value={newLineItemDraft.internalComment} onChange={(event) => updateDraftField("internalComment", event.target.value)} size="small" className={styles.searchFieldControl} multiline rows={3} />
-                  </div>
-                  <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="externalComment" label="Extern kommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Extern kommentar" value={newLineItemDraft.externalComment} onChange={(event) => updateDraftField("externalComment", event.target.value)} size="small" className={styles.searchFieldControl} multiline rows={3} />
-                  </div>
-                  <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="customerComment" label="Kundkommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Kundkommentar" value={newLineItemDraft.customerComment} onChange={(event) => updateDraftField("customerComment", event.target.value)} size="small" className={styles.searchFieldControl} multiline rows={3} />
-                  </div>
-                </div>
-                <label className={styles.lineItemCheckboxRow}>
-                  <Checkbox size="small" checked={Boolean(newLineItemDraft.showOnInvoice)} onChange={(event) => updateDraftField("showOnInvoice", event.target.checked)} />
-                  <Typography className={styles.searchFieldLabel}>Visa på följesedel och faktura</Typography>
-                </label>
-                <div className={styles.lineItemSectionGrid3}>
-                  <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="customerBrand" label="Kundens märke" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Kundens märke" value={newLineItemDraft.customerBrand} onChange={(event) => updateDraftField("customerBrand", event.target.value)} size="small" className={styles.searchFieldControl} />
-                  </div>
-                  <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="recipientBrand" label="Godsmottagarens märke" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Godsmottagarens märke" value={newLineItemDraft.recipientBrand} onChange={(event) => updateDraftField("recipientBrand", event.target.value)} size="small" className={styles.searchFieldControl} />
-                  </div>
-                  <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="callOffStatus" label="Avropsradstatus" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Avropsradstatus" value={newLineItemDraft.callOffStatus} onChange={(v) => updateDraftField("callOffStatus", v)} className={styles.searchFieldControl}>
+                    <FieldLabel fieldKey="callOffStatus" label={getFieldLabel("callOffStatus", "Avropsradsstatus")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("callOffStatus", "Avropsradsstatus")} value={newLineItemDraft.callOffStatus} onChange={(v) => updateDraftField("callOffStatus", v)} className={getFieldControlClassName("callOffStatus")}>
                       <MenuItem value="Sales planned">Sales planned</MenuItem>
                       <MenuItem value="Load planned">Load planned</MenuItem>
                       <MenuItem value="Aktiv">Aktiv</MenuItem>
                     </LabeledSelect>
                   </div>
                 </div>
+                <hr className={styles.contractFlatDivider} />
+                <div className={styles.lineItemSectionGrid3}>
+                  <div className={styles.lineItemField}>
+                    <FieldLabel fieldKey="internalComment" label="Intern kommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label="Intern kommentar" value={newLineItemDraft.internalComment} onChange={(event) => updateDraftField("internalComment", event.target.value)} size="small" className={getFieldControlClassName("internalComment")} multiline rows={3} />
+                  </div>
+                  <div className={styles.lineItemField}>
+                    <FieldLabel fieldKey="externalComment" label="Extern kommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label="Extern kommentar" value={newLineItemDraft.externalComment} onChange={(event) => updateDraftField("externalComment", event.target.value)} size="small" className={getFieldControlClassName("externalComment")} multiline rows={3} />
+                  </div>
+                  <div className={styles.lineItemField}>
+                    <FieldLabel fieldKey="customerComment" label="Kundkommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label="Kundkommentar" value={newLineItemDraft.customerComment} onChange={(event) => updateDraftField("customerComment", event.target.value)} size="small" className={getFieldControlClassName("customerComment")} multiline rows={3} />
+                  </div>
+                </div>
+                <label className={getFieldControlClassName("showOnInvoice", styles.lineItemCheckboxRow)}>
+                  <Checkbox size="small" checked={Boolean(newLineItemDraft.showOnInvoice)} onChange={(event) => updateDraftField("showOnInvoice", event.target.checked)} />
+                  <Typography className={styles.searchFieldLabel}>Visa på följesedel och faktura</Typography>
+                </label>
+                <div className={styles.lineItemSectionGrid3}>
+                  <div className={styles.lineItemField}>
+                    <FieldLabel fieldKey="customerBrand" label="Kundens märke" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label="Kundens märke" value={newLineItemDraft.customerBrand} onChange={(event) => updateDraftField("customerBrand", event.target.value)} size="small" className={getFieldControlClassName("customerBrand")} />
+                  </div>
+                  <div className={styles.lineItemField}>
+                    <FieldLabel fieldKey="recipientBrand" label="Godsmottagarens märke" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label="Godsmottagarens märke" value={newLineItemDraft.recipientBrand} onChange={(event) => updateDraftField("recipientBrand", event.target.value)} size="small" className={getFieldControlClassName("recipientBrand")} />
+                  </div>
+                </div>
               </AccordionDetails>
             </Accordion>
+
+            {isNewLineItem && createStep === 0 ? (
+              <div className={styles.lineItemAccordionFooterAction}>
+                <Button
+                  type="button"
+                  size="small"
+                  variant="contained"
+                  className={`${styles.lineItemSaveButton} ${styles.lineItemFastTrackTerminalAction}`}
+                  onClick={handleNextStep}
+                >
+                  Spara och gå vidare
+                </Button>
+              </div>
+            ) : null}
           </div>
         </div>
         <div className={styles.detailTabsColumn}>
           <div className={styles.contractModernAdditionsWrap}>
-            {isNewLineItem ? (
+            {createStep === 1 ? (
               <div className={styles.lineItemWizardReviewCard}>
                 <div className={styles.lineItemWizardReviewHeader}>
-                  <span className={styles.lineItemWizardReviewTitle}>Uppgifter från kontraktsradshuvud</span>
+                  <span className={styles.lineItemWizardReviewTitle}>{isNewLineItem ? "Obligatoriska uppgifter från kontraktsradshuvud" : "Kontraktsradshuvud"}</span>
+                  {remainingReviewFields.length > 0 ? (
+                    <>
+                      <span className={styles.lineItemWizardReviewHeaderDivider} aria-hidden="true" />
+                      <Button
+                        type="button"
+                        size="small"
+                        className={styles.lineItemWizardReviewToggleBtnInline}
+                        endIcon={
+                          <ExpandMoreIcon
+                            className={`${styles.lineItemWizardReviewToggleIcon} ${showAllReviewFields ? styles.lineItemWizardReviewToggleIconOpen : ""}`}
+                          />
+                        }
+                        onClick={() => setShowAllReviewFields((previous) => !previous)}
+                      >
+                        {showAllReviewFields ? "Visa färre" : "Visa alla"}
+                      </Button>
+                    </>
+                  ) : null}
                 </div>
                 <div className={styles.lineItemWizardReviewFields}>
                   {highlightedReviewFields.map(renderReviewField)}
@@ -1765,19 +1828,11 @@ export function LineItemDetailView({
                         </div>
                       </div>
                     ) : null}
-                    <Button
-                      type="button"
-                      size="small"
-                      className={styles.lineItemWizardReviewToggleBtn}
-                      onClick={() => setShowAllReviewFields((previous) => !previous)}
-                    >
-                      {showAllReviewFields ? "Visa färre" : "Visa alla"}
-                    </Button>
                   </>
                 ) : null}
               </div>
             ) : null}
-            <div className={styles.contractMudTabBar}>
+            <div className={styles.contractMudTabBar} style={{ paddingLeft: 16, paddingRight: 16 }}>
               {lineItemDetailTabs.map((tab) => (
                 <button
                   key={tab}
@@ -1803,10 +1858,12 @@ export function LineItemDetailView({
                       </Button>
                     </div>
 
+                    <div className={styles.lineItemsTableFrame}>
                     <div className={styles.freightTableWrap}>
                       <div className={styles.freightTable}>
                         <DataTable
                           variant="line"
+                          fillRemainingSpace
                           columns={LENGTH_DISTRIBUTION_COLUMNS}
                           rows={lengthDistributionRows}
                           rowKey={(row, index) => `${row.id}-${index}`}
@@ -1857,6 +1914,7 @@ export function LineItemDetailView({
                           }}
                         />
                       </div>
+                    </div>
                     </div>
                   </div>
 
@@ -1972,10 +2030,12 @@ export function LineItemDetailView({
                       </Button>
                     </div>
 
+                    <div className={styles.lineItemsTableFrame}>
                     <div className={styles.freightTableWrap}>
                       <div className={styles.freightTable}>
                         <DataTable
                           variant="line"
+                          fillRemainingSpace
                           columns={CALLOFF_COLUMNS}
                           rows={callOffRows}
                           rowKey={(row, index) => `${row.id}-${index}`}
@@ -2026,6 +2086,7 @@ export function LineItemDetailView({
                           }}
                         />
                       </div>
+                    </div>
                     </div>
                   </div>
 
@@ -2215,10 +2276,12 @@ export function LineItemDetailView({
                       </Button>
                     </div>
 
+                    <div className={styles.lineItemsTableFrame}>
                     <div className={styles.freightTableWrap}>
                       <div className={styles.freightTable}>
                         <DataTable
                           variant="line"
+                          fillRemainingSpace
                           columns={PERIODISERING_COLUMNS}
                           rows={periodiseringRows}
                           rowKey={(row, index) => `${row.id}-${index}`}
@@ -2267,6 +2330,7 @@ export function LineItemDetailView({
                           }}
                         />
                       </div>
+                    </div>
                     </div>
                   </div>
 
@@ -2418,10 +2482,12 @@ export function LineItemDetailView({
                       </Button>
                     </div>
 
+                    <div className={styles.lineItemsTableFrame}>
                     <div className={styles.freightTableWrap}>
                       <div className={`${styles.freightTable} ${styles.productionPlanningTable}`}>
                         <DataTable
                           variant="line"
+                          fillRemainingSpace
                           columns={PRODUCTION_PLANNING_COLUMNS}
                           rows={productionPlanningRows}
                           rowKey={(row, index) => `${row.id}-${index}`}
@@ -2472,6 +2538,7 @@ export function LineItemDetailView({
                           }}
                         />
                       </div>
+                    </div>
                     </div>
 
                     <Dialog
@@ -2601,10 +2668,12 @@ export function LineItemDetailView({
                   <div className={styles.freightSection}>
 
 
+                    <div className={styles.lineItemsTableFrame}>
                     <div className={styles.freightTableWrap}>
                       <div className={styles.freightTable}>
                         <DataTable
                           variant="line"
+                          fillRemainingSpace
                           columns={NETTOLAGER_COLUMNS}
                           rows={nettolagerRows}
                           rowKey={(row, index) => `${row.bolag}-${row.fakturatext}-${index}`}
@@ -2612,6 +2681,7 @@ export function LineItemDetailView({
                           onRowClick={(index) => setSelectedNettolagerRow((previous) => (previous === index ? null : index))}
                         />
                       </div>
+                    </div>
                     </div>
                   </div>
                 </div>
