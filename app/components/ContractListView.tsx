@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Typography } from "@mui/material";
+import { Button, Chip, Typography } from "@mui/material";
 import type { ReactNode, RefObject } from "react";
 import { ActionRow } from "./shared/ActionRow";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
@@ -12,17 +12,25 @@ type ContractListViewProps = {
   textFields: Array<{ key: string; label: string; control: "text" | "select" | "checkbox" }>;
   selectFields: Array<{ key: string; label: string; control: "text" | "select" | "checkbox" }>;
   checkboxFields: Array<{ key: string; label: string; control: "text" | "select" | "checkbox" }>;
+  allTextFields: Array<{ key: string; label: string; control: "text" | "select" | "checkbox" }>;
+  allSelectFields: Array<{ key: string; label: string; control: "text" | "select" | "checkbox" }>;
+  allCheckboxFields: Array<{ key: string; label: string; control: "text" | "select" | "checkbox" }>;
   searchValues: Record<string, string | boolean>;
+  globalSearchValue: string;
   isSearchMenuOpen: boolean;
-  draftSearchFields: Array<{ key: string; label: string; control: "text" | "select" | "checkbox"; visible: boolean }>;
+  draftSearchFields: Array<{ key: string; label: string; control: "text" | "select" | "checkbox"; visible: boolean; favorite?: boolean }>;
   searchButtonRef: RefObject<HTMLButtonElement | null>;
   searchMenuRef: RefObject<HTMLDivElement | null>;
   getSelectOptions: (key: string) => string[];
   onOpenSearchMenu: () => void;
   onCancelSearchMenu: () => void;
   onToggleSearchFieldVisibility: (key: string) => void;
+  onToggleSearchFieldFavorite: (key: string) => void;
+  onSaveFavoriteKeys: (orderedKeys: string[]) => void;
   onSaveSearchFieldChanges: () => void;
   onClearSearchFieldChanges: () => void;
+  onClearSearchValues: () => void;
+  onGlobalSearchChange: (value: string) => void;
   onSearchTextChange: (key: string, value: string) => void;
   onSearchSelectChange: (key: string, value: string) => void;
   onSearchCheckboxChange: (key: string, checked: boolean) => void;
@@ -58,6 +66,7 @@ type ContractListViewProps = {
   onMoveLineColumn: (key: string, direction: "up" | "down") => void;
   onSaveLineColumnChanges: () => void;
   onResetLineColumnChanges: () => void;
+  onToggleLineColumnPin: (key: string) => void;
   visibleLineColumns: Array<{ key: string; label: string }>;
   lineItemRows: Array<Record<string, string>>;
 };
@@ -66,7 +75,11 @@ export function ContractListView({
   textFields,
   selectFields,
   checkboxFields,
+  allTextFields,
+  allSelectFields,
+  allCheckboxFields,
   searchValues,
+  globalSearchValue,
   isSearchMenuOpen,
   draftSearchFields,
   searchButtonRef,
@@ -75,8 +88,12 @@ export function ContractListView({
   onOpenSearchMenu,
   onCancelSearchMenu,
   onToggleSearchFieldVisibility,
+  onToggleSearchFieldFavorite,
+  onSaveFavoriteKeys,
   onSaveSearchFieldChanges,
   onClearSearchFieldChanges,
+  onClearSearchValues,
+  onGlobalSearchChange,
   onSearchTextChange,
   onSearchSelectChange,
   onSearchCheckboxChange,
@@ -112,6 +129,7 @@ export function ContractListView({
   onMoveLineColumn,
   onSaveLineColumnChanges,
   onResetLineColumnChanges,
+  onToggleLineColumnPin,
   visibleLineColumns,
   lineItemRows
 }: ContractListViewProps) {
@@ -121,30 +139,40 @@ export function ContractListView({
         textFields={textFields}
         selectFields={selectFields}
         checkboxFields={checkboxFields}
+        allTextFields={allTextFields}
+        allSelectFields={allSelectFields}
+        allCheckboxFields={allCheckboxFields}
         values={searchValues}
+        globalSearchValue={globalSearchValue}
         isMenuOpen={isSearchMenuOpen}
         draftFields={draftSearchFields}
         searchButtonRef={searchButtonRef}
         searchMenuRef={searchMenuRef}
         getSelectOptions={getSelectOptions}
+        useAdvancedFilterLayout
         onOpenMenu={onOpenSearchMenu}
         onCancelMenu={onCancelSearchMenu}
         onToggleFieldVisibility={onToggleSearchFieldVisibility}
+        onToggleFieldFavorite={onToggleSearchFieldFavorite}
+        onSaveFavoriteKeys={onSaveFavoriteKeys}
         onSaveMenu={onSaveSearchFieldChanges}
         onClearMenu={onClearSearchFieldChanges}
+        onClearValues={onClearSearchValues}
+        onGlobalSearchChange={onGlobalSearchChange}
         onTextChange={onSearchTextChange}
         onSelectChange={onSearchSelectChange}
         onCheckboxChange={onSearchCheckboxChange}
       />
 
-      <div className={styles.ruleDivider} />
+      <div className={styles.ruleDivider} style={{ marginTop: "16px" }} />
 
       <ActionRow
         items={actionItems.map((item) => ({
           label: item.label,
           icon: item.icon,
           enabled: !item.requiresSelection || hasSelectedRows,
-          onClick: item.label === "Ny" ? onCreateContract : undefined
+          onClick: item.label === "Ny" ? onCreateContract : undefined,
+          tone: item.label === "Ny" ? "primary" : "default"
         }))}
         rightSlot={
           <>
@@ -184,22 +212,62 @@ export function ContractListView({
                 rowKey={(row, idx) => `${row.kontrakt}-${idx}`}
                 selectedRowIndex={selectedRowId}
                 onRowClick={onSelectMainTableRow}
-                renderCell={(row, column) =>
-                  column.key === "kontrakt" ? (
-                    <button
-                      type="button"
-                      className={styles.contractLinkButton}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onOpenContractDetail(getCellValue(row, column.key));
-                      }}
-                    >
-                      {getCellValue(row, column.key)}
-                    </button>
-                  ) : (
-                    getCellValue(row, column.key)
-                  )
-                }
+                renderCell={(row, column, rowIndex) => {
+                  if (column.key === "kontrakt") {
+                    return (
+                      <button
+                        type="button"
+                        className={styles.contractLinkButton}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onOpenContractDetail(getCellValue(row, column.key));
+                        }}
+                      >
+                        {getCellValue(row, column.key)}
+                      </button>
+                    );
+                  }
+
+                  if (column.key === "kund") {
+                    const limitStatus = row["limitStatus"];
+                    return (
+                      <span className={styles.kundCell}>
+                        {limitStatus === "error" ? (
+                          <span className={styles.kundStatusDotError} />
+                        ) : limitStatus === "warning" ? (
+                          <span className={styles.kundStatusDotWarning} />
+                        ) : null}
+                        {getCellValue(row, column.key)}
+                      </span>
+                    );
+                  }
+
+                  if (column.key === "limit") {
+                    const limitStatus = row["limitStatus"];
+                    const limitNumber = getCellValue(row, column.key);
+                    if (limitStatus === "error") {
+                      return (
+                        <Chip
+                          label={limitNumber}
+                          size="small"
+                          color="error"
+                        />
+                      );
+                    }
+                    if (limitStatus === "warning") {
+                      return (
+                        <Chip
+                          label={limitNumber}
+                          size="small"
+                          color="warning"
+                        />
+                      );
+                    }
+                    return <span>{limitNumber}</span>;
+                  }
+
+                  return getCellValue(row, column.key);
+                }}
               />
             </div>
           </div>
@@ -210,7 +278,17 @@ export function ContractListView({
         {isLineItemsTableVisible ? (
           <div className={`${styles.lineItemsSection} ${styles.lineItemsSectionSplit}`}>
             <div className={styles.lineItemsHeader}>
-              <Typography className={styles.lineItemsTitle}>Kontraktsrader</Typography>
+              <div className={styles.lineItemsTitleGroup}>
+                {selectedRowId !== null && tableRows[selectedRowId]?.["kontrakt"] ? (
+                  <>
+                    <span className={styles.contractSectionLabel}>
+                      Kontrakt {tableRows[selectedRowId]["kontrakt"]} - Kontraktsrader
+                    </span>
+                  </>
+                ) : (
+                  <Typography className={styles.lineItemsTitle}>Kontraktsrader</Typography>
+                )}
+              </div>
               <ColumnManagerDropdown
                 isOpen={isLineColumnsMenuOpen}
                 columns={draftLineColumns}
@@ -222,6 +300,7 @@ export function ContractListView({
                 onMove={onMoveLineColumn}
                 onSave={onSaveLineColumnChanges}
                 onReset={onResetLineColumnChanges}
+                onTogglePin={onToggleLineColumnPin}
               />
             </div>
 
@@ -233,7 +312,7 @@ export function ContractListView({
                   rows={lineItemRows}
                   rowKey={(_row, index) => `line-item-${index}`}
                   selectedRowIndex={null}
-                  onRowClick={() => {}}
+                  onRowClick={() => { }}
                   renderCell={(row, column) =>
                     column.key === "idRad" ? (
                       <button type="button" className={styles.lineItemLinkButton}>

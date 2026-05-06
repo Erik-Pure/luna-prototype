@@ -7,6 +7,7 @@
   --color-champagne-dark: #bd6d00;
   --color-champagne-20: #f5e5cc;
   --color-champagne-10: #faf3e8;
+  --color-champagne-001: #C4790003;
 }
 
 html,
@@ -21,4 +22,23 @@ body {
 
 html[data-color-mode="dark"] body {
   background: #1a1b1f;
+}
+
+button,
+.MuiButton-root,
+.MuiIconButton-root,
+.MuiFab-root {
+  box-shadow: none !important;
+}
+
+.MuiButton-root:hover,
+.MuiButton-root:focus-visible,
+.MuiButton-root:active,
+.MuiIconButton-root:hover,
+.MuiIconButton-root:focus-visible,
+.MuiIconButton-root:active,
+.MuiFab-root:hover,
+.MuiFab-root:focus-visible,
+.MuiFab-root:active {
+  box-shadow: none !important;
 }

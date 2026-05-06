@@ -1,11 +1,13 @@
 "use client";
 
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import {
   Avatar,
+  Badge,
   Button,
   IconButton,
   Menu,
@@ -28,6 +30,28 @@ type TopNavItem = {
   hasMenu?: boolean;
 };
 
+type TopMenuOption = {
+  slug: string;
+  label: string;
+  href?: string;
+  endIcon?: "open_in_new";
+};
+
+const companyAbbreviations: Record<string, string> = {
+  "BP Hammerdal Byggprodukter": "HA",
+  "BP Hissmofors Byggprodukter": "HB",
+  "BP Kåge Byggprodukter": "KB",
+  "Huvudkontor": "H",
+  "NT Hissmofors Såg": "HS",
+  "NT Kåge Såg": "KS",
+  "NT Stolfabrik Agnäs": "AG",
+  "NT Sävar Såg": "SS"
+};
+
+function getCompanyAbbreviation(companyName: string): string {
+  return companyAbbreviations[companyName] ?? companyName.slice(0, 2).toUpperCase();
+}
+
 type AppShellLayoutProps = {
   isSidebarCollapsed: boolean;
   selectedCompany: string;
@@ -47,10 +71,10 @@ type AppShellLayoutProps = {
   onTopMenuClick: (item: TopNavItem, event: ReactMouseEvent<HTMLButtonElement>) => void;
   topMenuAnchorEl: HTMLElement | null;
   onCloseTopMenuDropdown: () => void;
-  topMenuDropdownOptions: Array<{ slug: string; label: string }>;
+  topMenuDropdownOptions: TopMenuOption[];
   topMenuDropdownOwnerSlug: string | null;
   menuSlug: string;
-  onTopMenuOptionSelect: (optionSlug: string) => void;
+  onTopMenuOptionSelect: (option: TopMenuOption) => void;
   currentSectionLabel: string;
   currentMenuLabel: string;
   isContractDetailOpen: boolean;
@@ -119,13 +143,21 @@ export function AppShellLayout({
             type="button"
             ref={companyButtonRef}
             className={styles.companySelectorButton}
-            aria-label="BP Hissmofors Byggcor"
+            aria-label={selectedCompany}
             onClick={onToggleCompanyMenu}
             aria-expanded={isCompanyMenuOpen}
           >
             {isSidebarCollapsed ? (
               <>
-                <HomeOutlinedIcon className={styles.companySelectorHomeIcon} />
+                <Badge
+                  badgeContent={getCompanyAbbreviation(selectedCompany)}
+                  classes={{
+                    root: styles.companySelectorBadgeRoot,
+                    badge: styles.companySelectorBadge
+                  }}
+                >
+                  <BusinessOutlinedIcon className={styles.companySelectorHomeIcon} />
+                </Badge>
                 <span className={styles.companySelectorTooltip}>{selectedCompany}</span>
               </>
             ) : (
@@ -137,21 +169,20 @@ export function AppShellLayout({
           </button>
           {isCompanyMenuOpen ? (
             <div
-              className={`${styles.companyDropdown} ${
-                isSidebarCollapsed ? styles.companyDropdownCollapsed : ""
-              }`}
+              className={`${styles.companyDropdown} ${isSidebarCollapsed ? styles.companyDropdownCollapsed : ""
+                }`}
               ref={companyMenuRef}
             >
               {fakeCompanies.map((company) => (
                 <button
                   key={company}
                   type="button"
-                  className={`${styles.companyDropdownItem} ${
-                    selectedCompany === company ? styles.companyDropdownItemActive : ""
-                  }`}
+                  className={`${styles.companyDropdownItem} ${selectedCompany === company ? styles.companyDropdownItemActive : ""
+                    }`}
                   onClick={() => onCompanySelect(company)}
                 >
-                  {company}
+                  <span className={styles.companyDropdownItemLabel}>{company}</span>
+                  <span className={styles.companyDropdownItemCode}>{getCompanyAbbreviation(company)}</span>
                 </button>
               ))}
             </div>
@@ -165,9 +196,8 @@ export function AppShellLayout({
               <button
                 type="button"
                 key={section.slug}
-                className={`${styles.sidebarItemButton} ${
-                  section.slug === sectionSlug ? styles.sidebarItemActive : ""
-                }`}
+                className={`${styles.sidebarItemButton} ${section.slug === sectionSlug ? styles.sidebarItemActive : ""
+                  }`}
                 data-label={section.label}
                 onClick={() => onNavigateSection(section.slug, section.defaultMenuSlug)}
               >
@@ -187,9 +217,8 @@ export function AppShellLayout({
               <button
                 type="button"
                 key={section.slug}
-                className={`${styles.sidebarItemButton} ${
-                  section.slug === sectionSlug ? styles.sidebarItemActive : ""
-                }`}
+                className={`${styles.sidebarItemButton} ${section.slug === sectionSlug ? styles.sidebarItemActive : ""
+                  }`}
                 data-label={section.label}
                 onClick={() => onNavigateSection(section.slug, section.defaultMenuSlug)}
               >
@@ -213,9 +242,8 @@ export function AppShellLayout({
           <div className={styles.collapseButtonWrap}>
             <IconButton size="small" className={styles.collapseButton} onClick={onToggleSidebar}>
               <MenuOpenIcon
-                className={`${styles.mainMenuToggleIcon} ${
-                  isSidebarCollapsed ? styles.mainMenuToggleIconClosed : styles.mainMenuToggleIconOpen
-                }`}
+                className={`${styles.mainMenuToggleIcon} ${isSidebarCollapsed ? styles.mainMenuToggleIconClosed : styles.mainMenuToggleIconOpen
+                  }`}
               />
             </IconButton>
           </div>
@@ -230,20 +258,23 @@ export function AppShellLayout({
               {item.label}
             </Button>
           ))}
+          {rightTopMenuItems.length > 0 ? (
+            <span className={styles.topMenuGroupDivider} aria-hidden="true">
+              |
+            </span>
+          ) : null}
+          {rightTopMenuItems.map((item) => (
+            <Button
+              key={item.slug}
+              className={`${styles.topMenuItem} ${isTopMenuItemActive(item) ? styles.topMenuItemActive : ""}`}
+              endIcon={<KeyboardArrowDownIcon className={styles.menuArrowIcon} />}
+              aria-current={isTopMenuItemActive(item) ? "page" : undefined}
+              onClick={(event) => onTopMenuClick(item, event)}
+            >
+              {item.label}
+            </Button>
+          ))}
           <div className={styles.topMenuSpacer} />
-          <div className={styles.topMenuRightGroup}>
-            {rightTopMenuItems.map((item) => (
-              <Button
-                key={item.slug}
-                className={`${styles.topMenuItem} ${isTopMenuItemActive(item) ? styles.topMenuItemActive : ""}`}
-                endIcon={<KeyboardArrowDownIcon className={styles.menuArrowIcon} />}
-                aria-current={isTopMenuItemActive(item) ? "page" : undefined}
-                onClick={(event) => onTopMenuClick(item, event)}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </div>
 
           <Menu
             anchorEl={topMenuAnchorEl}
@@ -255,12 +286,17 @@ export function AppShellLayout({
             {topMenuDropdownOptions.map((option) => (
               <MenuItem
                 key={option.slug}
-                className={`${styles.topMenuDropdownItem} ${
-                  option.slug === menuSlug && topMenuDropdownOwnerSlug ? styles.topMenuDropdownItemActive : ""
+                className={`${styles.topMenuDropdownItem} ${option.slug === menuSlug && topMenuDropdownOwnerSlug ? styles.topMenuDropdownItemActive : ""}
+                  ${option.endIcon === "open_in_new" ? styles.linkOutside : ""}
                 }`}
-                onClick={() => onTopMenuOptionSelect(option.slug)}
+                onClick={() => onTopMenuOptionSelect(option)}
               >
-                {option.label}
+                <span className={styles.topMenuDropdownItemContent}>
+                  <span>{option.label}</span>
+                  {option.endIcon === "open_in_new" ? (
+                    <OpenInNewIcon className={styles.topMenuDropdownItemIcon} fontSize="inherit" />
+                  ) : null}
+                </span>
               </MenuItem>
             ))}
           </Menu>

@@ -1,12 +1,13 @@
 "use client";
 
-import { Typography } from "@mui/material";
 import type { ReactNode } from "react";
 import styles from "../../page.module.scss";
 
 type DataTableColumn = {
   key: string;
   label: string;
+  pinned?: boolean;
+  pinnedRight?: boolean;
 };
 
 type DataTableVariant = "main" | "line";
@@ -37,17 +38,76 @@ export function DataTable<TRow extends Record<string, string | undefined>>({
   const cellClass = variant === "main" ? styles.tableCell : styles.lineItemsCell;
   const stickyHeaderClass = variant === "main" ? styles.stickyMainHeaderCell : styles.stickyLineHeaderCell;
   const stickyCellClass = variant === "main" ? styles.stickyMainCell : styles.stickyLineCell;
+  const stickyRightHeaderClass = styles.stickyRightHeaderCell;
+  const stickyRightCellClass = styles.stickyRightCell;
+  const STICKY_COLUMN_WIDTH = 120;
+
+  const stickyMeta = columns.reduce<Array<{ isSticky: boolean; left: number; order: number }>>(
+    (acc, column, columnIndex) => {
+      const shouldStick = columnIndex === 0 || Boolean(column.pinned);
+      if (!shouldStick) {
+        acc.push({ isSticky: false, left: 0, order: -1 });
+        return acc;
+      }
+
+      const stickyOrder = acc.filter((entry) => entry.isSticky).length;
+      acc.push({
+        isSticky: true,
+        left: stickyOrder * STICKY_COLUMN_WIDTH,
+        order: stickyOrder,
+      });
+      return acc;
+    },
+    []
+  );
+
+  const stickyRightMeta = columns.reduceRight<Array<{ isSticky: boolean; right: number; order: number }>>(
+    (acc, column, columnIndex) => {
+      const shouldStick = Boolean(column.pinnedRight);
+      if (!shouldStick) {
+        acc[columnIndex] = { isSticky: false, right: 0, order: -1 };
+        return acc;
+      }
+
+      const stickyOrder = acc.filter((entry) => entry?.isSticky).length;
+      acc[columnIndex] = {
+        isSticky: true,
+        right: stickyOrder * STICKY_COLUMN_WIDTH,
+        order: stickyOrder,
+      };
+      return acc;
+    },
+    new Array(columns.length)
+  );
 
   return (
     <>
       <div className={headerClass}>
         {columns.map((column, columnIndex) => (
-          <Typography
+          <div
             key={column.key}
-            className={`${headerCellClass} ${columnIndex === 0 ? stickyHeaderClass : ""}`}
+            className={`${headerCellClass} ${stickyMeta[columnIndex]?.isSticky ? stickyHeaderClass : ""} ${stickyRightMeta[columnIndex]?.isSticky ? stickyRightHeaderClass : ""}`}
+            style={
+              stickyMeta[columnIndex]?.isSticky || stickyRightMeta[columnIndex]?.isSticky
+                ? {
+                  ...(stickyMeta[columnIndex]?.isSticky
+                    ? {
+                      left: `${stickyMeta[columnIndex].left}px`,
+                      zIndex: 20 - stickyMeta[columnIndex].order,
+                    }
+                    : {}),
+                  ...(stickyRightMeta[columnIndex]?.isSticky
+                    ? {
+                      right: `${stickyRightMeta[columnIndex].right}px`,
+                      zIndex: 30 - stickyRightMeta[columnIndex].order,
+                    }
+                    : {}),
+                }
+                : undefined
+            }
           >
             {column.label}
-          </Typography>
+          </div>
         ))}
       </div>
 
@@ -58,12 +118,30 @@ export function DataTable<TRow extends Record<string, string | undefined>>({
           onClick={() => onRowClick(rowIndex)}
         >
           {columns.map((column, columnIndex) => (
-            <Typography
+            <div
               key={`${rowKey(row, rowIndex)}-${column.key}`}
-              className={`${cellClass} ${columnIndex === 0 ? stickyCellClass : ""}`}
+              className={`${cellClass} ${stickyMeta[columnIndex]?.isSticky ? stickyCellClass : ""} ${stickyRightMeta[columnIndex]?.isSticky ? stickyRightCellClass : ""}`}
+              style={
+                stickyMeta[columnIndex]?.isSticky || stickyRightMeta[columnIndex]?.isSticky
+                  ? {
+                    ...(stickyMeta[columnIndex]?.isSticky
+                      ? {
+                        left: `${stickyMeta[columnIndex].left}px`,
+                        zIndex: 10 - stickyMeta[columnIndex].order,
+                      }
+                      : {}),
+                    ...(stickyRightMeta[columnIndex]?.isSticky
+                      ? {
+                        right: `${stickyRightMeta[columnIndex].right}px`,
+                        zIndex: 15 - stickyRightMeta[columnIndex].order,
+                      }
+                      : {}),
+                  }
+                  : undefined
+              }
             >
               {renderCell ? renderCell(row, column, rowIndex, columnIndex) : row[column.key]}
-            </Typography>
+            </div>
           ))}
         </div>
       ))}

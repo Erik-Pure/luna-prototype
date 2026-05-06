@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import AddIcon from "@mui/icons-material/Add";
+import DvrOutlinedIcon from "@mui/icons-material/DvrOutlined";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FactoryOutlinedIcon from "@mui/icons-material/FactoryOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
@@ -26,6 +27,7 @@ import {
   ContractDetailView,
   ContractListView,
   DeliveryListView,
+  HomeView,
   PriceListDetailView,
   PriceListRowDetailView,
   PriceListView
@@ -33,14 +35,14 @@ import {
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
-type SectionKey = "marknad" | "produktion" | "leverans" | "rapporter" | "system";
+type SectionKey = "hem" | "marknad" | "produktion" | "leverans" | "rapporter" | "systemhantering" | "system";
 
 type TopMenuItemDef = {
   slug: string;
   label: string;
   hasMenu?: boolean;
   alignRight?: boolean;
-  options?: Array<{ slug: string; label: string }>;
+  options?: Array<{ slug: string; label: string; href?: string; endIcon?: "open_in_new" }>;
 };
 
 const sectionDefinitions: Array<{
@@ -49,19 +51,23 @@ const sectionDefinitions: Array<{
   icon: ReactNode;
   defaultMenuSlug: string;
 }> = [
-  { slug: "marknad", label: "Marknad", icon: <StorefrontOutlinedIcon fontSize="small" />, defaultMenuSlug: "kontraktlista" },
-  { slug: "produktion", label: "Produktion", icon: <FactoryOutlinedIcon fontSize="small" />, defaultMenuSlug: "oversikt" },
-  { slug: "leverans", label: "Leverans", icon: <LocalShippingOutlinedIcon fontSize="small" />, defaultMenuSlug: "planering" },
-  { slug: "rapporter", label: "Rapporter", icon: <AssessmentOutlinedIcon fontSize="small" />, defaultMenuSlug: "dashboard" },
-  { slug: "system", label: "System", icon: <SettingsOutlinedIcon fontSize="small" />, defaultMenuSlug: "installningar" }
-];
+    { slug: "hem", label: "Hem", icon: <HomeOutlinedIcon fontSize="small" />, defaultMenuSlug: "start" },
+    { slug: "marknad", label: "Marknad", icon: <StorefrontOutlinedIcon fontSize="small" />, defaultMenuSlug: "kontraktlista" },
+    { slug: "produktion", label: "Produktion", icon: <FactoryOutlinedIcon fontSize="small" />, defaultMenuSlug: "oversikt" },
+    { slug: "leverans", label: "Leverans", icon: <LocalShippingOutlinedIcon fontSize="small" />, defaultMenuSlug: "planering" },
+    { slug: "rapporter", label: "Rapporter", icon: <AssessmentOutlinedIcon fontSize="small" />, defaultMenuSlug: "dashboard" },
+    { slug: "systemhantering", label: "System", icon: <DvrOutlinedIcon fontSize="small" />, defaultMenuSlug: "oversikt" },
+    { slug: "system", label: "Inställningar", icon: <SettingsOutlinedIcon fontSize="small" />, defaultMenuSlug: "installningar" }
+  ];
 
 const topMenusBySection: Record<SectionKey, TopMenuItemDef[]> = {
+  hem: [
+    { slug: "start", label: "Hem" }
+  ],
   marknad: [
     { slug: "kundlista", label: "Kundlista" },
     { slug: "prislistor", label: "Prislistor" },
     { slug: "kontraktlista", label: "Kontraktlista" },
-    { slug: "avropslista", label: "Avropslista" },
     { slug: "leveranslista", label: "Leveranslista" },
     { slug: "klar-sok", label: "Klar sök" },
     {
@@ -70,20 +76,29 @@ const topMenusBySection: Record<SectionKey, TopMenuItemDef[]> = {
       hasMenu: true,
       alignRight: true,
       options: [
-        { slug: "ehandel-orderportal", label: "Orderportal" },
-        { slug: "ehandel-edi", label: "EDI Integration" },
-        { slug: "ehandel-kundshop", label: "Kundshop" }
+        { slug: "ehandel-lista", label: "E-handelslista" },
+        { slug: "edi-lista", label: "EDI-lista" }
       ]
     },
     {
-      slug: "saljstod",
-      label: "Säljstöd",
+      slug: "affar",
+      label: "Affär",
       hasMenu: true,
       alignRight: true,
       options: [
-        { slug: "saljstod-kampanjer", label: "Kampanjer" },
-        { slug: "saljstod-offerter", label: "Offerter" },
-        { slug: "saljstod-prisguide", label: "Prisguide" }
+        { slug: "saljstod", label: "Säljstöd" },
+        {
+          slug: "riktlinjer-leveransvillkor",
+          label: "Riktlinjer leveransvillkor",
+          href: "https://canea.ad.norraskog.se/Document/Published/2853",
+          endIcon: "open_in_new"
+        },
+        {
+          slug: "checklista-ny-kund",
+          label: "Checklista ny kund",
+          href: "https://canea.ad.norraskog.se/Document/Published/2933",
+          endIcon: "open_in_new"
+        }
       ]
     }
   ],
@@ -102,6 +117,11 @@ const topMenusBySection: Record<SectionKey, TopMenuItemDef[]> = {
     { slug: "ekonomi", label: "Ekonomi" },
     { slug: "logistik", label: "Logistik" }
   ],
+  systemhantering: [
+    { slug: "oversikt", label: "Översikt" },
+    { slug: "komponenter", label: "Komponenter" },
+    { slug: "loggar", label: "Loggar" }
+  ],
   system: [
     { slug: "installningar", label: "Inställningar" },
     { slug: "anvandare", label: "Användare" },
@@ -114,21 +134,23 @@ const actionItems = [
   { label: "Ta bort", icon: <DeleteOutlineOutlinedIcon fontSize="small" />, requiresSelection: true },
   { label: "Skriv ut", icon: <PrintOutlinedIcon fontSize="small" />, requiresSelection: true },
   { label: "Kopiera", icon: <ContentCopyOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "Inaktivera", icon: <BlockOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "Ändra pris", icon: <EditOutlinedIcon fontSize="small" />, requiresSelection: true }
+  { label: "Inaktivera", icon: <BlockOutlinedIcon fontSize="small" />, requiresSelection: true }
 ];
 
 const fakeCompanies = [
+  "BP Hammerdal Byggprodukter",
   "BP Hissmofors Byggprodukter",
-  "Nordic Sten & Mark AB",
-  "Svea Entreprenad Partner",
-  "Luna Infrastruktur AB",
-  "Skandinavisk Industriservice",
-  "Grönkraft Fastighet & Drift"
+  "BP Kåge Byggprodukter",
+  "Huvudkontor",
+  "NT Hissmofors Såg",
+  "NT Kåge Såg",
+  "NT Stolpfabrik Agnäs",
+  "NT Sävar Såg"
 ];
 
 const contractTabs = [
   "Kontraktsrader",
+  "Tillägg",
   "Frakt",
   "Avrop"
 ] as const;
@@ -148,7 +170,13 @@ type ColumnKey =
   | "leveransperiod"
   | "upprattatAv"
   | "kontraktsvolym"
-  | "levVolym";
+  | "levVolym"
+  | "olevVolym"
+  | "avropatProcent"
+  | "prislistaNr"
+  | "utlastningssparr"
+  | "tillhor"
+  | "limit";
 
 type ColumnConfig = {
   key: ColumnKey;
@@ -180,6 +208,7 @@ type LineItemColumnConfig = {
   key: LineItemColumnKey;
   label: string;
   visible: boolean;
+  pinned: boolean;
 };
 
 type LineItemRow = Record<LineItemColumnKey, string>;
@@ -198,6 +227,13 @@ type TableRow = {
   upprattatAv?: string;
   kontraktsvolym?: string;
   levVolym?: string;
+  olevVolym?: string;
+  avropatProcent?: string;
+  prislistaNr?: string;
+  utlastningssparr?: string;
+  tillhor?: string;
+  limit?: string;
+  limitStatus?: "ok" | "warning" | "error";
 };
 
 type SearchFieldKey =
@@ -227,29 +263,30 @@ type SearchFieldConfig = {
   label: string;
   control: "text" | "select" | "checkbox";
   visible: boolean;
+  favorite: boolean;
 };
 
 const defaultSearchFields: SearchFieldConfig[] = [
-  { key: "typ", label: "Typ", control: "select", visible: true },
-  { key: "kontraktsNr", label: "KontraktsNr", control: "text", visible: true },
-  { key: "externtKontraktsnr", label: "Externt kontraktsnr", control: "text", visible: true },
-  { key: "kontraktsdatum", label: "Kontraktsdatum", control: "text", visible: false },
-  { key: "artNr", label: "ArtNr", control: "text", visible: false },
-  { key: "kund", label: "Kund", control: "text", visible: false },
-  { key: "kategori", label: "Kategori", control: "select", visible: false },
-  { key: "land", label: "Land", control: "select", visible: false },
-  { key: "mottagarland", label: "Mottagarland", control: "select", visible: false },
-  { key: "bolag", label: "Bolag", control: "select", visible: false },
-  { key: "upprattatAv", label: "Upprättat av", control: "text", visible: false },
-  { key: "prislistaNr", label: "Prislista nr", control: "text", visible: false },
-  { key: "certifiering", label: "Certifiering", control: "select", visible: false },
-  { key: "tillhor", label: "Tillhör", control: "text", visible: false },
-  { key: "varningsnivaFordran", label: "Varningsnivå fordran", control: "select", visible: false },
-  { key: "varningsnivaLimit", label: "Varningsnivå limit", control: "select", visible: false },
-  { key: "saknarAvtalsratt", label: "Saknar avtalsrätt", control: "checkbox", visible: false },
-  { key: "saknarAvtal", label: "Saknar avtal", control: "checkbox", visible: false },
-  { key: "avtalsrattSaknasI", label: "Avtalsrätt saknas i", control: "text", visible: false },
-  { key: "cLoad", label: "C-Load", control: "checkbox", visible: false }
+  { key: "typ", label: "Typ", control: "select", visible: true, favorite: true },
+  { key: "kontraktsNr", label: "KontraktsNr", control: "text", visible: true, favorite: true },
+  { key: "externtKontraktsnr", label: "Externt kontraktsnr", control: "text", visible: true, favorite: true },
+  { key: "kontraktsdatum", label: "Kontraktsdatum", control: "text", visible: false, favorite: false },
+  { key: "artNr", label: "ArtNr", control: "text", visible: false, favorite: false },
+  { key: "kund", label: "Kund", control: "text", visible: false, favorite: true },
+  { key: "kategori", label: "Kategori", control: "select", visible: false, favorite: false },
+  { key: "land", label: "Land", control: "select", visible: false, favorite: false },
+  { key: "mottagarland", label: "Mottagarland", control: "select", visible: false, favorite: false },
+  { key: "bolag", label: "Bolag", control: "select", visible: false, favorite: false },
+  { key: "upprattatAv", label: "Upprättat av", control: "text", visible: false, favorite: false },
+  { key: "prislistaNr", label: "Prislista nr", control: "text", visible: false, favorite: false },
+  { key: "certifiering", label: "Certifiering", control: "select", visible: false, favorite: false },
+  { key: "tillhor", label: "Tillhör", control: "text", visible: false, favorite: false },
+  { key: "varningsnivaFordran", label: "Varningsnivå fordran", control: "select", visible: false, favorite: false },
+  { key: "varningsnivaLimit", label: "Varningsnivå limit", control: "select", visible: false, favorite: false },
+  { key: "saknarAvtalsratt", label: "Saknar avtalsrätt", control: "checkbox", visible: false, favorite: false },
+  { key: "saknarAvtal", label: "Saknar avtal", control: "checkbox", visible: false, favorite: false },
+  { key: "avtalsrattSaknasI", label: "Avtalsrätt saknas i", control: "text", visible: false, favorite: false },
+  { key: "cLoad", label: "C-Load", control: "checkbox", visible: false, favorite: false }
 ];
 
 const selectOptionsByField: Partial<Record<SearchFieldKey, string[]>> = {
@@ -275,7 +312,7 @@ const initialSearchValues: SearchValueMap = {
   kategori: "",
   land: "",
   mottagarland: "",
-  bolag: "BP Hissmofors Byg",
+  bolag: "",
   upprattatAv: "",
   prislistaNr: "",
   certifiering: "",
@@ -294,50 +331,83 @@ const defaultColumns: ColumnConfig[] = [
   { key: "belopp", label: "Belopp SEK", visible: true, pinned: false },
   { key: "kund", label: "Kund", visible: true, pinned: false },
   { key: "land", label: "Land", visible: true, pinned: false },
-  { key: "kontraktsdatum", label: "Kontraktsdatum", visible: false, pinned: false },
-  { key: "giltigTom", label: "Giltig t.o.m.", visible: false, pinned: false },
-  { key: "egenAnmarkning", label: "Egen anmärkning", visible: false, pinned: false },
-  { key: "status", label: "Status", visible: false, pinned: false },
-  { key: "leveransperiod", label: "Leveransperiod", visible: false, pinned: false },
-  { key: "upprattatAv", label: "Upprättat av", visible: false, pinned: false },
-  { key: "kontraktsvolym", label: "Kontraktsvol", visible: false, pinned: false },
-  { key: "levVolym", label: "Lev volym", visible: false, pinned: false }
+  { key: "kontraktsdatum", label: "Kontraktsdatum", visible: true, pinned: false },
+  { key: "giltigTom", label: "Giltig t.o.m.", visible: true, pinned: false },
+  { key: "egenAnmarkning", label: "Egen anmärkning", visible: true, pinned: false },
+  { key: "status", label: "Status", visible: true, pinned: false },
+  { key: "leveransperiod", label: "Leveransperiod", visible: true, pinned: false },
+  { key: "upprattatAv", label: "Upprättat av", visible: true, pinned: false },
+  { key: "kontraktsvolym", label: "Kontraktsvol", visible: true, pinned: false },
+  { key: "levVolym", label: "Lev volym", visible: true, pinned: false },
+  { key: "olevVolym", label: "Olev volym", visible: true, pinned: false },
+  { key: "avropatProcent", label: "Avropat %", visible: true, pinned: false },
+  { key: "prislistaNr", label: "Prislista nr", visible: true, pinned: false },
+  { key: "utlastningssparr", label: "Utlastningsspärr", visible: true, pinned: false },
+  { key: "tillhor", label: "Tillhör", visible: true, pinned: false },
+  { key: "limit", label: "Limit", visible: true, pinned: false }
 ];
 
+const LIMIT_DATA: Array<{ limit: string; limitStatus: "ok" | "warning" | "error" }> = [
+  { limit: "500 000 SEK", limitStatus: "ok" },
+  { limit: "1 200 000 SEK", limitStatus: "ok" },
+  { limit: "350 000 SEK", limitStatus: "error" },
+  { limit: "800 000 SEK", limitStatus: "warning" },
+  { limit: "2 100 000 SEK", limitStatus: "ok" },
+  { limit: "660 000 SEK", limitStatus: "warning" },
+];
+
+const CONTRACT_IDS = ["163311", "163452", "163518", "163601", "163744", "163890"] as const;
+
+const CONTRACT_CUSTOMERS = [
+  "Acme AB",
+  "Globex Corp",
+  "Initech HB",
+  "Nordic Sten & Mark AB",
+  "Luna Infrastruktur AB",
+  "Skandinavisk Industriservice"
+] as const;
+
 const tableRows: TableRow[] = Array.from({ length: 6 }).map((_, idx) => ({
-  kontrakt: "163311",
-  externNr: "2025/03 Reg 2",
-  belopp: "26 651",
-  kund: "Stall Unik",
-  land: "SE",
-  kontraktsdatum: "2025-03-01",
-  giltigTom: "2025-12-31",
-  egenAnmarkning: idx === 0 ? "Ny kund" : "",
-  status: "Aktiv",
-  leveransperiod: "Q1",
-  upprattatAv: "Jane Doe",
-  kontraktsvolym: "10",
-  levVolym: "4"
+  kontrakt: CONTRACT_IDS[idx % CONTRACT_IDS.length],
+  externNr: `2026/${String(idx + 1).padStart(2, "0")} REG ${idx + 2}`,
+  belopp: `${(26651 + idx * 7450).toLocaleString("sv-SE")}`,
+  kund: CONTRACT_CUSTOMERS[idx % CONTRACT_CUSTOMERS.length],
+  land: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
+  kontraktsdatum: `2026-0${(idx % 5) + 1}-0${(idx % 7) + 1}`,
+  giltigTom: `2026-12-${String(10 + idx).padStart(2, "0")}`,
+  egenAnmarkning: idx === 0 ? "Ny kund" : idx === 3 ? "Kreditkontroll" : "",
+  status: idx === 5 ? "Inaktivt kontrakt" : "Aktivt kontrakt",
+  leveransperiod: idx % 3 === 0 ? "Q1-Q2" : idx % 3 === 1 ? "Q2-Q3" : "Q3-Q4",
+  upprattatAv: idx % 2 === 0 ? "Jane Doe" : "Erik Andersson",
+  kontraktsvolym: `${10 + idx}`,
+  levVolym: `${4 + idx}`,
+  olevVolym: `${6}`,
+  avropatProcent: `${Math.round(((4 + idx) / (10 + idx)) * 100)}%`,
+  prislistaNr: `PL-${202600 + idx}`,
+  utlastningssparr: idx % 4 === 0 ? "Ja" : "Nej",
+  tillhor: idx % 2 === 0 ? "Marknad Nord" : "Marknad Syd",
+  limit: LIMIT_DATA[idx % LIMIT_DATA.length].limit,
+  limitStatus: LIMIT_DATA[idx % LIMIT_DATA.length].limitStatus,
 }));
 
 const defaultLineItemColumns: LineItemColumnConfig[] = [
-  { key: "idRad", label: "ID-rad", visible: true },
-  { key: "status", label: "Status", visible: true },
-  { key: "underkonto", label: "Underkonto", visible: true },
-  { key: "artikelNr", label: "Artikelnr", visible: true },
-  { key: "produkt", label: "Produkt", visible: true },
-  { key: "langd", label: "Längd", visible: true },
-  { key: "mangd", label: "Mängd", visible: true },
-  { key: "enhet", label: "Enhet", visible: true },
-  { key: "aPris", label: "A-pris", visible: true },
-  { key: "rabatt", label: "Rabatt", visible: true },
-  { key: "volym", label: "Volym", visible: false },
-  { key: "leverans", label: "Leverans", visible: true },
-  { key: "lager", label: "Lager", visible: true },
-  { key: "prisOrt", label: "Prisort", visible: false },
-  { key: "transport", label: "Transport", visible: false },
-  { key: "nettoSek", label: "Netto SEK", visible: true },
-  { key: "radKommentar", label: "Radkommentar", visible: false }
+  { key: "idRad", label: "ID-rad", visible: true, pinned: true },
+  { key: "status", label: "Status", visible: true, pinned: false },
+  { key: "underkonto", label: "Underkonto", visible: true, pinned: false },
+  { key: "artikelNr", label: "Artikelnr", visible: true, pinned: false },
+  { key: "produkt", label: "Produkt", visible: true, pinned: false },
+  { key: "langd", label: "Längd", visible: true, pinned: false },
+  { key: "mangd", label: "Mängd", visible: true, pinned: false },
+  { key: "enhet", label: "Enhet faktura", visible: true, pinned: false },
+  { key: "aPris", label: "A-pris", visible: true, pinned: false },
+  { key: "rabatt", label: "Rabatt", visible: true, pinned: false },
+  { key: "volym", label: "Volym", visible: false, pinned: false },
+  { key: "leverans", label: "Leverans", visible: true, pinned: false },
+  { key: "lager", label: "Lager", visible: true, pinned: false },
+  { key: "prisOrt", label: "Prisort", visible: false, pinned: false },
+  { key: "transport", label: "Transport", visible: false, pinned: false },
+  { key: "nettoSek", label: "Netto SEK", visible: true, pinned: false },
+  { key: "radKommentar", label: "Radkommentar", visible: false, pinned: false }
 ];
 
 const lineItemRows: LineItemRow[] = Array.from({ length: 12 }).map((_, idx) => ({
@@ -368,7 +438,7 @@ export default function Home() {
   const sectionSlug: SectionKey =
     pathSection && sectionDefinitions.some((section) => section.slug === pathSection)
       ? pathSection
-      : "marknad";
+      : "hem";
   const sectionConfig =
     sectionDefinitions.find((section) => section.slug === sectionSlug) ?? sectionDefinitions[0];
   const menuSlug = pathParts[1] ?? sectionConfig.defaultMenuSlug;
@@ -390,6 +460,7 @@ export default function Home() {
   const isDeliveryListPage = sectionSlug === "marknad" && menuSlug === "leveranslista";
   const isPriceListPage = sectionSlug === "marknad" && menuSlug === "prislistor";
   const isSystemPage = sectionSlug === "system";
+  const isHomePage = sectionSlug === "hem";
   const topMenuItems = topMenusBySection[sectionSlug] ?? topMenusBySection.marknad;
   const leftTopMenuItems = topMenuItems.filter((item) => !item.alignRight);
   const rightTopMenuItems = topMenuItems.filter((item) => item.alignRight);
@@ -406,7 +477,9 @@ export default function Home() {
   const { isSidebarCollapsed, toggleSidebarCollapsed } = useUiState();
   const [topMenuAnchorEl, setTopMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [topMenuDropdownOwnerSlug, setTopMenuDropdownOwnerSlug] = useState<string | null>(null);
-  const [topMenuDropdownOptions, setTopMenuDropdownOptions] = useState<Array<{ slug: string; label: string }>>(
+  const [topMenuDropdownOptions, setTopMenuDropdownOptions] = useState<
+    Array<{ slug: string; label: string; href?: string; endIcon?: "open_in_new" }>
+  >(
     []
   );
   const [activeContractTab, setActiveContractTab] = useState<ContractTab>("Kontraktsrader");
@@ -414,6 +487,7 @@ export default function Home() {
   const [selectedCompany, setSelectedCompany] = useState(fakeCompanies[0]);
   const [isCompanyMenuOpen, setIsCompanyMenuOpen] = useState(false);
   const [searchValues, setSearchValues] = useState<SearchValueMap>(initialSearchValues);
+  const [globalSearchValue, setGlobalSearchValue] = useState("");
   const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
   const [appliedSearchFields, setAppliedSearchFields] = useState<SearchFieldConfig[]>(defaultSearchFields);
   const [draftSearchFields, setDraftSearchFields] = useState<SearchFieldConfig[]>(defaultSearchFields);
@@ -427,6 +501,8 @@ export default function Home() {
   const [draftLineColumns, setDraftLineColumns] = useState<LineItemColumnConfig[]>(defaultLineItemColumns);
   const [newLineItemDraftSeed, setNewLineItemDraftSeed] = useState<Partial<NewLineItemDraft>>({});
   const [newLineItemDraftVersion, setNewLineItemDraftVersion] = useState(0);
+  const [pinnedLineItemFields, setPinnedLineItemFields] = useState<Set<keyof NewLineItemDraft>>(new Set());
+  const [keepLineItemOpenAfterSave, setKeepLineItemOpenAfterSave] = useState(false);
   const [isLineItemToastOpen, setIsLineItemToastOpen] = useState(false);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
   const [isViewLoading, setIsViewLoading] = useState(false);
@@ -460,10 +536,11 @@ export default function Home() {
     return [...pinned, ...regular];
   }, [appliedColumns]);
 
-  const visibleLineColumns = useMemo(
-    () => appliedLineColumns.filter((column) => column.visible),
-    [appliedLineColumns]
-  );
+  const visibleLineColumns = useMemo(() => {
+    const pinned = appliedLineColumns.filter((column) => column.visible && column.pinned);
+    const regular = appliedLineColumns.filter((column) => column.visible && !column.pinned);
+    return [...pinned, ...regular];
+  }, [appliedLineColumns]);
 
   const hasSelectedRows = selectedRowId !== null;
 
@@ -486,6 +563,117 @@ export default function Home() {
     () => visibleSearchFields.filter((field) => field.control === "checkbox"),
     [visibleSearchFields]
   );
+
+  const allTextSearchFields = useMemo(
+    () => defaultSearchFields.filter((field) => field.control === "text"),
+    []
+  );
+
+  const allSelectSearchFields = useMemo(
+    () => defaultSearchFields.filter((field) => field.control === "select"),
+    []
+  );
+
+  const allCheckboxSearchFields = useMemo(
+    () => defaultSearchFields.filter((field) => field.control === "checkbox"),
+    []
+  );
+
+  const filteredContractRows = useMemo(() => {
+    const normalizedGlobalSearch = globalSearchValue.trim().toLowerCase();
+
+    const getSearchFieldValueForRow = (row: TableRow, fieldKey: SearchFieldKey) => {
+      switch (fieldKey) {
+        case "typ":
+          return row.status ?? "";
+        case "kontraktsNr":
+          return row.kontrakt;
+        case "externtKontraktsnr":
+          return row.externNr;
+        case "kontraktsdatum":
+          return row.kontraktsdatum ?? "";
+        case "artNr":
+          return "";
+        case "kund":
+          return row.kund;
+        case "kategori":
+          return "";
+        case "land":
+          return row.land;
+        case "mottagarland":
+          return row.land;
+        case "bolag":
+          return selectedCompany;
+        case "upprattatAv":
+          return row.upprattatAv ?? "";
+        case "prislistaNr":
+          return row.prislistaNr ?? "";
+        case "certifiering":
+          return "";
+        case "tillhor":
+          return row.tillhor ?? "";
+        case "varningsnivaFordran":
+          return "";
+        case "varningsnivaLimit":
+          return "";
+        case "avtalsrattSaknasI":
+          return row.egenAnmarkning ?? "";
+        default:
+          return "";
+      }
+    };
+
+    const getSearchFieldBooleanForRow = (row: TableRow, fieldKey: SearchFieldKey) => {
+      switch (fieldKey) {
+        case "saknarAvtalsratt":
+          return (row.egenAnmarkning ?? "").toLowerCase().includes("avtalsrätt saknas");
+        case "saknarAvtal":
+          return (row.status ?? "").toLowerCase() !== "aktivt kontrakt";
+        case "cLoad":
+          return (row.egenAnmarkning ?? "").toLowerCase().includes("c-load");
+        default:
+          return false;
+      }
+    };
+
+    return tableRows.filter((row) => {
+      if (normalizedGlobalSearch.length > 0) {
+        const rowMatchesGlobal = Object.values(row)
+          .filter((value): value is string => typeof value === "string")
+          .some((value) => value.toLowerCase().includes(normalizedGlobalSearch));
+
+        if (!rowMatchesGlobal) {
+          return false;
+        }
+      }
+
+      for (const field of defaultSearchFields) {
+        if (field.control === "checkbox") {
+          const checkboxIsEnabled = Boolean(searchValues[field.key]);
+          if (!checkboxIsEnabled) {
+            continue;
+          }
+
+          if (!getSearchFieldBooleanForRow(row, field.key)) {
+            return false;
+          }
+          continue;
+        }
+
+        const filterValue = String(searchValues[field.key] ?? "").trim().toLowerCase();
+        if (!filterValue) {
+          continue;
+        }
+
+        const rowValue = getSearchFieldValueForRow(row, field.key).toLowerCase();
+        if (!rowValue.includes(filterValue)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [globalSearchValue, searchValues, selectedCompany]);
 
   useEffect(() => {
     if (!isColumnsMenuOpen && !isLineColumnsMenuOpen && !isSearchMenuOpen && !isCompanyMenuOpen) {
@@ -550,6 +738,30 @@ export default function Home() {
     );
   };
 
+  const toggleSearchFieldFavorite = (key: SearchFieldKey) => {
+    setDraftSearchFields((previous) =>
+      previous.map((field) =>
+        field.key === key ? { ...field, favorite: !field.favorite } : field
+      )
+    );
+  };
+
+  const saveFavoriteKeys = (orderedKeys: string[]) => {
+    setDraftSearchFields((previous) => {
+      const orderedSet = new Set(orderedKeys);
+      // place favorites first in given order, then non-favorites in original order
+      const nonFavorites = previous.filter((f) => !orderedSet.has(f.key));
+      const favorites = orderedKeys
+        .map((key) => previous.find((f) => f.key === key))
+        .filter((f): f is SearchFieldConfig => f !== undefined)
+        .map((f) => ({ ...f, favorite: true }));
+      return [
+        ...favorites,
+        ...nonFavorites.map((f) => ({ ...f, favorite: false }))
+      ];
+    });
+  };
+
   const saveSearchFieldChanges = () => {
     setAppliedSearchFields(draftSearchFields);
     setIsSearchMenuOpen(false);
@@ -568,6 +780,19 @@ export default function Home() {
         visible: false
       }))
     );
+  };
+
+  const clearSearchValues = () => {
+    const clearedSearchValues = Object.fromEntries(
+      Object.entries(initialSearchValues).map(([key, value]) => [
+        key,
+        typeof value === "boolean" ? false : ""
+      ])
+    ) as SearchValueMap;
+
+    setSearchValues(clearedSearchValues);
+    setGlobalSearchValue("");
+    triggerViewLoading();
   };
 
   const openColumnsMenu = () => {
@@ -637,6 +862,14 @@ export default function Home() {
     setDraftLineColumns((previous) =>
       previous.map((column) =>
         column.key === key ? { ...column, visible: !column.visible } : column
+      )
+    );
+  };
+
+  const toggleLineColumnPin = (key: LineItemColumnKey) => {
+    setDraftLineColumns((previous) =>
+      previous.map((column) =>
+        column.key === key ? { ...column, pinned: !column.pinned } : column
       )
     );
   };
@@ -802,6 +1035,15 @@ export default function Home() {
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/new`);
   };
 
+  const togglePinnedLineItemField = (key: keyof NewLineItemDraft) => {
+    setPinnedLineItemFields((previous) => {
+      const next = new Set(previous);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const saveAndCreateNewLineItem = (draft: NewLineItemDraft) => {
     setActiveContractTab("Kontraktsrader");
     setActiveLineItemTab("Längdfördelning");
@@ -852,9 +1094,18 @@ export default function Home() {
     navigateToTopMenu(item.slug);
   };
 
-  const handleTopMenuOptionSelect = (optionSlug: string) => {
+  const handleTopMenuOptionSelect = (option: {
+    slug: string;
+    label: string;
+    href?: string;
+    endIcon?: "open_in_new";
+  }) => {
     closeTopMenuDropdown();
-    navigateToTopMenu(optionSlug);
+    if (option.href) {
+      window.open(option.href, "_blank", "noopener,noreferrer");
+      return;
+    }
+    navigateToTopMenu(option.slug);
   };
 
   const isTopMenuItemActive = (item: TopMenuItemDef) => {
@@ -977,135 +1228,158 @@ export default function Home() {
         onClosePriceListRowDetail={closePriceListRowDetail}
       >
 
-            {!isContractDetailOpen && isContractListPage ? (
-              <ContractListView
-                textFields={textSearchFields}
-                selectFields={selectSearchFields}
-                checkboxFields={checkboxSearchFields}
-                searchValues={searchValues as Record<string, string | boolean>}
-                isSearchMenuOpen={isSearchMenuOpen}
-                draftSearchFields={draftSearchFields}
-                searchButtonRef={searchButtonRef}
-                searchMenuRef={searchMenuRef}
-                getSelectOptions={(key) => getSelectOptions(key as SearchFieldKey)}
-                onOpenSearchMenu={openSearchMenu}
-                onCancelSearchMenu={cancelSearchFieldChanges}
-                onToggleSearchFieldVisibility={(key) => toggleSearchFieldVisibility(key as SearchFieldKey)}
-                onSaveSearchFieldChanges={saveSearchFieldChanges}
-                onClearSearchFieldChanges={clearSearchFieldChanges}
-                onSearchTextChange={(key, value) => handleSearchTextChange(key as SearchFieldKey, value)}
-                onSearchSelectChange={(key, value) => handleSearchSelectChange(key as SearchFieldKey, value)}
-                onSearchCheckboxChange={(key, checked) =>
-                  handleSearchCheckboxChange(key as SearchFieldKey, checked)
-                }
-                actionItems={actionItems}
-                onCreateContract={openNewContract}
-                hasSelectedRows={hasSelectedRows}
-                isLineItemsTableVisible={isLineItemsTableVisible}
-                onToggleLineItemsTable={() => setIsLineItemsTableVisible((previous) => !previous)}
-                isColumnsMenuOpen={isColumnsMenuOpen}
-                draftColumns={draftColumns}
-                columnsMenuRef={columnsMenuRef}
-                columnsButtonRef={columnsButtonRef}
-                onOpenColumnsMenu={openColumnsMenu}
-                onCancelColumnsMenu={cancelColumnChanges}
-                onToggleColumnVisibility={(key) => toggleColumnVisibility(key as ColumnKey)}
-                onMoveColumn={(key, direction) => moveColumn(key as ColumnKey, direction)}
-                onSaveColumnChanges={saveColumnChanges}
-                onResetColumnChanges={resetColumnChanges}
-                onToggleColumnPin={(key) => toggleColumnPin(key as ColumnKey)}
-                orderedVisibleColumns={orderedVisibleColumns}
-                tableRows={tableRows as Array<Record<string, string | undefined>>}
-                selectedRowId={selectedRowId}
-                onSelectMainTableRow={selectMainTableRow}
-                getCellValue={(row, columnKey) => getCellValue(row as TableRow, columnKey as ColumnKey)}
-                onOpenContractDetail={openContractDetail}
-                isLineColumnsMenuOpen={isLineColumnsMenuOpen}
-                draftLineColumns={draftLineColumns}
-                lineColumnsMenuRef={lineColumnsMenuRef}
-                lineColumnsButtonRef={lineColumnsButtonRef}
-                onOpenLineColumnsMenu={openLineColumnsMenu}
-                onCancelLineColumnsMenu={cancelLineColumnChanges}
-                onToggleLineColumnVisibility={(key) => toggleLineColumnVisibility(key as LineItemColumnKey)}
-                onMoveLineColumn={(key, direction) => moveLineColumn(key as LineItemColumnKey, direction)}
-                onSaveLineColumnChanges={saveLineColumnChanges}
-                onResetLineColumnChanges={resetLineColumnChanges}
-                visibleLineColumns={visibleLineColumns}
-                lineItemRows={lineItemRows}
-              />
-            ) : !isContractDetailOpen && isDeliveryListPage ? (
-              <DeliveryListView />
-            ) : !isPriceListDetailOpen && !isContractDetailOpen && isPriceListPage ? (
-              <PriceListView onOpenPriceListDetail={openPriceListDetail} onCreatePriceList={openNewPriceList} />
-            ) : isPriceListDetailOpen && selectedPriceListId ? (
-              isPriceListRowDetailOpen && selectedPriceRowId ? (
-                <PriceListRowDetailView priceListId={selectedPriceListId} priceRowId={selectedPriceRowId} />
-              ) : (
-                <PriceListDetailView
-                  selectedPriceListId={selectedPriceListId}
-                  onOpenPriceRowDetail={openPriceRowDetail}
-                  onCreatePriceRow={openNewPriceRow}
-                />
-              )
-            ) : isContractDetailOpen ? (
-              <ContractDetailView
-                isLineItemDetailOpen={isLineItemDetailOpen}
-                selectedLineItemId={selectedLineItemId}
-                newLineItemDraftVersion={newLineItemDraftVersion}
-                activeLineItemTab={activeLineItemTab}
-                onChangeLineItemTab={setActiveLineItemTab}
-                newLineItemDraftSeed={newLineItemDraftSeed}
-                onSaveAndCreateNewLineItem={saveAndCreateNewLineItem}
-                contractTabs={contractTabs}
-                activeContractTabForView={activeContractTabForView}
-                onChangeContractTab={(tab) => handleContractTabChange(tab as ContractTab)}
-                selectedContractId={selectedContractId}
-                visibleLineColumns={visibleLineColumns}
-                lineItemRows={lineItemRows}
-                draftLineColumns={draftLineColumns}
-                isLineColumnsMenuOpen={isLineColumnsMenuOpen}
-                lineColumnsMenuRef={lineColumnsMenuRef}
-                lineColumnsButtonRef={lineColumnsButtonRef}
-                onOpenLineColumnsMenu={openLineColumnsMenu}
-                onCancelLineColumnsMenu={cancelLineColumnChanges}
-                onToggleLineColumnVisibility={(key) => toggleLineColumnVisibility(key as LineItemColumnKey)}
-                onMoveLineColumn={(key, direction) =>
-                  moveLineColumn(key as LineItemColumnKey, direction)
-                }
-                onSaveLineColumnChanges={saveLineColumnChanges}
-                onResetLineColumnChanges={resetLineColumnChanges}
-                onOpenLineItemDetail={openLineItemDetail}
-                onCreateLineItem={openNewLineItem}
-              />
-            ) : isSystemPage ? (
-              <div className={styles.contractDetailPanel}>
-                <div className={styles.systemSettingsPanel}>
-                  <Typography className={styles.systemSettingsTitle}>Systeminställningar</Typography>
-                  <div className={styles.systemSettingRow}>
-                    <div>
-                      <Typography className={styles.systemSettingLabel}>Dark mode</Typography>
-                      <Typography className={styles.systemSettingDescription}>
-                        Växla mellan ljust och mörkt tema i hela applikationen.
-                      </Typography>
-                    </div>
-                    <Switch
-                      checked={mode === "dark"}
-                      onChange={() => toggleMode()}
-                      color="primary"
-                      inputProps={{ "aria-label": "Aktivera dark mode" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className={styles.contractDetailPanel}>
-                <div className={styles.contractTabPlaceholder}>
-                  <Typography className={styles.contractInfoValue}>
-                    {currentMenuLabel} - sida under uppbyggnad.
+        {isHomePage ? (
+          <HomeView
+            selectedCompany={selectedCompany}
+            onNavigateToContracts={() => navigateToSection("marknad", "kontraktlista")}
+            onNavigateToDeliveries={() => navigateToSection("marknad", "leveranslista")}
+            onNavigateToPriceLists={() => navigateToSection("marknad", "prislistor")}
+            onNavigateToReports={() => navigateToSection("rapporter", "dashboard")}
+          />
+        ) : !isContractDetailOpen && isContractListPage ? (
+          <ContractListView
+            textFields={textSearchFields}
+            selectFields={selectSearchFields}
+            checkboxFields={checkboxSearchFields}
+            allTextFields={allTextSearchFields}
+            allSelectFields={allSelectSearchFields}
+            allCheckboxFields={allCheckboxSearchFields}
+            searchValues={searchValues as Record<string, string | boolean>}
+            globalSearchValue={globalSearchValue}
+            isSearchMenuOpen={isSearchMenuOpen}
+            draftSearchFields={draftSearchFields}
+            searchButtonRef={searchButtonRef}
+            searchMenuRef={searchMenuRef}
+            getSelectOptions={(key) => getSelectOptions(key as SearchFieldKey)}
+            onOpenSearchMenu={openSearchMenu}
+            onCancelSearchMenu={cancelSearchFieldChanges}
+            onToggleSearchFieldVisibility={(key) => toggleSearchFieldVisibility(key as SearchFieldKey)}
+            onToggleSearchFieldFavorite={(key) => toggleSearchFieldFavorite(key as SearchFieldKey)}
+            onSaveFavoriteKeys={saveFavoriteKeys}
+            onSaveSearchFieldChanges={saveSearchFieldChanges}
+            onClearSearchFieldChanges={clearSearchFieldChanges}
+            onClearSearchValues={clearSearchValues}
+            onGlobalSearchChange={setGlobalSearchValue}
+            onSearchTextChange={(key, value) => handleSearchTextChange(key as SearchFieldKey, value)}
+            onSearchSelectChange={(key, value) => handleSearchSelectChange(key as SearchFieldKey, value)}
+            onSearchCheckboxChange={(key, checked) =>
+              handleSearchCheckboxChange(key as SearchFieldKey, checked)
+            }
+            actionItems={actionItems}
+            onCreateContract={openNewContract}
+            hasSelectedRows={hasSelectedRows}
+            isLineItemsTableVisible={isLineItemsTableVisible}
+            onToggleLineItemsTable={() => setIsLineItemsTableVisible((previous) => !previous)}
+            isColumnsMenuOpen={isColumnsMenuOpen}
+            draftColumns={draftColumns}
+            columnsMenuRef={columnsMenuRef}
+            columnsButtonRef={columnsButtonRef}
+            onOpenColumnsMenu={openColumnsMenu}
+            onCancelColumnsMenu={cancelColumnChanges}
+            onToggleColumnVisibility={(key) => toggleColumnVisibility(key as ColumnKey)}
+            onMoveColumn={(key, direction) => moveColumn(key as ColumnKey, direction)}
+            onSaveColumnChanges={saveColumnChanges}
+            onResetColumnChanges={resetColumnChanges}
+            onToggleColumnPin={(key) => toggleColumnPin(key as ColumnKey)}
+            orderedVisibleColumns={orderedVisibleColumns}
+            tableRows={filteredContractRows as Array<Record<string, string | undefined>>}
+            selectedRowId={selectedRowId}
+            onSelectMainTableRow={selectMainTableRow}
+            getCellValue={(row, columnKey) => getCellValue(row as TableRow, columnKey as ColumnKey)}
+            onOpenContractDetail={openContractDetail}
+            isLineColumnsMenuOpen={isLineColumnsMenuOpen}
+            draftLineColumns={draftLineColumns}
+            lineColumnsMenuRef={lineColumnsMenuRef}
+            lineColumnsButtonRef={lineColumnsButtonRef}
+            onOpenLineColumnsMenu={openLineColumnsMenu}
+            onCancelLineColumnsMenu={cancelLineColumnChanges}
+            onToggleLineColumnVisibility={(key) => toggleLineColumnVisibility(key as LineItemColumnKey)}
+            onMoveLineColumn={(key, direction) => moveLineColumn(key as LineItemColumnKey, direction)}
+            onSaveLineColumnChanges={saveLineColumnChanges}
+            onResetLineColumnChanges={resetLineColumnChanges}
+            onToggleLineColumnPin={(key) => toggleLineColumnPin(key as LineItemColumnKey)}
+            visibleLineColumns={visibleLineColumns}
+            lineItemRows={lineItemRows}
+          />
+        ) : !isContractDetailOpen && isDeliveryListPage ? (
+          <DeliveryListView />
+        ) : !isPriceListDetailOpen && !isContractDetailOpen && isPriceListPage ? (
+          <PriceListView onOpenPriceListDetail={openPriceListDetail} onCreatePriceList={openNewPriceList} />
+        ) : isPriceListDetailOpen && selectedPriceListId ? (
+          isPriceListRowDetailOpen && selectedPriceRowId ? (
+            <PriceListRowDetailView priceListId={selectedPriceListId} priceRowId={selectedPriceRowId} />
+          ) : (
+            <PriceListDetailView
+              selectedPriceListId={selectedPriceListId}
+              onOpenPriceRowDetail={openPriceRowDetail}
+              onCreatePriceRow={openNewPriceRow}
+            />
+          )
+        ) : isContractDetailOpen ? (
+          <ContractDetailView
+            isLineItemDetailOpen={isLineItemDetailOpen}
+            selectedLineItemId={selectedLineItemId}
+            newLineItemDraftVersion={newLineItemDraftVersion}
+            activeLineItemTab={activeLineItemTab}
+            onChangeLineItemTab={setActiveLineItemTab}
+            newLineItemDraftSeed={newLineItemDraftSeed}
+            pinnedLineItemFields={pinnedLineItemFields}
+            onTogglePinnedLineItemField={togglePinnedLineItemField}
+            keepLineItemOpenAfterSave={keepLineItemOpenAfterSave}
+            onToggleKeepLineItemOpenAfterSave={setKeepLineItemOpenAfterSave}
+            onSaveAndCreateNewLineItem={saveAndCreateNewLineItem}
+            onSaveAndCloseLineItem={closeLineItemDetail}
+            contractTabs={contractTabs}
+            activeContractTabForView={activeContractTabForView}
+            onChangeContractTab={(tab) => handleContractTabChange(tab as ContractTab)}
+            selectedContractId={selectedContractId}
+            visibleLineColumns={visibleLineColumns}
+            lineItemRows={lineItemRows}
+            draftLineColumns={draftLineColumns}
+            isLineColumnsMenuOpen={isLineColumnsMenuOpen}
+            lineColumnsMenuRef={lineColumnsMenuRef}
+            lineColumnsButtonRef={lineColumnsButtonRef}
+            onOpenLineColumnsMenu={openLineColumnsMenu}
+            onCancelLineColumnsMenu={cancelLineColumnChanges}
+            onToggleLineColumnVisibility={(key) => toggleLineColumnVisibility(key as LineItemColumnKey)}
+            onMoveLineColumn={(key, direction) =>
+              moveLineColumn(key as LineItemColumnKey, direction)
+            }
+            onSaveLineColumnChanges={saveLineColumnChanges}
+            onResetLineColumnChanges={resetLineColumnChanges}
+            onToggleLineColumnPin={(key) => toggleLineColumnPin(key as LineItemColumnKey)}
+            onOpenLineItemDetail={openLineItemDetail}
+            onCreateLineItem={openNewLineItem}
+          />
+        ) : isSystemPage ? (
+          <div className={styles.contractDetailPanel}>
+            <div className={styles.systemSettingsPanel}>
+              <Typography className={styles.systemSettingsTitle}>Systeminställningar</Typography>
+              <div className={styles.systemSettingRow}>
+                <div>
+                  <Typography className={styles.systemSettingLabel}>Dark mode</Typography>
+                  <Typography className={styles.systemSettingDescription}>
+                    Växla mellan ljust och mörkt tema i hela applikationen.
                   </Typography>
                 </div>
+                <Switch
+                  checked={mode === "dark"}
+                  onChange={() => toggleMode()}
+                  color="primary"
+                  inputProps={{ "aria-label": "Aktivera dark mode" }}
+                />
               </div>
-            )}
+            </div>
+          </div>
+        ) : (
+          <div className={styles.contractDetailPanel}>
+            <div className={styles.contractTabPlaceholder}>
+              <Typography className={styles.contractInfoValue}>
+                {currentMenuLabel} - sida under uppbyggnad.
+              </Typography>
+            </div>
+          </div>
+        )}
       </AppShellLayout>
       <Snackbar
         open={isLineItemToastOpen}

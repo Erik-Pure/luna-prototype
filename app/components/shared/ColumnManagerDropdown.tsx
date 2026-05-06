@@ -1,11 +1,11 @@
 "use client";
 
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import ViewColumnOutlinedIcon from "@mui/icons-material/ViewColumnOutlined";
 import { Button, Checkbox, IconButton, Typography } from "@mui/material";
+import { useState } from "react";
 import type { RefObject } from "react";
 import styles from "../../page.module.scss";
 
@@ -45,6 +45,24 @@ export function ColumnManagerDropdown({
   onTogglePin,
   buttonLabel = "Kolumner"
 }: ColumnManagerDropdownProps) {
+  const [draggedKey, setDraggedKey] = useState<string | null>(null);
+  const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
+
+  const reorderWithMoves = (fromKey: string, toKey: string) => {
+    const fromIndex = columns.findIndex((column) => column.key === fromKey);
+    const toIndex = columns.findIndex((column) => column.key === toKey);
+    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+      return;
+    }
+
+    const direction = fromIndex < toIndex ? "down" : "up";
+    const stepCount = Math.abs(toIndex - fromIndex);
+
+    for (let i = 0; i < stepCount; i += 1) {
+      onMove(fromKey, direction);
+    }
+  };
+
   return (
     <div className={styles.columnsMenuWrapper}>
       <Button
@@ -61,8 +79,34 @@ export function ColumnManagerDropdown({
       {isOpen ? (
         <div className={styles.columnsDropdown} ref={menuRef}>
           <div className={styles.columnsDropdownList}>
-            {columns.map((column, index) => (
-              <div key={column.key} className={styles.columnsDropdownRow}>
+            {columns.map((column) => (
+              <div
+                key={column.key}
+                className={`${styles.columnsDropdownRow} ${draggedKey === column.key ? styles.columnsDropdownRowDragging : ""} ${dropTargetKey === column.key ? styles.columnsDropdownRowDropTarget : ""}`}
+                draggable
+                onDragStart={() => {
+                  setDraggedKey(column.key);
+                  setDropTargetKey(column.key);
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  if (dropTargetKey !== column.key) {
+                    setDropTargetKey(column.key);
+                  }
+                }}
+                onDragEnd={() => {
+                  setDraggedKey(null);
+                  setDropTargetKey(null);
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (draggedKey) {
+                    reorderWithMoves(draggedKey, column.key);
+                  }
+                  setDraggedKey(null);
+                  setDropTargetKey(null);
+                }}
+              >
                 <button
                   type="button"
                   className={styles.columnsDropdownName}
@@ -77,9 +121,8 @@ export function ColumnManagerDropdown({
                     <IconButton
                       size="small"
                       onClick={() => onTogglePin(column.key)}
-                      className={`${styles.columnsActionIcon} ${
-                        column.pinned ? styles.columnsActionPinned : ""
-                      }`}
+                      className={`${styles.columnsActionIcon} ${column.pinned ? styles.columnsActionPinned : ""
+                        }`}
                     >
                       {column.pinned ? (
                         <PushPinIcon fontSize="inherit" />
@@ -88,22 +131,9 @@ export function ColumnManagerDropdown({
                       )}
                     </IconButton>
                   ) : null}
-                  <IconButton
-                    size="small"
-                    className={styles.columnsActionIcon}
-                    onClick={() => onMove(column.key, "up")}
-                    disabled={index === 0}
-                  >
-                    <KeyboardArrowUpIcon fontSize="inherit" />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    className={styles.columnsActionIcon}
-                    onClick={() => onMove(column.key, "down")}
-                    disabled={index === columns.length - 1}
-                  >
-                    <KeyboardArrowDownIcon fontSize="inherit" />
-                  </IconButton>
+                  <span className={styles.columnsDragHandle} title="Dra för att ändra ordning">
+                    <DragIndicatorIcon fontSize="inherit" />
+                  </span>
                 </div>
               </div>
             ))}
