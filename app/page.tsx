@@ -1418,32 +1418,29 @@ export default function Home() {
 
   const activeContractTabForView: ContractTab = isLineItemDetailOpen ? "Kontraktsrader" : activeContractTab;
 
-  useEffect(() => {
-    let deepestBreadcrumb = currentMenuLabel;
-
-    if (isCustomerDetailOpen && selectedCustomerName) {
-      deepestBreadcrumb = selectedCustomerName;
-    }
-
-    if (selectedContractId) {
-      deepestBreadcrumb = `Kontrakt ${selectedContractId}`;
-    }
-
-    if (isLineItemDetailOpen && selectedLineItemId) {
-      deepestBreadcrumb = isCreatingLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${selectedLineItemId}`;
+  const deepestBreadcrumb = useMemo(() => {
+    if (isPriceListRowDetailOpen && selectedPriceRowId) {
+      return isCreatingPriceRow ? "Ny prislistrad" : `Prislistrad ${selectedPriceRowId}`;
     }
 
     if (isPriceListDetailOpen && selectedPriceListId) {
-      deepestBreadcrumb = selectedPriceListId === "new" ? "Ny prislista" : `Prislista ${selectedPriceListId}`;
+      return selectedPriceListId === "new" ? "Ny prislista" : `Prislista ${selectedPriceListId}`;
     }
 
-    if (isPriceListRowDetailOpen && selectedPriceRowId) {
-      deepestBreadcrumb = isCreatingPriceRow ? "Ny prislistrad" : `Prislistrad ${selectedPriceRowId}`;
+    if (isLineItemDetailOpen && selectedLineItemId) {
+      return isCreatingLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${selectedLineItemId}`;
     }
 
-    document.title = `${deepestBreadcrumb} (${selectedCompany})`;
+    if (selectedContractId) {
+      return `Kontrakt ${selectedContractId}`;
+    }
+
+    if (isCustomerDetailOpen && selectedCustomerName) {
+      return selectedCustomerName;
+    }
+
+    return currentMenuLabel;
   }, [
-    selectedCompany,
     currentMenuLabel,
     isCustomerDetailOpen,
     selectedCustomerName,
@@ -1457,6 +1454,10 @@ export default function Home() {
     selectedPriceRowId,
     isCreatingPriceRow
   ]);
+
+  useEffect(() => {
+    document.title = `${deepestBreadcrumb} (${selectedCompany})`;
+  }, [deepestBreadcrumb, selectedCompany]);
 
   useEffect(() => {
     if (!isRouteLoading) {

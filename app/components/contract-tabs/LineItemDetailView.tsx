@@ -6,13 +6,16 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, TextField, Typography } from "@mui/material";
+import { getContractDetails, type ContractDocument } from "./contractDetails";
 import { DataTable } from "../shared/DataTable";
 import styles from "../../page.module.scss";
 
@@ -623,6 +626,7 @@ export function LineItemDetailView({
   const [lengthDistributionRows, setLengthDistributionRows] = useState<LengthDistributionRow[]>(initialLengthDistributionRows);
   const [selectedLengthDistributionRow, setSelectedLengthDistributionRow] = useState<number | null>(null);
   const [lengthDistributionForm, setLengthDistributionForm] = useState<LengthDistributionFormState>({ mode: "closed" });
+  const [showLengthOnPrint, setShowLengthOnPrint] = useState(false);
   const [keepLengthDistributionDialogOpen, setKeepLengthDistributionDialogOpen] = useState(false);
   const [keepLengthDistributionValues, setKeepLengthDistributionValues] = useState(false);
   const [lastLengthDistributionDraft, setLastLengthDistributionDraft] = useState<Omit<LengthDistributionRow, "id"> | null>(null);
@@ -660,6 +664,9 @@ export function LineItemDetailView({
   const [fastTrackEnabled, setFastTrackEnabled] = useState(false);
   const [optionalFastTrackKeys, setOptionalFastTrackKeys] = useState<Set<keyof NewLineItemDraft>>(new Set());
   const [showAllOptionalFields, setShowAllOptionalFields] = useState(false);
+  const [uploadedLineItemDocuments, setUploadedLineItemDocuments] = useState<ContractDocument[]>([]);
+  const contractDetails = getContractDetails(newLineItemDraft.contractNumber.trim() || null);
+  const lineItemDocuments = isNewLineItem ? uploadedLineItemDocuments : contractDetails.dokument;
 
   const updateDraftField = (key: keyof NewLineItemDraft, value: string | boolean) => {
     setNewLineItemDraft((previous) => ({
@@ -686,6 +693,17 @@ export function LineItemDetailView({
       }
     }
     onSaveAndCreateNew?.(seedDraft);
+  };
+
+  const handleMockDocumentUpload = () => {
+    setUploadedLineItemDocuments((previous) => [
+      ...previous,
+      {
+        name: `kontraktsrad_dokument_${previous.length + 1}.pdf`,
+        size: "-",
+        addedAt: new Date().toLocaleString("sv-SE"),
+      },
+    ]);
   };
 
   const missingRequiredKeys = isNewLineItem
@@ -800,7 +818,7 @@ export function LineItemDetailView({
       <TextField
         key={key}
         size="small"
-        label={label}
+        label={getFieldLabel(key, label)}
         value={displayVal}
         InputProps={{ readOnly: true }}
         className={styles.lineItemWizardReviewField}
@@ -824,6 +842,18 @@ export function LineItemDetailView({
     } else {
       onSaveAndClose?.();
     }
+  };
+
+  const hasSelectedProduct = newLineItemDraft.artNr.trim().length > 0;
+
+  const openProductDetail = () => {
+    if (!hasSelectedProduct) {
+      return;
+    }
+
+    const fallbackPriceListId = newLineItemDraft.priceList.trim() || "PL-202600";
+    const productDetailPath = `/marknad/prislistor/${encodeURIComponent(fallbackPriceListId)}/${encodeURIComponent(newLineItemDraft.artNr.trim())}`;
+    window.open(productDetailPath, "_blank", "noopener,noreferrer");
   };
 
   useEffect(() => {
@@ -1319,7 +1349,7 @@ export function LineItemDetailView({
                     checked={keepOpenAfterSave}
                     onChange={(event) => onToggleKeepOpenAfterSave(event.target.checked)}
                   />
-                  <span>Behåll öppen</span>
+                  <span>Skapa fler</span>
                 </label>
                 <span className={styles.lineItemTopActionDivider} aria-hidden="true" />
                 <Button
@@ -1368,17 +1398,6 @@ export function LineItemDetailView({
             className={styles.contractModernAccordionWrap}
             onKeyDownCapture={handleFastTrackKeyDown}
           >
-            {isNewLineItem && showStepErrors && missingRequiredKeys.length > 0 ? (
-              <Alert severity="error" className={styles.lineItemStepErrorAlert}>
-                Fyll i alla obligatoriska fält innan du går vidare:{" "}
-                <strong>
-                  {missingRequiredKeys
-                    .map((k) => REQUIRED_FIELD_DEFS.find((d) => d.key === k)?.label)
-                    .filter(Boolean)
-                    .join(", ")}
-                </strong>
-              </Alert>
-            ) : null}
             {isNewLineItem && createStep === 0 ? (
               <div className={styles.lineItemFastTrackBar}>
                 <div className={styles.lineItemFastTrackMain}>
@@ -1526,7 +1545,19 @@ export function LineItemDetailView({
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="artNr" label={getFieldLabel("artNr", "ArtNr")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label={getFieldLabel("artNr", "ArtNr")} value={newLineItemDraft.artNr} onChange={(event) => updateDraftField("artNr", event.target.value)} size="small" className={getFieldControlClassName("artNr")} />
+                    <div className={styles.lineItemFieldWithAction}>
+                      <TextField label={getFieldLabel("artNr", "ArtNr")} value={newLineItemDraft.artNr} onChange={(event) => updateDraftField("artNr", event.target.value)} size="small" className={`${getFieldControlClassName("artNr")} ${styles.lineItemFieldActionInput}`} />
+                      <IconButton
+                        size="small"
+                        className={styles.lineItemFieldActionButton}
+                        onClick={openProductDetail}
+                        disabled={!hasSelectedProduct}
+                        title="Öppna produktdetalj"
+                        aria-label="Öppna produktdetalj"
+                      >
+                        <OpenInNewIcon fontSize="small" />
+                      </IconButton>
+                    </div>
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="deliverArtNr" label="Leverera ArtNr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
@@ -1753,6 +1784,7 @@ export function LineItemDetailView({
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="externalComment" label="Extern kommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Extern kommentar" value={newLineItemDraft.externalComment} onChange={(event) => updateDraftField("externalComment", event.target.value)} size="small" className={getFieldControlClassName("externalComment")} multiline rows={3} />
+                    <Typography className={styles.lineItemFieldHelperText}>Visas på orderbekräftelse och kontrakt. Följer med till lastorder.</Typography>
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="customerComment" label="Kundkommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
@@ -1767,12 +1799,65 @@ export function LineItemDetailView({
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="customerBrand" label="Kundens märke" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Kundens märke" value={newLineItemDraft.customerBrand} onChange={(event) => updateDraftField("customerBrand", event.target.value)} size="small" className={getFieldControlClassName("customerBrand")} />
+                    <Typography className={styles.lineItemFieldHelperText}>Följer med till lastorder och visas på följesedel och faktura.</Typography>
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="recipientBrand" label="Godsmottagarens märke" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Godsmottagarens märke" value={newLineItemDraft.recipientBrand} onChange={(event) => updateDraftField("recipientBrand", event.target.value)} size="small" className={getFieldControlClassName("recipientBrand")} />
+                    <Typography className={styles.lineItemFieldHelperText}>Följer med till lastorder och visas på fraktsedel och i C-Load.</Typography>
                   </div>
                 </div>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion
+              expanded={expandedPanels.includes("dokument")}
+              onChange={() => togglePanel("dokument")}
+              className={styles.contractModernAccordion}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+                <div className={styles.contractModernAccordionTitleRow}>
+                  <FolderOutlinedIcon className={styles.contractModernAccordionIcon} />
+                  <Typography className={styles.contractModernAccordionTitle}>Dokument</Typography>
+                  {lineItemDocuments.length > 0 ? (
+                    <Chip
+                      label={lineItemDocuments.length}
+                      size="small"
+                      className={styles.contractSectionCountChip}
+                    />
+                  ) : null}
+                </div>
+              </AccordionSummary>
+              <AccordionDetails>
+                {isNewLineItem ? (
+                  <div className={styles.contractDropZone}>
+                    <p className={styles.contractDropZoneTitle}>Uppladdning av dokument</p>
+                    <p className={styles.contractDropZoneOrText}>Klicka nedan för att simulera uppladdning</p>
+                    <button type="button" className={styles.contractDropZoneButton} onClick={handleMockDocumentUpload}>
+                      Välj filer
+                    </button>
+                  </div>
+                ) : null}
+                {isNewLineItem && lineItemDocuments.length > 0 ? <hr className={styles.contractFlatDivider} /> : null}
+                {lineItemDocuments.length === 0 ? (
+                  <Typography className={styles.contractDataLabel} style={{ padding: "4px 0", fontStyle: "italic" }}>
+                    Inga dokument uppladdade.
+                  </Typography>
+                ) : (
+                  <div className={styles.contractDocumentList}>
+                    {lineItemDocuments.map((doc) => (
+                      <div key={`${doc.name}-${doc.addedAt}`} className={styles.contractFileRow}>
+                        <span className={styles.contractFileRowIcon}>
+                          {doc.name.endsWith(".pdf") ? "📄" : doc.name.endsWith(".doc") || doc.name.endsWith(".docx") ? "📝" : doc.name.endsWith(".xls") || doc.name.endsWith(".xlsx") ? "📊" : "📁"}
+                        </span>
+                        <div className={styles.contractFileRowInfo}>
+                          <p className={styles.contractFileName}>{doc.name}</p>
+                          <p className={styles.contractFileSize}>{doc.size} — {doc.addedAt}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </AccordionDetails>
             </Accordion>
 
@@ -1849,72 +1934,83 @@ export function LineItemDetailView({
                 <div className={styles.freightTabContent}>
                   <div className={styles.freightSection}>
                     <div className={styles.freightSectionHeader}>
-                      <Button
-                        className={styles.freightNewButton}
-                        startIcon={<AddIcon />}
-                        onClick={openLengthDistributionAdd}
-                      >
-                        Ny
-                      </Button>
+                      <div className={styles.lengthDistributionControls}>
+                        <label className={styles.freightDialogKeepOpen}>
+                          <Checkbox
+                            size="small"
+                            checked={showLengthOnPrint}
+                            onChange={(event) => setShowLengthOnPrint(event.target.checked)}
+                          />
+                          <span>Visa längd vid utskrift</span>
+                        </label>
+                        <span className={styles.lengthDistributionControlsDivider} aria-hidden="true" />
+                        <Button
+                          className={styles.freightNewButton}
+                          startIcon={<AddIcon />}
+                          onClick={openLengthDistributionAdd}
+                        >
+                          Ny
+                        </Button>
+                      </div>
                     </div>
 
                     <div className={styles.lineItemsTableFrame}>
-                    <div className={styles.freightTableWrap}>
-                      <div className={styles.freightTable}>
-                        <DataTable
-                          variant="line"
-                          fillRemainingSpace
-                          columns={LENGTH_DISTRIBUTION_COLUMNS}
-                          rows={lengthDistributionRows}
-                          rowKey={(row, index) => `${row.id}-${index}`}
-                          selectedRowIndex={selectedLengthDistributionRow}
-                          onRowClick={(index) =>
-                            setSelectedLengthDistributionRow((previous) => (previous === index ? null : index))
-                          }
-                          renderCell={(row, column, rowIndex) => {
-                            if (column.key === "_actions") {
-                              return (
-                                <span className={styles.freightActionCell}>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      openLengthDistributionEdit(rowIndex);
-                                    }}
-                                    title="Redigera rad"
-                                  >
-                                    <EditOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      openLengthDistributionClone(rowIndex);
-                                    }}
-                                    title="Duplicera rad"
-                                  >
-                                    <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      deleteLengthDistributionRow(rowIndex);
-                                    }}
-                                    title="Ta bort rad"
-                                  >
-                                    <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                </span>
-                              );
+                      <div className={styles.freightTableWrap}>
+                        <div className={styles.freightTable}>
+                          <DataTable
+                            variant="line"
+                            fillRemainingSpace
+                            columns={LENGTH_DISTRIBUTION_COLUMNS}
+                            rows={lengthDistributionRows}
+                            rowKey={(row, index) => `${row.id}-${index}`}
+                            selectedRowIndex={selectedLengthDistributionRow}
+                            onRowClick={(index) =>
+                              setSelectedLengthDistributionRow((previous) => (previous === index ? null : index))
                             }
+                            renderCell={(row, column, rowIndex) => {
+                              if (column.key === "_actions") {
+                                return (
+                                  <span className={styles.freightActionCell}>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openLengthDistributionEdit(rowIndex);
+                                      }}
+                                      title="Redigera rad"
+                                    >
+                                      <EditOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openLengthDistributionClone(rowIndex);
+                                      }}
+                                      title="Duplicera rad"
+                                    >
+                                      <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        deleteLengthDistributionRow(rowIndex);
+                                      }}
+                                      title="Ta bort rad"
+                                    >
+                                      <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                  </span>
+                                );
+                              }
 
-                            const value = row[column.key as keyof Omit<LengthDistributionRow, "id">];
-                            return value?.trim() ? value : "-";
-                          }}
-                        />
+                              const value = row[column.key as keyof Omit<LengthDistributionRow, "id">];
+                              return value?.trim() ? value : "-";
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
                     </div>
                   </div>
 
@@ -2031,62 +2127,62 @@ export function LineItemDetailView({
                     </div>
 
                     <div className={styles.lineItemsTableFrame}>
-                    <div className={styles.freightTableWrap}>
-                      <div className={styles.freightTable}>
-                        <DataTable
-                          variant="line"
-                          fillRemainingSpace
-                          columns={CALLOFF_COLUMNS}
-                          rows={callOffRows}
-                          rowKey={(row, index) => `${row.id}-${index}`}
-                          selectedRowIndex={selectedCallOffRow}
-                          onRowClick={(index) =>
-                            setSelectedCallOffRow((previous) => (previous === index ? null : index))
-                          }
-                          renderCell={(row, column, rowIndex) => {
-                            if (column.key === "_actions") {
-                              return (
-                                <span className={styles.freightActionCell}>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      openCallOffEdit(rowIndex);
-                                    }}
-                                    title="Redigera rad"
-                                  >
-                                    <EditOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      openCallOffClone(rowIndex);
-                                    }}
-                                    title="Kopiera rad"
-                                  >
-                                    <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      deleteCallOffRow(rowIndex);
-                                    }}
-                                    title="Ta bort rad"
-                                  >
-                                    <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                </span>
-                              );
+                      <div className={styles.freightTableWrap}>
+                        <div className={styles.freightTable}>
+                          <DataTable
+                            variant="line"
+                            fillRemainingSpace
+                            columns={CALLOFF_COLUMNS}
+                            rows={callOffRows}
+                            rowKey={(row, index) => `${row.id}-${index}`}
+                            selectedRowIndex={selectedCallOffRow}
+                            onRowClick={(index) =>
+                              setSelectedCallOffRow((previous) => (previous === index ? null : index))
                             }
+                            renderCell={(row, column, rowIndex) => {
+                              if (column.key === "_actions") {
+                                return (
+                                  <span className={styles.freightActionCell}>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openCallOffEdit(rowIndex);
+                                      }}
+                                      title="Redigera rad"
+                                    >
+                                      <EditOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openCallOffClone(rowIndex);
+                                      }}
+                                      title="Kopiera rad"
+                                    >
+                                      <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        deleteCallOffRow(rowIndex);
+                                      }}
+                                      title="Ta bort rad"
+                                    >
+                                      <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                  </span>
+                                );
+                              }
 
-                            const value = row[column.key as keyof Omit<CallOffRow, "id">];
-                            return value?.trim() ? value : "-";
-                          }}
-                        />
+                              const value = row[column.key as keyof Omit<CallOffRow, "id">];
+                              return value?.trim() ? value : "-";
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
                     </div>
                   </div>
 
@@ -2277,60 +2373,60 @@ export function LineItemDetailView({
                     </div>
 
                     <div className={styles.lineItemsTableFrame}>
-                    <div className={styles.freightTableWrap}>
-                      <div className={styles.freightTable}>
-                        <DataTable
-                          variant="line"
-                          fillRemainingSpace
-                          columns={PERIODISERING_COLUMNS}
-                          rows={periodiseringRows}
-                          rowKey={(row, index) => `${row.id}-${index}`}
-                          selectedRowIndex={selectedPeriodiseringRow}
-                          onRowClick={(index) => setSelectedPeriodiseringRow((previous) => (previous === index ? null : index))}
-                          renderCell={(row, column, rowIndex) => {
-                            if (column.key === "_actions") {
-                              return (
-                                <span className={styles.freightActionCell}>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      openPeriodiseringEdit(rowIndex);
-                                    }}
-                                    title="Redigera rad"
-                                  >
-                                    <EditOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      openPeriodiseringClone(rowIndex);
-                                    }}
-                                    title="Klona rad"
-                                  >
-                                    <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      deletePeriodiseringRow(rowIndex);
-                                    }}
-                                    title="Ta bort rad"
-                                  >
-                                    <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                </span>
-                              );
-                            }
+                      <div className={styles.freightTableWrap}>
+                        <div className={styles.freightTable}>
+                          <DataTable
+                            variant="line"
+                            fillRemainingSpace
+                            columns={PERIODISERING_COLUMNS}
+                            rows={periodiseringRows}
+                            rowKey={(row, index) => `${row.id}-${index}`}
+                            selectedRowIndex={selectedPeriodiseringRow}
+                            onRowClick={(index) => setSelectedPeriodiseringRow((previous) => (previous === index ? null : index))}
+                            renderCell={(row, column, rowIndex) => {
+                              if (column.key === "_actions") {
+                                return (
+                                  <span className={styles.freightActionCell}>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openPeriodiseringEdit(rowIndex);
+                                      }}
+                                      title="Redigera rad"
+                                    >
+                                      <EditOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openPeriodiseringClone(rowIndex);
+                                      }}
+                                      title="Klona rad"
+                                    >
+                                      <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        deletePeriodiseringRow(rowIndex);
+                                      }}
+                                      title="Ta bort rad"
+                                    >
+                                      <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                  </span>
+                                );
+                              }
 
-                            const value = row[column.key as keyof Omit<PeriodiseringRow, "id">];
-                            return value?.trim() ? value : "-";
-                          }}
-                        />
+                              const value = row[column.key as keyof Omit<PeriodiseringRow, "id">];
+                              return value?.trim() ? value : "-";
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
                     </div>
                   </div>
 
@@ -2483,62 +2579,62 @@ export function LineItemDetailView({
                     </div>
 
                     <div className={styles.lineItemsTableFrame}>
-                    <div className={styles.freightTableWrap}>
-                      <div className={`${styles.freightTable} ${styles.productionPlanningTable}`}>
-                        <DataTable
-                          variant="line"
-                          fillRemainingSpace
-                          columns={PRODUCTION_PLANNING_COLUMNS}
-                          rows={productionPlanningRows}
-                          rowKey={(row, index) => `${row.id}-${index}`}
-                          selectedRowIndex={selectedProductionPlanningRow}
-                          onRowClick={(index) =>
-                            setSelectedProductionPlanningRow((previous) => (previous === index ? null : index))
-                          }
-                          renderCell={(row, column, rowIndex) => {
-                            if (column.key === "_actions") {
-                              return (
-                                <span className={`${styles.freightActionCell} ${styles.productionPlanningActionCell}`}>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      openProductionPlanningEdit(rowIndex);
-                                    }}
-                                    title="Redigera rad"
-                                  >
-                                    <EditOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      openProductionPlanningClone(rowIndex);
-                                    }}
-                                    title="Duplicera rad"
-                                  >
-                                    <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      deleteProductionPlanningRow(rowIndex);
-                                    }}
-                                    title="Ta bort rad"
-                                  >
-                                    <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                                  </IconButton>
-                                </span>
-                              );
+                      <div className={styles.freightTableWrap}>
+                        <div className={`${styles.freightTable} ${styles.productionPlanningTable}`}>
+                          <DataTable
+                            variant="line"
+                            fillRemainingSpace
+                            columns={PRODUCTION_PLANNING_COLUMNS}
+                            rows={productionPlanningRows}
+                            rowKey={(row, index) => `${row.id}-${index}`}
+                            selectedRowIndex={selectedProductionPlanningRow}
+                            onRowClick={(index) =>
+                              setSelectedProductionPlanningRow((previous) => (previous === index ? null : index))
                             }
+                            renderCell={(row, column, rowIndex) => {
+                              if (column.key === "_actions") {
+                                return (
+                                  <span className={`${styles.freightActionCell} ${styles.productionPlanningActionCell}`}>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openProductionPlanningEdit(rowIndex);
+                                      }}
+                                      title="Redigera rad"
+                                    >
+                                      <EditOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        openProductionPlanningClone(rowIndex);
+                                      }}
+                                      title="Duplicera rad"
+                                    >
+                                      <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        deleteProductionPlanningRow(rowIndex);
+                                      }}
+                                      title="Ta bort rad"
+                                    >
+                                      <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                  </span>
+                                );
+                              }
 
-                            const value = row[column.key as keyof Omit<ProductionPlanningRow, "id">];
-                            return value?.trim() ? value : "-";
-                          }}
-                        />
+                              const value = row[column.key as keyof Omit<ProductionPlanningRow, "id">];
+                              return value?.trim() ? value : "-";
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
                     </div>
 
                     <Dialog
@@ -2669,19 +2765,19 @@ export function LineItemDetailView({
 
 
                     <div className={styles.lineItemsTableFrame}>
-                    <div className={styles.freightTableWrap}>
-                      <div className={styles.freightTable}>
-                        <DataTable
-                          variant="line"
-                          fillRemainingSpace
-                          columns={NETTOLAGER_COLUMNS}
-                          rows={nettolagerRows}
-                          rowKey={(row, index) => `${row.bolag}-${row.fakturatext}-${index}`}
-                          selectedRowIndex={selectedNettolagerRow}
-                          onRowClick={(index) => setSelectedNettolagerRow((previous) => (previous === index ? null : index))}
-                        />
+                      <div className={styles.freightTableWrap}>
+                        <div className={styles.freightTable}>
+                          <DataTable
+                            variant="line"
+                            fillRemainingSpace
+                            columns={NETTOLAGER_COLUMNS}
+                            rows={nettolagerRows}
+                            rowKey={(row, index) => `${row.bolag}-${row.fakturatext}-${index}`}
+                            selectedRowIndex={selectedNettolagerRow}
+                            onRowClick={(index) => setSelectedNettolagerRow((previous) => (previous === index ? null : index))}
+                          />
+                        </div>
                       </div>
-                    </div>
                     </div>
                   </div>
                 </div>
@@ -2694,6 +2790,21 @@ export function LineItemDetailView({
           </div>
         </div>
       </div>
+
+      <Snackbar
+        open={isNewLineItem && showStepErrors}
+        autoHideDuration={2600}
+        onClose={() => setShowStepErrors(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setShowStepErrors(false)}
+          severity="error"
+          variant="filled"
+        >
+          Fyll i alla obligatoriska fält innan du går vidare
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

@@ -2905,7 +2905,7 @@
 
 .lineItemsHeaderFillerCell {
   display: table-cell;
-  width: 100%;
+  width: auto;
   min-width: 0;
   padding: 0;
   background-color: #f4f6f9;
@@ -2914,7 +2914,7 @@
 
 .lineItemsFillerCell {
   display: table-cell;
-  width: 100%;
+  width: auto;
   min-width: 0;
   padding: 0;
   background-color: transparent;
@@ -3601,6 +3601,37 @@
   color: #5e6775;
 }
 
+.lineItemFieldHelperText {
+  margin: 0;
+  font-size: 11px;
+  color: #5e6775;
+}
+
+.lineItemFieldWithAction {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lineItemFieldActionInput {
+  flex: 1;
+}
+
+.lineItemFieldActionButton {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d5dbe4 !important;
+  border-radius: 8px !important;
+  color: #5d6574 !important;
+  background-color: #ffffff !important;
+}
+
+.lineItemFieldActionButton:disabled {
+  color: #b8bec8 !important;
+  border-color: #e2e7ef !important;
+  background-color: #f7f9fc !important;
+}
+
 .lineItemWizardInlineNextRow {
   display: flex;
   align-items: center;
@@ -3900,8 +3931,8 @@
     font-size: 11px !important;
     font-weight: 700 !important;
     color: #8a94a6 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    text-transform: none;
+    letter-spacing: 0;
     margin-bottom: 2px;
   }
   :global(.MuiInputLabel-shrink) {
@@ -5570,6 +5601,24 @@
   justify-content: space-between;
 }
 
+.lengthDistributionControls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+}
+
+.lengthDistributionControlsDivider {
+  display: block;
+  width: 100%;
+  align-self: stretch;
+  height: 1px;
+  background-color: #d7dde7;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
 .freightSectionTitle {
   color: #2f3743;
   font-size: 14px !important;
@@ -5624,8 +5673,8 @@
   }
 
   .freightTable {
-    width: 100%;
-    min-width: max-content;
+    width: max-content;
+    min-width: 100%;
   }
 
   .freightActionCell {
@@ -5637,8 +5686,8 @@
 
 .freightTable {
   display: table;
-  width: 100%;
-  min-width: max-content;
+  width: max-content;
+  min-width: 100%;
   table-layout: auto;
 }
 
