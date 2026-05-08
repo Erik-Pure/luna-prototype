@@ -244,7 +244,8 @@ type SearchFieldKey =
   | "typ"
   | "kontraktsNr"
   | "externtKontraktsnr"
-  | "kontraktsdatum"
+  | "kontraktsdatumFran"
+  | "kontraktsdatumTill"
   | "artNr"
   | "kund"
   | "kategori"
@@ -271,26 +272,26 @@ type SearchFieldConfig = {
 };
 
 const defaultSearchFields: SearchFieldConfig[] = [
-  { key: "typ", label: "Typ", control: "select", visible: true, favorite: true },
-  { key: "kontraktsNr", label: "KontraktsNr", control: "text", visible: true, favorite: true },
-  { key: "externtKontraktsnr", label: "Externt kontraktsnr", control: "text", visible: true, favorite: true },
-  { key: "kontraktsdatum", label: "Kontraktsdatum", control: "text", visible: false, favorite: false },
   { key: "artNr", label: "ArtNr", control: "text", visible: false, favorite: false },
-  { key: "kund", label: "Kund", control: "text", visible: false, favorite: true },
+  { key: "certifiering", label: "Certifiering", control: "select", visible: false, favorite: false },
+  { key: "bolag", label: "Enhet", control: "select", visible: false, favorite: false },
+  { key: "externtKontraktsnr", label: "Externt kontraktsnr", control: "text", visible: true, favorite: false },
   { key: "kategori", label: "Kategori", control: "select", visible: false, favorite: false },
+  { key: "kontraktsNr", label: "KontraktsNr", control: "text", visible: true, favorite: true },
+  { key: "kontraktsdatumFran", label: "Kontraktsdatum från", control: "text", visible: false, favorite: false },
+  { key: "kontraktsdatumTill", label: "Kontraktsdatum till", control: "text", visible: false, favorite: false },
+  { key: "kund", label: "Kund", control: "text", visible: false, favorite: true },
   { key: "land", label: "Land", control: "select", visible: false, favorite: false },
   { key: "mottagarland", label: "Mottagarland", control: "select", visible: false, favorite: false },
-  { key: "bolag", label: "Bolag", control: "select", visible: false, favorite: false },
-  { key: "upprattatAv", label: "Upprättat av", control: "text", visible: false, favorite: false },
   { key: "prislistaNr", label: "Prislista nr", control: "text", visible: false, favorite: false },
-  { key: "certifiering", label: "Certifiering", control: "select", visible: false, favorite: false },
   { key: "tillhor", label: "Tillhör", control: "text", visible: false, favorite: false },
+  { key: "typ", label: "Typ", control: "select", visible: true, favorite: true },
+  { key: "upprattatAv", label: "Upprättat av", control: "text", visible: false, favorite: true },
   { key: "varningsnivaFordran", label: "Varningsnivå fordran", control: "select", visible: false, favorite: false },
   { key: "varningsnivaLimit", label: "Varningsnivå limit", control: "select", visible: false, favorite: false },
-  { key: "saknarAvtalsratt", label: "Saknar avtalsrätt", control: "checkbox", visible: false, favorite: false },
+  { key: "saknarAvtalsratt", label: "Saknar avtalsrutt", control: "checkbox", visible: false, favorite: false },
   { key: "saknarAvtal", label: "Saknar avtal", control: "checkbox", visible: false, favorite: false },
-  { key: "avtalsrattSaknasI", label: "Avtalsrätt saknas i", control: "text", visible: false, favorite: false },
-  { key: "cLoad", label: "C-Load", control: "checkbox", visible: false, favorite: false }
+  { key: "cLoad", label: "Avtalsrutt saknas i C-Load", control: "checkbox", visible: false, favorite: false }
 ];
 
 const selectOptionsByField: Partial<Record<SearchFieldKey, string[]>> = {
@@ -310,7 +311,8 @@ const initialSearchValues: SearchValueMap = {
   typ: "Aktivt kontrakt",
   kontraktsNr: "",
   externtKontraktsnr: "",
-  kontraktsdatum: "",
+  kontraktsdatumFran: "",
+  kontraktsdatumTill: "",
   artNr: "",
   kund: "",
   kategori: "",
@@ -905,7 +907,9 @@ export default function Home() {
           return row.kontrakt;
         case "externtKontraktsnr":
           return row.externNr;
-        case "kontraktsdatum":
+        case "kontraktsdatumFran":
+          return row.kontraktsdatum ?? "";
+        case "kontraktsdatumTill":
           return row.kontraktsdatum ?? "";
         case "artNr":
           return "";

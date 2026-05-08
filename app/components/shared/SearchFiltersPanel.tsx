@@ -2,8 +2,7 @@
 
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import SearchIcon from "@mui/icons-material/Search";
 import { Button, Checkbox, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { useState, type RefObject } from "react";
@@ -75,8 +74,12 @@ export function SearchFiltersPanel({
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [isEditingFavorites, setIsEditingFavorites] = useState(false);
   const [editFavoriteKeys, setEditFavoriteKeys] = useState<string[]>([]);
+  const [draggedFavoriteKey, setDraggedFavoriteKey] = useState<string | null>(null);
+  const [dropTargetFavoriteKey, setDropTargetFavoriteKey] = useState<string | null>(null);
 
   if (useAdvancedFilterLayout) {
+    const compareByLabel = (a: SearchFieldConfig, b: SearchFieldConfig) =>
+      a.label.localeCompare(b.label, "sv", { sensitivity: "base" });
     const advancedTextFields = allTextFields ?? textFields;
     const advancedSelectFields = allSelectFields ?? selectFields;
     const advancedCheckboxFields = allCheckboxFields ?? checkboxFields;
@@ -88,11 +91,14 @@ export function SearchFiltersPanel({
     const moreTextFields = advancedTextFields.filter((field) => !favoriteFieldKeys.has(field.key));
     const moreSelectFields = advancedSelectFields.filter((field) => !favoriteFieldKeys.has(field.key));
     const moreCheckboxFields = advancedCheckboxFields.filter((field) => !favoriteFieldKeys.has(field.key));
+    const sortedMoreNonCheckboxFields = [...moreTextFields, ...moreSelectFields].sort(compareByLabel);
+    const sortedMoreCheckboxFields = [...moreCheckboxFields].sort(compareByLabel);
     const hasMoreFilters =
       moreTextFields.length > 0 || moreSelectFields.length > 0 || moreCheckboxFields.length > 0;
     const hasFavorites =
       favoriteTextFields.length > 0 || favoriteSelectFields.length > 0 || favoriteCheckboxFields.length > 0;
     const allFields = [...advancedTextFields, ...advancedSelectFields, ...advancedCheckboxFields];
+    const sortedAllFields = [...allFields].sort(compareByLabel);
 
     const handleStartEdit = () => {
       // Preserve existing favorite order, then add any new favorites at end
@@ -131,20 +137,18 @@ export function SearchFiltersPanel({
       });
     };
 
-    const handleMoveUp = (index: number) => {
-      if (index === 0) return;
+    const reorderFavoriteKeys = (fromKey: string, toKey: string) => {
       setEditFavoriteKeys((previous) => {
-        const next = [...previous];
-        [next[index - 1], next[index]] = [next[index], next[index - 1]];
-        return next;
-      });
-    };
+        const fromIndex = previous.indexOf(fromKey);
+        const toIndex = previous.indexOf(toKey);
 
-    const handleMoveDown = (index: number) => {
-      setEditFavoriteKeys((previous) => {
-        if (index === previous.length - 1) return previous;
+        if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+          return previous;
+        }
+
         const next = [...previous];
-        [next[index], next[index + 1]] = [next[index + 1], next[index]];
+        const [moved] = next.splice(fromIndex, 1);
+        next.splice(toIndex, 0, moved);
         return next;
       });
     };
@@ -208,7 +212,7 @@ export function SearchFiltersPanel({
                     <div className={styles.favoriteEditLeft}>
                       <Typography className={styles.favoriteEditSectionTitle}>Tillgängliga fält</Typography>
                       <div className={styles.favoriteEditList}>
-                        {allFields.map((field) => (
+                        {sortedAllFields.map((field) => (
                           <label key={field.key} className={`${styles.favoriteEditRow} ${editFavoriteKeys.includes(field.key) ? styles.favoriteEditRowSelected : ""}`}>
                             <Checkbox
                               size="small"
@@ -222,7 +226,7 @@ export function SearchFiltersPanel({
                     </div>
                     <div className={styles.favoriteEditRight}>
                       <Typography className={styles.favoriteEditSectionTitle}>
-                        Visningsordning ({editFavoriteKeys.length} valda)
+                        Visningsordning
                       </Typography>
                       {editFavoriteKeys.length === 0 ? (
                         <Typography className={styles.favoriteEditEmpty}>
@@ -234,29 +238,38 @@ export function SearchFiltersPanel({
                             const field = allFields.find((f) => f.key === key);
                             if (!field) return null;
                             return (
-                              <div key={key} className={styles.favoriteOrderRow}>
+                              <div
+                                key={key}
+                                className={`${styles.favoriteOrderRow} ${draggedFavoriteKey === key ? styles.favoriteOrderRowDragging : ""} ${dropTargetFavoriteKey === key ? styles.favoriteOrderRowDropTarget : ""}`}
+                                draggable
+                                onDragStart={() => {
+                                  setDraggedFavoriteKey(key);
+                                  setDropTargetFavoriteKey(key);
+                                }}
+                                onDragOver={(event) => {
+                                  event.preventDefault();
+                                  if (dropTargetFavoriteKey !== key) {
+                                    setDropTargetFavoriteKey(key);
+                                  }
+                                }}
+                                onDragEnd={() => {
+                                  setDraggedFavoriteKey(null);
+                                  setDropTargetFavoriteKey(null);
+                                }}
+                                onDrop={(event) => {
+                                  event.preventDefault();
+                                  if (draggedFavoriteKey) {
+                                    reorderFavoriteKeys(draggedFavoriteKey, key);
+                                  }
+                                  setDraggedFavoriteKey(null);
+                                  setDropTargetFavoriteKey(null);
+                                }}
+                              >
                                 <span className={styles.favoriteOrderIndex}>{index + 1}</span>
                                 <Typography className={styles.favoriteOrderLabel}>{field.label}</Typography>
-                                <div className={styles.favoriteOrderActions}>
-                                  <button
-                                    type="button"
-                                    className={styles.favoriteOrderButton}
-                                    onClick={() => handleMoveUp(index)}
-                                    disabled={index === 0}
-                                    aria-label="Flytta upp"
-                                  >
-                                    <ArrowUpwardIcon />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={styles.favoriteOrderButton}
-                                    onClick={() => handleMoveDown(index)}
-                                    disabled={index === editFavoriteKeys.length - 1}
-                                    aria-label="Flytta ned"
-                                  >
-                                    <ArrowDownwardIcon />
-                                  </button>
-                                </div>
+                                <span className={styles.favoriteOrderHandle} title="Dra för att ändra ordning">
+                                  <DragIndicatorIcon fontSize="inherit" />
+                                </span>
                               </div>
                             );
                           })}
@@ -266,7 +279,13 @@ export function SearchFiltersPanel({
                   </div>
                 </div>
                 <div className={styles.advancedFiltersFooter}>
-                  <Button className={styles.dropdownSave} size="small" onClick={handleSaveFavorites}>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="primary"
+                    className={styles.actionItemPrimary}
+                    onClick={handleSaveFavorites}
+                  >
                     Spara urval
                   </Button>
                 </div>
@@ -329,41 +348,42 @@ export function SearchFiltersPanel({
 
                   {hasMoreFilters && showMoreFilters ? (
                     <>
+                      <Typography className={styles.advancedFiltersSectionTitle}>Alla filter</Typography>
                       <div className={styles.advancedFiltersGrid}>
-                        {moreTextFields.map((field) => (
-                          <TextField
-                            key={field.key}
-                            size="small"
-                            label={field.label}
-                            className={styles.searchFieldControl}
-                            value={String(values[field.key] ?? "")}
-                            onChange={(event) => onTextChange(field.key, event.target.value)}
-                          />
-                        ))}
-
-                        {moreSelectFields.map((field) => (
-                          <FormControl key={field.key} size="small" className={styles.searchFieldControl}>
-                            <InputLabel>{field.label}</InputLabel>
-                            <Select
-                              value={String(values[field.key] ?? "")}
+                        {sortedMoreNonCheckboxFields.map((field) =>
+                          field.control === "text" ? (
+                            <TextField
+                              key={field.key}
+                              size="small"
                               label={field.label}
-                              onChange={(event) => onSelectChange(field.key, event.target.value)}
-                              IconComponent={KeyboardArrowDownIcon}
-                            >
-                              <MenuItem value="">-</MenuItem>
-                              {getSelectOptions(field.key).map((option) => (
-                                <MenuItem key={`${field.key}-${option}`} value={option}>
-                                  {option}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        ))}
+                              className={styles.searchFieldControl}
+                              value={String(values[field.key] ?? "")}
+                              onChange={(event) => onTextChange(field.key, event.target.value)}
+                            />
+                          ) : (
+                            <FormControl key={field.key} size="small" className={styles.searchFieldControl}>
+                              <InputLabel>{field.label}</InputLabel>
+                              <Select
+                                value={String(values[field.key] ?? "")}
+                                label={field.label}
+                                onChange={(event) => onSelectChange(field.key, event.target.value)}
+                                IconComponent={KeyboardArrowDownIcon}
+                              >
+                                <MenuItem value="">-</MenuItem>
+                                {getSelectOptions(field.key).map((option) => (
+                                  <MenuItem key={`${field.key}-${option}`} value={option}>
+                                    {option}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+                          )
+                        )}
                       </div>
 
-                      {moreCheckboxFields.length > 0 ? (
+                      {sortedMoreCheckboxFields.length > 0 ? (
                         <div className={styles.advancedCheckboxWrap}>
-                          {moreCheckboxFields.map((field) => (
+                          {sortedMoreCheckboxFields.map((field) => (
                             <label key={field.key} className={styles.searchCheckboxItem}>
                               <Checkbox
                                 size="small"
