@@ -6938,8 +6938,16 @@
 
 .tillaggActionsCell {
   text-align: right;
-  width: 40px;
-  padding-right: 6px !important;
+  width: 112px;
+  min-width: 112px;
+  padding-right: 8px !important;
+}
+
+.tillaggActionsHeaderCell {
+  text-align: right;
+  width: 112px;
+  min-width: 112px;
+  padding-right: 10px !important;
 }
 
 .tillaggEmptyRow {

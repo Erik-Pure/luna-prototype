@@ -4,6 +4,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
+    Alert,
     Button,
     Checkbox,
     Dialog,
@@ -14,6 +15,7 @@ import {
     InputAdornment,
     MenuItem,
     Select,
+    Snackbar,
     TextField,
     Typography,
 } from "@mui/material";
@@ -61,8 +63,9 @@ export function TilläggsTab() {
     const [draft, setDraft] = useState<Omit<TillaggItem, "id">>(EMPTY_DRAFT);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [keepDialogOpen, setKeepDialogOpen] = useState(false);
-    const [keepDialogValues, setKeepDialogValues] = useState(true);
+    const [keepDialogValues, setKeepDialogValues] = useState(false);
     const [lastDraft, setLastDraft] = useState<Omit<TillaggItem, "id">>(EMPTY_DRAFT);
+    const [isCreateToastOpen, setIsCreateToastOpen] = useState(false);
 
     function openDialog() {
         setDraft(keepDialogValues ? lastDraft : EMPTY_DRAFT);
@@ -89,6 +92,7 @@ export function TilläggsTab() {
         } else {
             setItems((prev) => [...prev, { id: _nextId++, ...draft }]);
             setLastDraft(keepDialogValues ? draft : EMPTY_DRAFT);
+            setIsCreateToastOpen(true);
             if (keepDialogOpen) {
                 setDraft(keepDialogValues ? draft : EMPTY_DRAFT);
                 return;
@@ -104,6 +108,10 @@ export function TilläggsTab() {
 
     function removeItem(id: number) {
         setItems((prev) => prev.filter((item) => item.id !== id));
+    }
+
+    function closeCreateToast() {
+        setIsCreateToastOpen(false);
     }
 
     const TABLE_COLS = [
@@ -138,7 +146,10 @@ export function TilläggsTab() {
                 <div className={styles.lineItemsTable}>
                     <div className={styles.lineItemsHeaderRow}>
                         {TABLE_COLS.map((col) => (
-                            <div key={col.key} className={styles.lineItemsHeaderCell}>
+                            <div
+                                key={col.key}
+                                className={`${styles.lineItemsHeaderCell} ${col.key === "_actions" ? `${styles.stickyRightHeaderCell} ${styles.tillaggActionsHeaderCell}` : ""}`}
+                            >
                                 {col.label}
                             </div>
                         ))}
@@ -163,13 +174,15 @@ export function TilläggsTab() {
                                     <div className={styles.lineItemsCell}>{item.konto || "—"}</div>
                                     <div className={`${styles.lineItemsCell} ${styles.tillaggCellTruncate}`}>{item.textPaFaktura || "—"}</div>
                                     <div className={styles.lineItemsCell}>{item.avtalsnrCanea || "—"}</div>
-                                    <div className={`${styles.lineItemsCell} ${styles.tillaggActionsCell}`}>
-                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); openEditDialog(item); }}>
-                                            <EditOutlinedIcon sx={{ fontSize: 15 }} />
-                                        </IconButton>
-                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}>
-                                            <DeleteOutlineIcon sx={{ fontSize: 15 }} />
-                                        </IconButton>
+                                    <div className={`${styles.lineItemsCell} ${styles.stickyRightCell} ${styles.tillaggActionsCell}`}>
+                                        <span className={styles.freightActionCell}>
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openEditDialog(item); }}>
+                                                <EditOutlinedIcon className={styles.freightActionIcon} />
+                                            </IconButton>
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}>
+                                                <DeleteOutlineIcon className={styles.freightActionIcon} />
+                                            </IconButton>
+                                        </span>
                                     </div>
                                 </div>
                             );
@@ -217,7 +230,6 @@ export function TilläggsTab() {
                         <div className={styles.freightFormField}>
                             <Typography className={styles.freightFormLabel}>Bolag</Typography>
                             <Select size="small" className={styles.freightFormInput} value={draft.bolag} onChange={(e) => setDraftField("bolag", e.target.value)}>
-                                <MenuItem value="">— Välj —</MenuItem>
                                 <MenuItem value="Bolag AB">Bolag AB</MenuItem>
                                 <MenuItem value="Dotterbolag AB">Dotterbolag AB</MenuItem>
                                 <MenuItem value="Intressebolag HB">Intressebolag HB</MenuItem>
@@ -227,7 +239,6 @@ export function TilläggsTab() {
                         <div className={styles.freightFormField}>
                             <Typography className={styles.freightFormLabel}>Tillägg</Typography>
                             <Select size="small" className={styles.freightFormInput} value={draft.tillagg} onChange={(e) => setDraftField("tillagg", e.target.value)}>
-                                <MenuItem value="">— Välj —</MenuItem>
                                 <MenuItem value="Dellossning">Dellossning</MenuItem>
                                 <MenuItem value="Frakttillägg">Frakttillägg</MenuItem>
                                 <MenuItem value="Färg">Färg</MenuItem>
@@ -263,11 +274,8 @@ export function TilläggsTab() {
 
                         <div className={styles.freightFormField}>
                             <Typography className={styles.freightFormLabel}>Valuta</Typography>
-                            <Select size="small" className={styles.freightFormInput} value={draft.valuta} onChange={(e) => setDraftField("valuta", e.target.value)}>
-                                <MenuItem value="EUR">EUR</MenuItem>
-                                <MenuItem value="SEK">SEK</MenuItem>
-                                <MenuItem value="USD">USD</MenuItem>
-                            </Select>
+                            <TextField size="small" className={styles.freightFormInput} value={draft.valuta} disabled helperText="Hämtas från kund">
+                            </TextField>
                         </div>
 
                         <div className={styles.freightFormField}>
@@ -291,14 +299,13 @@ export function TilläggsTab() {
                         <div className={styles.freightFormField}>
                             <Typography className={styles.freightFormLabel}>Konto</Typography>
                             <Select size="small" className={styles.freightFormInput} value={draft.konto} onChange={(e) => setDraftField("konto", e.target.value)}>
-                                <MenuItem value="">— Välj —</MenuItem>
                                 <MenuItem value="Frakt">Frakt</MenuItem>
                                 <MenuItem value="Färg">Färg</MenuItem>
                                 <MenuItem value="Postning/Plockningstillägg">Postning/Plockningstillägg</MenuItem>
                             </Select>
                         </div>
 
-                        <div className={`${styles.freightFormField} ${styles.tillaggDialogFullCol}`}>
+                        <div className={`${styles.freightFormField}`}>
                             <Typography className={styles.freightFormLabel}>Avtalsnr i Canea</Typography>
                             <TextField size="small" className={styles.freightFormInput} value={draft.avtalsnrCanea} onChange={(e) => setDraftField("avtalsnrCanea", e.target.value)} />
                         </div>
@@ -319,6 +326,17 @@ export function TilläggsTab() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar
+                open={isCreateToastOpen}
+                autoHideDuration={2400}
+                onClose={closeCreateToast}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+                <Alert onClose={closeCreateToast} severity="success" variant="filled">
+                    Tillägg skapat
+                </Alert>
+            </Snackbar>
         </div>
     );
 }
