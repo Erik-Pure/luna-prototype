@@ -204,6 +204,7 @@ type FormState =
 export function FreightTab() {
   const [virkeRows, setVirkeRows] = useState<VirkeRow[]>(INITIAL_VIRKE_ROWS);
   const [selectedSnittRow, setSelectedSnittRow] = useState<number | null>(null);
+  const [freightInfoExpanded, setFreightInfoExpanded] = useState(false);
   const [selectedVirkeRow, setSelectedVirkeRow] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>({ mode: "closed" });
   const [keepDialogOpen, setKeepDialogOpen] = useState(false);
@@ -264,37 +265,39 @@ export function FreightTab() {
     closeForm();
   };
 
-  const deleteVirkeRow = (index: number) => {
-    setVirkeRows((prev) => prev.filter((_, i) => i !== index));
-    setSelectedVirkeRow(null);
-    closeForm();
-  };
-
   const draft = form.mode !== "closed" ? form.draft : null;
   const isDialogOpen = draft !== null;
   const totalFreightSummary = draft ? getTotalFreightSummary(draft) : getTotalFreightSummary(emptyVirkeRow());
 
   return (
     <div className={styles.freightTabContent}>
-      <div className={styles.freightSnittCard}>
-        <Typography className={styles.freightSnittTitle}>
-          Snittpriser i C-Load (valuta/m3) till Mariestad
-        </Typography>
-        <div className={styles.freightTableWrap}>
-          <div className={styles.freightTable}>
-            <DataTable
-              variant="line"
-              columns={SNITT_COLUMNS}
-              rows={SNITT_ROWS}
-              rowKey={(_row, index) => `snitt-${index}`}
-              selectedRowIndex={selectedSnittRow}
-              onRowClick={setSelectedSnittRow}
-            />
-          </div>
-        </div>
-      </div>
-
       <div className={styles.freightSection}>
+        <div className={styles.freightInfoSection}>
+          <div className={styles.freightInfoTitleRow}>
+            <Typography className={styles.freightInfoTitle}>Fraktrader för virke skapas automatiskt</Typography>
+            <button
+              type="button"
+              className={styles.freightInfoToggle}
+              aria-expanded={freightInfoExpanded}
+              aria-label="Mer information"
+              onClick={() => setFreightInfoExpanded((prev) => !prev)}
+            >
+              ?
+            </button>
+          </div>
+          {freightInfoExpanded ? (
+            <>
+              <Typography className={styles.freightInfoText}>
+                Fraktrader för virke läggs till automatiskt utifrån avtalsrutt. Värdet för Frakt Bil / Jvg hämtas från C-Load och kan, likt eventuella övriga fraktkostnader, justeras manuellt.
+              </Typography>
+              <Typography className={styles.freightInfoText}>
+                För ströprodukter behöver alla fält fyllas i manuellt.
+              </Typography>
+            </>
+
+          ) : null}
+        </div>
+
         <div className={styles.freightSectionHeader}>
           <Button
             className={styles.freightNewButton}
@@ -341,16 +344,6 @@ export function FreightTab() {
                           <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
                         </IconButton>
                       ) : null}
-                      <IconButton
-                        size="small"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          deleteVirkeRow(rowIndex);
-                        }}
-                        title="Ta bort rad"
-                      >
-                        <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                      </IconButton>
                     </span>
                   );
                 }
@@ -468,6 +461,29 @@ export function FreightTab() {
             </Button>
           </DialogActions>
         </Dialog>
+
+        <div className={styles.freightSnittCard}>
+          <div className={styles.freightSnittHeader}>
+            <Typography className={styles.freightSnittTitle}>
+              Snittpriser i C-Load (valuta/m3) till Mariestad
+            </Typography>
+            <Button className={styles.freightSnittFetchButton}>
+              Hämta
+            </Button>
+          </div>
+          <div className={styles.freightTableWrap}>
+            <div className={styles.freightTable}>
+              <DataTable
+                variant="line"
+                columns={SNITT_COLUMNS}
+                rows={SNITT_ROWS}
+                rowKey={(_row, index) => `snitt-${index}`}
+                selectedRowIndex={selectedSnittRow}
+                onRowClick={setSelectedSnittRow}
+              />
+            </div>
+          </div>
+        </div>
 
         <Snackbar
           key={createFeedback.key}

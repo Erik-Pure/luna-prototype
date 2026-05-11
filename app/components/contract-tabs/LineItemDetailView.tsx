@@ -15,6 +15,8 @@ import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, Switch, TextField, Typography } from "@mui/material";
@@ -878,14 +880,10 @@ export function LineItemDetailView({
     const displayVal = typeof val === "boolean" ? (val ? "Ja" : "Nej") : (String(val || "") || "—");
 
     return (
-      <TextField
-        key={key}
-        size="small"
-        label={getFieldLabel(key, label)}
-        value={displayVal}
-        InputProps={{ readOnly: true }}
-        className={styles.lineItemWizardReviewField}
-      />
+      <div key={key} className={styles.lineItemWizardReviewField}>
+        <span className={styles.lineItemWizardReviewFieldLabel}>{getFieldLabel(key, label)}</span>
+        <span className={styles.lineItemWizardReviewFieldValue}>{displayVal}</span>
+      </div>
     );
   };
 
@@ -2105,7 +2103,7 @@ export function LineItemDetailView({
             {createStep === 1 ? (
               <div className={styles.lineItemWizardReviewCard}>
                 <div className={styles.lineItemWizardReviewHeader}>
-                  <span className={styles.lineItemWizardReviewTitle}>{isNewLineItem ? "Obligatoriska uppgifter från kontraktsradshuvud" : "Kontraktsradshuvud"}</span>
+                  <span className={styles.lineItemWizardReviewTitle}>{isNewLineItem ? "Obligatoriska uppgifter från kontraktsradshuvud" : "Obligatoriska uppgifter från kontraktsradshuvud"}</span>
                   {remainingReviewFields.length > 0 ? (
                     <>
                       <span className={styles.lineItemWizardReviewHeaderDivider} aria-hidden="true" />
@@ -2322,7 +2320,7 @@ export function LineItemDetailView({
                   </Dialog>
 
                   <Snackbar
-                    key={lengthDistributionCreateFeedback.key}
+                    key={`length-create-${lengthDistributionCreateFeedback.key}`}
                     open={lengthDistributionCreateFeedback.open}
                     autoHideDuration={2200}
                     onClose={() => setLengthDistributionCreateFeedback((previous) => ({ ...previous, open: false }))}
@@ -2586,6 +2584,36 @@ export function LineItemDetailView({
               ) : activeTab === "Periodisering" ? (
                 <div className={styles.freightTabContent}>
                   <div className={styles.freightSection}>
+                    {hasContractVolume && contractVolume !== null ? (
+                      <div className={styles.periodiseringStatsRow}>
+                        <div className={`${styles.periodiseringStatCardCombined}${periodiseringArIbalans ? ` ${styles.periodiseringStatCardCombinedDone}` : ""}`}>
+                          <div className={styles.periodiseringStatCardSide}>
+                            <div className={styles.periodiseringStatCardHeader}>
+                              <Inventory2OutlinedIcon className={styles.periodiseringStatCardIcon} />
+                              <span>Återstår</span>
+                            </div>
+                            <div className={styles.periodiseringStatCardValue}>
+                              {formatSvVolume(aterstarAttPeriodisera ?? 0)}
+                              <span className={styles.periodiseringStatCardUnit}>{volumeUnit}</span>
+                            </div>
+                          </div>
+                          <div className={styles.periodiseringStatCardDivider} />
+                          <div className={styles.periodiseringStatCardSide}>
+                            <div className={styles.periodiseringStatCardHeader}>
+                              <EventOutlinedIcon className={styles.periodiseringStatCardIcon} />
+                              <span>Periodiserat</span>
+                              {periodiseringArIbalans ? (
+                                <CheckCircleIcon className={styles.periodiseringStatDoneIcon} />
+                              ) : null}
+                            </div>
+                            <div className={styles.periodiseringStatCardValue}>
+                              {formatSvVolume(periodiseradVolym)}
+                              <span className={styles.periodiseringStatCardFraction}>/ {formatSvVolume(contractVolume)} {volumeUnit}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
                     <div className={styles.periodiseringToolbar}>
                       <div className={styles.periodiseringToolbarLeft}>
                         <Button
@@ -2603,32 +2631,6 @@ export function LineItemDetailView({
                         >
                           Automatisk periodisering
                         </Button>
-                        {hasContractVolume && contractVolume !== null ? (
-                          <>
-                            <span className={styles.periodiseringToolbarDivider} aria-hidden="true" />
-                            {periodiseringArIbalans ? (
-                              <div className={styles.periodiseringDone}>
-                                <CheckCircleIcon className={styles.periodiseringDoneIcon} />
-                                <span className={styles.periodiseringDoneText}>Periodiserad</span>
-                                <span className={styles.periodiseringDoneSub}>- {formatSvVolume(periodiseradVolym)} {volumeUnit}</span>
-                              </div>
-                            ) : (
-                              <div className={styles.periodiseringProgress}>
-                                <span className={styles.periodiseringProgressVol}>{formatSvVolume(aterstarAttPeriodisera ?? 0)} {volumeUnit} återstår</span>
-
-                                <span className={styles.periodiseringProgressTopRow}>
-                                  <span className={styles.periodiseringProgressFraction}>
-                                    <span className={styles.periodiseringProgressDenominator}>{formatSvVolume(periodiseradVolym)}</span>
-                                    <span className={styles.periodiseringProgressSlash}>/</span>
-                                    <span className={styles.periodiseringProgressDenominator}>{formatSvVolume(contractVolume)}</span>
-                                    <span className={styles.periodiseringProgressDenominator}>{volumeUnit}</span>
-                                  </span>
-                                  <span className={styles.periodiseringProgressDenominator}>periodiserat</span>
-                                </span>
-                              </div>
-                            )}
-                          </>
-                        ) : null}
                       </div>
                     </div>
 
@@ -2920,7 +2922,7 @@ export function LineItemDetailView({
                   </Dialog>
 
                   <Snackbar
-                    key={periodiseringCreateFeedback.key}
+                    key={`periodiering-create-${periodiseringCreateFeedback.key}`}
                     open={periodiseringCreateFeedback.open}
                     autoHideDuration={2200}
                     onClose={() => setPeriodiseringCreateFeedback((previous) => ({ ...previous, open: false }))}
@@ -2936,7 +2938,7 @@ export function LineItemDetailView({
                   </Snackbar>
 
                   <Snackbar
-                    key={periodiseringValidationFeedback.key}
+                    key={`periodiering-validation-${periodiseringValidationFeedback.key}`}
                     open={periodiseringValidationFeedback.open}
                     autoHideDuration={3600}
                     onClose={() => setPeriodiseringValidationFeedback((previous) => ({ ...previous, open: false }))}
@@ -3129,7 +3131,7 @@ export function LineItemDetailView({
                     </Dialog>
 
                     <Snackbar
-                      key={productionPlanningCreateFeedback.key}
+                      key={`production-planning-${productionPlanningCreateFeedback.key}`}
                       open={productionPlanningCreateFeedback.open}
                       autoHideDuration={2200}
                       onClose={() => setProductionPlanningCreateFeedback((previous) => ({ ...previous, open: false }))}

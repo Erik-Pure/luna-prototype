@@ -221,6 +221,7 @@ type TableRow = {
   kontrakt: string;
   externNr: string;
   belopp: string;
+  artNr?: string;
   kund: string;
   land: string;
   kontraktsdatum?: string;
@@ -272,7 +273,7 @@ type SearchFieldConfig = {
 };
 
 const defaultSearchFields: SearchFieldConfig[] = [
-  { key: "artNr", label: "ArtNr", control: "text", visible: false, favorite: false },
+  { key: "artNr", label: "ArtNr", control: "select", visible: false, favorite: false },
   { key: "certifiering", label: "Certifiering", control: "select", visible: false, favorite: false },
   { key: "bolag", label: "Enhet", control: "select", visible: false, favorite: false },
   { key: "externtKontraktsnr", label: "Externt kontraktsnr", control: "text", visible: true, favorite: false },
@@ -280,13 +281,13 @@ const defaultSearchFields: SearchFieldConfig[] = [
   { key: "kontraktsNr", label: "KontraktsNr", control: "text", visible: true, favorite: true },
   { key: "kontraktsdatumFran", label: "Kontraktsdatum från", control: "text", visible: false, favorite: false },
   { key: "kontraktsdatumTill", label: "Kontraktsdatum till", control: "text", visible: false, favorite: false },
-  { key: "kund", label: "Kund", control: "text", visible: false, favorite: true },
+  { key: "kund", label: "Kund", control: "select", visible: false, favorite: true },
   { key: "land", label: "Land", control: "select", visible: false, favorite: false },
   { key: "mottagarland", label: "Mottagarland", control: "select", visible: false, favorite: false },
   { key: "prislistaNr", label: "Prislista nr", control: "text", visible: false, favorite: false },
   { key: "tillhor", label: "Tillhör", control: "text", visible: false, favorite: false },
   { key: "typ", label: "Typ", control: "select", visible: true, favorite: true },
-  { key: "upprattatAv", label: "Upprättat av", control: "text", visible: false, favorite: true },
+  { key: "upprattatAv", label: "Upprättat av", control: "select", visible: false, favorite: true },
   { key: "varningsnivaFordran", label: "Varningsnivå fordran", control: "select", visible: false, favorite: false },
   { key: "varningsnivaLimit", label: "Varningsnivå limit", control: "select", visible: false, favorite: false },
   { key: "saknarAvtalsratt", label: "Saknar avtalsrutt", control: "checkbox", visible: false, favorite: false },
@@ -296,7 +297,17 @@ const defaultSearchFields: SearchFieldConfig[] = [
 
 const selectOptionsByField: Partial<Record<SearchFieldKey, string[]>> = {
   typ: ["Aktivt kontrakt", "Inaktivt kontrakt", "Alla kontrakt"],
+  artNr: ["22120", "22121", "22122", "22123", "22124", "22125"],
+  kund: [
+    "Acme AB",
+    "Globex Corp",
+    "Initech HB",
+    "Nordic Sten & Mark AB",
+    "Luna Infrastruktur AB",
+    "Skandinavisk Industriservice"
+  ],
   bolag: ["BP Hissmofors Byg", "BP Team Syd", "BP Region Norr"],
+  upprattatAv: ["Jane Doe", "Erik Andersson"],
   land: ["SE", "NO", "FI", "DK"],
   mottagarland: ["SE", "NO", "FI", "DK"],
   kategori: ["A", "B", "C"],
@@ -534,6 +545,7 @@ const tableRows: TableRow[] = Array.from({ length: 6 }).map((_, idx) => ({
   kontrakt: CONTRACT_IDS[idx % CONTRACT_IDS.length],
   externNr: `2026/${String(idx + 1).padStart(2, "0")} REG ${idx + 2}`,
   belopp: `${(26651 + idx * 7450).toLocaleString("sv-SE")}`,
+  artNr: `22${120 + idx}`,
   kund: CONTRACT_CUSTOMERS[idx % CONTRACT_CUSTOMERS.length],
   land: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
   kontraktsdatum: `2026-0${(idx % 5) + 1}-0${(idx % 7) + 1}`,
@@ -912,7 +924,7 @@ export default function Home() {
         case "kontraktsdatumTill":
           return row.kontraktsdatum ?? "";
         case "artNr":
-          return "";
+          return row.artNr ?? "";
         case "kund":
           return row.kund;
         case "kategori":

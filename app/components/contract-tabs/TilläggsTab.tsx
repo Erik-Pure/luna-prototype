@@ -201,7 +201,7 @@ export function TilläggsTab() {
             >
                 <DialogTitle className={styles.freightDialogTitle}>
                     <div className={styles.freightDialogTitleRow}>
-                        <span>{editingId !== null ? "Redigera tillägg" : "Lägg till tillägg"}</span>
+                        <span>{editingId !== null ? "Redigera tillägg" : "Nytt tillägg"}</span>
                         {editingId === null && (
                             <div className={styles.freightDialogToggles}>
                                 <label className={styles.freightDialogKeepOpen}>
