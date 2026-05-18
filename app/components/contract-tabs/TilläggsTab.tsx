@@ -116,11 +116,10 @@ export function TilläggsTab() {
 
     const TABLE_COLS = [
         { key: "tillagg", label: "Tillägg" },
-        { key: "bolag", label: "Bolag" },
+        { key: "bolag", label: "Enhet" },
         { key: "mangd", label: "Mängd" },
-        { key: "enhet", label: "Enhet" },
+        { key: "enhet", label: "Beställd enhet" },
         { key: "aPris", label: "À-pris" },
-        { key: "valuta", label: "Valuta" },
         { key: "belopp", label: "Belopp" },
         { key: "konto", label: "Konto" },
         { key: "textPaFaktura", label: "Text på faktura" },
@@ -168,8 +167,7 @@ export function TilläggsTab() {
                                     <div className={styles.lineItemsCell}>{item.bolag || "—"}</div>
                                     <div className={styles.lineItemsCell}>{item.mangd || "—"}</div>
                                     <div className={styles.lineItemsCell}>{item.enhet}</div>
-                                    <div className={styles.lineItemsCell}>{item.aPris || "—"}</div>
-                                    <div className={styles.lineItemsCell}>{item.valuta}</div>
+                                    <div className={styles.lineItemsCell}>{item.aPris || "—"} {item.valuta}</div>
                                     <div className={styles.lineItemsCell}>{belopp ? `${belopp} ${item.valuta}` : "—"}</div>
                                     <div className={styles.lineItemsCell}>{item.konto || "—"}</div>
                                     <div className={`${styles.lineItemsCell} ${styles.tillaggCellTruncate}`}>{item.textPaFaktura || "—"}</div>
@@ -228,7 +226,7 @@ export function TilläggsTab() {
                 <DialogContent className={styles.freightDialogContent}>
                     <div className={styles.freightFormGrid}>
                         <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Bolag</Typography>
+                            <Typography className={styles.freightFormLabel}>Enhet</Typography>
                             <Select size="small" className={styles.freightFormInput} value={draft.bolag} onChange={(e) => setDraftField("bolag", e.target.value)}>
                                 <MenuItem value="Bolag AB">Bolag AB</MenuItem>
                                 <MenuItem value="Dotterbolag AB">Dotterbolag AB</MenuItem>
@@ -255,7 +253,7 @@ export function TilläggsTab() {
                         </div>
 
                         <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Enhet</Typography>
+                            <Typography className={styles.freightFormLabel}>Beställd enhet</Typography>
                             <Select size="small" className={styles.freightFormInput} value={draft.enhet} onChange={(e) => setDraftField("enhet", e.target.value)}>
                                 <MenuItem value="st">st</MenuItem>
                                 <MenuItem value="kg">kg</MenuItem>
@@ -269,13 +267,17 @@ export function TilläggsTab() {
 
                         <div className={styles.freightFormField}>
                             <Typography className={styles.freightFormLabel}>À-pris</Typography>
-                            <TextField size="small" type="number" className={styles.freightFormInput} value={draft.aPris} onChange={(e) => setDraftField("aPris", e.target.value)} />
-                        </div>
-
-                        <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Valuta</Typography>
-                            <TextField size="small" className={styles.freightFormInput} value={draft.valuta} disabled helperText="Hämtas från kund">
-                            </TextField>
+                            <TextField
+                                size="small"
+                                type="number"
+                                className={styles.freightFormInput}
+                                value={draft.aPris}
+                                onChange={(e) => setDraftField("aPris", e.target.value)}
+                                InputProps={{
+                                    endAdornment: <InputAdornment position="end">{draft.valuta}</InputAdornment>
+                                }}
+                                helperText="Valuta hämtas från kund"
+                            />
                         </div>
 
                         <div className={styles.freightFormField}>
@@ -318,11 +320,11 @@ export function TilläggsTab() {
                 </DialogContent>
 
                 <DialogActions className={styles.freightDialogActions}>
-                    <Button size="small" className={styles.freightCancelButton} onClick={closeDialog}>
-                        Avbryt
-                    </Button>
                     <Button size="small" className={styles.freightSaveButton} onClick={saveDraft}>
                         {editingId !== null ? "Spara" : "Lägg till"}
+                    </Button>
+                    <Button size="small" className={styles.freightCancelButton} onClick={closeDialog}>
+                        Avbryt
                     </Button>
                 </DialogActions>
             </Dialog>

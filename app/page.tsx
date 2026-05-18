@@ -259,10 +259,8 @@ type SearchFieldKey =
   | "tillhor"
   | "varningsnivaFordran"
   | "varningsnivaLimit"
-  | "saknarAvtalsratt"
-  | "saknarAvtal"
   | "avtalsrattSaknasI"
-  | "cLoad";
+  ;
 
 type SearchFieldConfig = {
   key: SearchFieldKey;
@@ -289,10 +287,7 @@ const defaultSearchFields: SearchFieldConfig[] = [
   { key: "typ", label: "Typ", control: "select", visible: true, favorite: true },
   { key: "upprattatAv", label: "Upprättat av", control: "select", visible: false, favorite: true },
   { key: "varningsnivaFordran", label: "Varningsnivå fordran", control: "select", visible: false, favorite: false },
-  { key: "varningsnivaLimit", label: "Varningsnivå limit", control: "select", visible: false, favorite: false },
-  { key: "saknarAvtalsratt", label: "Saknar avtalsrutt", control: "checkbox", visible: false, favorite: false },
-  { key: "saknarAvtal", label: "Saknar avtal", control: "checkbox", visible: false, favorite: false },
-  { key: "cLoad", label: "Avtalsrutt saknas i C-Load", control: "checkbox", visible: false, favorite: false }
+  { key: "varningsnivaLimit", label: "Varningsnivå limit", control: "select", visible: false, favorite: false }
 ];
 
 const selectOptionsByField: Partial<Record<SearchFieldKey, string[]>> = {
@@ -336,10 +331,7 @@ const initialSearchValues: SearchValueMap = {
   tillhor: "",
   varningsnivaFordran: "",
   varningsnivaLimit: "",
-  saknarAvtalsratt: false,
-  saknarAvtal: false,
-  avtalsrattSaknasI: "",
-  cLoad: false
+  avtalsrattSaknasI: ""
 };
 
 const CONTRACT_CREATE_FIELD_COLUMNS: Array<{ key: keyof NewContractDraft; label: string }> = [
@@ -956,12 +948,6 @@ export default function Home() {
 
     const getSearchFieldBooleanForRow = (row: TableRow, fieldKey: SearchFieldKey) => {
       switch (fieldKey) {
-        case "saknarAvtalsratt":
-          return (row.egenAnmarkning ?? "").toLowerCase().includes("avtalsrätt saknas");
-        case "saknarAvtal":
-          return (row.status ?? "").toLowerCase() !== "aktivt kontrakt";
-        case "cLoad":
-          return (row.egenAnmarkning ?? "").toLowerCase().includes("c-load");
         default:
           return false;
       }

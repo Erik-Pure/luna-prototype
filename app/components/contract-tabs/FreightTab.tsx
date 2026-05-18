@@ -453,11 +453,11 @@ export function FreightTab() {
                 <Typography className={styles.freightTotalCostValue}>{totalFreightSummary}</Typography>
               </div>
             ) : null}
-            <Button size="small" className={styles.freightCancelButton} onClick={closeForm}>
-              Avbryt
-            </Button>
             <Button size="small" className={styles.freightSaveButton} onClick={saveForm}>
               {form.mode === "add" ? "Lägg till" : "Spara"}
+            </Button>
+            <Button size="small" className={styles.freightCancelButton} onClick={closeForm}>
+              Avbryt
             </Button>
           </DialogActions>
         </Dialog>

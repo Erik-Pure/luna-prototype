@@ -1494,6 +1494,14 @@ export function LineItemDetailView({
             createStep === 0 ? (
               <>
                 <Button
+                  className={styles.lineItemSaveButton}
+                  size="small"
+                  variant="contained"
+                  onClick={handleNextStep}
+                >
+                  Spara och gå vidare
+                </Button>
+                <Button
                   className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
                   size="small"
                   variant="outlined"
@@ -1501,22 +1509,12 @@ export function LineItemDetailView({
                 >
                   Avbryt
                 </Button>
-                <Button
-                  className={styles.lineItemSaveButton}
-                  size="small"
-                  variant="contained"
-                  title="Ctrl+→"
-                  onClick={handleNextStep}
-                >
-                  Spara och gå vidare
-                </Button>
               </>
             ) : (
               <>
                 <Button
                   className={styles.lineItemBackButton}
                   size="small"
-                  title="Ctrl+←"
                   onClick={() => setCreateStep(0)}
                 >
                   Tillbaka
@@ -1531,6 +1529,9 @@ export function LineItemDetailView({
                   <span>Skapa fler</span>
                 </label>
                 <span className={styles.lineItemTopActionDivider} aria-hidden="true" />
+                <Button className={styles.lineItemSaveButton} size="small" variant="contained" onClick={handleSave}>
+                  Skapa kontraktsrad
+                </Button>
                 <Button
                   className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
                   size="small"
@@ -1538,9 +1539,6 @@ export function LineItemDetailView({
                   onClick={onSaveAndClose}
                 >
                   Avbryt
-                </Button>
-                <Button className={styles.lineItemSaveButton} size="small" variant="contained" onClick={handleSave}>
-                  Skapa kontraktsrad
                 </Button>
               </>
             )
@@ -1861,16 +1859,16 @@ export function LineItemDetailView({
                     <TextField label={getFieldLabel("quantity", "Mängd")} value={newLineItemDraft.quantity} onChange={(event) => updateDraftField("quantity", event.target.value)} size="small" className={getFieldControlClassName("quantity")} />
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="volume" label={getFieldLabel("volume", "Volym")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label={getFieldLabel("volume", "Volym")} value={newLineItemDraft.volume} onChange={(event) => updateDraftField("volume", event.target.value)} size="small" className={getFieldControlClassName("volume")} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
-                  </div>
-                  <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="orderedUnit" label={getFieldLabel("orderedUnit", "Beställd enhet")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <LabeledSelect label={getFieldLabel("orderedUnit", "Beställd enhet")} value={newLineItemDraft.orderedUnit} onChange={(v) => updateDraftField("orderedUnit", v)} className={getFieldControlClassName("orderedUnit")}>
                       <MenuItem value="m3 nominell">m3 nominell</MenuItem>
                       <MenuItem value="m3 fast">m3 fast</MenuItem>
                       <MenuItem value="lpm">lpm</MenuItem>
                     </LabeledSelect>
+                  </div>
+                  <div className={styles.lineItemField}>
+                    <FieldLabel fieldKey="volume" label={getFieldLabel("volume", "Volym")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label={getFieldLabel("volume", "Volym")} value={newLineItemDraft.volume} onChange={(event) => updateDraftField("volume", event.target.value)} size="small" className={getFieldControlClassName("volume")} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
                   </div>
                   <div className={`${styles.lineItemField}${fieldHide("finalVolume")}`}>
                     <FieldLabel fieldKey="finalVolume" label="Slutvolym" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
@@ -2310,11 +2308,11 @@ export function LineItemDetailView({
                       ) : null}
                     </DialogContent>
                     <DialogActions className={styles.freightDialogActions}>
-                      <Button size="small" className={styles.freightCancelButton} onClick={closeLengthDistributionForm}>
-                        Avbryt
-                      </Button>
                       <Button size="small" className={styles.freightSaveButton} onClick={saveLengthDistributionForm}>
                         {lengthDistributionForm.mode === "add" ? "Lägg till" : "Spara"}
+                      </Button>
+                      <Button size="small" className={styles.freightCancelButton} onClick={closeLengthDistributionForm}>
+                        Avbryt
                       </Button>
                     </DialogActions>
                   </Dialog>
@@ -2572,11 +2570,11 @@ export function LineItemDetailView({
                       ) : null}
                     </DialogContent>
                     <DialogActions className={styles.freightDialogActions}>
-                      <Button size="small" className={styles.freightCancelButton} onClick={closeCallOffForm}>
-                        Avbryt
-                      </Button>
                       <Button size="small" className={styles.freightSaveButton} onClick={saveCallOffForm}>
                         {isCreateCallOffView ? "Skapa" : "Spara"}
+                      </Button>
+                      <Button size="small" className={styles.freightCancelButton} onClick={closeCallOffForm}>
+                        Avbryt
                       </Button>
                     </DialogActions>
                   </Dialog>
@@ -2824,11 +2822,11 @@ export function LineItemDetailView({
                       ) : null}
                     </DialogContent>
                     <DialogActions className={styles.freightDialogActions}>
-                      <Button size="small" className={styles.freightCancelButton} onClick={closePeriodiseringForm}>
-                        Avbryt
-                      </Button>
                       <Button size="small" className={styles.freightSaveButton} onClick={savePeriodiseringForm}>
                         {periodiseringForm.mode === "add" ? "Lägg till" : "Spara"}
+                      </Button>
+                      <Button size="small" className={styles.freightCancelButton} onClick={closePeriodiseringForm}>
+                        Avbryt
                       </Button>
                     </DialogActions>
                   </Dialog>
@@ -2912,11 +2910,11 @@ export function LineItemDetailView({
                       ) : null}
                     </DialogContent>
                     <DialogActions className={styles.freightDialogActions}>
-                      <Button size="small" className={styles.freightCancelButton} onClick={closeAutoPeriodisering}>
-                        Avbryt
-                      </Button>
                       <Button size="small" className={styles.freightSaveButton} onClick={createAutoPeriodiseringRows}>
                         Skapa rader
+                      </Button>
+                      <Button size="small" className={styles.freightCancelButton} onClick={closeAutoPeriodisering}>
+                        Avbryt
                       </Button>
                     </DialogActions>
                   </Dialog>
@@ -3121,11 +3119,11 @@ export function LineItemDetailView({
                         ) : null}
                       </DialogContent>
                       <DialogActions className={styles.freightDialogActions}>
-                        <Button size="small" className={styles.freightCancelButton} onClick={closeProductionPlanningForm}>
-                          Avbryt
-                        </Button>
                         <Button size="small" className={styles.freightSaveButton} onClick={saveProductionPlanningForm}>
                           {productionPlanningForm.mode === "add" ? "Lägg till" : "Spara"}
+                        </Button>
+                        <Button size="small" className={styles.freightCancelButton} onClick={closeProductionPlanningForm}>
+                          Avbryt
                         </Button>
                       </DialogActions>
                     </Dialog>

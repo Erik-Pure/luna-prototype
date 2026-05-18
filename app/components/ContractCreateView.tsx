@@ -328,11 +328,11 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                     <Typography className={styles.contractModernTitle} style={{ letterSpacing: "-0.5px" }}>Nytt kontrakt</Typography>
                 </div>
                 <div className={styles.contractModernTopActions}>
-                    <Button className={styles.contractQuickActionButton} size="small" onClick={handleCancel}>
-                        Avbryt
-                    </Button>
                     <Button className={styles.contractSaveButton} size="small" onClick={handleSave}>
                         Skapa kontrakt
+                    </Button>
+                    <Button className={styles.contractQuickActionButton} size="small" onClick={handleCancel}>
+                        Avbryt
                     </Button>
                 </div>
             </div>
@@ -773,11 +773,11 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
 
                     </div>
                     <div className={styles.contractCreateFooter}>
-                        <Button variant="text" size="small" onClick={handleCancel} style={{ color: "#555e6d" }}>
-                            Avbryt
-                        </Button>
                         <Button className={styles.contractSaveButton} size="small" onClick={handleSave}>
                             Skapa kontrakt
+                        </Button>
+                        <Button variant="text" size="small" onClick={handleCancel} style={{ color: "#555e6d" }}>
+                            Avbryt
                         </Button>
                     </div>
                 </div>
