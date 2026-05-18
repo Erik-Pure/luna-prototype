@@ -66,6 +66,7 @@ export function TilläggsTab() {
     const [keepDialogValues, setKeepDialogValues] = useState(false);
     const [lastDraft, setLastDraft] = useState<Omit<TillaggItem, "id">>(EMPTY_DRAFT);
     const [isCreateToastOpen, setIsCreateToastOpen] = useState(false);
+    const [deleteDialogItem, setDeleteDialogItem] = useState<TillaggItem | null>(null);
 
     function openDialog() {
         setDraft(keepDialogValues ? lastDraft : EMPTY_DRAFT);
@@ -108,6 +109,20 @@ export function TilläggsTab() {
 
     function removeItem(id: number) {
         setItems((prev) => prev.filter((item) => item.id !== id));
+    }
+
+    function openDeleteDialog(item: TillaggItem) {
+        setDeleteDialogItem(item);
+    }
+
+    function closeDeleteDialog() {
+        setDeleteDialogItem(null);
+    }
+
+    function confirmDeleteItem() {
+        if (!deleteDialogItem) return;
+        removeItem(deleteDialogItem.id);
+        closeDeleteDialog();
     }
 
     function closeCreateToast() {
@@ -177,7 +192,7 @@ export function TilläggsTab() {
                                             <IconButton size="small" onClick={(e) => { e.stopPropagation(); openEditDialog(item); }}>
                                                 <EditOutlinedIcon className={styles.freightActionIcon} />
                                             </IconButton>
-                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}>
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openDeleteDialog(item); }}>
                                                 <DeleteOutlineIcon className={styles.freightActionIcon} />
                                             </IconButton>
                                         </span>
@@ -326,6 +341,26 @@ export function TilläggsTab() {
                     <Button size="small" className={styles.freightCancelButton} onClick={closeDialog}>
                         Avbryt
                     </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={Boolean(deleteDialogItem)}
+                onClose={closeDeleteDialog}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle fontSize={16}>Ta bort tillägg</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" lineHeight={1} marginBottom={0}>
+                        Vill du ta bort {deleteDialogItem?.tillagg ? `"${deleteDialogItem.tillagg}"` : ""}?
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ margin: "0 12px 12px 0" }}>
+                    <Button color="error" variant="contained" onClick={confirmDeleteItem} sx={{ textTransform: "none" }}>
+                        Ta bort
+                    </Button>
+                    <Button variant="outlined" color="inherit" className={styles.lineItemsToggleButton} onClick={closeDeleteDialog} sx={{ textTransform: "none" }}>Avbryt</Button>
                 </DialogActions>
             </Dialog>
 
