@@ -420,7 +420,7 @@ export function FreightTab() {
                     value={draft.typ}
                     onChange={(e) => setDraftField("typ", e.target.value as ProductType)}
                     className={styles.freightFormInput}
-                    disabled={form.mode === "add" || (form.mode === "edit" && virkeRows[form.index]?.typ === "Ströprodukt")}
+                    disabled={form.mode === "add" || form.mode === "edit"}
                   >
                     <MenuItem value="Virke">Virke</MenuItem>
                     <MenuItem value="Ströprodukt">Ströprodukt</MenuItem>
