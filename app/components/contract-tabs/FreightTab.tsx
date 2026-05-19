@@ -2,9 +2,9 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, Snackbar, TextField, Typography } from "@mui/material";
+import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
+import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, Snackbar, TextField, Tooltip, Typography } from "@mui/material";
 import { useState } from "react";
 import { DataTable } from "../shared/DataTable";
 import styles from "../../page.module.scss";
@@ -14,6 +14,22 @@ type CurrencyCode = "SEK" | "EUR" | "USD" | "NOK";
 
 const CURRENCY_OPTIONS: CurrencyCode[] = ["SEK", "EUR", "USD", "NOK"];
 const DEFAULT_CURRENCY: CurrencyCode = "SEK";
+const UNIT_OPTIONS = [
+  "BP Hammerdal Byggprodukter",
+  "BP Hissmofors Byggprodukter",
+  "BP Kåge Byggprodukter",
+  "Huvudkontor",
+  "NT Hissmofors Såg",
+  "NT Kåge Såg",
+  "NT Stolfabrik Agnäs",
+  "NT Sävar Såg",
+] as const;
+const ROUTE_OPTIONS = [
+  "Sävar - Mariestad",
+  "Krokom - Mariestad",
+  "Kåge - Mariestad",
+  "Hammerdal - Mariestad",
+] as const;
 
 type VirkeRow = {
   typ: ProductType;
@@ -65,7 +81,7 @@ const SNITT_ROWS: FreightRow[] = [
 
 const VIRKE_COLUMNS: Array<{ key: VirkeColumnKey; label: string; pinnedRight?: boolean }> = [
   { key: "typ", label: "Typ" },
-  { key: "bolag", label: "Bolag" },
+  { key: "bolag", label: "Enhet" },
   { key: "avtalsrutt", label: "Avtalsrutt" },
   { key: "frakt", label: "Frakt Bil / Jvg" },
   { key: "sped", label: "Sped/termkostn." },
@@ -304,7 +320,7 @@ export function FreightTab() {
             startIcon={<AddIcon />}
             onClick={openAddStröprodukt}
           >
-            Ny ströprodukt
+            Ny frakt (ströprodukt)
           </Button>
         </div>
 
@@ -368,7 +384,7 @@ export function FreightTab() {
         >
           <DialogTitle className={styles.freightDialogTitle}>
             <div className={styles.freightDialogTitleRow}>
-              <span>{form.mode === "add" ? "Ny Ströprodukt" : "Redigera frakt"}</span>
+              <span>{form.mode === "add" ? "Ny frakt (ströprodukt)" : "Redigera frakt"}</span>
               {form.mode === "add" ? (
                 <div className={styles.freightDialogToggles}>
                   <label className={styles.freightDialogKeepOpen}>
@@ -404,19 +420,41 @@ export function FreightTab() {
                     value={draft.typ}
                     onChange={(e) => setDraftField("typ", e.target.value as ProductType)}
                     className={styles.freightFormInput}
-                    disabled={form.mode === "add"}
+                    disabled={form.mode === "add" || (form.mode === "edit" && virkeRows[form.index]?.typ === "Ströprodukt")}
                   >
                     <MenuItem value="Virke">Virke</MenuItem>
                     <MenuItem value="Ströprodukt">Ströprodukt</MenuItem>
                   </Select>
                 </div>
                 <div className={styles.freightFormField}>
-                  <Typography className={styles.freightFormLabel}>Bolag</Typography>
-                  <TextField size="small" value={draft.bolag} onChange={(e) => setDraftField("bolag", e.target.value)} className={styles.freightFormInput} />
+                  <Typography className={styles.freightFormLabel}>Enhet</Typography>
+                  <Select
+                    size="small"
+                    value={draft.bolag}
+                    onChange={(e) => setDraftField("bolag", e.target.value)}
+                    className={styles.freightFormInput}
+                  >
+                    {UNIT_OPTIONS.map((unit) => (
+                      <MenuItem key={unit} value={unit}>
+                        {unit}
+                      </MenuItem>
+                    ))}
+                  </Select>
                 </div>
                 <div className={styles.freightFormField}>
                   <Typography className={styles.freightFormLabel}>Avtalsrutt</Typography>
-                  <TextField size="small" value={draft.avtalsrutt} onChange={(e) => setDraftField("avtalsrutt", e.target.value)} className={styles.freightFormInput} />
+                  <Select
+                    size="small"
+                    value={draft.avtalsrutt}
+                    onChange={(e) => setDraftField("avtalsrutt", e.target.value)}
+                    className={styles.freightFormInput}
+                  >
+                    {ROUTE_OPTIONS.map((route) => (
+                      <MenuItem key={route} value={route}>
+                        {route}
+                      </MenuItem>
+                    ))}
+                  </Select>
                 </div>
                 {FREIGHT_FIELDS.map((field) => (
                   <div key={field.amountKey} className={styles.freightFormField}>
@@ -467,9 +505,11 @@ export function FreightTab() {
             <Typography className={styles.freightSnittTitle}>
               Snittpriser i C-Load (valuta/m3) till Mariestad
             </Typography>
-            <Button className={styles.freightSnittFetchButton}>
-              Hämta
-            </Button>
+            <Tooltip title="Uppdatera" placement="top">
+              <IconButton size="small" className={styles.contractHeaderDotsButton}>
+                <RefreshOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </div>
           <div className={styles.freightTableWrap}>
             <div className={styles.freightTable}>
