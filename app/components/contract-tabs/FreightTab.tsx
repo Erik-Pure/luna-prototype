@@ -287,7 +287,7 @@ export function FreightTab() {
   const totalFreightSummary = draft ? getTotalFreightSummary(draft) : getTotalFreightSummary(emptyVirkeRow());
 
   return (
-    <div className={styles.freightTabContent}>
+    <div className={[styles.freightTabContent, styles.freightTabContentAdditionalInfo].join(" ")}>
       <div className={styles.freightSection}>
         <div className={styles.freightSectionHeader}>
           <Button
