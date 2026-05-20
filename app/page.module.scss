@@ -586,6 +586,7 @@
   flex-direction: column;
   gap: 8px;
   margin-inline: auto;
+  margin-bottom: 12px;
 }
 
 .advancedSearchTopBar {
@@ -640,11 +641,8 @@
 }
 
 .advancedFiltersContainer {
-  border: 1px solid #d5dbe4;
   border-radius: 10px;
   overflow: hidden;
-  background-color: #f9fafc;
-
 }
 
 .advancedFiltersHeader {
@@ -652,9 +650,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 12px;
-  border-bottom: 1px solid #dde2ea;
-  background-color: #f2f4f7;
+  padding: 8px 4px;
 }
 
 .advancedFiltersHeaderActions {
@@ -692,12 +688,21 @@
   flex-direction: column;
   gap: 10px;
   padding: 10px 12px;
+  border: 1px solid #d5dbe4;
+  border-radius: 10px;
+  background-color: #f9fafc;
 }
 
 .advancedFiltersSectionTitle {
   color: #2f343b;
   font-size: 12px;
   font-weight: 700;
+}
+
+.advancedFiltersDivider {
+  border: none;
+  border-top: 1px solid #dde2ea;
+  margin: 2px 0;
 }
 
 .advancedFiltersHint {
@@ -721,6 +726,14 @@
   border-radius: 8px;
   padding: 8px 10px;
   background-color: #fafbfc;
+}
+
+.favoriteEditFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: 8px;
+  margin-top: -52px;
 }
 
 .favoriteEditSectionTitle {
@@ -832,11 +845,11 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 36px;
+  height: 28px;
   border: 1px solid #d0d5de;
   border-radius: 6px;
   background-color: #ffffff;
-  padding: 0 10px;
+  padding: 0 8px;
   color: #3d4554;
   font-size: 12px;
   font-weight: 500;
@@ -847,27 +860,32 @@
   &:hover {
     background-color: #f4f6f9;
     border-color: #b8bfcc;
+    color: #2e343d;
   }
 }
 
 .advancedFiltersEditButton {
   display: inline-flex;
   align-items: center;
-  height: 36px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   border: 1px solid #d0d5de;
   border-radius: 6px;
   background-color: #ffffff;
-  padding: 0 10px;
+  padding: 0;
   color: #3d4554;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1;
   cursor: pointer;
   transition: background-color 0.12s, border-color 0.12s;
+
+  :global(svg) {
+    font-size: 16px;
+  }
 
   &:hover {
     background-color: #f4f6f9;
     border-color: #b8bfcc;
+    color: #2e343d;
   }
 }
 
@@ -875,8 +893,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   border: 1px solid #d0d5de;
   border-radius: 6px;
   background-color: #ffffff;
@@ -1189,6 +1207,99 @@
   background-color: #edf0f4;
 }
 
+.advancedFiltersHeaderCompact {
+  justify-content: flex-end;
+}
+
+.actionVerticalDivider {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  background-color: #d1d5db;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.tableSearchWrapper {
+  position: relative;
+}
+
+.tableSearchButtonActive {
+  border-color: #9da5b2 !important;
+  background-color: #f4f6f9 !important;
+}
+
+.tableSearchDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  min-width: 300px;
+  border: 1px solid #d7dbe3;
+  border-radius: 6px;
+  background-color: #ffffff;
+  box-shadow: 0 8px 22px rgba(20, 31, 53, 0.14);
+  padding: 10px 14px;
+  gap: 8px;
+}
+
+.tableSearchDropdownInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+  background: transparent;
+  min-width: 0;
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+}
+
+.tableSearchDropdownClear {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    color: #374151;
+  }
+}
+
+.tableSearchInput {
+  width: 200px;
+
+  :global(.MuiOutlinedInput-root) {
+    border-radius: 6px;
+    background-color: #ffffff;
+    height: 32px;
+  }
+
+  :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: #d1d5db;
+  }
+
+  :global(.MuiOutlinedInput-input) {
+    padding: 0 8px 0 0;
+    font-size: 13px;
+  }
+}
+
+.tableSearchIcon {
+  font-size: 17px !important;
+  color: #8a94a3;
+}
+
 .actionRow {
   display: flex;
   align-items: center;
@@ -1212,8 +1323,8 @@
 }
 
 .actionItemPrimary {
-  min-height: 32px;
-  padding: 0 14px;
+  min-height: 30px;
+  padding: 0 12px;
   border-radius: 6px;
   border: 1px solid var(--color-champagne-dark);
   background-color: var(--color-champagne) !important;
@@ -1308,13 +1419,13 @@
 }
 
 .lineItemsToggleButton {
-  min-height: 32px;
+  min-height: 30px;
   border-radius: 6px;
   border-color: #d1d5db !important;
   color: #374151;
   font-size: 13px;
   font-weight: 500;
-  padding: 0 12px;
+  padding: 0 10px;
   text-transform: none;
   background-color: #ffffff;
 
@@ -1323,6 +1434,31 @@
     background-color: #f9fafb;
     color: #1f2937;
   }
+}
+
+.columnsIconButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px !important;
+  border: 1px solid #d1d5db !important;
+  color: #374151;
+  background-color: #ffffff !important;
+
+  &:hover {
+    border-color: #9da5b2 !important;
+    background-color: #f9fafb !important;
+    color: #1f2937;
+  }
+
+  :global(svg) {
+    font-size: 18px;
+  }
+}
+
+.columnsIconButtonActive {
+  border-color: #9da5b2 !important;
+  background-color: #f4f6f9 !important;
+  color: #1f2937 !important;
 }
 
 .contractRowInlineInput {
@@ -1341,7 +1477,7 @@
 
 .columnsDropdown {
   position: absolute;
-  top: 36px;
+  top: calc(100% + 4px);
   right: 0;
   z-index: 5;
   display: flex;
@@ -6380,6 +6516,79 @@
   font-weight: 700 !important;
 }
 
+// ── Avrop detail view ──────────────────────────────────────────────────────────
+
+.callOffDetailPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.callOffDetailTopBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #e8ecf2;
+  background: #f7f9fc;
+}
+
+.callOffBackButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: #2d5f8c;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+
+  &:hover {
+    background: #e2eaf4;
+  }
+}
+
+.callOffDetailTitle {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #2f3743;
+}
+
+.callOffSummaryBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid #e8ecf2;
+  background: #ffffff;
+}
+
+.callOffSummaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 24px 4px 0;
+  min-width: 110px;
+}
+
+.callOffSummaryLabel {
+  font-size: 10px;
+  color: #7a8799;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.callOffSummaryValue {
+  font-size: 12.5px;
+  color: #2f3743;
+  font-weight: 500;
+}
+
 .freightDialogPaper {
   border-radius: 12px !important;
   border: 1px solid #dde3ec;
@@ -6448,7 +6657,7 @@
 
 .freightTotalCostValue {
   color: #0d0f14;
-  font-size: 14px !important;
+  font-size: 16px !important;
   font-weight: 700 !important;
 }
 

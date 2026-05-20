@@ -813,7 +813,7 @@ export default function Home() {
   const [appliedSearchFields, setAppliedSearchFields] = useState<SearchFieldConfig[]>(defaultSearchFields);
   const [draftSearchFields, setDraftSearchFields] = useState<SearchFieldConfig[]>(defaultSearchFields);
   const [isColumnsMenuOpen, setIsColumnsMenuOpen] = useState(false);
-  const [isLineItemsTableVisible, setIsLineItemsTableVisible] = useState(false);
+  const [isLineItemsTableVisible, setIsLineItemsTableVisible] = useState(true);
   const [isLineColumnsMenuOpen, setIsLineColumnsMenuOpen] = useState(false);
   const [selectedRowId, setSelectedRowId] = useState<number | null>(null);
   const [appliedColumns, setAppliedColumns] = useState<ColumnConfig[]>(defaultColumns);

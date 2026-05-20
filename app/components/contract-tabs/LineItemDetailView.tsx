@@ -1859,16 +1859,16 @@ export function LineItemDetailView({
                     <TextField label={getFieldLabel("quantity", "Mängd")} value={newLineItemDraft.quantity} onChange={(event) => updateDraftField("quantity", event.target.value)} size="small" className={getFieldControlClassName("quantity")} />
                   </div>
                   <div className={styles.lineItemField}>
+                    <FieldLabel fieldKey="volume" label={getFieldLabel("volume", "Volym")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label={getFieldLabel("volume", "Volym")} value={newLineItemDraft.volume} onChange={(event) => updateDraftField("volume", event.target.value)} size="small" className={getFieldControlClassName("volume")} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
+                  </div>
+                  <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="orderedUnit" label={getFieldLabel("orderedUnit", "Beställd enhet")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <LabeledSelect label={getFieldLabel("orderedUnit", "Beställd enhet")} value={newLineItemDraft.orderedUnit} onChange={(v) => updateDraftField("orderedUnit", v)} className={getFieldControlClassName("orderedUnit")}>
                       <MenuItem value="m3 nominell">m3 nominell</MenuItem>
                       <MenuItem value="m3 fast">m3 fast</MenuItem>
                       <MenuItem value="lpm">lpm</MenuItem>
                     </LabeledSelect>
-                  </div>
-                  <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="volume" label={getFieldLabel("volume", "Volym")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label={getFieldLabel("volume", "Volym")} value={newLineItemDraft.volume} onChange={(event) => updateDraftField("volume", event.target.value)} size="small" className={getFieldControlClassName("volume")} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
                   </div>
                   <div className={`${styles.lineItemField}${fieldHide("finalVolume")}`}>
                     <FieldLabel fieldKey="finalVolume" label="Slutvolym" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />

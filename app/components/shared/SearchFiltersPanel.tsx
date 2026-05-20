@@ -2,6 +2,7 @@
 
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import SearchIcon from "@mui/icons-material/Search";
 import { Button, Checkbox, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
@@ -24,6 +25,7 @@ type SearchFiltersPanelProps = {
   values: Record<string, string | boolean>;
   globalSearchValue?: string;
   onGlobalSearchChange?: (value: string) => void;
+  hideGlobalSearch?: boolean;
   isMenuOpen: boolean;
   draftFields: Array<SearchFieldConfig & { visible: boolean; favorite?: boolean }>;
   searchButtonRef: RefObject<HTMLButtonElement | null>;
@@ -53,6 +55,7 @@ export function SearchFiltersPanel({
   values,
   globalSearchValue,
   onGlobalSearchChange,
+  hideGlobalSearch = false,
   isMenuOpen,
   draftFields,
   searchButtonRef,
@@ -157,10 +160,9 @@ export function SearchFiltersPanel({
       <div className={styles.filterRow}>
         <div className={styles.advancedSearchPanel}>
           <div className={styles.advancedFiltersContainer} ref={searchMenuRef}>
-            <div className={styles.advancedFiltersHeader}>
-              {isEditingFavorites ? (
-                <Typography className={styles.advancedFiltersTitle}>Välj filter att spara</Typography>
-              ) : (
+            <div className={`${styles.advancedFiltersHeader} ${hideGlobalSearch && !isEditingFavorites ? styles.advancedFiltersHeaderCompact : ""}`}>
+
+              {isEditingFavorites ? null : hideGlobalSearch ? null : (
                 <TextField
                   size="small"
                   placeholder="Sök..."
@@ -170,7 +172,7 @@ export function SearchFiltersPanel({
                 />
               )}
               {isEditingFavorites ? (
-                <button type="button" className={styles.advancedFiltersToggleButton} onClick={handleCancelEdit}>
+                <button type="button" className={styles.advancedFiltersToggleButton} style={{ marginLeft: "auto" }} onClick={handleCancelEdit}>
                   Avbryt
                 </button>
               ) : (
@@ -188,8 +190,14 @@ export function SearchFiltersPanel({
                     </button>
                   ) : null}
                   {onToggleFieldFavorite ? (
-                    <button type="button" className={styles.advancedFiltersEditButton} onClick={handleStartEdit}>
-                      Redigera
+                    <button
+                      type="button"
+                      className={styles.advancedFiltersEditButton}
+                      title="Redigera favoritfilter"
+                      aria-label="Redigera favoritfilter"
+                      onClick={handleStartEdit}
+                    >
+                      <EditOutlinedIcon />
                     </button>
                   ) : null}
                   <button
@@ -277,17 +285,17 @@ export function SearchFiltersPanel({
                       )}
                     </div>
                   </div>
-                </div>
-                <div className={styles.advancedFiltersFooter}>
-                  <Button
-                    size="small"
-                    variant="contained"
-                    color="primary"
-                    className={styles.actionItemPrimary}
-                    onClick={handleSaveFavorites}
-                  >
-                    Spara urval
-                  </Button>
+                  <div className={styles.favoriteEditFooter}>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      className={styles.actionItemPrimary}
+                      onClick={handleSaveFavorites}
+                    >
+                      Spara urval
+                    </Button>
+                  </div>
                 </div>
               </>
             ) : (
@@ -348,7 +356,7 @@ export function SearchFiltersPanel({
 
                   {hasMoreFilters && showMoreFilters ? (
                     <>
-                      <Typography className={styles.advancedFiltersSectionTitle}>Alla filter</Typography>
+                      <hr className={styles.advancedFiltersDivider} />
                       <div className={styles.advancedFiltersGrid}>
                         {sortedMoreNonCheckboxFields.map((field) =>
                           field.control === "text" ? (

@@ -3,8 +3,9 @@
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import PushPinIcon from "@mui/icons-material/PushPin";
+import TuneIcon from "@mui/icons-material/Tune";
 import ViewColumnOutlinedIcon from "@mui/icons-material/ViewColumnOutlined";
-import { Button, Checkbox, IconButton, Typography } from "@mui/material";
+import { Button, Checkbox, IconButton, Tooltip, Typography } from "@mui/material";
 import { useState } from "react";
 import type { RefObject } from "react";
 import styles from "../../page.module.scss";
@@ -29,6 +30,7 @@ type ColumnManagerDropdownProps = {
   onReset: () => void;
   onTogglePin?: (key: string) => void;
   buttonLabel?: string;
+  iconOnly?: boolean;
 };
 
 export function ColumnManagerDropdown({
@@ -43,7 +45,8 @@ export function ColumnManagerDropdown({
   onSave,
   onReset,
   onTogglePin,
-  buttonLabel = "Kolumner"
+  buttonLabel = "Kolumner",
+  iconOnly = false
 }: ColumnManagerDropdownProps) {
   const [draggedKey, setDraggedKey] = useState<string | null>(null);
   const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
@@ -65,16 +68,29 @@ export function ColumnManagerDropdown({
 
   return (
     <div className={styles.columnsMenuWrapper}>
-      <Button
-        ref={buttonRef}
-        className={styles.columnsButton}
-        variant="outlined"
-        size="small"
-        startIcon={<ViewColumnOutlinedIcon fontSize="small" />}
-        onClick={isOpen ? onCancel : onOpen}
-      >
-        {buttonLabel}
-      </Button>
+      {iconOnly ? (
+        <Tooltip title="Kolumner" placement="top">
+          <IconButton
+            ref={buttonRef}
+            size="small"
+            className={styles.columnsIconButton}
+            onClick={isOpen ? onCancel : onOpen}
+          >
+            <TuneIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ) : (
+        <Button
+          ref={buttonRef}
+          className={styles.columnsButton}
+          variant="outlined"
+          size="small"
+          startIcon={<ViewColumnOutlinedIcon fontSize="small" />}
+          onClick={isOpen ? onCancel : onOpen}
+        >
+          {buttonLabel}
+        </Button>
+      )}
 
       {isOpen ? (
         <div className={styles.columnsDropdown} ref={menuRef}>

@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Button, Chip, Typography } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import TableRowsOutlinedIcon from "@mui/icons-material/TableRowsOutlined";
+import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
+import { useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 import { ActionRow } from "./shared/ActionRow";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
@@ -136,6 +139,19 @@ export function ContractListView({
   visibleLineColumns,
   lineItemRows
 }: ContractListViewProps) {
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const handleToggleSearch = () => {
+    setIsSearchOpen((prev) => {
+      if (!prev) {
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+      }
+      return !prev;
+    });
+  };
+
   return (
     <>
       <SearchFiltersPanel
@@ -165,9 +181,8 @@ export function ContractListView({
         onTextChange={onSearchTextChange}
         onSelectChange={onSearchSelectChange}
         onCheckboxChange={onSearchCheckboxChange}
+        hideGlobalSearch
       />
-
-      <div className={styles.ruleDivider} style={{ marginTop: "16px" }} />
 
       <ActionRow
         items={actionItems.map((item) => ({
@@ -179,14 +194,48 @@ export function ContractListView({
         }))}
         rightSlot={
           <>
-            <Button
-              className={styles.lineItemsToggleButton}
-              variant="outlined"
-              size="small"
-              onClick={onToggleLineItemsTable}
-            >
-              {isLineItemsTableVisible ? "Dölj rader" : "Visa rader"}
-            </Button>
+            <div className={styles.tableSearchWrapper} ref={searchWrapperRef}>
+              <Button
+                className={`${styles.lineItemsToggleButton} ${isSearchOpen ? styles.tableSearchButtonActive : ""}`}
+                variant="outlined"
+                size="small"
+                startIcon={<SearchIcon fontSize="small" />}
+                onClick={handleToggleSearch}
+              >
+                Sök
+              </Button>
+              {isSearchOpen ? (
+                <div className={styles.tableSearchDropdown}>
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    className={styles.tableSearchDropdownInput}
+                    placeholder="Sök i tabell..."
+                    value={globalSearchValue}
+                    onChange={(e) => onGlobalSearchChange(e.target.value)}
+                  />
+                  {globalSearchValue ? (
+                    <button
+                      type="button"
+                      className={styles.tableSearchDropdownClear}
+                      onClick={() => onGlobalSearchChange("")}
+                      aria-label="Rensa sökning"
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+            <Tooltip title={isLineItemsTableVisible ? "Dölj kontraktsrader" : "Visa kontraktsrader"} placement="top">
+              <IconButton
+                size="small"
+                className={`${styles.columnsIconButton} ${isLineItemsTableVisible ? styles.columnsIconButtonActive : ""}`}
+                onClick={onToggleLineItemsTable}
+              >
+                <TableRowsOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <ColumnManagerDropdown
               isOpen={isColumnsMenuOpen}
               columns={draftColumns}
@@ -199,6 +248,7 @@ export function ContractListView({
               onSave={onSaveColumnChanges}
               onReset={onResetColumnChanges}
               onTogglePin={onToggleColumnPin}
+              iconOnly
             />
           </>
         }
@@ -311,6 +361,7 @@ export function ContractListView({
                 onSave={onSaveLineColumnChanges}
                 onReset={onResetLineColumnChanges}
                 onTogglePin={onToggleLineColumnPin}
+                iconOnly
               />
             </div>
 
