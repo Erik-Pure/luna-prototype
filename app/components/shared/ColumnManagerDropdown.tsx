@@ -1,6 +1,8 @@
 "use client";
 
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import TuneIcon from "@mui/icons-material/Tune";
@@ -29,6 +31,10 @@ type ColumnManagerDropdownProps = {
   onSave: () => void;
   onReset: () => void;
   onTogglePin?: (key: string) => void;
+  getColumnWidth?: (key: string) => number | undefined;
+  canAdjustWidth?: (key: string) => boolean;
+  onDecreaseWidth?: (key: string) => void;
+  onIncreaseWidth?: (key: string) => void;
   buttonLabel?: string;
   iconOnly?: boolean;
 };
@@ -45,6 +51,10 @@ export function ColumnManagerDropdown({
   onSave,
   onReset,
   onTogglePin,
+  getColumnWidth,
+  canAdjustWidth,
+  onDecreaseWidth,
+  onIncreaseWidth,
   buttonLabel = "Kolumner",
   iconOnly = false
 }: ColumnManagerDropdownProps) {
@@ -133,6 +143,29 @@ export function ColumnManagerDropdown({
                 </button>
 
                 <div className={styles.columnsDropdownActions}>
+                  {canAdjustWidth?.(column.key) && getColumnWidth && onDecreaseWidth && onIncreaseWidth ? (
+                    <div className={styles.columnsWidthControls}>
+                      <IconButton
+                        size="small"
+                        onClick={() => onDecreaseWidth(column.key)}
+                        className={styles.columnsWidthArrow}
+                        title="Minska bredd"
+                        aria-label="Minska bredd"
+                      >
+                        <KeyboardArrowLeftIcon fontSize="inherit" />
+                      </IconButton>
+                      <span className={styles.columnsWidthValue}>{getColumnWidth(column.key)}</span>
+                      <IconButton
+                        size="small"
+                        onClick={() => onIncreaseWidth(column.key)}
+                        className={styles.columnsWidthArrow}
+                        title="Öka bredd"
+                        aria-label="Öka bredd"
+                      >
+                        <KeyboardArrowRightIcon fontSize="inherit" />
+                      </IconButton>
+                    </div>
+                  ) : null}
                   {onTogglePin ? (
                     <IconButton
                       size="small"

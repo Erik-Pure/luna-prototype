@@ -3,6 +3,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, Snackbar, TextField, Tooltip, Typography } from "@mui/material";
 import { useState } from "react";
@@ -220,7 +221,7 @@ type FormState =
 export function FreightTab() {
   const [virkeRows, setVirkeRows] = useState<VirkeRow[]>(INITIAL_VIRKE_ROWS);
   const [selectedSnittRow, setSelectedSnittRow] = useState<number | null>(null);
-  const [freightInfoExpanded, setFreightInfoExpanded] = useState(false);
+  const [freightInfoOpen, setFreightInfoOpen] = useState(false);
   const [selectedVirkeRow, setSelectedVirkeRow] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>({ mode: "closed" });
   const [keepDialogOpen, setKeepDialogOpen] = useState(false);
@@ -288,32 +289,6 @@ export function FreightTab() {
   return (
     <div className={styles.freightTabContent}>
       <div className={styles.freightSection}>
-        <div className={styles.freightInfoSection}>
-          <div className={styles.freightInfoTitleRow}>
-            <Typography className={styles.freightInfoTitle}>Fraktrader för virke skapas automatiskt</Typography>
-            <button
-              type="button"
-              className={styles.freightInfoToggle}
-              aria-expanded={freightInfoExpanded}
-              aria-label="Mer information"
-              onClick={() => setFreightInfoExpanded((prev) => !prev)}
-            >
-              ?
-            </button>
-          </div>
-          {freightInfoExpanded ? (
-            <>
-              <Typography className={styles.freightInfoText}>
-                Fraktrader för virke läggs till automatiskt utifrån avtalsrutt. Värdet för Frakt Bil / Jvg hämtas från C-Load och kan, likt eventuella övriga fraktkostnader, justeras manuellt.
-              </Typography>
-              <Typography className={styles.freightInfoText}>
-                För ströprodukter behöver alla fält fyllas i manuellt.
-              </Typography>
-            </>
-
-          ) : null}
-        </div>
-
         <div className={styles.freightSectionHeader}>
           <Button
             className={styles.freightNewButton}
@@ -322,7 +297,37 @@ export function FreightTab() {
           >
             Ny frakt (ströprodukt)
           </Button>
+          <Tooltip title="Info" placement="top">
+            <IconButton
+              size="small"
+              className={styles.contractHeaderDotsButton}
+              onClick={() => setFreightInfoOpen(true)}
+            >
+              <HelpOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </div>
+
+        <Dialog
+          open={freightInfoOpen}
+          onClose={() => setFreightInfoOpen(false)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle fontSize={16}>Fraktrader för virke skapas automatiskt</DialogTitle>
+          <DialogContent>
+            <Typography className={styles.freightInfoText} style={{ marginBottom: 8 }}>
+              Fraktrader för virke läggs till automatiskt utifrån avtalsrutt. Värdet för Frakt Bil / Jvg hämtas från C-Load och kan, likt eventuella övriga fraktkostnader, justeras manuellt.
+            </Typography>
+            <Typography className={styles.freightInfoText}>
+              För ströprodukter behöver alla fält fyllas i manuellt.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            {/* Gör texten grå istället för orange */}
+            <Button onClick={() => setFreightInfoOpen(false)} sx={{ textTransform: "none", color: "#252525" }}>Stäng</Button>
+          </DialogActions>
+        </Dialog>
 
         <div className={styles.freightTableWrap}>
           <div className={styles.freightTable}>
@@ -503,6 +508,7 @@ export function FreightTab() {
         <div className={styles.freightSnittCard}>
           <div className={styles.freightSnittHeader}>
             <Typography className={styles.freightSnittTitle}>
+
               Snittpriser i C-Load (valuta/m3) till Mariestad
             </Typography>
             <Tooltip title="Uppdatera" placement="top">

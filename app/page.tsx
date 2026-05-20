@@ -186,6 +186,7 @@ type ColumnConfig = {
   label: string;
   visible: boolean;
   pinned: boolean;
+  width?: number;
 };
 
 type LineItemColumnKey =
@@ -405,11 +406,32 @@ const baseContractColumns: ColumnConfig[] = [
   { key: "limit", label: "Limit", visible: true, pinned: false }
 ];
 
+const CONTRACT_COLUMN_DEFAULT_WIDTHS: Partial<Record<ColumnKey, number>> = {
+  kontrakt: 138,
+  externNr: 178,
+  belopp: 130,
+  kund: 230,
+  land: 90,
+  kontraktsdatum: 132,
+  giltigTom: 126,
+  status: 120,
+  leveransperiod: 146,
+  upprattatAv: 156,
+  limit: 132,
+};
+
+const COLUMN_WIDTH_STEP = 12;
+const MIN_COLUMN_WIDTH = 84;
+const MAX_COLUMN_WIDTH = 420;
+
 const defaultColumns: ColumnConfig[] = [
-  ...baseContractColumns,
+  ...baseContractColumns.map((column) => ({
+    ...column,
+    width: CONTRACT_COLUMN_DEFAULT_WIDTHS[column.key],
+  })),
   ...CONTRACT_CREATE_FIELD_COLUMNS
     .filter(({ key }) => !baseContractColumns.some((column) => column.key === key))
-    .map(({ key, label }) => ({ key, label, visible: false, pinned: false })),
+    .map(({ key, label }) => ({ key, label, visible: false, pinned: false, width: CONTRACT_COLUMN_DEFAULT_WIDTHS[key] })),
 ];
 
 const LIMIT_DATA: Array<{ limit: string; limitStatus: "ok" | "warning" | "error" }> = [
@@ -1169,6 +1191,43 @@ export default function Home() {
     setDraftColumns(defaultColumns);
   };
 
+  const isContractColumnWidthAdjustable = (key: string) =>
+    Object.prototype.hasOwnProperty.call(CONTRACT_COLUMN_DEFAULT_WIDTHS, key);
+
+  const getContractColumnWidth = (key: string) => {
+    const typedKey = key as ColumnKey;
+    const draftColumn = draftColumns.find((column) => column.key === typedKey);
+    return draftColumn?.width ?? CONTRACT_COLUMN_DEFAULT_WIDTHS[typedKey] ?? 120;
+  };
+
+  const adjustContractColumnWidth = (key: string, direction: "increase" | "decrease") => {
+    if (!isContractColumnWidthAdjustable(key)) {
+      return;
+    }
+
+    const typedKey = key as ColumnKey;
+    setDraftColumns((previous) =>
+      previous.map((column) => {
+        if (column.key !== typedKey) {
+          return column;
+        }
+
+        const currentWidth = column.width ?? CONTRACT_COLUMN_DEFAULT_WIDTHS[typedKey] ?? 120;
+        const delta = direction === "increase" ? COLUMN_WIDTH_STEP : -COLUMN_WIDTH_STEP;
+        const nextWidth = Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, currentWidth + delta));
+        return { ...column, width: nextWidth };
+      })
+    );
+  };
+
+  const increaseContractColumnWidth = (key: string) => {
+    adjustContractColumnWidth(key, "increase");
+  };
+
+  const decreaseContractColumnWidth = (key: string) => {
+    adjustContractColumnWidth(key, "decrease");
+  };
+
   const openLineColumnsMenu = () => {
     setDraftLineColumns(appliedLineColumns);
     setIsColumnsMenuOpen(false);
@@ -1594,6 +1653,10 @@ export default function Home() {
             onSaveColumnChanges={saveColumnChanges}
             onResetColumnChanges={resetColumnChanges}
             onToggleColumnPin={(key) => toggleColumnPin(key as ColumnKey)}
+            getColumnWidth={getContractColumnWidth}
+            canAdjustColumnWidth={isContractColumnWidthAdjustable}
+            onIncreaseColumnWidth={increaseContractColumnWidth}
+            onDecreaseColumnWidth={decreaseContractColumnWidth}
             orderedVisibleColumns={orderedVisibleColumns}
             tableRows={filteredContractRows as Array<Record<string, string | undefined>>}
             selectedRowId={selectedRowId}

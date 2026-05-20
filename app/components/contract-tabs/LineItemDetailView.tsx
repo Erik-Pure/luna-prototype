@@ -1,6 +1,7 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
+import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
@@ -19,7 +20,7 @@ import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, Switch, TextField, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import { getContractDetails, type ContractDocument } from "./contractDetails";
 import { DataTable } from "../shared/DataTable";
 import styles from "../../page.module.scss";
@@ -2155,6 +2156,14 @@ export function LineItemDetailView({
                   <div className={styles.freightSection}>
                     <div className={styles.freightSectionHeader}>
                       <div className={styles.lengthDistributionControls}>
+                        <Button
+                          className={styles.freightNewButton}
+                          startIcon={<AddIcon />}
+                          onClick={openLengthDistributionAdd}
+                        >
+                          Ny
+                        </Button>
+                        <span className={styles.lengthDistributionControlsDivider} aria-hidden="true" />
                         <label className={styles.freightDialogKeepOpen}>
                           <Checkbox
                             size="small"
@@ -2163,14 +2172,6 @@ export function LineItemDetailView({
                           />
                           <span>Visa längd vid utskrift</span>
                         </label>
-                        <span className={styles.lengthDistributionControlsDivider} aria-hidden="true" />
-                        <Button
-                          className={styles.freightNewButton}
-                          startIcon={<AddIcon />}
-                          onClick={openLengthDistributionAdd}
-                        >
-                          Ny
-                        </Button>
                       </div>
                     </div>
 
@@ -3148,8 +3149,11 @@ export function LineItemDetailView({
               ) : activeTab === "Nettolager" ? (
                 <div className={styles.freightTabContent}>
                   <div className={styles.freightSection}>
-
-
+                    <Tooltip title="Uppdatera" placement="top">
+                      <IconButton size="small" className={styles.contractHeaderDotsButton} style={{ display: "flex", alignSelf: "flex-end" }} onClick={() => { }}>
+                        <RefreshOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     <div className={styles.lineItemsTableFrame}>
                       <div className={styles.freightTableWrap}>
                         <div className={styles.freightTable}>

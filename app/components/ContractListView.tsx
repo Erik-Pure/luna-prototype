@@ -44,7 +44,7 @@ type ContractListViewProps = {
   isLineItemsTableVisible: boolean;
   onToggleLineItemsTable: () => void;
   isColumnsMenuOpen: boolean;
-  draftColumns: Array<{ key: string; label: string; visible: boolean; pinned?: boolean }>;
+  draftColumns: Array<{ key: string; label: string; visible: boolean; pinned?: boolean; width?: number }>;
   columnsMenuRef: RefObject<HTMLDivElement | null>;
   columnsButtonRef: RefObject<HTMLButtonElement | null>;
   onOpenColumnsMenu: () => void;
@@ -54,7 +54,11 @@ type ContractListViewProps = {
   onSaveColumnChanges: () => void;
   onResetColumnChanges: () => void;
   onToggleColumnPin: (key: string) => void;
-  orderedVisibleColumns: Array<{ key: string; label: string }>;
+  getColumnWidth: (key: string) => number | undefined;
+  canAdjustColumnWidth: (key: string) => boolean;
+  onIncreaseColumnWidth: (key: string) => void;
+  onDecreaseColumnWidth: (key: string) => void;
+  orderedVisibleColumns: Array<{ key: string; label: string; width?: number }>;
   tableRows: Array<Record<string, string | undefined>>;
   selectedRowId: number | null;
   onSelectMainTableRow: (rowIndex: number) => void;
@@ -118,6 +122,10 @@ export function ContractListView({
   onSaveColumnChanges,
   onResetColumnChanges,
   onToggleColumnPin,
+  getColumnWidth,
+  canAdjustColumnWidth,
+  onIncreaseColumnWidth,
+  onDecreaseColumnWidth,
   orderedVisibleColumns,
   tableRows,
   selectedRowId,
@@ -248,6 +256,10 @@ export function ContractListView({
               onSave={onSaveColumnChanges}
               onReset={onResetColumnChanges}
               onTogglePin={onToggleColumnPin}
+              getColumnWidth={getColumnWidth}
+              canAdjustWidth={canAdjustColumnWidth}
+              onDecreaseWidth={onDecreaseColumnWidth}
+              onIncreaseWidth={onIncreaseColumnWidth}
               iconOnly
             />
           </>
