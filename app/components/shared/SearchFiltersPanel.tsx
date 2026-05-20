@@ -186,7 +186,7 @@ export function SearchFiltersPanel({
                       <KeyboardArrowDownIcon
                         className={`${styles.moreFiltersChevron} ${showMoreFilters ? styles.moreFiltersChevronOpen : ""}`}
                       />
-                      Alla filter
+                      Alla sökfält
                     </button>
                   ) : null}
                   {onToggleFieldFavorite ? (
