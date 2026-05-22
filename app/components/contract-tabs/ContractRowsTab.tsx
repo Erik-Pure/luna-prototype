@@ -4,7 +4,7 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
-import { IconButton, TextField, Tooltip } from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, TextField, Tooltip, Typography } from "@mui/material";
 import { useState, type RefObject } from "react";
 import { ActionRow } from "../shared/ActionRow";
 import { ColumnManagerDropdown } from "../shared/ColumnManagerDropdown";
@@ -40,6 +40,24 @@ const tableActionItems = [
   { label: "Ändra pris", icon: <EditOutlinedIcon fontSize="small" />, requiresSelection: false },
 ];
 
+const INVOICE_UNIT_OPTIONS = ["lpm", "m2", "m3 aktuell", "m3 nominell", "paket", "st"] as const;
+
+const toIntegerPriceString = (value: string): string => {
+  const normalized = value
+    .replace(/\s+/g, "")
+    .replace(/[^\d,.-]/g, "")
+    .replace(/,/g, ".");
+
+  const parsed = Number.parseFloat(normalized);
+  if (!Number.isFinite(parsed)) {
+    return "";
+  }
+
+  return String(Math.round(parsed));
+};
+
+const sanitizePriceInput = (value: string): string => value.replace(/[^\d-]/g, "");
+
 export function ContractRowsTab({
   visibleColumns,
   rows,
@@ -60,17 +78,20 @@ export function ContractRowsTab({
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [editedRowValues, setEditedRowValues] = useState<Record<number, Partial<Record<"aPris" | "enhet", string>>>>({});
   const [isPriceEditMode, setIsPriceEditMode] = useState(false);
+  const [isBulkUnitDialogOpen, setIsBulkUnitDialogOpen] = useState(false);
+  const [bulkUnitValue, setBulkUnitValue] = useState<string>(INVOICE_UNIT_OPTIONS[0]);
 
   const selectRow = (rowIndex: number) => {
     setSelectedRow((previous) => (previous === rowIndex ? null : rowIndex));
   };
 
   const updateDraftRowField = (rowIndex: number, key: "aPris" | "enhet", value: string) => {
+    const nextValue = key === "aPris" ? sanitizePriceInput(value) : value;
     setEditedRowValues((previous) => ({
       ...previous,
       [rowIndex]: {
         ...previous[rowIndex],
-        [key]: value
+        [key]: nextValue
       }
     }));
   };
@@ -94,13 +115,44 @@ export function ContractRowsTab({
     setIsPriceEditMode(false);
   };
 
+  const getRowInvoiceUnit = (row: Record<string, string>, rowIndex: number): string =>
+    editedRowValues[rowIndex]?.enhet ?? row.enhet ?? "";
+
+  const handleOpenBulkUnitDialog = () => {
+    const firstExisting = rows.length > 0 ? getRowInvoiceUnit(rows[0], 0) : "";
+    setBulkUnitValue(
+      INVOICE_UNIT_OPTIONS.includes(firstExisting as (typeof INVOICE_UNIT_OPTIONS)[number])
+        ? firstExisting
+        : INVOICE_UNIT_OPTIONS[0]
+    );
+    setIsBulkUnitDialogOpen(true);
+  };
+
+  const handleCloseBulkUnitDialog = () => {
+    setIsBulkUnitDialogOpen(false);
+  };
+
+  const handleApplyBulkUnit = () => {
+    setEditedRowValues((previous) => {
+      const next = { ...previous };
+      rows.forEach((_row, rowIndex) => {
+        next[rowIndex] = {
+          ...next[rowIndex],
+          enhet: bulkUnitValue,
+        };
+      });
+      return next;
+    });
+    handleCloseBulkUnitDialog();
+  };
+
   const actionRowItems = [
     {
       key: "new-row",
       label: tableActionItems[0].label,
       icon: tableActionItems[0].icon,
       enabled: !isPriceEditMode,
-      tone: "primary" as const,
+      tone: isPriceEditMode ? "default" as const : "primary" as const,
       onClick: onCreateRow
     },
     {
@@ -108,8 +160,22 @@ export function ContractRowsTab({
       kind: "divider" as const,
       label: "|"
     },
+    {
+      key: "edit-price",
+      label: isPriceEditMode ? "Spara pris" : "Ändra pris",
+      icon: tableActionItems[1].icon,
+      enabled: true,
+      tone: isPriceEditMode ? "primary" as const : "default" as const,
+      onClick: isPriceEditMode ? handleSavePrice : handleEditPrice
+    },
     ...(isPriceEditMode
       ? [
+        {
+          key: "bulk-unit",
+          label: "Ändra alla",
+          enabled: true,
+          onClick: handleOpenBulkUnitDialog
+        },
         {
           key: "cancel-price",
           label: "Avbryt",
@@ -121,16 +187,9 @@ export function ContractRowsTab({
       : [])
     ,
     {
-      key: "edit-price",
-      label: isPriceEditMode ? "Spara pris" : "Ändra pris",
-      icon: tableActionItems[1].icon,
-      enabled: true,
-      onClick: isPriceEditMode ? handleSavePrice : handleEditPrice
-    },
-    {
       key: "container",
       label: "Container",
-      enabled: true
+      enabled: !isPriceEditMode
     },
   ];
 
@@ -141,24 +200,31 @@ export function ContractRowsTab({
         rightSlot={
           <>
             <Tooltip title="Uppdatera" placement="top">
-              <IconButton size="small" className={styles.contractHeaderDotsButton} onClick={handleRefreshList}>
+              <IconButton
+                size="small"
+                className={styles.contractHeaderDotsButton}
+                onClick={handleRefreshList}
+                disabled={isPriceEditMode}
+              >
                 <RefreshOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <ColumnManagerDropdown
-              isOpen={isColumnsMenuOpen}
-              columns={draftColumns}
-              menuRef={columnsMenuRef}
-              buttonRef={columnsButtonRef}
-              onOpen={onOpenColumnsMenu}
-              onCancel={onCancelColumnsMenu}
-              onToggleVisibility={onToggleColumnVisibility}
-              onMove={onMoveColumn}
-              onSave={onSaveColumnChanges}
-              onReset={onResetColumnChanges}
-              onTogglePin={onToggleColumnPin}
-              iconOnly
-            />
+            <div style={{ opacity: isPriceEditMode ? 0.45 : 1, pointerEvents: isPriceEditMode ? "none" : "auto" }}>
+              <ColumnManagerDropdown
+                isOpen={isColumnsMenuOpen}
+                columns={draftColumns}
+                menuRef={columnsMenuRef}
+                buttonRef={columnsButtonRef}
+                onOpen={onOpenColumnsMenu}
+                onCancel={onCancelColumnsMenu}
+                onToggleVisibility={onToggleColumnVisibility}
+                onMove={onMoveColumn}
+                onSave={onSaveColumnChanges}
+                onReset={onResetColumnChanges}
+                onTogglePin={onToggleColumnPin}
+                iconOnly
+              />
+            </div>
           </>
         }
       />
@@ -185,21 +251,75 @@ export function ContractRowsTab({
                 >
                   {row[column.key]}
                 </button>
-              ) : isPriceEditMode && (column.key === "aPris" || column.key === "enhet") ? (
+              ) : isPriceEditMode && column.key === "aPris" ? (
                 <TextField
-                  value={editedRowValues[rowIndex]?.[column.key] ?? row[column.key] ?? ""}
+                  value={editedRowValues[rowIndex]?.aPris ?? toIntegerPriceString(row.aPris ?? "")}
                   size="small"
                   onClick={(event) => event.stopPropagation()}
                   onChange={(event) => updateDraftRowField(rowIndex, column.key as "aPris" | "enhet", event.target.value)}
                   className={styles.contractRowInlineInput}
                 />
+              ) : isPriceEditMode && column.key === "enhet" ? (
+                <Select
+                  value={editedRowValues[rowIndex]?.enhet ?? row.enhet ?? ""}
+                  size="small"
+                  onClick={(event) => event.stopPropagation()}
+                  onChange={(event) => updateDraftRowField(rowIndex, "enhet", event.target.value)}
+                  className={styles.contractRowInlineInput}
+                >
+                  {INVOICE_UNIT_OPTIONS.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </Select>
               ) : (
-                editedRowValues[rowIndex]?.[column.key as "aPris" | "enhet"] ?? row[column.key]
+                column.key === "aPris"
+                  ? (editedRowValues[rowIndex]?.aPris ?? toIntegerPriceString(row.aPris ?? ""))
+                  : (editedRowValues[rowIndex]?.[column.key as "aPris" | "enhet"] ?? row[column.key])
               )
             }
           />
         </div>
       </div>
+
+      <Dialog open={isBulkUnitDialogOpen} onClose={handleCloseBulkUnitDialog} maxWidth="xs" fullWidth>
+        <DialogTitle fontSize={16}>Ändra Enhet faktura på alla rader</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 1 }}>Välj enhet som ska sättas på samtliga rader</Typography>
+          <Select
+            value={bulkUnitValue}
+            onChange={(event) => setBulkUnitValue(event.target.value)}
+            size="small"
+            fullWidth
+          >
+            {INVOICE_UNIT_OPTIONS.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </Select>
+        </DialogContent>
+        <DialogActions sx={{ margin: "0 12px 12px 0" }}>
+          <button
+            type="button"
+            className={styles.actionItemPrimary}
+            onClick={handleApplyBulkUnit}
+          >
+            Spara
+          </button>
+          <Button
+            size="small"
+            variant="outlined"
+            color="inherit"
+            className={styles.lineItemsToggleButton}
+            onClick={handleCloseBulkUnitDialog}
+            sx={{ textTransform: "none" }}
+          >
+            Avbryt
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }
