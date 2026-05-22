@@ -2,6 +2,7 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
@@ -228,6 +229,7 @@ export function FreightTab() {
   const [keepDialogValues, setKeepDialogValues] = useState(false);
   const [lastFreightDraft, setLastFreightDraft] = useState<VirkeRow | null>(null);
   const [createFeedback, setCreateFeedback] = useState({ open: false, key: 0 });
+  const [deleteDialogRow, setDeleteDialogRow] = useState<{ index: number; row: VirkeRow } | null>(null);
 
   const openAddStröprodukt = () => {
     const initialDraft = keepDialogValues && lastFreightDraft ? { ...lastFreightDraft, typ: "Ströprodukt" as ProductType } : emptyStröproduktRow();
@@ -247,6 +249,44 @@ export function FreightTab() {
   };
 
   const closeForm = () => setForm({ mode: "closed" });
+
+  const removeStröproduktRow = (index: number) => {
+    setVirkeRows((prev) => prev.filter((_, rowIndex) => rowIndex !== index));
+    setSelectedVirkeRow((previous) => {
+      if (previous === null) {
+        return null;
+      }
+      if (previous === index) {
+        return null;
+      }
+      if (previous > index) {
+        return previous - 1;
+      }
+      return previous;
+    });
+  };
+
+  const openDeleteDialog = (index: number) => {
+    const row = virkeRows[index];
+    if (!row || row.typ !== "Ströprodukt") {
+      return;
+    }
+
+    setDeleteDialogRow({ index, row });
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogRow(null);
+  };
+
+  const confirmDeleteDialog = () => {
+    if (!deleteDialogRow) {
+      return;
+    }
+
+    removeStröproduktRow(deleteDialogRow.index);
+    closeDeleteDialog();
+  };
 
   const setDraftField = (key: keyof VirkeRow, value: string) => {
     setForm((prev) =>
@@ -354,16 +394,28 @@ export function FreightTab() {
                         <EditOutlinedIcon className={styles.freightActionIcon} />
                       </IconButton>
                       {virkeRow.typ === "Ströprodukt" ? (
-                        <IconButton
-                          size="small"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            openClone(rowIndex);
-                          }}
-                          title="Duplicera rad"
-                        >
-                          <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
-                        </IconButton>
+                        <>
+                          <IconButton
+                            size="small"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openClone(rowIndex);
+                            }}
+                            title="Duplicera rad"
+                          >
+                            <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openDeleteDialog(rowIndex);
+                            }}
+                            title="Ta bort rad"
+                          >
+                            <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                          </IconButton>
+                        </>
                       ) : null}
                     </span>
                   );
@@ -500,6 +552,34 @@ export function FreightTab() {
               {form.mode === "add" ? "Lägg till" : "Spara"}
             </Button>
             <Button size="small" className={styles.freightCancelButton} onClick={closeForm}>
+              Avbryt
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={Boolean(deleteDialogRow)}
+          onClose={closeDeleteDialog}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle fontSize={16}>Ta bort ströprodukt</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" lineHeight={1} marginBottom={0}>
+              Vill du ta bort {deleteDialogRow?.row.avtalsrutt ? `"${deleteDialogRow.row.avtalsrutt}"` : "denna rad"}?
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ margin: "0 12px 12px 0" }}>
+            <Button color="error" variant="contained" onClick={confirmDeleteDialog} sx={{ textTransform: "none" }}>
+              Ta bort
+            </Button>
+            <Button
+              variant="outlined"
+              color="inherit"
+              className={styles.lineItemsToggleButton}
+              onClick={closeDeleteDialog}
+              sx={{ textTransform: "none" }}
+            >
               Avbryt
             </Button>
           </DialogActions>
