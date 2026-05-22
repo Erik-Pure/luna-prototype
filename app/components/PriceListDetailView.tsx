@@ -184,7 +184,7 @@ export function PriceListDetailView({
           <Typography className={styles.contractInfoValue}>{draft.status || "-"}</Typography>
         </div>
         <div className={styles.contractModernSummaryCard}>
-          <Typography className={styles.contractInfoLabel}>Upprättat av</Typography>
+          <Typography className={styles.contractInfoLabel}>Registrerad av</Typography>
           <Typography className={styles.contractInfoValue}>{draft.createdBy || "-"}</Typography>
         </div>
         <div className={styles.contractModernSummaryCard}>
@@ -301,7 +301,7 @@ export function PriceListDetailView({
                   <TextField label="Kund" size="small" value={draft.customer} onChange={(event) => updateField("customer", event.target.value)} />
                   <TextField label="Kundens referens" size="small" value={draft.customerReference} onChange={(event) => updateField("customerReference", event.target.value)} />
                   <TextField label="Externt prislistenr" size="small" value={draft.externalNumber} onChange={(event) => updateField("externalNumber", event.target.value)} />
-                  <TextField label="Upprättat av" size="small" value={draft.createdBy} onChange={(event) => updateField("createdBy", event.target.value)} />
+                  <TextField label="Registrerad av" size="small" value={draft.createdBy} onChange={(event) => updateField("createdBy", event.target.value)} />
                 </div>
               </AccordionDetails>
             </Accordion>

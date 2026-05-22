@@ -286,7 +286,7 @@ const defaultSearchFields: SearchFieldConfig[] = [
   { key: "prislistaNr", label: "Prislista nr", control: "text", visible: false, favorite: false },
   { key: "tillhor", label: "Tillhör", control: "text", visible: false, favorite: false },
   { key: "typ", label: "Typ", control: "select", visible: true, favorite: true },
-  { key: "upprattatAv", label: "Upprättat av", control: "select", visible: false, favorite: true },
+  { key: "upprattatAv", label: "Registrerad av", control: "select", visible: false, favorite: true },
   { key: "varningsnivaFordran", label: "Varningsnivå fordran", control: "select", visible: false, favorite: false },
   { key: "varningsnivaLimit", label: "Varningsnivå limit", control: "select", visible: false, favorite: false }
 ];
@@ -395,10 +395,10 @@ const baseContractColumns: ColumnConfig[] = [
   { key: "egenAnmarkning", label: "Egen anmärkning", visible: true, pinned: false },
   { key: "status", label: "Status", visible: true, pinned: false },
   { key: "leveransperiod", label: "Leveransperiod", visible: true, pinned: false },
-  { key: "upprattatAv", label: "Upprättat av", visible: true, pinned: false },
-  { key: "kontraktsvolym", label: "Kontraktsvol", visible: true, pinned: false },
+  { key: "upprattatAv", label: "Registrerad av", visible: true, pinned: false },
+  { key: "kontraktsvolym", label: "Kontraktsvolym", visible: true, pinned: false },
   { key: "levVolym", label: "Lev volym", visible: true, pinned: false },
-  { key: "olevVolym", label: "Olev volym", visible: true, pinned: false },
+  { key: "olevVolym", label: "Rest", visible: true, pinned: false },
   { key: "avropatProcent", label: "Avropat %", visible: true, pinned: false },
   { key: "prislistaNr", label: "Prislista nr", visible: true, pinned: false },
   { key: "utlastningssparr", label: "Utlastningsspärr", visible: true, pinned: false },
@@ -419,10 +419,6 @@ const CONTRACT_COLUMN_DEFAULT_WIDTHS: Partial<Record<ColumnKey, number>> = {
   upprattatAv: 156,
   limit: 132,
 };
-
-const COLUMN_WIDTH_STEP = 12;
-const MIN_COLUMN_WIDTH = 84;
-const MAX_COLUMN_WIDTH = 420;
 
 const defaultColumns: ColumnConfig[] = [
   ...baseContractColumns.map((column) => ({
@@ -631,11 +627,10 @@ const tableRows: TableRow[] = Array.from({ length: 6 }).map((_, idx) => ({
 const LINE_ITEM_CREATE_FIELD_COLUMNS: Array<{ key: keyof NewLineItemDraft; label: string }> = [
   { key: "senderCompany", label: "Säljande bolag" },
   { key: "senderWarehouse", label: "Säljande lager" },
-  { key: "responsibleCompany", label: "Ansvarigt bolag" },
+  { key: "responsibleCompany", label: "Ansvarig enhet" },
   { key: "priceList", label: "Prislista (rad)" },
   { key: "certification", label: "Certifiering (rad)" },
   { key: "contractNumber", label: "Kontraktsnummer (rad)" },
-  { key: "comboPackageNumber", label: "Kombipaketnummer" },
   { key: "nobbNumber", label: "NOBB-nummer" },
   { key: "artNr", label: "Art.nr" },
   { key: "deliverArtNr", label: "Leverera art.nr" },
@@ -845,7 +840,7 @@ export default function Home() {
   const [newLineItemDraftSeed, setNewLineItemDraftSeed] = useState<Partial<NewLineItemDraft>>({});
   const [newLineItemDraftVersion, setNewLineItemDraftVersion] = useState(0);
   const [pinnedLineItemFields, setPinnedLineItemFields] = useState<Set<keyof NewLineItemDraft>>(new Set());
-  const [keepLineItemOpenAfterSave, setKeepLineItemOpenAfterSave] = useState(false);
+  const [keepLineItemOpenAfterSave, setKeepLineItemOpenAfterSave] = useState(true);
   const [isLineItemToastOpen, setIsLineItemToastOpen] = useState(false);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
   const [isViewLoading, setIsViewLoading] = useState(false);
@@ -1189,43 +1184,6 @@ export default function Home() {
 
   const resetColumnChanges = () => {
     setDraftColumns(defaultColumns);
-  };
-
-  const isContractColumnWidthAdjustable = (key: string) =>
-    Object.prototype.hasOwnProperty.call(CONTRACT_COLUMN_DEFAULT_WIDTHS, key);
-
-  const getContractColumnWidth = (key: string) => {
-    const typedKey = key as ColumnKey;
-    const draftColumn = draftColumns.find((column) => column.key === typedKey);
-    return draftColumn?.width ?? CONTRACT_COLUMN_DEFAULT_WIDTHS[typedKey] ?? 120;
-  };
-
-  const adjustContractColumnWidth = (key: string, direction: "increase" | "decrease") => {
-    if (!isContractColumnWidthAdjustable(key)) {
-      return;
-    }
-
-    const typedKey = key as ColumnKey;
-    setDraftColumns((previous) =>
-      previous.map((column) => {
-        if (column.key !== typedKey) {
-          return column;
-        }
-
-        const currentWidth = column.width ?? CONTRACT_COLUMN_DEFAULT_WIDTHS[typedKey] ?? 120;
-        const delta = direction === "increase" ? COLUMN_WIDTH_STEP : -COLUMN_WIDTH_STEP;
-        const nextWidth = Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, currentWidth + delta));
-        return { ...column, width: nextWidth };
-      })
-    );
-  };
-
-  const increaseContractColumnWidth = (key: string) => {
-    adjustContractColumnWidth(key, "increase");
-  };
-
-  const decreaseContractColumnWidth = (key: string) => {
-    adjustContractColumnWidth(key, "decrease");
   };
 
   const openLineColumnsMenu = () => {
@@ -1653,10 +1611,6 @@ export default function Home() {
             onSaveColumnChanges={saveColumnChanges}
             onResetColumnChanges={resetColumnChanges}
             onToggleColumnPin={(key) => toggleColumnPin(key as ColumnKey)}
-            getColumnWidth={getContractColumnWidth}
-            canAdjustColumnWidth={isContractColumnWidthAdjustable}
-            onIncreaseColumnWidth={increaseContractColumnWidth}
-            onDecreaseColumnWidth={decreaseContractColumnWidth}
             orderedVisibleColumns={orderedVisibleColumns}
             tableRows={filteredContractRows as Array<Record<string, string | undefined>>}
             selectedRowId={selectedRowId}

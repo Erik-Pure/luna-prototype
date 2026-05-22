@@ -12,8 +12,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
-import LockIcon from "@mui/icons-material/Lock";
-import LockOpenIcon from "@mui/icons-material/LockOpen";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
@@ -181,6 +181,12 @@ const existingLineItemDraft: NewLineItemDraft = {
   recipientBrand: "",
   callOffStatus: "Sales planned"
 };
+
+const ART_NR_OPTIONS = [
+  "2202209500002000",
+  "2202209500003000",
+  "2202212000001000",
+] as const;
 type PeriodiseringRow = {
   id: string;
   leveransvecka: string;
@@ -192,10 +198,12 @@ type PeriodiseringRow = {
 };
 
 type AutoPeriodiseringDraft = {
-  leveransvecka: string;
+  step0Mode: "antalRader" | "mangdPerRad";
+  antalRader: string;
   mangdPerRad: string;
-  enhet: string;
-  avropsradsstatus: string;
+  step1Mode: "sprid" | "olika";
+  rowWeeks: string[];
+  rowMarks: Array<{ kundensMarke: string; godsmottagarensMarke: string }>;
 };
 
 type LengthDistributionRow = {
@@ -218,7 +226,6 @@ type CallOffRow = {
   leveransvecka: string;
   avropaddatum: string;
   fakturatext: string;
-  kombipaketNr: string;
   kundensReferens: string;
   levereraArtNr: string;
   levereraProdukt: string;
@@ -274,7 +281,7 @@ const PERIODISERING_COLUMNS: Array<{ key: PeriodiseringColumnKey; label: string;
 const LENGTH_DISTRIBUTION_COLUMNS: Array<{ key: LengthDistributionColumnKey; label: string; pinnedRight?: boolean }> = [
   { key: "langd", label: "Längd" },
   { key: "mangd", label: "Mängd" },
-  { key: "enhet", label: "Enhet" },
+  { key: "enhet", label: "Beställd enhet" },
   { key: "_actions", label: "", pinnedRight: true },
 ];
 
@@ -283,7 +290,7 @@ const CALLOFF_COLUMNS: Array<{ key: CallOffColumnKey; label: string; pinnedRight
   { key: "artNr", label: "ArtNr" },
   { key: "pakettyp", label: "Pakettyp" },
   { key: "mangd", label: "Mängd" },
-  { key: "enhet", label: "Enhet" },
+  { key: "enhet", label: "Beställd enhet" },
   { key: "volym", label: "Volym" },
   { key: "leveransvecka", label: "Leveransvecka" },
   { key: "avropaddatum", label: "Avropaddatum" },
@@ -314,7 +321,6 @@ const emptyCallOffRow = (): Omit<CallOffRow, "id"> => ({
   leveransvecka: "",
   avropaddatum: "",
   fakturatext: "",
-  kombipaketNr: "",
   kundensReferens: "",
   levereraArtNr: "",
   levereraProdukt: "",
@@ -349,7 +355,6 @@ const initialCallOffRows: CallOffRow[] = [
     leveransvecka: "202613",
     avropaddatum: "2026-03-14",
     fakturatext: "22x95 Gran Ytterpanel",
-    kombipaketNr: "",
     kundensReferens: "REF-771",
     levereraArtNr: "2202209500002000",
     levereraProdukt: "22x95 Gran Ytterpanel",
@@ -460,12 +465,42 @@ const formatSvVolume = (value: number): string => {
   }).format(value);
 };
 
-const createAutoPeriodiseringDraft = (deliveryWeek: string, unit: string): AutoPeriodiseringDraft => ({
-  leveransvecka: deliveryWeek,
+const createAutoPeriodiseringDraft = (): AutoPeriodiseringDraft => ({
+  step0Mode: "mangdPerRad",
+  antalRader: "",
   mangdPerRad: "",
-  enhet: unit,
-  avropsradsstatus: "Planerad",
+  step1Mode: "sprid",
+  rowWeeks: [],
+  rowMarks: [],
 });
+
+const dateToIsoWeekCode = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${date.getUTCFullYear()}${String(week).padStart(2, "0")}`;
+};
+
+const distributeWeekCodes = (minDateStr: string, maxDateStr: string, n: number): string[] => {
+  if (n <= 0) return [];
+  const minCode = dateToIsoWeekCode(minDateStr);
+  const maxCode = dateToIsoWeekCode(maxDateStr);
+  if (!minCode || !maxCode) return Array<string>(n).fill("");
+  const toOrd = (code: string) =>
+    parseInt(code.slice(0, 4), 10) * 53 + parseInt(code.slice(4), 10);
+  const minOrd = toOrd(minCode);
+  const maxOrd = toOrd(maxCode);
+  return Array.from({ length: n }, (_, i) => {
+    const ordinal = n === 1 ? minOrd : Math.round(minOrd + (i * (maxOrd - minOrd)) / (n - 1));
+    const year = Math.floor((ordinal - 1) / 53);
+    const week = Math.max(1, Math.min(53, ((ordinal - 1) % 53) + 1));
+    return `${year}${String(week).padStart(2, "0")}`;
+  });
+};
 
 const emptyLengthDistributionRow = (): Omit<LengthDistributionRow, "id"> => ({
   langd: "",
@@ -528,18 +563,19 @@ function FieldLabel({
 
   return (
     <div className={styles.fieldPinRow}>
-      <button
-        type="button"
-        className={`${styles.fieldPinButton} ${isPinned ? styles.fieldPinButtonActive : ""}`}
-        tabIndex={-1}
-        aria-pressed={isPinned}
-        aria-label={isPinned ? `Frånkoppla: ${label}` : `Fäst: ${label}`}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => onTogglePinnedField(fieldKey)}
-        title={isPinned ? `Frånkoppla: ${label}` : `Fäst: ${label}`}
-      >
-        {isPinned ? <LockIcon style={{ fontSize: 14 }} /> : <LockOpenIcon style={{ fontSize: 14 }} />}
-      </button>
+      <Tooltip title={isPinned ? "Ta bort spara" : "Spara värde till nästa kontraktsrad"} placement="top">
+        <button
+          type="button"
+          className={`${styles.fieldPinButton} ${isPinned ? styles.fieldPinButtonActive : ""}`}
+          tabIndex={-1}
+          aria-pressed={isPinned}
+          aria-label={isPinned ? `Frånkoppla: ${label}` : `Fäst: ${label}`}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => onTogglePinnedField(fieldKey)}
+        >
+          {isPinned ? <BookmarkIcon style={{ fontSize: 14 }} /> : <BookmarkBorderIcon style={{ fontSize: 14 }} />}
+        </button>
+      </Tooltip>
     </div>
   );
 }
@@ -565,16 +601,16 @@ function LabeledSelect({ label, value, size = "small", className, onChange, chil
 }
 
 const REQUIRED_FIELD_DEFS: { key: keyof NewLineItemDraft; label: string }[] = [
-  { key: "senderCompany", label: "Utlastande bolag" },
+  { key: "senderCompany", label: "Utlastande enhet" },
   { key: "senderWarehouse", label: "Utlastande lagerställe" },
   { key: "status", label: "Status" },
-  { key: "responsibleCompany", label: "Ansvarigt bolag" },
+  { key: "responsibleCompany", label: "Ansvarig enhet" },
   { key: "artNr", label: "ArtNr" },
   { key: "packageType", label: "Pakettyp" },
   { key: "quantity", label: "Mängd" },
+  { key: "orderedUnit", label: "Beställd enhet" },
   { key: "volume", label: "Volym" },
   { key: "price", label: "Pris" },
-  { key: "orderedUnit", label: "Beställd enhet" },
   { key: "invoiceUnit", label: "Faktura enhet" },
   { key: "salesType", label: "Säljtyp" },
   { key: "deliveryWindowMin", label: "Lev. fönster min" },
@@ -592,8 +628,6 @@ const OPTIONAL_FAST_TRACK_GROUPS: Array<{
     {
       title: "Allmänt",
       fields: [
-        { key: "contractNumber", label: "KontraktsNr" },
-        { key: "comboPackageNumber", label: "KombipaketNr" },
         { key: "priceList", label: "Prislista" },
         { key: "certification", label: "Certifiering" },
       ],
@@ -638,8 +672,8 @@ const OPTIONAL_FAST_TRACK_GROUPS: Array<{
       fields: [
         { key: "internalComment", label: "Intern kommentar" },
         { key: "externalComment", label: "Extern kommentar" },
-        { key: "customerComment", label: "Kundkommentar" },
         { key: "showOnInvoice", label: "Visa på följesedel och faktura" },
+        { key: "customerComment", label: "Kundkommentar" },
         { key: "customerBrand", label: "Kundens märke" },
         { key: "recipientBrand", label: "Godsmottagarens märke" },
       ],
@@ -668,25 +702,27 @@ export function LineItemDetailView({
 }: LineItemDetailViewProps) {
   const isNewLineItem = lineItemId === "new";
   const accordionWrapRef = useRef<HTMLDivElement | null>(null);
+  const saveAndContinueButtonRef = useRef<HTMLButtonElement | null>(null);
   const [lengthDistributionRows, setLengthDistributionRows] = useState<LengthDistributionRow[]>(initialLengthDistributionRows);
   const [selectedLengthDistributionRow, setSelectedLengthDistributionRow] = useState<number | null>(null);
   const [lengthDistributionForm, setLengthDistributionForm] = useState<LengthDistributionFormState>({ mode: "closed" });
   const [showLengthOnPrint, setShowLengthOnPrint] = useState(false);
-  const [keepLengthDistributionDialogOpen, setKeepLengthDistributionDialogOpen] = useState(false);
+  const [keepLengthDistributionDialogOpen, setKeepLengthDistributionDialogOpen] = useState(true);
   const [keepLengthDistributionValues, setKeepLengthDistributionValues] = useState(false);
   const [lastLengthDistributionDraft, setLastLengthDistributionDraft] = useState<Omit<LengthDistributionRow, "id"> | null>(null);
   const [lengthDistributionCreateFeedback, setLengthDistributionCreateFeedback] = useState({ open: false, key: 0 });
   const [periodiseringRows, setPeriodiseringRows] = useState<PeriodiseringRow[]>([]);
   const [selectedPeriodiseringRow, setSelectedPeriodiseringRow] = useState<number | null>(null);
   const [periodiseringForm, setPeriodiseringForm] = useState<PeriodiseringFormState>({ mode: "closed" });
-  const [keepPeriodiseringDialogOpen, setKeepPeriodiseringDialogOpen] = useState(false);
+  const [keepPeriodiseringDialogOpen, setKeepPeriodiseringDialogOpen] = useState(true);
   const [keepPeriodiseringValues, setKeepPeriodiseringValues] = useState(false);
   const [lastPeriodiseringDraft, setLastPeriodiseringDraft] = useState<Omit<PeriodiseringRow, "id"> | null>(null);
   const [periodiseringCreateFeedback, setPeriodiseringCreateFeedback] = useState({ open: false, key: 0 });
   const [periodiseringValidationFeedback, setPeriodiseringValidationFeedback] = useState({ open: false, key: 0, message: "" });
   const [isAutoPeriodiseringDialogOpen, setIsAutoPeriodiseringDialogOpen] = useState(false);
+  const [autoPeriodiseringStep, setAutoPeriodiseringStep] = useState<0 | 1 | 2>(0);
   const [autoPeriodiseringDraft, setAutoPeriodiseringDraft] = useState<AutoPeriodiseringDraft>(
-    createAutoPeriodiseringDraft(emptyNewLineItemDraft.deliveryWeek, emptyNewLineItemDraft.orderedUnit)
+    createAutoPeriodiseringDraft()
   );
   const [callOffRows, setCallOffRows] = useState<CallOffRow[]>(initialCallOffRows);
   const [selectedCallOffRow, setSelectedCallOffRow] = useState<number | null>(null);
@@ -724,6 +760,18 @@ export function LineItemDetailView({
     setNewLineItemDraft((previous) => ({
       ...previous,
       [key]: value
+    }));
+  };
+
+  const handleArtNrChange = (artNr: string) => {
+    const productText = artNr ? `${artNr} (produktnamn)` : "";
+    setNewLineItemDraft((previous) => ({
+      ...previous,
+      artNr,
+      deliverArtNr: artNr,
+      product: productText,
+      deliverProduct: productText,
+      invoiceText: productText,
     }));
   };
 
@@ -798,7 +846,7 @@ export function LineItemDetailView({
           inputBaseRoot.querySelector<HTMLElement>("[role='combobox'], input:not([type='hidden']), textarea")
         ),
       ...Array.from(container.querySelectorAll<HTMLElement>(`.${styles.lineItemFastTrackControl} input[type='checkbox']`)),
-      ...Array.from(container.querySelectorAll<HTMLElement>(`.${styles.lineItemFastTrackTerminalAction}`)),
+      saveAndContinueButtonRef.current,
     ]
       .filter((element): element is HTMLElement => {
         if (!element) {
@@ -1147,14 +1195,35 @@ export function LineItemDetailView({
   const periodiseringArIbalans =
     hasContractVolume && aterstarAttPeriodisera !== null && Math.abs(aterstarAttPeriodisera) <= PERIODISERING_SUM_EPSILON;
   const volumeUnit = newLineItemDraft.orderedUnit.trim() || "m3";
-  const autoMangdPerRad = parseSvNumber(autoPeriodiseringDraft.mangdPerRad);
   const autoTotalAttFordela = hasContractVolume ? Math.max(0, aterstarAttPeriodisera ?? 0) : 0;
-  const autoAntalRader = autoMangdPerRad && autoMangdPerRad > 0
-    ? Math.ceil(autoTotalAttFordela / autoMangdPerRad)
-    : 0;
-  const autoSistaRadVolym = autoAntalRader > 1 && autoMangdPerRad
+  const autoParsedAntalRader = parseSvNumber(autoPeriodiseringDraft.antalRader);
+  const autoParsedMangdPerRad = parseSvNumber(autoPeriodiseringDraft.mangdPerRad);
+  const autoAntalRader: number = autoPeriodiseringDraft.step0Mode === "antalRader"
+    ? (autoParsedAntalRader !== null ? Math.max(1, Math.round(autoParsedAntalRader)) : 0)
+    : (autoParsedMangdPerRad !== null && autoParsedMangdPerRad > 0 && autoTotalAttFordela > 0
+      ? Math.max(1, Math.ceil(autoTotalAttFordela / autoParsedMangdPerRad))
+      : 0);
+  const autoMangdPerRad = autoAntalRader > 0 ? autoTotalAttFordela / autoAntalRader : null;
+  const autoSistaRadVolym = autoAntalRader > 1 && autoMangdPerRad !== null
     ? autoTotalAttFordela - autoMangdPerRad * (autoAntalRader - 1)
     : autoMangdPerRad;
+  const autoWeeks: string[] = autoPeriodiseringDraft.step1Mode === "sprid" && autoAntalRader > 0
+    ? distributeWeekCodes(newLineItemDraft.deliveryWindowMin, newLineItemDraft.deliveryWindowMax, autoAntalRader)
+    : Array.from({ length: autoAntalRader }, (_, i) => autoPeriodiseringDraft.rowWeeks[i] ?? "");
+  const autoCanProceedStep0 = autoAntalRader > 0;
+  const autoHarTommaVeckor =
+    autoPeriodiseringDraft.step1Mode === "olika" &&
+    autoAntalRader > 0 &&
+    Array.from({ length: autoAntalRader }, (_, i) => (autoPeriodiseringDraft.rowWeeks[i] ?? "").trim()).some(
+      (week) => week === ""
+    );
+  const autoCanProceedStep1 = autoPeriodiseringDraft.step1Mode === "sprid" || !autoHarTommaVeckor;
+  const autoCanProceedCurrentStep =
+    autoPeriodiseringStep === 0
+      ? autoCanProceedStep0
+      : autoPeriodiseringStep === 1
+        ? autoCanProceedStep1
+        : false;
 
   const showPeriodiseringValidationError = (message: string) => {
     setPeriodiseringValidationFeedback((previous) => ({
@@ -1189,9 +1258,8 @@ export function LineItemDetailView({
   };
 
   const openAutoPeriodisering = () => {
-    const initialDeliveryWeek = newLineItemDraft.deliveryWeek.trim();
-    const initialUnit = newLineItemDraft.orderedUnit.trim() || "m3 nominell";
-    setAutoPeriodiseringDraft(createAutoPeriodiseringDraft(initialDeliveryWeek, initialUnit));
+    setAutoPeriodiseringDraft(createAutoPeriodiseringDraft());
+    setAutoPeriodiseringStep(0);
     setIsAutoPeriodiseringDialogOpen(true);
   };
 
@@ -1199,8 +1267,64 @@ export function LineItemDetailView({
     setIsAutoPeriodiseringDialogOpen(false);
   };
 
-  const setAutoPeriodiseringField = (key: keyof AutoPeriodiseringDraft, value: string) => {
-    setAutoPeriodiseringDraft((previous) => ({ ...previous, [key]: value }));
+  const handleNextStepAuto = () => {
+    if (autoPeriodiseringStep === 0) {
+      if (!autoCanProceedStep0) return;
+      const n = autoAntalRader;
+      setAutoPeriodiseringDraft((prev) => ({
+        ...prev,
+        rowWeeks: Array.from({ length: n }, (_, i) => prev.rowWeeks[i] ?? ""),
+      }));
+      setAutoPeriodiseringStep(1);
+    } else if (autoPeriodiseringStep === 1) {
+      if (!autoCanProceedStep1) return;
+      const n = autoAntalRader;
+      setAutoPeriodiseringDraft((prev) => ({
+        ...prev,
+        rowMarks: Array.from({ length: n }, (_, i) => prev.rowMarks[i] ?? { kundensMarke: "", godsmottagarensMarke: "" }),
+      }));
+      setAutoPeriodiseringStep(2);
+    }
+  };
+
+  const handleGoToStep = (target: 0 | 1 | 2) => {
+    if (target === autoPeriodiseringStep) return;
+    if (target < autoPeriodiseringStep) {
+      setAutoPeriodiseringStep(target);
+    } else {
+      if (autoPeriodiseringStep === 0 && !autoCanProceedStep0) return;
+      if (autoPeriodiseringStep === 1 && !autoCanProceedStep1) return;
+      const n = autoAntalRader;
+      setAutoPeriodiseringDraft((prev) => ({
+        ...prev,
+        rowWeeks: Array.from({ length: n }, (_, i) => prev.rowWeeks[i] ?? ""),
+        ...(target >= 2
+          ? { rowMarks: Array.from({ length: n }, (_, i) => prev.rowMarks[i] ?? { kundensMarke: "", godsmottagarensMarke: "" }) }
+          : {}),
+      }));
+      setAutoPeriodiseringStep(target);
+    }
+  };
+
+  const setAllAutoRowMarks = (key: "kundensMarke" | "godsmottagarensMarke", value: string) => {
+    setAutoPeriodiseringDraft((prev) => ({
+      ...prev,
+      rowMarks: prev.rowMarks.map((mark) => ({ ...mark, [key]: value })),
+    }));
+  };
+
+  const setAutoRowMark = (index: number, key: "kundensMarke" | "godsmottagarensMarke", value: string) => {
+    setAutoPeriodiseringDraft((prev) => ({
+      ...prev,
+      rowMarks: prev.rowMarks.map((mark, i) => (i === index ? { ...mark, [key]: value } : mark)),
+    }));
+  };
+
+  const setAutoRowWeek = (index: number, value: string) => {
+    setAutoPeriodiseringDraft((prev) => ({
+      ...prev,
+      rowWeeks: prev.rowWeeks.map((w, i) => (i === index ? value : w)),
+    }));
   };
 
   const createAutoPeriodiseringRows = () => {
@@ -1214,26 +1338,28 @@ export function LineItemDetailView({
       return;
     }
 
-    if (autoMangdPerRad === null || autoMangdPerRad <= 0) {
-      showPeriodiseringValidationError("Ange en giltig mängd per rad för automatisk periodisering.");
+    if (autoAntalRader <= 0) {
+      showPeriodiseringValidationError("Ange antal rader för automatisk periodisering.");
       return;
     }
 
-    const rowsToCreate = Math.ceil(aterstarAttPeriodisera / autoMangdPerRad);
-    const nextRows: PeriodiseringRow[] = Array.from({ length: rowsToCreate }, (_, index) => {
-      const remainingBeforeRow = aterstarAttPeriodisera - autoMangdPerRad * index;
-      const rowVolume = index === rowsToCreate - 1
-        ? remainingBeforeRow
-        : Math.min(autoMangdPerRad, remainingBeforeRow);
+    const total = aterstarAttPeriodisera;
+    const baseVolume = total / autoAntalRader;
+    const unit = newLineItemDraft.orderedUnit.trim() || "m3 nominell";
+
+    const nextRows: PeriodiseringRow[] = Array.from({ length: autoAntalRader }, (_, index) => {
+      const isLast = index === autoAntalRader - 1;
+      const rowVolume = isLast ? total - baseVolume * (autoAntalRader - 1) : baseVolume;
+      const marks = autoPeriodiseringDraft.rowMarks[index] ?? { kundensMarke: "", godsmottagarensMarke: "" };
 
       return {
-        id: `periodisering-auto-${periodiseringRows.length + index + 1}`,
-        leveransvecka: autoPeriodiseringDraft.leveransvecka,
+        id: `periodisering-auto-${Date.now()}-${index}`,
+        leveransvecka: autoWeeks[index] ?? "",
         mangd: formatSvVolume(Math.max(0, rowVolume)),
-        enhet: autoPeriodiseringDraft.enhet,
-        avropsradsstatus: autoPeriodiseringDraft.avropsradsstatus,
-        kundensMarke: "",
-        godsmottagarensMarke: "",
+        enhet: unit,
+        avropsradsstatus: "Planerad",
+        kundensMarke: marks.kundensMarke,
+        godsmottagarensMarke: marks.godsmottagarensMarke,
       };
     });
 
@@ -1495,6 +1621,7 @@ export function LineItemDetailView({
             createStep === 0 ? (
               <>
                 <Button
+                  ref={saveAndContinueButtonRef}
                   className={styles.lineItemSaveButton}
                   size="small"
                   variant="contained"
@@ -1514,7 +1641,7 @@ export function LineItemDetailView({
             ) : (
               <>
                 <Button
-                  className={styles.lineItemBackButton}
+                  className={styles.lineItemBackButton2}
                   size="small"
                   onClick={() => setCreateStep(0)}
                 >
@@ -1696,8 +1823,8 @@ export function LineItemDetailView({
               <AccordionDetails>
                 <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="senderCompany" label={getFieldLabel("senderCompany", "Utlastande bolag")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label={getFieldLabel("senderCompany", "Utlastande bolag")} value={newLineItemDraft.senderCompany} onChange={(v) => updateDraftField("senderCompany", v)} className={getFieldControlClassName("senderCompany")}>
+                    <FieldLabel fieldKey="senderCompany" label={getFieldLabel("senderCompany", "Utlastande enhet")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("senderCompany", "Utlastande enhet")} value={newLineItemDraft.senderCompany} onChange={(v) => updateDraftField("senderCompany", v)} className={getFieldControlClassName("senderCompany")}>
                       <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
                       <MenuItem value="Moelven">Moelven</MenuItem>
                     </LabeledSelect>
@@ -1709,20 +1836,12 @@ export function LineItemDetailView({
                       <MenuItem value="Hissmofors">Hissmofors</MenuItem>
                     </LabeledSelect>
                   </div>
-                  <div className={`${styles.lineItemField}${fieldHide("contractNumber")}`}>
-                    <FieldLabel fieldKey="contractNumber" label="KontraktsNr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="KontraktsNr" value={newLineItemDraft.contractNumber} onChange={(event) => updateDraftField("contractNumber", event.target.value)} size="small" className={getFieldControlClassName("contractNumber")} InputProps={{ readOnly: !isNewLineItem }} />
-                  </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="responsibleCompany" label={getFieldLabel("responsibleCompany", "Ansvarigt bolag")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label={getFieldLabel("responsibleCompany", "Ansvarigt bolag")} value={newLineItemDraft.responsibleCompany} onChange={(v) => updateDraftField("responsibleCompany", v)} className={getFieldControlClassName("responsibleCompany")}>
+                    <FieldLabel fieldKey="responsibleCompany" label={getFieldLabel("responsibleCompany", "Ansvarig enhet")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label={getFieldLabel("responsibleCompany", "Ansvarig enhet")} value={newLineItemDraft.responsibleCompany} onChange={(v) => updateDraftField("responsibleCompany", v)} className={getFieldControlClassName("responsibleCompany")}>
                       <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
                       <MenuItem value="Moelven">Moelven</MenuItem>
                     </LabeledSelect>
-                  </div>
-                  <div className={`${styles.lineItemField}${fieldHide("comboPackageNumber")}`}>
-                    <FieldLabel fieldKey="comboPackageNumber" label="KombipaketNr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="KombipaketNr" value={newLineItemDraft.comboPackageNumber} onChange={(event) => updateDraftField("comboPackageNumber", event.target.value)} size="small" className={getFieldControlClassName("comboPackageNumber")} />
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="status" label={getFieldLabel("status", "Status")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
@@ -1733,15 +1852,16 @@ export function LineItemDetailView({
                   </div>
                   <div className={`${styles.lineItemField}${fieldHide("priceList")}`}>
                     <FieldLabel fieldKey="priceList" label="Prislista" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Prislista" value={newLineItemDraft.priceList} onChange={(event) => updateDraftField("priceList", event.target.value)} size="small" className={getFieldControlClassName("priceList")} />
+                    <LabeledSelect label="Prislista" value={newLineItemDraft.priceList} onChange={(v) => updateDraftField("priceList", v)} className={getFieldControlClassName("priceList")}>
+                      <MenuItem value="">-</MenuItem>
+                      <MenuItem value="PL-2024-A">PL-2024-A</MenuItem>
+                      <MenuItem value="PL-2024-B">PL-2024-B</MenuItem>
+                      <MenuItem value="PL-2024-C">PL-2024-C</MenuItem>
+                    </LabeledSelect>
                   </div>
                   <div className={`${styles.lineItemField}${fieldHide("certification")}`}>
                     <FieldLabel fieldKey="certification" label="Certifiering" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Certifiering" value={newLineItemDraft.certification} onChange={(v) => updateDraftField("certification", v)} className={getFieldControlClassName("certification")}>
-                      <MenuItem value="Ocertifierat">Ocertifierat</MenuItem>
-                      <MenuItem value="FSC">FSC</MenuItem>
-                      <MenuItem value="PEFC">PEFC</MenuItem>
-                    </LabeledSelect>
+                    <TextField label="Certifiering" value={newLineItemDraft.certification} size="small" className={getFieldControlClassName("certification")} InputProps={{ readOnly: true }} helperText="Bestäms av kontraktet" />
                   </div>
                 </div>
               </AccordionDetails>
@@ -1762,12 +1882,22 @@ export function LineItemDetailView({
                 <div className={styles.lineItemSectionGrid3}>
                   <div className={`${styles.lineItemField}${fieldHide("nobbNumber")}`}>
                     <FieldLabel fieldKey="nobbNumber" label="NOBBnr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="NOBBnr" value={newLineItemDraft.nobbNumber} onChange={(event) => updateDraftField("nobbNumber", event.target.value)} size="small" className={getFieldControlClassName("nobbNumber")} />
+                    <LabeledSelect label="NOBBnr" value={newLineItemDraft.nobbNumber} onChange={(v) => updateDraftField("nobbNumber", v)} className={getFieldControlClassName("nobbNumber")}>
+                      <MenuItem value="">-</MenuItem>
+                      <MenuItem value="10110001">10110001</MenuItem>
+                      <MenuItem value="10110002">10110002</MenuItem>
+                      <MenuItem value="10110003">10110003</MenuItem>
+                    </LabeledSelect>
                   </div>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="artNr" label={getFieldLabel("artNr", "ArtNr")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <div className={styles.lineItemFieldWithAction}>
-                      <TextField label={getFieldLabel("artNr", "ArtNr")} value={newLineItemDraft.artNr} onChange={(event) => updateDraftField("artNr", event.target.value)} size="small" className={`${getFieldControlClassName("artNr")} ${styles.lineItemFieldActionInput}`} />
+                      <LabeledSelect label={getFieldLabel("artNr", "ArtNr")} value={newLineItemDraft.artNr} onChange={handleArtNrChange} className={`${getFieldControlClassName("artNr")} ${styles.lineItemFieldActionInput}`}>
+                        <MenuItem value="">-</MenuItem>
+                        {ART_NR_OPTIONS.map((artNrOption) => (
+                          <MenuItem key={artNrOption} value={artNrOption}>{artNrOption}</MenuItem>
+                        ))}
+                      </LabeledSelect>
                       <IconButton
                         size="small"
                         className={styles.lineItemFieldActionButton}
@@ -1782,7 +1912,24 @@ export function LineItemDetailView({
                   </div>
                   <div className={`${styles.lineItemField}${fieldHide("deliverArtNr")}`}>
                     <FieldLabel fieldKey="deliverArtNr" label="Leverera ArtNr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="Leverera ArtNr" value={newLineItemDraft.deliverArtNr} onChange={(event) => updateDraftField("deliverArtNr", event.target.value)} size="small" className={getFieldControlClassName("deliverArtNr")} />
+                    <div className={styles.lineItemFieldWithAction}>
+                      <LabeledSelect label="Leverera ArtNr" value={newLineItemDraft.deliverArtNr} onChange={(v) => updateDraftField("deliverArtNr", v)} className={`${getFieldControlClassName("deliverArtNr")} ${styles.lineItemFieldActionInput}`}>
+                        <MenuItem value="">-</MenuItem>
+                        {ART_NR_OPTIONS.map((artNrOption) => (
+                          <MenuItem key={artNrOption} value={artNrOption}>{artNrOption}</MenuItem>
+                        ))}
+                      </LabeledSelect>
+                      <IconButton
+                        size="small"
+                        className={styles.lineItemFieldActionButton}
+                        onClick={openProductDetail}
+                        disabled={!hasSelectedProduct}
+                        title="Öppna produktdetalj"
+                        aria-label="Öppna produktdetalj"
+                      >
+                        <OpenInNewIcon fontSize="small" />
+                      </IconButton>
+                    </div>
                   </div>
                 </div>
                 <div className={styles.lineItemSectionGrid3}>
@@ -1836,7 +1983,12 @@ export function LineItemDetailView({
                   </div>
                   <div className={`${styles.lineItemField}${fieldHide("vflGroup")}`}>
                     <FieldLabel fieldKey="vflGroup" label="VFL grupp" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label="VFL grupp" value={newLineItemDraft.vflGroup} onChange={(event) => updateDraftField("vflGroup", event.target.value)} size="small" className={getFieldControlClassName("vflGroup")} />
+                    <LabeledSelect label="VFL grupp" value={newLineItemDraft.vflGroup} onChange={(v) => updateDraftField("vflGroup", v)} className={getFieldControlClassName("vflGroup")}>
+                      <MenuItem value="">-</MenuItem>
+                      <MenuItem value="VFL-A">VFL-A</MenuItem>
+                      <MenuItem value="VFL-B">VFL-B</MenuItem>
+                      <MenuItem value="VFL-C">VFL-C</MenuItem>
+                    </LabeledSelect>
                   </div>
                 </div>
               </AccordionDetails>
@@ -1860,16 +2012,16 @@ export function LineItemDetailView({
                     <TextField label={getFieldLabel("quantity", "Mängd")} value={newLineItemDraft.quantity} onChange={(event) => updateDraftField("quantity", event.target.value)} size="small" className={getFieldControlClassName("quantity")} />
                   </div>
                   <div className={styles.lineItemField}>
-                    <FieldLabel fieldKey="volume" label={getFieldLabel("volume", "Volym")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <TextField label={getFieldLabel("volume", "Volym")} value={newLineItemDraft.volume} onChange={(event) => updateDraftField("volume", event.target.value)} size="small" className={getFieldControlClassName("volume")} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
-                  </div>
-                  <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="orderedUnit" label={getFieldLabel("orderedUnit", "Beställd enhet")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <LabeledSelect label={getFieldLabel("orderedUnit", "Beställd enhet")} value={newLineItemDraft.orderedUnit} onChange={(v) => updateDraftField("orderedUnit", v)} className={getFieldControlClassName("orderedUnit")}>
                       <MenuItem value="m3 nominell">m3 nominell</MenuItem>
                       <MenuItem value="m3 fast">m3 fast</MenuItem>
                       <MenuItem value="lpm">lpm</MenuItem>
                     </LabeledSelect>
+                  </div>
+                  <div className={styles.lineItemField}>
+                    <FieldLabel fieldKey="volume" label={getFieldLabel("volume", "Volym")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField label={getFieldLabel("volume", "Volym")} value={newLineItemDraft.volume} onChange={(event) => updateDraftField("volume", event.target.value)} size="small" className={getFieldControlClassName("volume")} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
                   </div>
                   <div className={`${styles.lineItemField}${fieldHide("finalVolume")}`}>
                     <FieldLabel fieldKey="finalVolume" label="Slutvolym" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
@@ -1997,6 +2149,10 @@ export function LineItemDetailView({
                   </div>
                 </div>
                 <hr className={styles.contractFlatDivider} />
+                <label className={`${getFieldControlClassName("showOnInvoice", styles.lineItemCheckboxRow)}${fieldHide("showOnInvoice")}`}>
+                  <Checkbox size="small" checked={Boolean(newLineItemDraft.showOnInvoice)} onChange={(event) => updateDraftField("showOnInvoice", event.target.checked)} />
+                  <Typography className={styles.searchFieldLabel}>Visa extern kommentar på följesedel och faktura</Typography>
+                </label>
                 <div className={styles.lineItemSectionGrid3}>
                   <div className={`${styles.lineItemField}${fieldHide("internalComment")}`}>
                     <FieldLabel fieldKey="internalComment" label="Intern kommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
@@ -2012,10 +2168,6 @@ export function LineItemDetailView({
                     <TextField label="Kundkommentar" value={newLineItemDraft.customerComment} onChange={(event) => updateDraftField("customerComment", event.target.value)} size="small" className={getFieldControlClassName("customerComment")} multiline rows={3} />
                   </div>
                 </div>
-                <label className={`${getFieldControlClassName("showOnInvoice", styles.lineItemCheckboxRow)}${fieldHide("showOnInvoice")}`}>
-                  <Checkbox size="small" checked={Boolean(newLineItemDraft.showOnInvoice)} onChange={(event) => updateDraftField("showOnInvoice", event.target.checked)} />
-                  <Typography className={styles.searchFieldLabel}>Visa på följesedel och faktura</Typography>
-                </label>
                 <div className={styles.lineItemSectionGrid3}>
                   <div className={`${styles.lineItemField}${fieldHide("customerBrand")}`}>
                     <FieldLabel fieldKey="customerBrand" label="Kundens märke" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
@@ -2081,20 +2233,6 @@ export function LineItemDetailView({
                 )}
               </AccordionDetails>
             </Accordion>
-
-            {isNewLineItem && createStep === 0 ? (
-              <div className={styles.lineItemAccordionFooterAction}>
-                <Button
-                  type="button"
-                  size="small"
-                  variant="contained"
-                  className={`${styles.lineItemSaveButton} ${styles.lineItemFastTrackTerminalAction}`}
-                  onClick={handleNextStep}
-                >
-                  Spara och gå vidare
-                </Button>
-              </div>
-            ) : null}
           </div>
         </div>
         <div className={styles.detailTabsColumn}>
@@ -2105,7 +2243,6 @@ export function LineItemDetailView({
                   <span className={styles.lineItemWizardReviewTitle}>{isNewLineItem ? "Obligatoriska uppgifter från kontraktsradshuvud" : "Obligatoriska uppgifter från kontraktsradshuvud"}</span>
                   {remainingReviewFields.length > 0 ? (
                     <>
-                      <span className={styles.lineItemWizardReviewHeaderDivider} aria-hidden="true" />
                       <Button
                         type="button"
                         size="small"
@@ -2544,7 +2681,6 @@ export function LineItemDetailView({
                             <Typography className={styles.callOffSectionTitle}>Övriga fält</Typography>
                             <div className={styles.freightFormGrid}>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Fakturatext</Typography><TextField size="small" value={callOffDraft.fakturatext} onChange={(e) => setCallOffDraftField("fakturatext", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>KombipaketNr</Typography><TextField size="small" value={callOffDraft.kombipaketNr} onChange={(e) => setCallOffDraftField("kombipaketNr", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Kundens referens</Typography><TextField size="small" value={callOffDraft.kundensReferens} onChange={(e) => setCallOffDraftField("kundensReferens", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera ArtNr</Typography><Select size="small" value={callOffDraft.levereraArtNr} onChange={(e) => setCallOffDraftField("levereraArtNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera Produkt</Typography><TextField size="small" value={callOffDraft.levereraProdukt} onChange={(e) => setCallOffDraftField("levereraProdukt", e.target.value)} className={styles.freightFormInput} /></div>
@@ -2628,7 +2764,7 @@ export function LineItemDetailView({
                           onClick={openAutoPeriodisering}
                           disabled={periodiseringArIbalans}
                         >
-                          Automatisk periodisering
+                          Automatisk periodisering (implementera inte denna)
                         </Button>
                       </div>
                     </div>
@@ -2842,81 +2978,323 @@ export function LineItemDetailView({
                     <DialogTitle className={styles.freightDialogTitle}>
                       <div className={styles.freightDialogTitleRow}>
                         <span>Automatisk periodisering</span>
+                        <Button
+                          size="small"
+                          className={styles.freightCancelButton}
+                          onClick={closeAutoPeriodisering}
+                        >
+                          Avbryt
+                        </Button>
+                      </div>
+                      <div className={styles.autoPeriodiseringStepTopRow}>
+                        <div className={styles.autoPeriodiseringStepBar}>
+                          {(["Antal rader", "Leveransvecka", "Märken"] as const).map((label, i) => (
+                            <div key={label} className={styles.autoPeriodiseringStepBarItem}>
+                              {i > 0 && <div className={styles.autoPeriodiseringStepConnector} />}
+                              <button
+                                type="button"
+                                className={styles.autoPeriodiseringStepBtn}
+                                onClick={() => handleGoToStep(i as 0 | 1 | 2)}
+                                disabled={
+                                  i > autoPeriodiseringStep + 1 ||
+                                  (i === 1 && !autoCanProceedStep0) ||
+                                  (i === 2 && !autoCanProceedStep1)
+                                }
+                              >
+                                <div
+                                  className={[
+                                    styles.autoPeriodiseringStepCircle,
+                                    autoPeriodiseringStep > i ? styles.autoPeriodiseringStepDone : "",
+                                    autoPeriodiseringStep === i ? styles.autoPeriodiseringStepActive : "",
+                                  ].filter(Boolean).join(" ")}
+                                >
+                                  {i + 1}
+                                </div>
+                                <span
+                                  className={[
+                                    styles.autoPeriodiseringStepLabel,
+                                    autoPeriodiseringStep === i ? styles.autoPeriodiseringStepLabelActive : "",
+                                  ].filter(Boolean).join(" ")}
+                                >
+                                  {label}
+                                </span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </DialogTitle>
+
                     <DialogContent className={styles.freightDialogContent}>
-                      <div className={styles.freightFormGrid}>
-                        <div className={styles.freightFormField}>
-                          <Typography className={styles.freightFormLabel}>Leveransvecka</Typography>
-                          <TextField
-                            size="small"
-                            placeholder="202550"
-                            value={autoPeriodiseringDraft.leveransvecka}
-                            onChange={(e) => setAutoPeriodiseringField("leveransvecka", e.target.value)}
-                            className={styles.freightFormInput}
-                          />
+                      {autoPeriodiseringStep === 0 ? (
+                        <div className={styles.autoPeriodiseringStepContent}>
+                          <div className={styles.autoPeriodiseringModeToggle}>
+                            <button
+                              type="button"
+                              className={[
+                                styles.autoPeriodiseringModeBtn,
+                                autoPeriodiseringDraft.step0Mode === "mangdPerRad"
+                                  ? styles.autoPeriodiseringModeBtnActive
+                                  : "",
+                              ].filter(Boolean).join(" ")}
+                              onClick={() =>
+                                setAutoPeriodiseringDraft((prev) => ({ ...prev, step0Mode: "mangdPerRad" }))
+                              }
+                            >
+                              Mängd per rad
+                            </button>
+                            <button
+                              type="button"
+                              className={[
+                                styles.autoPeriodiseringModeBtn,
+                                autoPeriodiseringDraft.step0Mode === "antalRader"
+                                  ? styles.autoPeriodiseringModeBtnActive
+                                  : "",
+                              ].filter(Boolean).join(" ")}
+                              onClick={() =>
+                                setAutoPeriodiseringDraft((prev) => ({ ...prev, step0Mode: "antalRader" }))
+                              }
+                            >
+                              Antal rader
+                            </button>
+                          </div>
+                          <div className={styles.freightFormGrid}>
+                            {autoPeriodiseringDraft.step0Mode === "antalRader" ? (
+                              <div className={styles.freightFormField}>
+                                <Typography className={styles.freightFormLabel}>Antal periodiseringsrader</Typography>
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  placeholder="4"
+                                  inputProps={{ min: 1, step: 1 }}
+                                  value={autoPeriodiseringDraft.antalRader}
+                                  onChange={(e) =>
+                                    setAutoPeriodiseringDraft((prev) => ({ ...prev, antalRader: e.target.value }))
+                                  }
+                                  className={styles.freightFormInput}
+                                  autoFocus
+                                />
+                              </div>
+                            ) : (
+                              <div className={styles.freightFormField}>
+                                <Typography className={styles.freightFormLabel}>Mängd per rad ({volumeUnit})</Typography>
+                                <TextField
+                                  size="small"
+                                  placeholder={formatSvVolume(autoTotalAttFordela / 4)}
+                                  value={autoPeriodiseringDraft.mangdPerRad}
+                                  onChange={(e) =>
+                                    setAutoPeriodiseringDraft((prev) => ({ ...prev, mangdPerRad: e.target.value }))
+                                  }
+                                  className={styles.freightFormInput}
+                                  autoFocus
+                                />
+                              </div>
+                            )}
+                          </div>
+                          {(autoPeriodiseringDraft.step0Mode === "antalRader"
+                            ? autoPeriodiseringDraft.antalRader.trim() !== ""
+                            : autoPeriodiseringDraft.mangdPerRad.trim() !== "") ? (
+                            <div className={styles.periodiseringAutoPreview}>
+                              {autoAntalRader > 0 && autoMangdPerRad !== null ? (
+                                <span className={styles.periodiseringAutoPreviewText}>
+                                  Skapar{" "}
+                                  <strong>{autoAntalRader} rader</strong> à{" "}
+                                  <strong>{formatSvVolume(autoMangdPerRad)} {volumeUnit}</strong>
+                                  {autoAntalRader > 1 && autoSistaRadVolym !== null &&
+                                    Math.abs(autoSistaRadVolym - autoMangdPerRad) > PERIODISERING_SUM_EPSILON
+                                    ? ` (sista: ${formatSvVolume(Math.max(0, autoSistaRadVolym))} ${volumeUnit})`
+                                    : ""}
+                                </span>
+                              ) : (
+                                <span className={styles.periodiseringAutoPreviewTextDim}>
+                                  {autoPeriodiseringDraft.step0Mode === "antalRader"
+                                    ? "Ange ett giltigt antal rader."
+                                    : "Ange en giltig mängd per rad."}
+                                </span>
+                              )}
+                            </div>
+                          ) : null}
                         </div>
-                        <div className={styles.freightFormField}>
-                          <Typography className={styles.freightFormLabel}>Mängd per rad</Typography>
-                          <TextField
-                            size="small"
-                            placeholder="0"
-                            value={autoPeriodiseringDraft.mangdPerRad}
-                            onChange={(e) => setAutoPeriodiseringField("mangdPerRad", e.target.value)}
-                            className={styles.freightFormInput}
-                          />
-                        </div>
-                        <div className={styles.freightFormField}>
-                          <Typography className={styles.freightFormLabel}>Enhet</Typography>
-                          <Select
-                            size="small"
-                            value={autoPeriodiseringDraft.enhet}
-                            onChange={(e) => setAutoPeriodiseringField("enhet", String(e.target.value))}
-                            className={styles.freightFormInput}
-                          >
-                            <MenuItem value="m3 nominell">m3 nominell</MenuItem>
-                            <MenuItem value="m3 fast">m3 fast</MenuItem>
-                            <MenuItem value="ton">ton</MenuItem>
-                            <MenuItem value="st">st</MenuItem>
-                          </Select>
-                        </div>
-                        <div className={styles.freightFormField}>
-                          <Typography className={styles.freightFormLabel}>Avropsradsstatus</Typography>
-                          <Select
-                            size="small"
-                            value={autoPeriodiseringDraft.avropsradsstatus}
-                            onChange={(e) => setAutoPeriodiseringField("avropsradsstatus", String(e.target.value))}
-                            className={styles.freightFormInput}
-                          >
-                            <MenuItem value="Planerad">Planerad</MenuItem>
-                            <MenuItem value="Aktiv">Aktiv</MenuItem>
-                            <MenuItem value="Pausad">Pausad</MenuItem>
-                            <MenuItem value="Avslutad">Avslutad</MenuItem>
-                          </Select>
-                        </div>
-                      </div>
-                      {(autoAntalRader > 0 || autoPeriodiseringDraft.mangdPerRad.trim() !== "") ? (
-                        <div className={styles.periodiseringAutoPreview}>
-                          {autoAntalRader > 0 ? (
-                            <span className={styles.periodiseringAutoPreviewText}>
-                              Skapar <strong>{autoAntalRader}&nbsp;rader</strong> à {formatSvVolume(autoMangdPerRad ?? 0)}&nbsp;{volumeUnit}
-                              {autoAntalRader > 1 && autoSistaRadVolym !== null && Math.abs(autoSistaRadVolym - (autoMangdPerRad ?? 0)) > PERIODISERING_SUM_EPSILON
-                                ? ` (sista: ${formatSvVolume(Math.max(0, autoSistaRadVolym))} ${volumeUnit})`
-                                : ""}
-                            </span>
+                      ) : autoPeriodiseringStep === 1 ? (
+                        <div className={styles.autoPeriodiseringStepContent}>
+                          <div className={styles.autoPeriodiseringModeToggle}>
+                            {(["sprid", "olika"] as const).map((mode) => (
+                              <button
+                                key={mode}
+                                type="button"
+                                className={[
+                                  styles.autoPeriodiseringModeBtn,
+                                  autoPeriodiseringDraft.step1Mode === mode
+                                    ? styles.autoPeriodiseringModeBtnActive
+                                    : "",
+                                ].filter(Boolean).join(" ")}
+                                onClick={() =>
+                                  setAutoPeriodiseringDraft((prev) => ({ ...prev, step1Mode: mode }))
+                                }
+                              >
+                                {mode === "sprid" ? "Sprid jämnt" : "Välj veckor"}
+                              </button>
+                            ))}
+                          </div>
+                          {autoPeriodiseringDraft.step1Mode === "sprid" ? (
+                            <div className={styles.autoPeriodiseringSpreadPreview}>
+                              <div className={styles.autoPeriodiseringSpreadPreviewInfo}>
+                                <span className={styles.freightFormLabel}>Lev. fönster min</span>
+                                <span className={styles.autoPeriodiseringSpreadValue}>
+                                  {newLineItemDraft.deliveryWindowMin || "—"}
+                                </span>
+                                <ArrowForwardIcon style={{ fontSize: 14, color: "#748195" }} />
+                                <span className={styles.freightFormLabel}>Lev. fönster max</span>
+                                <span className={styles.autoPeriodiseringSpreadValue}>
+                                  {newLineItemDraft.deliveryWindowMax || "—"}
+                                </span>
+                              </div>
+                              {autoAntalRader > 0 ? (
+                                <div className={styles.autoPeriodiseringWeekList}>
+                                  {autoWeeks.map((week, i) => (
+                                    <div key={i} className={styles.autoPeriodiseringWeekChip}>
+                                      <span className={styles.autoPeriodiseringWeekChipIndex}>Rad {i + 1}</span>
+                                      <span className={styles.autoPeriodiseringWeekChipWeek}>{week || "—"}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
                           ) : (
-                            <span className={styles.periodiseringAutoPreviewTextDim}>Ange mängd per rad för att se förhandsvisning.</span>
+                            <>
+                              <div className={styles.autoPeriodiseringMarkFillRow} style={{ marginTop: 8 }}>
+                                <Typography className={styles.freightFormLabel}>Fyll alla:</Typography>
+                                <input
+                                  type="text"
+                                  placeholder="202550"
+                                  className={styles.autoPeriodiseringMarkInput}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setAutoPeriodiseringDraft((prev) => ({
+                                      ...prev,
+                                      rowWeeks: prev.rowWeeks.map(() => v),
+                                    }));
+                                  }}
+                                />
+                              </div>
+                              <div className={styles.autoPeriodiseringMarkTable}>
+                                <div className={styles.autoPeriodiseringMarkTableHead} style={{ gridTemplateColumns: "40px 1fr" }}>
+                                  <span className={styles.autoPeriodiseringMarkCol}>Rad</span>
+                                  <span className={styles.autoPeriodiseringMarkCol}>Leveransvecka</span>
+                                </div>
+                                {autoPeriodiseringDraft.rowWeeks.map((week, i) => (
+                                  <div key={i} className={styles.autoPeriodiseringMarkTableRow} style={{ gridTemplateColumns: "40px 1fr" }}>
+                                    <span className={`${styles.autoPeriodiseringMarkCol} ${styles.autoPeriodiseringMarkRowNum}`}>
+                                      {i + 1}
+                                    </span>
+                                    <span className={styles.autoPeriodiseringMarkCol}>
+                                      <input
+                                        type="text"
+                                        placeholder="202550"
+                                        value={week}
+                                        className={styles.periodiseringMarkGhostInput}
+                                        onChange={(e) => setAutoRowWeek(i, e.target.value)}
+                                      />
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
                           )}
                         </div>
-                      ) : null}
+                      ) : (
+                        <div className={styles.autoPeriodiseringStepContent}>
+                          <div className={styles.autoPeriodiseringMarkenFillRow}>
+                            <Typography className={styles.freightFormLabel}>Fyll alla:</Typography>
+                            <div style={{ display: "flex", gap: "10px" }}>
+                              <input
+                                type="text"
+                                placeholder="Kundens märke"
+                                className={styles.autoPeriodiseringMarkInput}
+                                onChange={(e) => setAllAutoRowMarks("kundensMarke", e.target.value)}
+                              />
+                              <input
+                                type="text"
+                                placeholder="Godsmottagarens märke"
+                                className={styles.autoPeriodiseringMarkInput}
+                                onChange={(e) => setAllAutoRowMarks("godsmottagarensMarke", e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className={styles.autoPeriodiseringMarkTable}>
+                            <div className={styles.autoPeriodiseringMarkTableHead}>
+                              <span className={styles.autoPeriodiseringMarkCol}>Rad</span>
+                              <span className={styles.autoPeriodiseringMarkCol}>Leveransvecka</span>
+                              <span className={styles.autoPeriodiseringMarkCol}>Kundens märke</span>
+                              <span className={styles.autoPeriodiseringMarkCol}>Godsmottagarens märke</span>
+                            </div>
+                            {autoPeriodiseringDraft.rowMarks.map((mark, i) => (
+                              <div key={i} className={styles.autoPeriodiseringMarkTableRow}>
+                                <span
+                                  className={`${styles.autoPeriodiseringMarkCol} ${styles.autoPeriodiseringMarkRowNum}`}
+                                >
+                                  {i + 1}
+                                </span>
+                                <span className={styles.autoPeriodiseringMarkCol}>
+                                  {autoWeeks[i] || "—"}
+                                </span>
+                                <span className={styles.autoPeriodiseringMarkCol}>
+                                  <input
+                                    type="text"
+                                    placeholder="—"
+                                    value={mark.kundensMarke}
+                                    className={styles.periodiseringMarkGhostInput}
+                                    onChange={(e) => setAutoRowMark(i, "kundensMarke", e.target.value)}
+                                  />
+                                </span>
+                                <span className={styles.autoPeriodiseringMarkCol}>
+                                  <input
+                                    type="text"
+                                    placeholder="—"
+                                    value={mark.godsmottagarensMarke}
+                                    className={styles.periodiseringMarkGhostInput}
+                                    onChange={(e) =>
+                                      setAutoRowMark(i, "godsmottagarensMarke", e.target.value)
+                                    }
+                                  />
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </DialogContent>
+
                     <DialogActions className={styles.freightDialogActions}>
-                      <Button size="small" className={styles.freightSaveButton} onClick={createAutoPeriodiseringRows}>
-                        Skapa rader
-                      </Button>
-                      <Button size="small" className={styles.freightCancelButton} onClick={closeAutoPeriodisering}>
-                        Avbryt
-                      </Button>
+                      {autoPeriodiseringStep !== 0 && (
+                        <Button
+                          size="small"
+                          className={styles.freightCancelButton}
+                          onClick={() =>
+                            setAutoPeriodiseringStep((prev) => (prev - 1) as 0 | 1 | 2)
+                          }
+                        >
+                          Tillbaka
+                        </Button>
+                      )}
+                      {autoPeriodiseringStep < 2 ? (
+                        <Button
+                          size="small"
+                          className={styles.freightSaveButton}
+                          onClick={handleNextStepAuto}
+                          disabled={!autoCanProceedCurrentStep}
+                        >
+                          Nästa
+                        </Button>
+                      ) : (
+                        <Button
+                          size="small"
+                          className={styles.freightSaveButton}
+                          onClick={createAutoPeriodiseringRows}
+                        >
+                          Skapa periodiseringsrader
+                        </Button>
+                      )}
                     </DialogActions>
                   </Dialog>
 

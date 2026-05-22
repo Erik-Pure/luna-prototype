@@ -4,7 +4,7 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Tooltip, Typography } from "@mui/material";
+import { IconButton, TextField, Tooltip } from "@mui/material";
 import { useState, type RefObject } from "react";
 import { ActionRow } from "../shared/ActionRow";
 import { ColumnManagerDropdown } from "../shared/ColumnManagerDropdown";
@@ -60,7 +60,6 @@ export function ContractRowsTab({
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [editedRowValues, setEditedRowValues] = useState<Record<number, Partial<Record<"aPris" | "enhet", string>>>>({});
   const [isPriceEditMode, setIsPriceEditMode] = useState(false);
-  const [callOffModalOpen, setCallOffModalOpen] = useState(false);
 
   const selectRow = (rowIndex: number) => {
     setSelectedRow((previous) => (previous === rowIndex ? null : rowIndex));
@@ -104,6 +103,11 @@ export function ContractRowsTab({
       tone: "primary" as const,
       onClick: onCreateRow
     },
+    {
+      key: "primary-secondary-divider",
+      kind: "divider" as const,
+      label: "|"
+    },
     ...(isPriceEditMode
       ? [
         {
@@ -116,17 +120,6 @@ export function ContractRowsTab({
       ]
       : [])
     ,
-    {
-      key: "calloff",
-      label: "Avropa kontraktsrader",
-      enabled: !isPriceEditMode && rows.length > 0,
-      onClick: () => setCallOffModalOpen(true),
-    },
-    {
-      key: "primary-secondary-divider",
-      kind: "divider" as const,
-      label: "|"
-    },
     {
       key: "edit-price",
       label: isPriceEditMode ? "Spara pris" : "Ändra pris",
@@ -143,37 +136,6 @@ export function ContractRowsTab({
 
   return (
     <div className={styles.lineItemsSection}>
-      <Dialog
-        open={callOffModalOpen}
-        onClose={() => setCallOffModalOpen(false)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle fontSize={16}>Avropa kontraktsrader</DialogTitle>
-        <DialogContent>
-          <Typography fontSize={14} color="textSecondary">
-            Ett avrop kommer att skapas för {rows.length} kontraktsrader.
-          </Typography>
-        </DialogContent>
-        <DialogActions style={{ margin: "0 12px 12px 0" }}>
-          <Button
-            variant="contained"
-            className={styles.dropdownSave}
-            onClick={() => setCallOffModalOpen(false)}
-            sx={{ textTransform: "none" }}
-          >
-            Avropa
-          </Button>
-          <Button
-            variant="outlined"
-            className={styles.dropdownCancel}
-            onClick={() => setCallOffModalOpen(false)}
-            sx={{ textTransform: "none" }}
-          >
-            Avbryt
-          </Button>
-        </DialogActions>
-      </Dialog>
       <ActionRow
         items={actionRowItems}
         rightSlot={
@@ -195,6 +157,7 @@ export function ContractRowsTab({
               onSave={onSaveColumnChanges}
               onReset={onResetColumnChanges}
               onTogglePin={onToggleColumnPin}
+              iconOnly
             />
           </>
         }

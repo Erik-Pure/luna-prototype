@@ -29,7 +29,7 @@ export function OverviewTab({ contractId }: OverviewTabProps) {
           </Select>
         </div>
         <div className={styles.contractFormItem}>
-          <Typography className={styles.searchFieldLabel}>Upprättat av*</Typography>
+          <Typography className={styles.searchFieldLabel}>Registrerad av*</Typography>
           <Select defaultValue="Tobias Albertsson" size="small" className={styles.searchFieldControl}>
             <MenuItem value="Tobias Albertsson">Tobias Albertsson</MenuItem>
             <MenuItem value="John Doe">John Doe</MenuItem>

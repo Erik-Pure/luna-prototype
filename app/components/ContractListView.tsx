@@ -54,10 +54,6 @@ type ContractListViewProps = {
   onSaveColumnChanges: () => void;
   onResetColumnChanges: () => void;
   onToggleColumnPin: (key: string) => void;
-  getColumnWidth: (key: string) => number | undefined;
-  canAdjustColumnWidth: (key: string) => boolean;
-  onIncreaseColumnWidth: (key: string) => void;
-  onDecreaseColumnWidth: (key: string) => void;
   orderedVisibleColumns: Array<{ key: string; label: string; width?: number }>;
   tableRows: Array<Record<string, string | undefined>>;
   selectedRowId: number | null;
@@ -122,10 +118,6 @@ export function ContractListView({
   onSaveColumnChanges,
   onResetColumnChanges,
   onToggleColumnPin,
-  getColumnWidth,
-  canAdjustColumnWidth,
-  onIncreaseColumnWidth,
-  onDecreaseColumnWidth,
   orderedVisibleColumns,
   tableRows,
   selectedRowId,
@@ -210,7 +202,7 @@ export function ContractListView({
                 startIcon={<SearchIcon fontSize="small" />}
                 onClick={handleToggleSearch}
               >
-                Sök
+                Filtrera
               </Button>
               {isSearchOpen ? (
                 <div className={styles.tableSearchDropdown}>
@@ -218,7 +210,7 @@ export function ContractListView({
                     ref={searchInputRef}
                     type="text"
                     className={styles.tableSearchDropdownInput}
-                    placeholder="Sök i tabell..."
+                    placeholder="Filtrera i tabell..."
                     value={globalSearchValue}
                     onChange={(e) => onGlobalSearchChange(e.target.value)}
                   />
@@ -227,7 +219,7 @@ export function ContractListView({
                       type="button"
                       className={styles.tableSearchDropdownClear}
                       onClick={() => onGlobalSearchChange("")}
-                      aria-label="Rensa sökning"
+                      aria-label="Rensa filtrering"
                     >
                       ×
                     </button>
@@ -256,10 +248,6 @@ export function ContractListView({
               onSave={onSaveColumnChanges}
               onReset={onResetColumnChanges}
               onTogglePin={onToggleColumnPin}
-              getColumnWidth={getColumnWidth}
-              canAdjustWidth={canAdjustColumnWidth}
-              onDecreaseWidth={onDecreaseColumnWidth}
-              onIncreaseWidth={onIncreaseColumnWidth}
               iconOnly
             />
           </>

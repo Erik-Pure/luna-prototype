@@ -395,7 +395,7 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     </div>
                                 )}
 
-                                {/* Status, Upprättat av, Datum, Språk — explicit 2-col grid */}
+                                {/* Status, Registrerad av, Datum, Språk — explicit 2-col grid */}
                                 <div className={styles.contractFormGrid2} style={{ marginBottom: 10 }}>
                                     <TextField select fullWidth label="Status *" value={draft.status} onChange={(e) => updateDraftField("status", e.target.value)} size="small">
                                         <MenuItem value="Aktivt kontrakt">Aktivt kontrakt</MenuItem>
@@ -403,7 +403,7 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                         <MenuItem value="Avslutat">Avslutat</MenuItem>
                                         <MenuItem value="Pausat">Pausat</MenuItem>
                                     </TextField>
-                                    <TextField select fullWidth label="Upprättat av *" value={draft.createdBy} onChange={(e) => updateDraftField("createdBy", e.target.value)} size="small">
+                                    <TextField select fullWidth label="Registrerad av *" value={draft.createdBy} onChange={(e) => updateDraftField("createdBy", e.target.value)} size="small">
                                         <MenuItem value="">— Välj person —</MenuItem>
                                         <MenuItem value="John Doe">John Doe</MenuItem>
                                         <MenuItem value="Jane Smith">Jane Smith</MenuItem>

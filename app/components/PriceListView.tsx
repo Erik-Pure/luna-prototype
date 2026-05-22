@@ -46,7 +46,7 @@ const priceListSearchFieldsDefault: PriceListSearchField[] = [
   { key: "artNr", label: "ArtNr", control: "text", visible: false },
   { key: "kund", label: "Kund", control: "text", visible: false },
   { key: "land", label: "Land", control: "select", visible: false },
-  { key: "upprattatAv", label: "Upprättat av", control: "text", visible: false },
+  { key: "upprattatAv", label: "Registrerad av", control: "text", visible: false },
   { key: "tillhor", label: "Tillhör", control: "text", visible: false }
 ];
 
@@ -65,7 +65,7 @@ const priceListColumnsDefault: PriceListColumn[] = [
   { key: "giltigTom", label: "Giltig t.o.m.", visible: true, pinned: false },
   { key: "egenAnmarkning", label: "Egen anmärkning", visible: true, pinned: false },
   { key: "status", label: "Status", visible: true, pinned: false },
-  { key: "upprattatAv", label: "Upprättat av", visible: true, pinned: false },
+  { key: "upprattatAv", label: "Registrerad av", visible: true, pinned: false },
   { key: "tillhor", label: "Tillhör", visible: true, pinned: false }
 ];
 

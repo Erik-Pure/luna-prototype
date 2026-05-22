@@ -1481,7 +1481,7 @@
   right: 0;
   z-index: 5;
   display: flex;
-  width: 360px;
+  width: 300px;
   max-height: 510px;
   flex-direction: column;
   border: 1px solid #d7dbe3;
@@ -1590,6 +1590,7 @@
 .columnsDropdownFooter {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
   padding: 6px;
   border-top: 1px solid #ebeff4;
@@ -2115,7 +2116,7 @@
 .contractModernAccordionWrap {
   width: 100%;
   max-width: 960px;
-  padding: 12px 12px 0 12px;
+  padding: 12px 12px 120px 12px;
 }
 
 .contractModernAccordion {
@@ -3266,6 +3267,12 @@
   text-transform: none;
 }
 
+.lineItemBackButton2{
+  min-height: 28px;
+  color: #2f3743 !important;
+  text-transform: none;
+}
+
 .lineItemSaveButton {
   min-height: 28px;
   background-color: var(--color-champagne) !important;
@@ -4165,20 +4172,16 @@
 
 // ── Step 2 review card ──────────────────────────────────────
 .lineItemWizardReviewCard {
-  padding: 0;
-  background-color: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  background-color: #F5F7FA;
-  margin-bottom: 16px !important;
-  padding-bottom: 6px;
+  width: min(100%, 1028px);
+  padding: 12px 16px 0 16px;
+  background-color: #f5f7fa;
+  border: 1px solid #e3e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+  margin: 12px auto 18px !important;
   flex-shrink: 0;
-  margin: 0;
   position: relative;
-  overflow: visible;
-  border-bottom: 1px solid #e3e8f0;
-
+  overflow: hidden;
 }
 
 .lineItemWizardReviewHeader {
@@ -4191,14 +4194,6 @@
   border-bottom: none;
   background: transparent;
   margin: 0;
-  margin-top: 16px;
-}
-
-.lineItemWizardReviewHeaderDivider {
-  width: 1px;
-  align-self: stretch;
-  min-height: 24px;
-  background-color: #d7dde7;
 }
 
 .lineItemWizardReviewTitle {
@@ -4210,7 +4205,7 @@
   flex-shrink: 0;
   font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
   line-height: 1.3;
-  margin-left: 24px;
+  margin-left: 0;
 }
 
 .lineItemWizardReviewFields {
@@ -4218,18 +4213,18 @@
   flex-wrap: wrap;
   gap: 10px;
   align-items: flex-start;
-  padding: 16px 20px 18px;
+  padding: 12px 0 12px;
   margin: 0;
 }
 
 .lineItemWizardReviewFieldsExtra {
-  padding: 0 20px 18px;
+  padding: 0 0 12px;
   margin: 0;
 
   .lineItemWizardReviewFields {
     padding: 0;
     border-top: 1px solid #e3e8f0;
-    padding-top: 16px;
+    padding-top: 12px;
     margin: 0;
     gap: 10px;
   }
@@ -4288,6 +4283,7 @@
 }
 
 .lineItemWizardReviewToggleBtnInline {
+  margin-left: auto !important;
   padding: 2px 8px !important;
   min-width: 0 !important;
   color: #5c5c5c !important;
@@ -6044,7 +6040,7 @@
 }
 
 .periodiseringAutoButton {
-  min-height: 28px;
+  height: 34px;
   border: 1px solid #c1ccdb !important;
   background-color: transparent !important;
   color: #3f5066 !important;
@@ -6376,6 +6372,247 @@
   &::placeholder {
     color: #b0bac8;
   }
+}
+
+/* ── Auto periodisering wizard ── */
+.autoPeriodiseringModeToggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border: 1px solid #d0d7e2;
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+}
+.autoPeriodiseringModeBtn {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 500;
+  color: #748195;
+  background: #f3f6fa;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  & + & {
+    border-left: 1px solid #d0d7e2;
+  }
+
+  &:hover {
+    background: #e8eef7;
+    color: #2a3749;
+  }
+}
+.autoPeriodiseringModeBtnActive {
+  background: #fff !important;
+  color: #2a3749 !important;
+  font-weight: 600;
+}
+
+.autoPeriodiseringStepBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  &:not(:disabled):hover .autoPeriodiseringStepCircle:not(.autoPeriodiseringStepActive):not(.autoPeriodiseringStepDone) {
+    background: #d7dde7;
+  }
+}
+.autoPeriodiseringStepBar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 16px;
+  padding: 0 4px 4px;
+}
+.autoPeriodiseringStepTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.autoPeriodiseringStepNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.autoPeriodiseringStepBarItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.autoPeriodiseringStepConnector {
+  flex: 1;
+  height: 1px;
+  background: #d7dde7;
+  min-width: 24px;
+}
+.autoPeriodiseringStepCircle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e8ecf2;
+  color: #748195;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.autoPeriodiseringStepActive {
+  background: var(--color-champagne) !important;
+  color: #fff !important;
+}
+.autoPeriodiseringStepDone {
+  background: #DDE1E8 !important;
+  color: #5F6774 !important;
+}
+.autoPeriodiseringStepLabel {
+  font-size: 11px;
+  color: #8896a8;
+  white-space: nowrap;
+}
+.autoPeriodiseringStepLabelActive {
+  color: #2a3749;
+  font-weight: 600;
+}
+.autoPeriodiseringStepContent {
+  padding-top: 8px;
+}
+.autoPeriodiseringSpreadLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #2a3749;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.autoPeriodiseringSpreadPreview {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.autoPeriodiseringSpreadPreviewInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.autoPeriodiseringSpreadValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2a3749;
+  background: #edf2fa;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+.autoPeriodiseringWeekList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.autoPeriodiseringWeekChip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #f3f6fa;
+  border: 1px solid #d9e0eb;
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+.autoPeriodiseringWeekChipIndex {
+  font-size: 10px;
+  color: #748195;
+}
+.autoPeriodiseringWeekChipWeek {
+  font-size: 12px;
+  font-weight: 600;
+  color: #2a3749;
+}
+.autoPeriodiseringMarkFillRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid #e8ecf2;
+  margin-bottom: 10px;
+}
+.autoPeriodiseringMarkenFillRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid #e8ecf2;
+  margin-bottom: 10px;
+}
+.autoPeriodiseringMarkInput {
+  flex: 1;
+  border: 1px solid #d0d7e2;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: #2a3749;
+  font-family: inherit;
+  background: #f8fafc;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-champagne);
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(200, 140, 80, 0.12);
+  }
+}
+.autoPeriodiseringMarkTable {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e8ecf2;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.autoPeriodiseringMarkTableHead {
+  display: grid;
+  grid-template-columns: 40px 110px 1fr 1fr;
+  background: #f3f6fa;
+  border-bottom: 1px solid #e8ecf2;
+}
+.autoPeriodiseringMarkTableRow {
+  display: grid;
+  grid-template-columns: 40px 110px 1fr 1fr;
+  border-bottom: 1px solid #f0f2f6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: #fafbfd;
+  }
+}
+.autoPeriodiseringMarkCol {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #2a3749;
+  display: flex;
+  align-items: center;
+}
+.autoPeriodiseringMarkRowNum {
+  color: #748195;
+  font-weight: 600;
 }
 
 .lengthDistributionControls {
