@@ -246,9 +246,14 @@ type CallOffRow = {
   kundmarke: string;
   registreratAv: string;
   customerPlanned: string;
+  plocktillaggMin: string;
+  lastorderVolym: string;
+  leveradVolym: string;
+  avropsrest: string;
+  lev: string;
 };
 
-type CallOffColumnKey = keyof Omit<CallOffRow, "id"> | "_actions";
+type CallOffColumnKey = keyof Omit<CallOffRow, "id"> | "_actions" | "_nr";
 type ProductionPlanningRow = {
   id: string;
   producerandeBolag: string;
@@ -286,16 +291,21 @@ const LENGTH_DISTRIBUTION_COLUMNS: Array<{ key: LengthDistributionColumnKey; lab
 ];
 
 const CALLOFF_COLUMNS: Array<{ key: CallOffColumnKey; label: string; pinnedRight?: boolean }> = [
-  { key: "status", label: "Status" },
-  { key: "artNr", label: "ArtNr" },
+  { key: "_nr", label: "Avropsrad nr" },
+  { key: "status", label: "Avropsradstatus" },
+  { key: "fakturatext", label: "Fakturatext" },
   { key: "pakettyp", label: "Pakettyp" },
   { key: "mangd", label: "Mängd" },
   { key: "enhet", label: "Beställd enhet" },
   { key: "volym", label: "Volym" },
-  { key: "leveransvecka", label: "Leveransvecka" },
-  { key: "avropaddatum", label: "Avropaddatum" },
-  { key: "fakturatext", label: "Fakturatext" },
-  { key: "kundensReferens", label: "Kundens referens" },
+  { key: "bunt", label: "Bunt" },
+  { key: "emballage", label: "Emballage" },
+  { key: "leveransvecka", label: "Levvecka" },
+  { key: "avropsrest", label: "Avropsrest" },
+  { key: "lev", label: "Lev" },
+  { key: "folie", label: "Folie" },
+  { key: "internKommentar", label: "Intern kommentar" },
+  { key: "externKommentar", label: "Extern kommentar" },
   { key: "kundmarke", label: "Kundmärke" },
   { key: "certifiering", label: "Certifiering" },
   { key: "_actions", label: "", pinnedRight: true },
@@ -341,6 +351,11 @@ const emptyCallOffRow = (): Omit<CallOffRow, "id"> => ({
   kundmarke: "",
   registreratAv: "",
   customerPlanned: "",
+  plocktillaggMin: "",
+  lastorderVolym: "",
+  leveradVolym: "",
+  avropsrest: "",
+  lev: "",
 });
 
 const initialCallOffRows: CallOffRow[] = [
@@ -375,6 +390,11 @@ const initialCallOffRows: CallOffRow[] = [
     kundmarke: "az-26",
     registreratAv: "Jane Doe",
     customerPlanned: "Ja",
+    plocktillaggMin: "",
+    lastorderVolym: "",
+    leveradVolym: "",
+    avropsrest: "",
+    lev: "",
   },
 ];
 
@@ -2498,6 +2518,9 @@ export function LineItemDetailView({
                               setSelectedCallOffRow((previous) => (previous === index ? null : index))
                             }
                             renderCell={(row, column, rowIndex) => {
+                              if (column.key === "_nr") {
+                                return String(rowIndex + 1);
+                              }
                               if (column.key === "_actions") {
                                 return (
                                   <span className={styles.freightActionCell}>
@@ -2583,124 +2606,56 @@ export function LineItemDetailView({
                       {callOffDraft !== null ? (
                         <>
                           <div className={styles.freightFormCard}>
-                            <Typography className={styles.callOffSectionTitle}>Obligatoriska fält</Typography>
+                            <Typography className={styles.callOffSectionTitle}>Artikel</Typography>
                             <div className={styles.freightFormGrid}>
-                              <div className={styles.freightFormField}>
-                                <Typography className={styles.freightFormLabel}>Status *</Typography>
-                                <Select
-                                  size="small"
-                                  value={callOffDraft.status}
-                                  onChange={(e) => setCallOffDraftField("status", String(e.target.value))}
-                                  className={`${styles.freightFormInput} ${styles.lineItemRequiredControl}`}
-                                >
-                                  <MenuItem value="Sales planned">Sales planned</MenuItem>
-                                  <MenuItem value="Load planned">Load planned</MenuItem>
-                                  <MenuItem value="Aktiv">Aktiv</MenuItem>
-                                  <MenuItem value="Avslutad">Avslutad</MenuItem>
-                                </Select>
-                              </div>
-                              <div className={styles.freightFormField}>
-                                <Typography className={styles.freightFormLabel}>ArtNr *</Typography>
-                                <Select
-                                  size="small"
-                                  value={callOffDraft.artNr}
-                                  onChange={(e) => setCallOffDraftField("artNr", String(e.target.value))}
-                                  className={`${styles.freightFormInput} ${styles.lineItemRequiredControl}`}
-                                >
-                                  <MenuItem value="2202209500002000">2202209500002000</MenuItem>
-                                  <MenuItem value="2515012000000000">2515012000000000</MenuItem>
-                                  <MenuItem value="4512014500000000">4512014500000000</MenuItem>
-                                </Select>
-                              </div>
-                              <div className={styles.freightFormField}>
-                                <Typography className={styles.freightFormLabel}>Pakettyp *</Typography>
-                                <Select
-                                  size="small"
-                                  value={callOffDraft.pakettyp}
-                                  onChange={(e) => setCallOffDraftField("pakettyp", String(e.target.value))}
-                                  className={`${styles.freightFormInput} ${styles.lineItemRequiredControl}`}
-                                >
-                                  <MenuItem value="Lp">Lp</MenuItem>
-                                  <MenuItem value="Paket">Paket</MenuItem>
-                                </Select>
-                              </div>
-                              <div className={styles.freightFormField}>
-                                <Typography className={styles.freightFormLabel}>Mängd *</Typography>
-                                <TextField
-                                  size="small"
-                                  value={callOffDraft.mangd}
-                                  onChange={(e) => setCallOffDraftField("mangd", e.target.value)}
-                                  className={`${styles.freightFormInput} ${styles.lineItemRequiredControl}`}
-                                />
-                              </div>
-                              <div className={styles.freightFormField}>
-                                <Typography className={styles.freightFormLabel}>Enhet *</Typography>
-                                <Select
-                                  size="small"
-                                  value={callOffDraft.enhet}
-                                  onChange={(e) => setCallOffDraftField("enhet", String(e.target.value))}
-                                  className={`${styles.freightFormInput} ${styles.lineItemRequiredControl}`}
-                                >
-                                  <MenuItem value="m3 nominell">m3 nominell</MenuItem>
-                                  <MenuItem value="m3 fast">m3 fast</MenuItem>
-                                  <MenuItem value="lpm">lpm</MenuItem>
-                                  <MenuItem value="st">st</MenuItem>
-                                </Select>
-                              </div>
-                              <div className={styles.freightFormField}>
-                                <Typography className={styles.freightFormLabel}>Volym *</Typography>
-                                <TextField
-                                  size="small"
-                                  value={callOffDraft.volym}
-                                  onChange={(e) => setCallOffDraftField("volym", e.target.value)}
-                                  className={`${styles.freightFormInput} ${styles.lineItemRequiredControl}`}
-                                />
-                              </div>
-                              <div className={styles.freightFormField}>
-                                <Typography className={styles.freightFormLabel}>Leveransvecka *</Typography>
-                                <TextField
-                                  size="small"
-                                  value={callOffDraft.leveransvecka}
-                                  onChange={(e) => setCallOffDraftField("leveransvecka", e.target.value)}
-                                  className={`${styles.freightFormInput} ${styles.lineItemRequiredControl}`}
-                                />
-                              </div>
-                              <div className={styles.freightFormField}>
-                                <Typography className={styles.freightFormLabel}>Avropaddatum *</Typography>
-                                <TextField
-                                  size="small"
-                                  value={callOffDraft.avropaddatum}
-                                  onChange={(e) => setCallOffDraftField("avropaddatum", e.target.value)}
-                                  className={`${styles.freightFormInput} ${styles.lineItemRequiredControl}`}
-                                />
-                              </div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>ArtNr</Typography><Select size="small" value={callOffDraft.artNr} onChange={(e) => setCallOffDraftField("artNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera ArtNr</Typography><Select size="small" value={callOffDraft.levereraArtNr} onChange={(e) => setCallOffDraftField("levereraArtNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Fakturatext</Typography><TextField size="small" value={callOffDraft.fakturatext} onChange={(e) => setCallOffDraftField("fakturatext", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera Produkt</Typography><TextField size="small" value={callOffDraft.levereraProdukt} onChange={(e) => setCallOffDraftField("levereraProdukt", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Pakettyp</Typography><Select size="small" value={callOffDraft.pakettyp} onChange={(e) => setCallOffDraftField("pakettyp", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Lp">Lp</MenuItem><MenuItem value="Paket">Paket</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera pakettyp</Typography><Select size="small" value={callOffDraft.levereraPakettyp} onChange={(e) => setCallOffDraftField("levereraPakettyp", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Lp">Lp</MenuItem><MenuItem value="Paket">Paket</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Certifiering</Typography><Select size="small" value={callOffDraft.certifiering} onChange={(e) => setCallOffDraftField("certifiering", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Ocertifierat">Ocertifierat</MenuItem><MenuItem value="FSC">FSC</MenuItem><MenuItem value="PEFC">PEFC</MenuItem></Select></div>
                             </div>
                           </div>
 
                           <div className={styles.freightFormCard}>
-                            <Typography className={styles.callOffSectionTitle}>Övriga fält</Typography>
+                            <Typography className={styles.callOffSectionTitle}>Volym &amp; pris</Typography>
                             <div className={styles.freightFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Fakturatext</Typography><TextField size="small" value={callOffDraft.fakturatext} onChange={(e) => setCallOffDraftField("fakturatext", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Kundens referens</Typography><TextField size="small" value={callOffDraft.kundensReferens} onChange={(e) => setCallOffDraftField("kundensReferens", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera ArtNr</Typography><Select size="small" value={callOffDraft.levereraArtNr} onChange={(e) => setCallOffDraftField("levereraArtNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera Produkt</Typography><TextField size="small" value={callOffDraft.levereraProdukt} onChange={(e) => setCallOffDraftField("levereraProdukt", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera pakettyp</Typography><Select size="small" value={callOffDraft.levereraPakettyp} onChange={(e) => setCallOffDraftField("levereraPakettyp", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Lp">Lp</MenuItem><MenuItem value="Paket">Paket</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Certifiering</Typography><Select size="small" value={callOffDraft.certifiering} onChange={(e) => setCallOffDraftField("certifiering", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Ocertifierat">Ocertifierat</MenuItem><MenuItem value="FSC">FSC</MenuItem><MenuItem value="PEFC">PEFC</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Mängd</Typography><TextField size="small" value={callOffDraft.mangd} onChange={(e) => setCallOffDraftField("mangd", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Apris</Typography><TextField size="small" value={callOffDraft.aPris} onChange={(e) => setCallOffDraftField("aPris", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Beställd enhet</Typography><Select size="small" value={callOffDraft.enhet} onChange={(e) => setCallOffDraftField("enhet", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="m3 nominell">m3 nominell</MenuItem><MenuItem value="m3 fast">m3 fast</MenuItem><MenuItem value="lpm">lpm</MenuItem><MenuItem value="st">st</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Volym</Typography><TextField size="small" value={callOffDraft.volym} onChange={(e) => setCallOffDraftField("volym", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Emballage</Typography><Select size="small" value={callOffDraft.emballage} onChange={(e) => setCallOffDraftField("emballage", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Standard">Standard</MenuItem><MenuItem value="Skydd">Skydd</MenuItem><MenuItem value="Export">Export</MenuItem></Select></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Bunt</Typography><TextField size="small" value={callOffDraft.bunt} onChange={(e) => setCallOffDraftField("bunt", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransdag</Typography><Select size="small" value={callOffDraft.leveransdag} onChange={(e) => setCallOffDraftField("leveransdag", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Måndag">Måndag</MenuItem><MenuItem value="Tisdag">Tisdag</MenuItem><MenuItem value="Onsdag">Onsdag</MenuItem><MenuItem value="Torsdag">Torsdag</MenuItem><MenuItem value="Fredag">Fredag</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg</Typography><TextField size="small" value={callOffDraft.plocktillagg} onChange={(e) => setCallOffDraftField("plocktillagg", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg</Typography><TextField size="small" value={callOffDraft.malningstillagg} onChange={(e) => setCallOffDraftField("malningstillagg", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg tröskel</Typography><TextField size="small" value={callOffDraft.malningstillaggTroskel} onChange={(e) => setCallOffDraftField("malningstillaggTroskel", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Apris</Typography><TextField size="small" value={callOffDraft.aPris} onChange={(e) => setCallOffDraftField("aPris", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Folie</Typography><Select size="small" value={callOffDraft.folie} onChange={(e) => setCallOffDraftField("folie", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Ingen">Ingen</MenuItem><MenuItem value="Vit">Vit</MenuItem><MenuItem value="Transparent">Transparent</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Lev. tidigast</Typography><TextField size="small" value={callOffDraft.levTidigast} onChange={(e) => setCallOffDraftField("levTidigast", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Lev. senast</Typography><TextField size="small" value={callOffDraft.levSenast} onChange={(e) => setCallOffDraftField("levSenast", e.target.value)} className={styles.freightFormInput} /></div>
+                            </div>
+                          </div>
+
+                          <div className={styles.freightFormCard}>
+                            <Typography className={styles.callOffSectionTitle}>Leverans</Typography>
+                            <div className={styles.freightFormGrid}>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransvecka</Typography><TextField size="small" value={callOffDraft.leveransvecka} onChange={(e) => setCallOffDraftField("leveransvecka", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransdag</Typography><Select size="small" value={callOffDraft.leveransdag} onChange={(e) => setCallOffDraftField("leveransdag", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Måndag">Måndag</MenuItem><MenuItem value="Tisdag">Tisdag</MenuItem><MenuItem value="Onsdag">Onsdag</MenuItem><MenuItem value="Torsdag">Torsdag</MenuItem><MenuItem value="Fredag">Fredag</MenuItem></Select></div>
+                            </div>
+                          </div>
+
+                          <div className={styles.freightFormCard}>
+                            <Typography className={styles.callOffSectionTitle}>Tillägg</Typography>
+                            <div className={styles.freightFormGrid}>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg min</Typography><TextField size="small" value={callOffDraft.plocktillaggMin} onChange={(e) => setCallOffDraftField("plocktillaggMin", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg</Typography><TextField size="small" value={callOffDraft.plocktillagg} onChange={(e) => setCallOffDraftField("plocktillagg", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg</Typography><TextField size="small" value={callOffDraft.malningstillagg} onChange={(e) => setCallOffDraftField("malningstillagg", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg tröskel</Typography><TextField size="small" helperText="Tillägg vid mindre än detta värde" value={callOffDraft.malningstillaggTroskel} onChange={(e) => setCallOffDraftField("malningstillaggTroskel", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">lpm</InputAdornment> } }} /></div>
+                            </div>
+                          </div>
+
+                          <div className={styles.freightFormCard}>
+                            <Typography className={styles.callOffSectionTitle}>Övrigt</Typography>
+                            <div className={styles.freightFormGrid}>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Lastorder volym</Typography><TextField size="small" value={callOffDraft.lastorderVolym} onChange={(e) => setCallOffDraftField("lastorderVolym", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Levererad volym</Typography><TextField size="small" value={callOffDraft.leveradVolym} onChange={(e) => setCallOffDraftField("leveradVolym", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Intern kommentar</Typography><TextField size="small" value={callOffDraft.internKommentar} onChange={(e) => setCallOffDraftField("internKommentar", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Extern kommentar</Typography><TextField size="small" value={callOffDraft.externKommentar} onChange={(e) => setCallOffDraftField("externKommentar", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Kundmärke</Typography><TextField size="small" value={callOffDraft.kundmarke} onChange={(e) => setCallOffDraftField("kundmarke", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Registrerat av</Typography><Select size="small" value={callOffDraft.registreratAv} onChange={(e) => setCallOffDraftField("registreratAv", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Jane Doe">Jane Doe</MenuItem><MenuItem value="Erik Andersson">Erik Andersson</MenuItem><MenuItem value="Maria Nilsson">Maria Nilsson</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Customer planned</Typography><TextField size="small" value={callOffDraft.customerPlanned} onChange={(e) => setCallOffDraftField("customerPlanned", e.target.value)} className={styles.freightFormInput} /></div>
                             </div>
                           </div>
                         </>
@@ -2708,7 +2663,7 @@ export function LineItemDetailView({
                     </DialogContent>
                     <DialogActions className={styles.freightDialogActions}>
                       <Button size="small" className={styles.freightSaveButton} onClick={saveCallOffForm}>
-                        {isCreateCallOffView ? "Skapa" : "Spara"}
+                        {isCreateCallOffView ? "Lägg till" : "Spara"}
                       </Button>
                       <Button size="small" className={styles.freightCancelButton} onClick={closeCallOffForm}>
                         Avbryt

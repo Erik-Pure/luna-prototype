@@ -3,6 +3,7 @@
 import Link from "next/link";
 import SearchIcon from "@mui/icons-material/Search";
 import TableRowsOutlinedIcon from "@mui/icons-material/TableRowsOutlined";
+import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
@@ -227,6 +228,14 @@ export function ContractListView({
                 </div>
               ) : null}
             </div>
+            <Tooltip title={"Skriv ut"} placement="top">
+              <IconButton
+                size="small"
+                className={`${styles.columnsIconButton}`}
+              >
+                <PrintOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <Tooltip title={isLineItemsTableVisible ? "Dölj kontraktsrader" : "Visa kontraktsrader"} placement="top">
               <IconButton
                 size="small"
