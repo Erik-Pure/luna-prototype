@@ -318,7 +318,7 @@ export function FreightTab() {
   return (
     <div className={[styles.freightTabContent, styles.freightTabContentAdditionalInfo].join(" ")}>
       <div className={styles.freightSection}>
-        <div className={styles.freightSectionHeader}>
+        <div className={styles.freightSectionHeaderEnd}>
           <Tooltip title="Info" placement="top">
             <IconButton
               size="small"

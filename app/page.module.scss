@@ -6022,7 +6022,12 @@
 .freightSectionHeader {
   display: flex;
   align-items: center;
-  justify-content: end;
+  justify-content: space-between;
+}
+.freightSectionHeaderEnd {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .periodiseringToolbar {
