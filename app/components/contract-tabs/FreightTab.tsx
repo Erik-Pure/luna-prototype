@@ -123,6 +123,7 @@ const emptyStröproduktRow = (): VirkeRow => ({
 
 const LEGACY_INITIAL_VIRKE_ROWS: Array<Partial<VirkeRow>> = [
   { typ: "Virke", bolag: "NT Hissmofors Såg", avtalsrutt: "Krokom - Mariestad", frakt: "123 SEK", sped: "0 SEK", sjofrakt: "0 SEK", haulage: "0 SEK" },
+  { typ: "Ströprodukt", bolag: "NT Hissmofors Såg", avtalsrutt: "Krokom - Mariestad", frakt: "123 SEK", sped: "0 SEK", sjofrakt: "0 SEK", haulage: "0 SEK" },
 ];
 
 const isCurrencyCode = (value: string | undefined): value is CurrencyCode =>
@@ -227,16 +228,8 @@ export function FreightTab() {
   const [form, setForm] = useState<FormState>({ mode: "closed" });
   const [keepDialogOpen, setKeepDialogOpen] = useState(false);
   const [keepDialogValues, setKeepDialogValues] = useState(false);
-  const [lastFreightDraft, setLastFreightDraft] = useState<VirkeRow | null>(null);
   const [createFeedback, setCreateFeedback] = useState({ open: false, key: 0 });
   const [deleteDialogRow, setDeleteDialogRow] = useState<{ index: number; row: VirkeRow } | null>(null);
-
-  const openAddStröprodukt = () => {
-    const initialDraft = keepDialogValues && lastFreightDraft ? { ...lastFreightDraft, typ: "Ströprodukt" as ProductType } : emptyStröproduktRow();
-    setForm({ mode: "add", draft: initialDraft });
-    setSelectedVirkeRow(null);
-  };
-
 
   const openEdit = (index: number) => {
     setForm({ mode: "edit", index, draft: normalizeVirkeRow(virkeRows[index]) });
@@ -330,13 +323,6 @@ export function FreightTab() {
     <div className={[styles.freightTabContent, styles.freightTabContentAdditionalInfo].join(" ")}>
       <div className={styles.freightSection}>
         <div className={styles.freightSectionHeader}>
-          <Button
-            className={styles.freightNewButton}
-            startIcon={<AddIcon />}
-            onClick={openAddStröprodukt}
-          >
-            Ny frakt (ströprodukt)
-          </Button>
           <Tooltip title="Info" placement="top">
             <IconButton
               size="small"
@@ -354,13 +340,10 @@ export function FreightTab() {
           maxWidth="xs"
           fullWidth
         >
-          <DialogTitle fontSize={16}>Fraktrader för virke skapas automatiskt</DialogTitle>
+          <DialogTitle fontSize={16}>Fraktrader skapas automatiskt</DialogTitle>
           <DialogContent>
-            <Typography className={styles.freightInfoText} style={{ marginBottom: 8 }}>
-              Fraktrader för virke läggs till automatiskt utifrån avtalsrutt. Värdet för Frakt Bil / Jvg hämtas från C-Load och kan, likt eventuella övriga fraktkostnader, justeras manuellt.
-            </Typography>
             <Typography className={styles.freightInfoText}>
-              För ströprodukter behöver alla fält fyllas i manuellt.
+              Fraktrader för virke och ströprodukter läggs till automatiskt utifrån avtalsrutt. Värdet för Frakt Bil / Jvg hämtas från C-Load och kan, likt eventuella övriga fraktkostnader, justeras manuellt.
             </Typography>
           </DialogContent>
           <DialogActions>
@@ -393,30 +376,6 @@ export function FreightTab() {
                       >
                         <EditOutlinedIcon className={styles.freightActionIcon} />
                       </IconButton>
-                      {virkeRow.typ === "Ströprodukt" ? (
-                        <>
-                          <IconButton
-                            size="small"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              openClone(rowIndex);
-                            }}
-                            title="Duplicera rad"
-                          >
-                            <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              openDeleteDialog(rowIndex);
-                            }}
-                            title="Ta bort rad"
-                          >
-                            <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                          </IconButton>
-                        </>
-                      ) : null}
                     </span>
                   );
                 }

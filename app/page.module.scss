@@ -1081,7 +1081,7 @@
 
 .searchFieldLabel {
   color: #464d59;
-  font-size: 10px;
+  font-size: 12px !important;
   line-height: 1;
 }
 
@@ -6015,14 +6015,14 @@
 
 .freightInfoText {
   color: #556173;
-  font-size: 12px !important;
+  font-size: 14px !important;
   line-height: 1.45;
 }
 
 .freightSectionHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: end;
 }
 
 .periodiseringToolbar {
@@ -6979,6 +6979,7 @@
   border: 1px solid #e2e7f0;
   border-radius: 8px;
   background-color: #f9fafc;
+  margin-bottom: 18px;
 }
 
 .freightFormTitle {
@@ -6990,6 +6991,12 @@
 .freightFormGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.avropFormGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 10px;
 }
 
@@ -7654,3 +7661,126 @@
   grid-column: 1 / -1;
 }
 
+// ── Avrop tab (redesigned) ─────────────────────────────────────────────────────
+
+.callOffTabLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 16px 32px;
+  min-height: 0;
+}
+
+.avropSummaryWrap {
+  display: flex;
+  justify-content: center;
+}
+
+.avropSummaryCard {
+  display: inline-flex;
+  flex-direction: row;
+  gap: 12px;
+  // background: #f8f9fb;
+  // border: 1px solid #e2e6ed;
+  border-radius: 12px;
+  // padding: 16px 28px 0 28px;
+}
+
+.avropSummaryItem {
+  display: flex;
+  text-align: center;
+  flex-direction: column;
+  gap: 3px;
+  // padding-right: 44px;
+  width: 140px;
+  padding: 8px 12px 0 12px;
+  // border: 1px solid #e2e6ed;
+  // background-color: #f8f9fb;
+  // border: 1px solid black;
+}
+
+.avropSummaryLabel {
+  font-size: 12px;
+  color: #6a7483;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.avropSummaryValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2230;
+  line-height: 1.25;
+}
+
+.avropFieldsWrap {
+  display: flex;
+  justify-content: center;
+}
+
+.avropFieldsCard {
+  width: 100%;
+  max-width: 700px;
+}
+
+.avropFieldsEditBar {
+  display: flex;
+  align-items: center;
+}
+
+.avropFieldsGrid {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  // background-color: rgb(248, 249, 251);
+  // border: 1px solid #e2e6ed;
+  background: #f8f9fb;
+  border: 1px solid #e2e6ed;
+  border-radius: 12px;
+  padding: 16px 0;
+
+  @media (max-width: 700px) {
+    flex-wrap: wrap;
+  }
+}
+
+.avropFieldItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.avropFieldValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a2230;
+  line-height: 1.35;
+}
+
+.avropTableSection {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.avropTableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 8px;
+}
+
+.avropTableTitle {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #2f3743;
+}
+
+.avropDivider {
+  display: flex;
+  align-self: center;
+  width: 700px;
+  border-bottom: 1px solid rgba(47, 55, 67, 0.15);
+  margin: 14px 0;
+}
