@@ -1,8 +1,5 @@
 "use client";
 
-import AddIcon from "@mui/icons-material/Add";
-import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
@@ -296,7 +293,6 @@ export function FreightTab() {
 
     if (form.mode === "add") {
       setVirkeRows((prev) => [...prev, nextDraft]);
-      setLastFreightDraft(keepDialogValues ? nextDraft : null);
       setCreateFeedback((previous) => ({ open: true, key: previous.key + 1 }));
       if (keepDialogOpen) {
         setForm({ mode: "add", draft: keepDialogValues ? nextDraft : emptyVirkeRow() });
