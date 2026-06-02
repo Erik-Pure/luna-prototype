@@ -4,8 +4,9 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
+import SearchIcon from "@mui/icons-material/Search";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, TextField, Tooltip, Typography } from "@mui/material";
-import { useState, type RefObject } from "react";
+import { useRef, useState, type RefObject } from "react";
 import { ActionRow } from "../shared/ActionRow";
 import { ColumnManagerDropdown } from "../shared/ColumnManagerDropdown";
 import { DataTable } from "../shared/DataTable";
@@ -80,10 +81,31 @@ export function ContractRowsTab({
   const [isPriceEditMode, setIsPriceEditMode] = useState(false);
   const [isBulkUnitDialogOpen, setIsBulkUnitDialogOpen] = useState(false);
   const [bulkUnitValue, setBulkUnitValue] = useState<string>(INVOICE_UNIT_OPTIONS[0]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [filterValue, setFilterValue] = useState("");
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const selectRow = (rowIndex: number) => {
     setSelectedRow((previous) => (previous === rowIndex ? null : rowIndex));
   };
+
+  const handleToggleSearch = () => {
+    setIsSearchOpen((prev) => {
+      if (!prev) {
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+      }
+      return !prev;
+    });
+  };
+
+  const filteredRows = filterValue
+    ? rows.filter((row) =>
+      Object.values(row).some((cell) =>
+        String(cell ?? "").toLowerCase().includes(filterValue.toLowerCase())
+      )
+    )
+    : rows;
 
   const updateDraftRowField = (rowIndex: number, key: "aPris" | "enhet", value: string) => {
     const nextValue = key === "aPris" ? sanitizePriceInput(value) : value;
@@ -199,6 +221,40 @@ export function ContractRowsTab({
         items={actionRowItems}
         rightSlot={
           <>
+            <div className={styles.tableSearchWrapper} ref={searchWrapperRef}>
+              <Button
+                className={`${styles.lineItemsToggleButton} ${isSearchOpen ? styles.tableSearchButtonActive : ""}`}
+                variant="outlined"
+                size="small"
+                startIcon={<SearchIcon fontSize="small" />}
+                onClick={handleToggleSearch}
+                disabled={isPriceEditMode}
+              >
+                Filtrera
+              </Button>
+              {isSearchOpen ? (
+                <div className={styles.tableSearchDropdown}>
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    className={styles.tableSearchDropdownInput}
+                    placeholder="Filtrera i tabell..."
+                    value={filterValue}
+                    onChange={(e) => setFilterValue(e.target.value)}
+                  />
+                  {filterValue ? (
+                    <button
+                      type="button"
+                      className={styles.tableSearchDropdownClear}
+                      onClick={() => setFilterValue("")}
+                      aria-label="Rensa filtrering"
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
             <Tooltip title="Uppdatera" placement="top">
               <IconButton
                 size="small"
@@ -234,7 +290,7 @@ export function ContractRowsTab({
           <DataTable
             variant="line"
             columns={visibleColumns}
-            rows={rows}
+            rows={filteredRows}
             rowKey={(_row, index) => `contract-row-${index}`}
             selectedRowIndex={selectedRow}
             onRowClick={selectRow}

@@ -1,5 +1,7 @@
 "use client";
 
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
@@ -118,6 +120,7 @@ export function ContractDetailView({
   ];
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<HTMLElement | null>(null);
   const [sectionsPanelWidth, setSectionsPanelWidth] = useState<number | null>(null);
+  const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
 
   const isWide = useSyncExternalStore(
     (cb) => {
@@ -205,9 +208,6 @@ export function ContractDetailView({
               ) : null}
             </div>
             <div className={styles.contractModernTopActions}>
-              <Button className={styles.contractSaveButton} size="small" startIcon={<EditOutlinedIcon fontSize="small" />}>
-                Redigera
-              </Button>
               <Button className={styles.contractQuickActionButton} size="small" startIcon={<ReceiptLongOutlinedIcon fontSize="small" />}>
                 Orderbekräftelse
               </Button>
@@ -267,213 +267,232 @@ export function ContractDetailView({
           <div className={`${styles.contractBodyLayout} ${isWide ? styles.contractBodyLayoutWide : ""}`}>
             {/* Right on large / top on small: accordion detail sections */}
             <div
-              className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : ""} ${isExtraWide && !sectionsPanelWidth ? styles.contractBodySectionsColExtraWide : ""}`}
-              style={isWide && sectionsPanelWidth ? { width: sectionsPanelWidth, maxWidth: sectionsPanelWidth } : undefined}
+              className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : ""} ${isExtraWide && !sectionsPanelWidth && !isSectionsPanelCollapsed ? styles.contractBodySectionsColExtraWide : ""} ${isSectionsPanelCollapsed ? styles.contractBodySectionsColCollapsed : ""}`}
+              style={isWide && sectionsPanelWidth && !isSectionsPanelCollapsed ? { width: sectionsPanelWidth, maxWidth: sectionsPanelWidth } : undefined}
             >
-              {isWide ? (
+              {isWide && !isSectionsPanelCollapsed ? (
                 <div className={styles.contractSectionsResizeHandle} onMouseDown={startResizeSections} />
               ) : null}
 
-              {/* ── Allmänt ── */}
-              <Accordion defaultExpanded disableGutters elevation={0} className={styles.contractSectionAccordion}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
-                  <span className={styles.contractSectionTitleRow}>
-                    <InfoOutlinedIcon className={styles.contractSectionIcon} />
-                    <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
-                  </span>
-                </AccordionSummary>
-                <AccordionDetails className={styles.contractSectionDetailsArea}>
-                  <div className={styles.contractDataGridCompact}>
-                    {contractDetails.allmant.map((field) => (
-                      <div key={field.label} className={styles.contractDataItem}>
-                        <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                        <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                      </div>
-                    ))}
-                  </div>
-                  {contractDetails.kommentarer.length > 0 ? (
-                    <>
-                      <Divider className={styles.contractSectionDivider} />
-                      <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
-                      <div className={styles.contractDataGridCompact}>
-                        {contractDetails.kommentarer.map((field) => (
-                          <div key={field.label} className={`${styles.contractDataItem} ${styles.contractDataItemWide}`}>
+              {/* Panel header: minimize button left + Redigera button right */}
+              <div className={styles.contractSectionsPanelHeader}>
+                <IconButton
+                  size="small"
+                  className={styles.contractSectionsPanelMinimizeBtn}
+                  onClick={() => setIsSectionsPanelCollapsed((v) => !v)}
+                  title={isSectionsPanelCollapsed ? "Expandera sidopanel" : "Minimera sidopanel"}
+                >
+                  {isSectionsPanelCollapsed ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+                </IconButton>
+                {!isSectionsPanelCollapsed ? (
+                  <Button className={styles.contractSaveButton} size="small" startIcon={<EditOutlinedIcon fontSize="small" />}>
+                    Redigera
+                  </Button>
+                ) : null}
+              </div>
+
+              {!isSectionsPanelCollapsed ? (<>
+                {/* ── Allmänt ── */}
+                <Accordion defaultExpanded disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                    <span className={styles.contractSectionTitleRow}>
+                      <InfoOutlinedIcon className={styles.contractSectionIcon} />
+                      <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
+                    </span>
+                  </AccordionSummary>
+                  <AccordionDetails className={styles.contractSectionDetailsArea}>
+                    <div className={styles.contractDataGridCompact}>
+                      {contractDetails.allmant.map((field) => (
+                        <div key={field.label} className={styles.contractDataItem}>
+                          <Typography className={styles.contractDataLabel}>{field.label}</Typography>
+                          <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
+                        </div>
+                      ))}
+                    </div>
+                    {contractDetails.kommentarer.length > 0 ? (
+                      <>
+                        <Divider className={styles.contractSectionDivider} />
+                        <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
+                        <div className={styles.contractDataGridCompact}>
+                          {contractDetails.kommentarer.map((field) => (
+                            <div key={field.label} className={`${styles.contractDataItem} ${styles.contractDataItemWide}`}>
+                              <Typography className={styles.contractDataLabel}>{field.label}</Typography>
+                              <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+                  </AccordionDetails>
+                </Accordion>
+
+                {/* ── Villkor ── */}
+                <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                    <span className={styles.contractSectionTitleRow}>
+                      <GavelOutlinedIcon className={styles.contractSectionIcon} />
+                      <Typography className={styles.contractSectionTitle}>Villkor</Typography>
+                    </span>
+                  </AccordionSummary>
+                  <AccordionDetails className={styles.contractSectionDetailsArea}>
+                    {/* Valuta & Betalning */}
+                    <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; Betalning</Typography>
+                    <div className={styles.contractDataGridCompact}>
+                      {contractDetails.villkor
+                        .filter((f) => ["Valuta", "Betalningsvillkor", "Betalningsvillkor dagar", "Moms"].includes(f.label))
+                        .map((field) => (
+                          <div key={field.label} className={styles.contractDataItem}>
                             <Typography className={styles.contractDataLabel}>{field.label}</Typography>
                             <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
                           </div>
                         ))}
-                      </div>
-                    </>
-                  ) : null}
-                </AccordionDetails>
-              </Accordion>
-
-              {/* ── Villkor ── */}
-              <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
-                  <span className={styles.contractSectionTitleRow}>
-                    <GavelOutlinedIcon className={styles.contractSectionIcon} />
-                    <Typography className={styles.contractSectionTitle}>Villkor</Typography>
-                  </span>
-                </AccordionSummary>
-                <AccordionDetails className={styles.contractSectionDetailsArea}>
-                  {/* Valuta & Betalning */}
-                  <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; Betalning</Typography>
-                  <div className={styles.contractDataGridCompact}>
-                    {contractDetails.villkor
-                      .filter((f) => ["Valuta", "Betalningsvillkor", "Betalningsvillkor dagar", "Moms"].includes(f.label))
-                      .map((field) => (
-                        <div key={field.label} className={styles.contractDataItem}>
-                          <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                          <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                        </div>
-                      ))}
-                  </div>
-                  {/* Kontrakt & Leverans */}
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; Leverans</Typography>
-                  <div className={styles.contractDataGridCompact}>
-                    {contractDetails.villkor
-                      .filter((f) => ["Certifiering", "Kontraktsformular", "Kontraktsformulär", "Leveranssatt", "Leveranssätt", "Leveransvillkor", "Leveransvillkor ort"].includes(f.label))
-                      .map((field) => (
-                        <div key={field.label} className={styles.contractDataItem}>
-                          <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                          <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                        </div>
-                      ))}
-                  </div>
-                  {/* Agenter */}
-                  {contractDetails.villkor.some((f) => f.label.startsWith("Agent")) ? (
-                    <>
-                      <Divider className={styles.contractSectionDivider} />
-                      <Typography className={styles.contractSectionGroupLabel}>Agenter</Typography>
-                      <div className={styles.contractDataGridCompact}>
-                        {contractDetails.villkor
-                          .filter((f) => f.label.startsWith("Agent"))
-                          .map((field) => (
-                            <div key={field.label} className={styles.contractDataItem}>
-                              <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                              <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                            </div>
-                          ))}
-                      </div>
-                    </>
-                  ) : null}
-                  {/* Rabatter & Avgifter */}
-                  {contractDetails.villkor.some((f) => ["Kassarabatt", "Bonus", "Plocktillagg", "Plocktillägg", "Malningstillagg", "Målningstillägg", "Inforselavgift", "Införselavgift"].includes(f.label)) ? (
-                    <>
-                      <Divider className={styles.contractSectionDivider} />
-                      <Typography className={styles.contractSectionGroupLabel}>Rabatter &amp; Avgifter</Typography>
-                      <div className={styles.contractDataGridCompact}>
-                        {contractDetails.villkor
-                          .filter((f) => ["Kassarabatt", "Bonus", "Plocktillagg", "Plocktillägg", "Malningstillagg", "Målningstillägg", "Inforselavgift", "Införselavgift"].includes(f.label))
-                          .map((field) => (
-                            <div key={field.label} className={styles.contractDataItem}>
-                              <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                              <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                            </div>
-                          ))}
-                      </div>
-                    </>
-                  ) : null}
-                  {/* Lager */}
-                  {contractDetails.villkor.some((f) => f.label === "Konsignationslager") ? (
-                    <>
-                      <Divider className={styles.contractSectionDivider} />
-                      <Typography className={styles.contractSectionGroupLabel}>Lager</Typography>
-                      <div className={styles.contractDataGridCompact}>
-                        {contractDetails.villkor
-                          .filter((f) => f.label === "Konsignationslager")
-                          .map((field) => (
-                            <div key={field.label} className={styles.contractDataItem}>
-                              <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                              <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                            </div>
-                          ))}
-                      </div>
-                    </>
-                  ) : null}
-                </AccordionDetails>
-              </Accordion>
-
-              {/* ── Leverans ── */}
-              <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
-                  <span className={styles.contractSectionTitleRow}>
-                    <LocalShippingOutlinedIcon className={styles.contractSectionIcon} />
-                    <Typography className={styles.contractSectionTitle}>Leverans</Typography>
-                  </span>
-                </AccordionSummary>
-                <AccordionDetails className={styles.contractSectionDetailsArea}>
-                  <Typography className={styles.contractSectionGroupLabel}>Allmänt</Typography>
-                  <div className={styles.contractDataGridCompact}>
-                    {leveransAllmant.map((field) => (
-                      <div key={field.label} className={styles.contractDataItem}>
-                        <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                        <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                      </div>
-                    ))}
-                  </div>
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Lossning</Typography>
-                  <div className={styles.contractDataGridCompact}>
-                    {leveransLossning.map((field) => (
-                      <div key={field.label} className={styles.contractDataItem}>
-                        <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                        <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                      </div>
-                    ))}
-                  </div>
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Sjöfrakt</Typography>
-                  <div className={styles.contractDataGridCompact}>
-                    {leveransSjofrakt.map((field) => (
-                      <div key={field.label} className={styles.contractDataItem}>
-                        <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                        <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                      </div>
-                    ))}
-                  </div>
-                </AccordionDetails>
-              </Accordion>
-
-              {/* ── Dokument ── */}
-              <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
-                  <span className={styles.contractSectionTitleRow}>
-                    <FolderOutlinedIcon className={styles.contractSectionIcon} />
-                    <Typography className={styles.contractSectionTitle}>Dokument</Typography>
-                    {contractDetails.dokument.length > 0 ? (
-                      <Chip
-                        label={contractDetails.dokument.length}
-                        size="small"
-                        className={styles.contractSectionCountChip}
-                      />
-                    ) : null}
-                  </span>
-                </AccordionSummary>
-                <AccordionDetails className={styles.contractSectionDetailsArea}>
-                  {contractDetails.dokument.length === 0 ? (
-                    <Typography className={styles.contractDataLabel} style={{ padding: "4px 0", fontStyle: "italic" }}>
-                      Inga dokument uppladdade.
-                    </Typography>
-                  ) : (
-                    <div className={styles.contractDocumentList}>
-                      {contractDetails.dokument.map((doc) => (
-                        <div key={`${doc.name}-${doc.addedAt}`} className={styles.contractFileRow}>
-                          <span className={styles.contractFileRowIcon}>
-                            {doc.name.endsWith(".pdf") ? "📄" : doc.name.endsWith(".docx") ? "📝" : doc.name.endsWith(".xlsx") ? "📊" : "📁"}
-                          </span>
-                          <div className={styles.contractFileRowInfo}>
-                            <p className={styles.contractFileName}>{doc.name}</p>
-                            <p className={styles.contractFileSize}>{doc.size} — {doc.addedAt}</p>
+                    </div>
+                    {/* Kontrakt & Leverans */}
+                    <Divider className={styles.contractSectionDivider} />
+                    <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; Leverans</Typography>
+                    <div className={styles.contractDataGridCompact}>
+                      {contractDetails.villkor
+                        .filter((f) => ["Certifiering", "Kontraktsformular", "Kontraktsformulär", "Leveranssatt", "Leveranssätt", "Leveransvillkor", "Leveransvillkor ort"].includes(f.label))
+                        .map((field) => (
+                          <div key={field.label} className={styles.contractDataItem}>
+                            <Typography className={styles.contractDataLabel}>{field.label}</Typography>
+                            <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
                           </div>
+                        ))}
+                    </div>
+                    {/* Agenter */}
+                    {contractDetails.villkor.some((f) => f.label.startsWith("Agent")) ? (
+                      <>
+                        <Divider className={styles.contractSectionDivider} />
+                        <Typography className={styles.contractSectionGroupLabel}>Agenter</Typography>
+                        <div className={styles.contractDataGridCompact}>
+                          {contractDetails.villkor
+                            .filter((f) => f.label.startsWith("Agent"))
+                            .map((field) => (
+                              <div key={field.label} className={styles.contractDataItem}>
+                                <Typography className={styles.contractDataLabel}>{field.label}</Typography>
+                                <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
+                              </div>
+                            ))}
+                        </div>
+                      </>
+                    ) : null}
+                    {/* Rabatter & Avgifter */}
+                    {contractDetails.villkor.some((f) => ["Kassarabatt", "Bonus", "Plocktillagg", "Plocktillägg", "Malningstillagg", "Målningstillägg", "Inforselavgift", "Införselavgift"].includes(f.label)) ? (
+                      <>
+                        <Divider className={styles.contractSectionDivider} />
+                        <Typography className={styles.contractSectionGroupLabel}>Rabatter &amp; Avgifter</Typography>
+                        <div className={styles.contractDataGridCompact}>
+                          {contractDetails.villkor
+                            .filter((f) => ["Kassarabatt", "Bonus", "Plocktillagg", "Plocktillägg", "Malningstillagg", "Målningstillägg", "Inforselavgift", "Införselavgift"].includes(f.label))
+                            .map((field) => (
+                              <div key={field.label} className={styles.contractDataItem}>
+                                <Typography className={styles.contractDataLabel}>{field.label}</Typography>
+                                <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
+                              </div>
+                            ))}
+                        </div>
+                      </>
+                    ) : null}
+                    {/* Lager */}
+                    {contractDetails.villkor.some((f) => f.label === "Konsignationslager") ? (
+                      <>
+                        <Divider className={styles.contractSectionDivider} />
+                        <Typography className={styles.contractSectionGroupLabel}>Lager</Typography>
+                        <div className={styles.contractDataGridCompact}>
+                          {contractDetails.villkor
+                            .filter((f) => f.label === "Konsignationslager")
+                            .map((field) => (
+                              <div key={field.label} className={styles.contractDataItem}>
+                                <Typography className={styles.contractDataLabel}>{field.label}</Typography>
+                                <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
+                              </div>
+                            ))}
+                        </div>
+                      </>
+                    ) : null}
+                  </AccordionDetails>
+                </Accordion>
+
+                {/* ── Leverans ── */}
+                <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                    <span className={styles.contractSectionTitleRow}>
+                      <LocalShippingOutlinedIcon className={styles.contractSectionIcon} />
+                      <Typography className={styles.contractSectionTitle}>Leverans</Typography>
+                    </span>
+                  </AccordionSummary>
+                  <AccordionDetails className={styles.contractSectionDetailsArea}>
+                    <Typography className={styles.contractSectionGroupLabel}>Allmänt</Typography>
+                    <div className={styles.contractDataGridCompact}>
+                      {leveransAllmant.map((field) => (
+                        <div key={field.label} className={styles.contractDataItem}>
+                          <Typography className={styles.contractDataLabel}>{field.label}</Typography>
+                          <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
                         </div>
                       ))}
                     </div>
-                  )}
-                </AccordionDetails>
-              </Accordion>
+                    <Divider className={styles.contractSectionDivider} />
+                    <Typography className={styles.contractSectionGroupLabel}>Lossning</Typography>
+                    <div className={styles.contractDataGridCompact}>
+                      {leveransLossning.map((field) => (
+                        <div key={field.label} className={styles.contractDataItem}>
+                          <Typography className={styles.contractDataLabel}>{field.label}</Typography>
+                          <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
+                        </div>
+                      ))}
+                    </div>
+                    <Divider className={styles.contractSectionDivider} />
+                    <Typography className={styles.contractSectionGroupLabel}>Sjöfrakt</Typography>
+                    <div className={styles.contractDataGridCompact}>
+                      {leveransSjofrakt.map((field) => (
+                        <div key={field.label} className={styles.contractDataItem}>
+                          <Typography className={styles.contractDataLabel}>{field.label}</Typography>
+                          <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionDetails>
+                </Accordion>
+
+                {/* ── Dokument ── */}
+                <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                    <span className={styles.contractSectionTitleRow}>
+                      <FolderOutlinedIcon className={styles.contractSectionIcon} />
+                      <Typography className={styles.contractSectionTitle}>Dokument</Typography>
+                      {contractDetails.dokument.length > 0 ? (
+                        <Chip
+                          label={contractDetails.dokument.length}
+                          size="small"
+                          className={styles.contractSectionCountChip}
+                        />
+                      ) : null}
+                    </span>
+                  </AccordionSummary>
+                  <AccordionDetails className={styles.contractSectionDetailsArea}>
+                    {contractDetails.dokument.length === 0 ? (
+                      <Typography className={styles.contractDataLabel} style={{ padding: "4px 0", fontStyle: "italic" }}>
+                        Inga dokument uppladdade.
+                      </Typography>
+                    ) : (
+                      <div className={styles.contractDocumentList}>
+                        {contractDetails.dokument.map((doc) => (
+                          <div key={`${doc.name}-${doc.addedAt}`} className={styles.contractFileRow}>
+                            <span className={styles.contractFileRowIcon}>
+                              {doc.name.endsWith(".pdf") ? "📄" : doc.name.endsWith(".docx") ? "📝" : doc.name.endsWith(".xlsx") ? "📊" : "📁"}
+                            </span>
+                            <div className={styles.contractFileRowInfo}>
+                              <p className={styles.contractFileName}>{doc.name}</p>
+                              <p className={styles.contractFileSize}>{doc.size} — {doc.addedAt}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </AccordionDetails>
+                </Accordion>
+              </>) : null}
 
             </div>
 

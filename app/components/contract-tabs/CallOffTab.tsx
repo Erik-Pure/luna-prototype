@@ -22,7 +22,6 @@ import styles from "../../page.module.scss";
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type AvropFields = {
-  leveranskund: string;
   extAvropsnr: string;
   avropsdatum: string;
   status: string;
@@ -59,7 +58,6 @@ type AvropsradRow = {
 // ── Mock data ──────────────────────────────────────────────────────────────────
 
 const INITIAL_FIELDS: AvropFields = {
-  leveranskund: "Stocka Emballage",
   extAvropsnr: "EXT-001",
   avropsdatum: "2025-04-01",
   status: "Aktiv",
@@ -148,13 +146,12 @@ type EditAvropDialogProps = {
 };
 
 function EditAvropDialog({ open, onClose, fields, onSave }: EditAvropDialogProps) {
-  const [leveranskund, setLeveranskund] = useState(fields.leveranskund);
   const [extAvropsnr, setExtAvropsnr] = useState(fields.extAvropsnr);
   const [avropsdatum, setAvropsdatum] = useState(fields.avropsdatum);
   const [status, setStatus] = useState(fields.status);
 
   const handleSave = () => {
-    onSave({ leveranskund, extAvropsnr, avropsdatum, status });
+    onSave({ extAvropsnr, avropsdatum, status });
     onClose();
   };
 
@@ -166,14 +163,6 @@ function EditAvropDialog({ open, onClose, fields, onSave }: EditAvropDialogProps
         </div>
       </DialogTitle>
       <DialogContent style={{ display: "flex", flexDirection: "row", gap: 16, paddingTop: 8 }}>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
-          <Typography className={styles.searchFieldLabel}>Leveranskund</Typography>
-          <Select value={leveranskund} onChange={(e) => setLeveranskund(e.target.value)} size="small" fullWidth disabled readOnly>
-            <MenuItem value="Stocka Emballage">Stocka Emballage</MenuItem>
-            <MenuItem value="Billerud Korsnäs">Billerud Korsnäs</MenuItem>
-            <MenuItem value="SCA Timber">SCA Timber</MenuItem>
-          </Select>
-        </div>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
           <Typography className={styles.searchFieldLabel}>Ext avropsnr</Typography>
           <TextField
@@ -249,10 +238,6 @@ export function CallOffTab() {
         <div className={styles.avropFieldsCard}>
 
           <div className={styles.avropFieldsGrid}>
-            <div className={styles.avropFieldItem}>
-              <div className={styles.avropSummaryLabel}>Leveranskund</div>
-              <div className={styles.avropFieldValue}>{fields.leveranskund}</div>
-            </div>
             <div className={styles.avropFieldItem}>
               <div className={styles.avropSummaryLabel}>Ext avropsnr</div>
               <div className={styles.avropFieldValue}>{fields.extAvropsnr || "—"}</div>

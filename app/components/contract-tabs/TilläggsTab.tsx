@@ -239,7 +239,7 @@ export function TilläggsTab() {
                 </DialogTitle>
 
                 <DialogContent className={styles.freightDialogContent}>
-                    <div className={styles.freightFormGrid}>
+                    <div className={styles.avropFormGrid}>
                         <div className={styles.freightFormField}>
                             <Typography className={styles.freightFormLabel}>Enhet</Typography>
                             <Select size="small" className={styles.freightFormInput} value={draft.bolag} onChange={(e) => setDraftField("bolag", e.target.value)}>

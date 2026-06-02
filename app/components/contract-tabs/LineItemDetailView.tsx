@@ -1647,7 +1647,7 @@ export function LineItemDetailView({
                   variant="contained"
                   onClick={handleNextStep}
                 >
-                  Spara och gå vidare
+                  Gå vidare
                 </Button>
                 <Button
                   className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
@@ -2429,7 +2429,7 @@ export function LineItemDetailView({
                     </DialogTitle>
                     <DialogContent className={styles.freightDialogContent}>
                       {lengthDistributionDraft !== null ? (
-                        <div className={styles.freightFormGrid}>
+                        <div className={styles.avropFormGrid}>
                           <div className={styles.freightFormField}>
                             <Typography className={styles.freightFormLabel}>Längd</Typography>
                             <TextField
@@ -2605,9 +2605,9 @@ export function LineItemDetailView({
                     <DialogContent className={styles.freightDialogContent}>
                       {callOffDraft !== null ? (
                         <>
-                          <div className={styles.freightFormCard}>
+                          <div className={styles.avropFormCard}>
                             <Typography className={styles.callOffSectionTitle}>Artikel</Typography>
-                            <div className={styles.freightFormGrid}>
+                            <div className={styles.avropFormGrid}>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>ArtNr</Typography><Select size="small" value={callOffDraft.artNr} onChange={(e) => setCallOffDraftField("artNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera ArtNr</Typography><Select size="small" value={callOffDraft.levereraArtNr} onChange={(e) => setCallOffDraftField("levereraArtNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Fakturatext</Typography><TextField size="small" value={callOffDraft.fakturatext} onChange={(e) => setCallOffDraftField("fakturatext", e.target.value)} className={styles.freightFormInput} /></div>
@@ -2618,9 +2618,9 @@ export function LineItemDetailView({
                             </div>
                           </div>
 
-                          <div className={styles.freightFormCard}>
+                          <div className={styles.avropFormCard}>
                             <Typography className={styles.callOffSectionTitle}>Volym &amp; pris</Typography>
-                            <div className={styles.freightFormGrid}>
+                            <div className={styles.avropFormGrid}>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Mängd</Typography><TextField size="small" value={callOffDraft.mangd} onChange={(e) => setCallOffDraftField("mangd", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Apris</Typography><TextField size="small" value={callOffDraft.aPris} onChange={(e) => setCallOffDraftField("aPris", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Beställd enhet</Typography><Select size="small" value={callOffDraft.enhet} onChange={(e) => setCallOffDraftField("enhet", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="m3 nominell">m3 nominell</MenuItem><MenuItem value="m3 fast">m3 fast</MenuItem><MenuItem value="lpm">lpm</MenuItem><MenuItem value="st">st</MenuItem></Select></div>
@@ -2631,17 +2631,17 @@ export function LineItemDetailView({
                             </div>
                           </div>
 
-                          <div className={styles.freightFormCard}>
+                          <div className={styles.avropFormCard}>
                             <Typography className={styles.callOffSectionTitle}>Leverans</Typography>
-                            <div className={styles.freightFormGrid}>
+                            <div className={styles.avropFormGrid}>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransvecka</Typography><TextField size="small" value={callOffDraft.leveransvecka} onChange={(e) => setCallOffDraftField("leveransvecka", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransdag</Typography><Select size="small" value={callOffDraft.leveransdag} onChange={(e) => setCallOffDraftField("leveransdag", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Måndag">Måndag</MenuItem><MenuItem value="Tisdag">Tisdag</MenuItem><MenuItem value="Onsdag">Onsdag</MenuItem><MenuItem value="Torsdag">Torsdag</MenuItem><MenuItem value="Fredag">Fredag</MenuItem></Select></div>
                             </div>
                           </div>
 
-                          <div className={styles.freightFormCard}>
+                          <div className={styles.avropFormCard}>
                             <Typography className={styles.callOffSectionTitle}>Tillägg</Typography>
-                            <div className={styles.freightFormGrid}>
+                            <div className={styles.avropFormGrid}>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg min</Typography><TextField size="small" value={callOffDraft.plocktillaggMin} onChange={(e) => setCallOffDraftField("plocktillaggMin", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg</Typography><TextField size="small" value={callOffDraft.plocktillagg} onChange={(e) => setCallOffDraftField("plocktillagg", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg</Typography><TextField size="small" value={callOffDraft.malningstillagg} onChange={(e) => setCallOffDraftField("malningstillagg", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} /></div>
@@ -2649,9 +2649,9 @@ export function LineItemDetailView({
                             </div>
                           </div>
 
-                          <div className={styles.freightFormCard}>
+                          <div className={styles.avropFormCard}>
                             <Typography className={styles.callOffSectionTitle}>Övrigt</Typography>
-                            <div className={styles.freightFormGrid}>
+                            <div className={styles.avropFormGrid}>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Lastorder volym</Typography><TextField size="small" value={callOffDraft.lastorderVolym} onChange={(e) => setCallOffDraftField("lastorderVolym", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Levererad volym</Typography><TextField size="small" value={callOffDraft.leveradVolym} onChange={(e) => setCallOffDraftField("leveradVolym", e.target.value)} className={styles.freightFormInput} /></div>
                               <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Intern kommentar</Typography><TextField size="small" value={callOffDraft.internKommentar} onChange={(e) => setCallOffDraftField("internKommentar", e.target.value)} className={styles.freightFormInput} /></div>
@@ -2841,7 +2841,7 @@ export function LineItemDetailView({
                     </DialogTitle>
                     <DialogContent className={styles.freightDialogContent}>
                       {periodiseringDraft !== null ? (
-                        <div className={styles.freightFormGrid}>
+                        <div className={styles.avropFormGrid}>
                           <div className={styles.freightFormField}>
                             <Typography className={styles.freightFormLabel}>Leveransvecka</Typography>
                             <TextField
@@ -3013,7 +3013,7 @@ export function LineItemDetailView({
                               Antal rader
                             </button>
                           </div>
-                          <div className={styles.freightFormGrid}>
+                          <div className={styles.avropFormGrid}>
                             {autoPeriodiseringDraft.step0Mode === "antalRader" ? (
                               <div className={styles.freightFormField}>
                                 <Typography className={styles.freightFormLabel}>Antal periodiseringsrader</Typography>
@@ -3394,7 +3394,7 @@ export function LineItemDetailView({
                       </DialogTitle>
                       <DialogContent className={styles.freightDialogContent}>
                         {productionPlanningDraft !== null ? (
-                          <div className={styles.freightFormGrid}>
+                          <div className={styles.avropFormGrid}>
                             <div className={styles.freightFormField}>
                               <Typography className={styles.freightFormLabel}>Producerande bolag</Typography>
                               <TextField

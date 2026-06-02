@@ -36,6 +36,9 @@ type VirkeRow = {
   avtalsrutt: string;
   frakt: string;
   fraktCurrency: CurrencyCode;
+};
+
+type GlobalFreightCosts = {
   sped: string;
   spedCurrency: CurrencyCode;
   sjofrakt: string;
@@ -46,15 +49,16 @@ type VirkeRow = {
 
 type FreightRow = Record<string, string | undefined>;
 type VirkeColumnKey = keyof VirkeRow | "totalFraktkostnad" | "_actions";
-type FreightAmountKey = "frakt" | "sped" | "sjofrakt" | "haulage";
-type FreightCurrencyKey = "fraktCurrency" | "spedCurrency" | "sjofraktCurrency" | "haulageCurrency";
 
-const FREIGHT_FIELDS: Array<{
-  amountKey: FreightAmountKey;
-  currencyKey: FreightCurrencyKey;
+const FREIGHT_FIELDS = [
+  { amountKey: "frakt" as const, currencyKey: "fraktCurrency" as const, label: "Frakt Bil / Jvg" },
+];
+
+const GLOBAL_FREIGHT_FIELDS: Array<{
+  amountKey: "sped" | "sjofrakt" | "haulage";
+  currencyKey: "spedCurrency" | "sjofraktCurrency" | "haulageCurrency";
   label: string;
 }> = [
-    { amountKey: "frakt", currencyKey: "fraktCurrency", label: "Frakt Bil / Jvg" },
     { amountKey: "sped", currencyKey: "spedCurrency", label: "Sped/termkostn." },
     { amountKey: "sjofrakt", currencyKey: "sjofraktCurrency", label: "Sjöfrakt" },
     { amountKey: "haulage", currencyKey: "haulageCurrency", label: "Haulage" },
@@ -83,9 +87,6 @@ const VIRKE_COLUMNS: Array<{ key: VirkeColumnKey; label: string; pinnedRight?: b
   { key: "bolag", label: "Enhet" },
   { key: "avtalsrutt", label: "Avtalsrutt" },
   { key: "frakt", label: "Frakt Bil / Jvg" },
-  { key: "sped", label: "Sped/termkostn." },
-  { key: "sjofrakt", label: "Sjöfrakt" },
-  { key: "haulage", label: "Haulage" },
   { key: "totalFraktkostnad", label: "Total fraktkostnad" },
   { key: "_actions", label: "", pinnedRight: true },
 ];
@@ -96,12 +97,6 @@ const emptyVirkeRow = (): VirkeRow => ({
   avtalsrutt: "",
   frakt: "",
   fraktCurrency: DEFAULT_CURRENCY,
-  sped: "",
-  spedCurrency: DEFAULT_CURRENCY,
-  sjofrakt: "",
-  sjofraktCurrency: DEFAULT_CURRENCY,
-  haulage: "",
-  haulageCurrency: DEFAULT_CURRENCY,
 });
 
 const emptyStröproduktRow = (): VirkeRow => ({
@@ -110,17 +105,11 @@ const emptyStröproduktRow = (): VirkeRow => ({
   avtalsrutt: "",
   frakt: "0",
   fraktCurrency: DEFAULT_CURRENCY,
-  sped: "0",
-  spedCurrency: DEFAULT_CURRENCY,
-  sjofrakt: "0",
-  sjofraktCurrency: DEFAULT_CURRENCY,
-  haulage: "0",
-  haulageCurrency: DEFAULT_CURRENCY,
 });
 
 const LEGACY_INITIAL_VIRKE_ROWS: Array<Partial<VirkeRow>> = [
-  { typ: "Virke", bolag: "NT Hissmofors Såg", avtalsrutt: "Krokom - Mariestad", frakt: "123 SEK", sped: "0 SEK", sjofrakt: "0 SEK", haulage: "0 SEK" },
-  { typ: "Ströprodukt", bolag: "NT Hissmofors Såg", avtalsrutt: "Krokom - Mariestad", frakt: "123 SEK", sped: "0 SEK", sjofrakt: "0 SEK", haulage: "0 SEK" },
+  { typ: "Virke", bolag: "NT Hissmofors Såg", avtalsrutt: "Krokom - Mariestad", frakt: "123 SEK" },
+  { typ: "Ströprodukt", bolag: "NT Hissmofors Såg", avtalsrutt: "Krokom - Mariestad", frakt: "123 SEK" },
 ];
 
 const isCurrencyCode = (value: string | undefined): value is CurrencyCode =>
@@ -180,36 +169,54 @@ const formatCurrencyValue = (value: number, currency: CurrencyCode): string => {
   }).format(value)} ${currency}`;
 };
 
-const getFreightDisplayValue = (row: VirkeRow, amountKey: FreightAmountKey): string => {
-  const field = FREIGHT_FIELDS.find((entry) => entry.amountKey === amountKey);
-  if (!field) {
-    return "-";
-  }
-
-  const amount = row[amountKey].trim();
+const getFreightDisplayValue = (row: VirkeRow): string => {
+  const amount = row.frakt.trim();
   if (!amount) {
     return "-";
   }
-
-  return formatCurrencyValue(parseAmountInput(amount), row[field.currencyKey]);
+  return formatCurrencyValue(parseAmountInput(amount), row.fraktCurrency);
 };
 
-const getTotalFreightCost = (row: VirkeRow): number =>
-  FREIGHT_FIELDS.reduce((sum, field) => sum + parseAmountInput(row[field.amountKey]), 0);
+const getGlobalTotalSummary = (global: GlobalFreightCosts): string => {
+  const entries = [
+    { amount: global.sped, currency: global.spedCurrency },
+    { amount: global.sjofrakt, currency: global.sjofraktCurrency },
+    { amount: global.haulage, currency: global.haulageCurrency },
+  ].filter((e) => e.amount.trim() !== "");
 
-const getTotalFreightSummary = (row: VirkeRow): string => {
-  const activeFields = FREIGHT_FIELDS.filter((field) => row[field.amountKey].trim() !== "");
+  if (entries.length === 0) return "–";
 
-  if (activeFields.length === 0) {
+  const currencies = [...new Set(entries.map((e) => e.currency))];
+  if (currencies.length !== 1) return "Blandad valuta";
+
+  const total = entries.reduce((sum, e) => sum + parseAmountInput(e.amount), 0);
+  return formatCurrencyValue(total, currencies[0]);
+};
+
+const getTotalFreightCost = (row: VirkeRow, global: GlobalFreightCosts): number =>
+  parseAmountInput(row.frakt) +
+  parseAmountInput(global.sped) +
+  parseAmountInput(global.sjofrakt) +
+  parseAmountInput(global.haulage);
+
+const getTotalFreightSummary = (row: VirkeRow, global: GlobalFreightCosts): string => {
+  const entries: Array<{ amount: string; currency: CurrencyCode }> = [
+    { amount: row.frakt, currency: row.fraktCurrency },
+    { amount: global.sped, currency: global.spedCurrency },
+    { amount: global.sjofrakt, currency: global.sjofraktCurrency },
+    { amount: global.haulage, currency: global.haulageCurrency },
+  ].filter((e) => e.amount.trim() !== "");
+
+  if (entries.length === 0) {
     return formatCurrencyValue(0, DEFAULT_CURRENCY);
   }
 
-  const currencies = [...new Set(activeFields.map((field) => row[field.currencyKey]))];
+  const currencies = [...new Set(entries.map((e) => e.currency))];
   if (currencies.length !== 1) {
     return "Blandad valuta";
   }
 
-  return formatCurrencyValue(getTotalFreightCost(row), currencies[0]);
+  return formatCurrencyValue(getTotalFreightCost(row, global), currencies[0]);
 };
 
 type FormState =
@@ -219,6 +226,16 @@ type FormState =
 
 export function FreightTab() {
   const [virkeRows, setVirkeRows] = useState<VirkeRow[]>(INITIAL_VIRKE_ROWS);
+  const [globalCosts, setGlobalCosts] = useState<GlobalFreightCosts>({
+    sped: "",
+    spedCurrency: DEFAULT_CURRENCY,
+    sjofrakt: "",
+    sjofraktCurrency: DEFAULT_CURRENCY,
+    haulage: "",
+    haulageCurrency: DEFAULT_CURRENCY,
+  });
+  const [globalCostsDialogOpen, setGlobalCostsDialogOpen] = useState(false);
+  const [globalCostsDraft, setGlobalCostsDraft] = useState<GlobalFreightCosts | null>(null);
   const [selectedSnittRow, setSelectedSnittRow] = useState<number | null>(null);
   const [freightInfoOpen, setFreightInfoOpen] = useState(false);
   const [selectedVirkeRow, setSelectedVirkeRow] = useState<number | null>(null);
@@ -227,6 +244,24 @@ export function FreightTab() {
   const [keepDialogValues, setKeepDialogValues] = useState(false);
   const [createFeedback, setCreateFeedback] = useState({ open: false, key: 0 });
   const [deleteDialogRow, setDeleteDialogRow] = useState<{ index: number; row: VirkeRow } | null>(null);
+
+  const startGlobalCostsEdit = () => {
+    setGlobalCostsDraft({ ...globalCosts });
+    setGlobalCostsDialogOpen(true);
+  };
+
+  const saveGlobalCosts = () => {
+    if (globalCostsDraft) {
+      setGlobalCosts(globalCostsDraft);
+    }
+    setGlobalCostsDialogOpen(false);
+    setGlobalCostsDraft(null);
+  };
+
+  const cancelGlobalCostsEdit = () => {
+    setGlobalCostsDialogOpen(false);
+    setGlobalCostsDraft(null);
+  };
 
   const openEdit = (index: number) => {
     setForm({ mode: "edit", index, draft: normalizeVirkeRow(virkeRows[index]) });
@@ -313,12 +348,13 @@ export function FreightTab() {
 
   const draft = form.mode !== "closed" ? form.draft : null;
   const isDialogOpen = draft !== null;
-  const totalFreightSummary = draft ? getTotalFreightSummary(draft) : getTotalFreightSummary(emptyVirkeRow());
+  const totalFreightSummary = draft ? getTotalFreightSummary(draft, globalCosts) : getTotalFreightSummary(emptyVirkeRow(), globalCosts);
 
   return (
     <div className={[styles.freightTabContent, styles.freightTabContentAdditionalInfo].join(" ")}>
       <div className={styles.freightSection}>
-        <div className={styles.freightSectionHeaderEnd}>
+        <div className={styles.freightSectionHeader} style={{ margin: "0 auto", width: 900 }}>
+          <Typography className={styles.freightFormTitle}>Gemensamma fraktkostnader per rad</Typography>
           <Tooltip title="Info" placement="top">
             <IconButton
               size="small"
@@ -341,15 +377,109 @@ export function FreightTab() {
             <Typography className={styles.freightInfoText}>
               Fraktrader för virke och ströprodukter läggs till automatiskt utifrån avtalsrutt. Värdet för Frakt Bil / Jvg hämtas från C-Load och kan, likt eventuella övriga fraktkostnader, justeras manuellt.
             </Typography>
+            <Typography className={styles.freightInfoText} style={{ marginTop: 16 }}>
+              Gemensamma fraktkostnader läggs på varje rad i tabellen och summeras i kolumnen Total fraktkostnad.
+            </Typography>
           </DialogContent>
           <DialogActions>
-            {/* Gör texten grå istället för orange */}
             <Button onClick={() => setFreightInfoOpen(false)} sx={{ textTransform: "none", color: "#252525" }}>Stäng</Button>
+          </DialogActions>
+        </Dialog>
+
+        <div className={styles.freightFormCard} style={{ margin: "0 auto" }}>
+          <div className={styles.freightGlobalRow}>
+            {GLOBAL_FREIGHT_FIELDS.map((field) => {
+              const amount = globalCosts[field.amountKey].trim();
+              const displayValue = amount
+                ? formatCurrencyValue(parseAmountInput(amount), globalCosts[field.currencyKey])
+                : "–";
+              return (
+                <div key={field.amountKey} className={styles.freightFormField}>
+                  <Typography className={styles.freightFormLabel}>{field.label}</Typography>
+                  <Typography className={styles.freightGlobalReadOnlyValue}>{displayValue}</Typography>
+                </div>
+              );
+            })}
+            <div className={styles.freightGlobalReadOnlyDivider} />
+            <div className={styles.freightFormField}>
+              <Typography className={styles.freightFormLabel}>Totalt tillägg per rad</Typography>
+              <Typography className={`${styles.freightGlobalReadOnlyValue} ${styles.freightGlobalReadOnlyTotal}`}>
+                {getGlobalTotalSummary(globalCosts) === "–" ? "0 SEK" : getGlobalTotalSummary(globalCosts)}
+              </Typography>
+            </div>
+            <div style={{ marginLeft: "auto", alignSelf: "center", display: "flex", gap: 6, flexShrink: 0 }}>
+              <Button size="small" className={styles.freightSaveButton} style={{ paddingLeft: "12px", paddingRight: "12px" }} onClick={startGlobalCostsEdit}>
+                Redigera
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Dialog: Redigera gemensamma fraktkostnader */}
+        <Dialog
+          open={globalCostsDialogOpen}
+          onClose={cancelGlobalCostsEdit}
+          maxWidth="md"
+          fullWidth
+          classes={{ paper: styles.freightDialogPaper }}
+        >
+          <DialogTitle className={styles.freightDialogTitle}>Gemensamma fraktkostnader per rad</DialogTitle>
+          <DialogContent className={styles.freightDialogContent}>
+            <div className={styles.freightFormGrid}>
+              {GLOBAL_FREIGHT_FIELDS.map((field) => (
+                <div key={field.amountKey} className={styles.freightFormField}>
+                  <Typography className={styles.freightFormLabel}>{field.label}</Typography>
+                  <div className={styles.freightAmountCurrencyRow}>
+                    <TextField
+                      size="small"
+                      value={globalCostsDraft?.[field.amountKey] ?? ""}
+                      onChange={(e) =>
+                        setGlobalCostsDraft((prev) => prev ? { ...prev, [field.amountKey]: e.target.value } : prev)
+                      }
+                      className={`${styles.freightFormInput} ${styles.freightAmountInput}`}
+                      placeholder="0"
+                      variant="outlined"
+                    />
+                    <Select
+                      size="small"
+                      value={globalCostsDraft?.[field.currencyKey] ?? DEFAULT_CURRENCY}
+                      onChange={(e) =>
+                        setGlobalCostsDraft((prev) => prev ? { ...prev, [field.currencyKey]: e.target.value as CurrencyCode } : prev)
+                      }
+                      className={`${styles.freightFormInput} ${styles.freightCurrencyInput}`}
+                    >
+                      {CURRENCY_OPTIONS.map((currency) => (
+                        <MenuItem key={currency} value={currency}>
+                          {currency}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+          <DialogActions className={styles.freightDialogActions}>
+            <div className={styles.freightTotalCostWrap}>
+              <Typography className={styles.freightTotalCostLabel}>Totalt tillägg per rad</Typography>
+              <Typography className={styles.freightTotalCostValue}>
+                {globalCostsDraft
+                  ? (getGlobalTotalSummary(globalCostsDraft) === "–" ? "0 SEK" : getGlobalTotalSummary(globalCostsDraft))
+                  : "0 SEK"}
+              </Typography>
+            </div>
+            <Button size="small" className={styles.freightSaveButton} onClick={saveGlobalCosts}>
+              Spara
+            </Button>
+            <Button size="small" className={styles.freightCancelButton} onClick={cancelGlobalCostsEdit}>
+              Avbryt
+            </Button>
           </DialogActions>
         </Dialog>
 
         <div className={styles.freightTableWrap}>
           <div className={styles.freightTable}>
+            <Typography className={styles.freightFormTitle} style={{ marginBottom: 14 }}>Fraktkostnader</Typography>
             <DataTable
               variant="line"
               columns={VIRKE_COLUMNS}
@@ -359,7 +489,6 @@ export function FreightTab() {
               onRowClick={(index) => setSelectedVirkeRow((prev) => (prev === index ? null : index))}
               renderCell={(row, column, rowIndex) => {
                 if (column.key === "_actions") {
-                  const virkeRow = row as VirkeRow;
                   return (
                     <span className={styles.freightActionCell}>
                       <IconButton
@@ -376,10 +505,10 @@ export function FreightTab() {
                   );
                 }
                 if (column.key === "totalFraktkostnad") {
-                  return getTotalFreightSummary(row as VirkeRow);
+                  return getTotalFreightSummary(row as VirkeRow, globalCosts);
                 }
-                if (["frakt", "sped", "sjofrakt", "haulage"].includes(column.key)) {
-                  return getFreightDisplayValue(row as VirkeRow, column.key as FreightAmountKey);
+                if (column.key === "frakt") {
+                  return getFreightDisplayValue(row as VirkeRow);
                 }
                 return row[column.key as keyof VirkeRow];
               }}
@@ -424,82 +553,84 @@ export function FreightTab() {
           </DialogTitle>
           <DialogContent className={styles.freightDialogContent}>
             {draft !== null ? (
-              <div className={styles.freightFormGrid}>
-                <div className={styles.freightFormField}>
-                  <Typography className={styles.freightFormLabel}>Typ</Typography>
-                  <Select
-                    size="small"
-                    value={draft.typ}
-                    onChange={(e) => setDraftField("typ", e.target.value as ProductType)}
-                    className={styles.freightFormInput}
-                    disabled={form.mode === "add" || form.mode === "edit"}
-                  >
-                    <MenuItem value="Virke">Virke</MenuItem>
-                    <MenuItem value="Ströprodukt">Ströprodukt</MenuItem>
-                  </Select>
-                </div>
-                <div className={styles.freightFormField}>
-                  <Typography className={styles.freightFormLabel}>Enhet</Typography>
-                  <Select
-                    size="small"
-                    value={draft.bolag}
-                    onChange={(e) => setDraftField("bolag", e.target.value)}
-                    className={styles.freightFormInput}
-                  >
-                    {UNIT_OPTIONS.map((unit) => (
-                      <MenuItem key={unit} value={unit}>
-                        {unit}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </div>
-                <div className={styles.freightFormField}>
-                  <Typography className={styles.freightFormLabel}>Avtalsrutt</Typography>
-                  <Select
-                    size="small"
-                    value={draft.avtalsrutt}
-                    onChange={(e) => setDraftField("avtalsrutt", e.target.value)}
-                    className={styles.freightFormInput}
-                  >
-                    {ROUTE_OPTIONS.map((route) => (
-                      <MenuItem key={route} value={route}>
-                        {route}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </div>
-                {FREIGHT_FIELDS.map((field) => (
-                  <div key={field.amountKey} className={styles.freightFormField}>
-                    <Typography className={styles.freightFormLabel}>{field.label}</Typography>
-                    <div className={styles.freightAmountCurrencyRow}>
-                      <TextField
-                        size="small"
-                        value={draft[field.amountKey]}
-                        onChange={(e) => setDraftField(field.amountKey, e.target.value)}
-                        className={`${styles.freightFormInput} ${styles.freightAmountInput}`}
-                      />
-                      <Select
-                        size="small"
-                        value={draft[field.currencyKey]}
-                        onChange={(e) => setDraftField(field.currencyKey, e.target.value as CurrencyCode)}
-                        className={`${styles.freightFormInput} ${styles.freightCurrencyInput}`}
-                      >
-                        {CURRENCY_OPTIONS.map((currency) => (
-                          <MenuItem key={currency} value={currency}>
-                            {currency}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </div>
+              <>
+                <div className={styles.freightFormGrid}>
+                  <div className={styles.freightFormField}>
+                    <Typography className={styles.freightFormLabel}>Typ</Typography>
+                    <Select
+                      size="small"
+                      value={draft.typ}
+                      onChange={(e) => setDraftField("typ", e.target.value as ProductType)}
+                      className={styles.freightFormInput}
+                      disabled={form.mode === "add" || form.mode === "edit"}
+                    >
+                      <MenuItem value="Virke">Virke</MenuItem>
+                      <MenuItem value="Ströprodukt">Ströprodukt</MenuItem>
+                    </Select>
                   </div>
-                ))}
-              </div>
+                  <div className={styles.freightFormField}>
+                    <Typography className={styles.freightFormLabel}>Enhet</Typography>
+                    <Select
+                      size="small"
+                      value={draft.bolag}
+                      onChange={(e) => setDraftField("bolag", e.target.value)}
+                      className={styles.freightFormInput}
+                    >
+                      {UNIT_OPTIONS.map((unit) => (
+                        <MenuItem key={unit} value={unit}>
+                          {unit}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </div>
+                  <div className={styles.freightFormField}>
+                    <Typography className={styles.freightFormLabel}>Avtalsrutt</Typography>
+                    <Select
+                      size="small"
+                      value={draft.avtalsrutt}
+                      onChange={(e) => setDraftField("avtalsrutt", e.target.value)}
+                      className={styles.freightFormInput}
+                    >
+                      {ROUTE_OPTIONS.map((route) => (
+                        <MenuItem key={route} value={route}>
+                          {route}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </div>
+                  {FREIGHT_FIELDS.map((field) => (
+                    <div key={field.amountKey} className={styles.freightFormField}>
+                      <Typography className={styles.freightFormLabel}>{field.label}</Typography>
+                      <div className={styles.freightAmountCurrencyRow}>
+                        <TextField
+                          size="small"
+                          value={draft[field.amountKey]}
+                          onChange={(e) => setDraftField(field.amountKey, e.target.value)}
+                          className={`${styles.freightFormInput} ${styles.freightAmountInput}`}
+                        />
+                        <Select
+                          size="small"
+                          value={draft[field.currencyKey]}
+                          onChange={(e) => setDraftField(field.currencyKey, e.target.value as CurrencyCode)}
+                          className={`${styles.freightFormInput} ${styles.freightCurrencyInput}`}
+                        >
+                          {CURRENCY_OPTIONS.map((currency) => (
+                            <MenuItem key={currency} value={currency}>
+                              {currency}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : null}
           </DialogContent>
           <DialogActions className={styles.freightDialogActions}>
             {form.mode !== "closed" ? (
               <div className={styles.freightTotalCostWrap}>
-                <Typography className={styles.freightTotalCostLabel}>Total fraktkostnad</Typography>
+                <Typography className={styles.freightTotalCostLabel}>Total fraktkostnad (inkl. gemensamma)</Typography>
                 <Typography className={styles.freightTotalCostValue}>{totalFreightSummary}</Typography>
               </div>
             ) : null}
@@ -542,7 +673,7 @@ export function FreightTab() {
 
         <div className={styles.freightSnittCard}>
           <div className={styles.freightSnittHeader}>
-            <Typography className={styles.freightSnittTitle}>
+            <Typography className={styles.freightFormTitle}>
 
               Snittpriser i C-Load (valuta/m3) till Mariestad
             </Typography>

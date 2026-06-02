@@ -2307,6 +2307,33 @@
   width: 380px;
 }
 
+.contractBodySectionsColCollapsed {
+  width: 40px !important;
+  max-width: 40px !important;
+  min-width: 40px !important;
+  padding: 10px 4px !important;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.contractSectionsPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  min-height: 32px;
+}
+
+.contractSectionsPanelMinimizeBtn {
+  color: #6b7280 !important;
+  flex-shrink: 0;
+}
+
+.contractSectionsPanelMinimizeBtn:hover {
+  color: #1a2233 !important;
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
 .contractBodyTabsCol {
   display: flex;
   flex-direction: column;
@@ -5218,6 +5245,19 @@
   color: #ffffff !important;
 }
 
+:global(html[data-color-mode="dark"]) .contractSectionsPanelHeader {
+  border-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .contractSectionsPanelMinimizeBtn {
+  color: #8a93a6 !important;
+}
+
+:global(html[data-color-mode="dark"]) .contractSectionsPanelMinimizeBtn:hover {
+  color: #dbe1ea !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
 :global(html[data-color-mode="dark"]) .columnsDropdownFooter {
   border-color: #3a3f4a;
   background-color: #1f222a;
@@ -6976,7 +7016,73 @@
   font-weight: 700 !important;
 }
 
+.freightTableHint {
+  font-size: 11px !important;
+  color: #9eaabb;
+  margin-bottom: 12px !important;
+}
+
+.freightCostBreakdown {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #f4f6fa;
+  border: 1px solid #e2e7f0;
+  border-radius: 6px;
+}
+
+.freightCostBreakdownTitle {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: #9eaabb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px !important;
+}
+
+.freightCostBreakdownRows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.freightCostBreakdownRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #4f5968;
+}
+
+.freightCostBreakdownTotal {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid #d0d7e2;
+  font-weight: 600;
+  color: #2f3743;
+}
+
+.freightCostBreakdownShared {
+  font-size: 10.5px;
+  color: #9eaabb;
+  margin-left: 2px;
+  flex: 1;
+}
+
 .freightFormCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e2e7f0;
+  border-radius: 8px;
+  background-color: #f9fafc;
+  margin-bottom: 18px;
+  width: 900px;
+}
+
+.avropFormCard {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -6990,13 +7096,33 @@
 .freightFormTitle {
   color: #2f3743;
   font-size: 13px !important;
-  font-weight: 600;
+  font-weight: 600 !important;
 }
 
 .freightFormGrid {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 24px;
+}
+
+.avropFormGrid {
+  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
+  gap: 24px;
+}
+
+.freightGlobalCostsRow {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  .freightFormGrid {
+    flex: 1;
+    min-width: 0;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 18px;
+  }
 }
 
 .avropFormGrid {
@@ -7059,6 +7185,79 @@
   gap: 8px;
 }
 
+.freightGlobalReadOnlyGrid {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.freightGlobalRow {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.freightGlobalEditField {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.freightFieldReadOnly {
+  :global(.MuiOutlinedInput-root) {
+    pointer-events: none;
+    background-color: transparent;
+  }
+
+  :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: #dde3ec !important;
+  }
+}
+
+.freightGlobalReadOnlyDivider {
+  width: 1px;
+  height: 32px;
+  background: #dde3ec;
+  flex-shrink: 0;
+}
+
+.freightGlobalEditRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+
+  .freightGlobalEditField {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 220px;
+  }
+
+  .freightGlobalEditActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+    padding-bottom: 1px;
+  }
+}
+
+.freightGlobalReadOnlyValue {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #2f3743;
+  line-height: 1.4;
+}
+
+.freightGlobalReadOnlyTotal {
+  font-weight: 700 !important;
+}
+
 .freightSaveButton {
   min-height: 28px;
   background-color: var(--color-champagne) !important;
@@ -7067,6 +7266,10 @@
   font-weight: 600 !important;
   text-transform: none !important;
   box-shadow: none !important;
+
+  &:disabled {
+    opacity: 0.5 !important;
+  }
 
   &:hover {
     background-color: var(--color-champagne-dark) !important;
