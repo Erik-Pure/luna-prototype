@@ -1638,7 +1638,7 @@ export function LineItemDetailView({
                   setIsBytBolagDialogOpen(true);
                 }}
               >
-                Byt bolag
+                Byt enhet
               </Button>
               <Button className={styles.contractQuickActionButton} size="small">
                 Visa träd
@@ -3554,7 +3554,7 @@ export function LineItemDetailView({
       >
         <DialogTitle className={styles.freightDialogTitle}>
           <div className={styles.freightDialogTitleRow}>
-            <span>Byt bolag</span>
+            <span>Byt enhet</span>
           </div>
         </DialogTitle>
         <DialogContent className={styles.freightDialogContent}>
