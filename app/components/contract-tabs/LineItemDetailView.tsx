@@ -759,6 +759,8 @@ export function LineItemDetailView({
   const [productionPlanningCreateFeedback, setProductionPlanningCreateFeedback] = useState({ open: false, key: 0 });
   const [nettolagerRows] = useState<NettolagerRow[]>(NETTOLAGER_FETCHED_ROWS);
   const [selectedNettolagerRow, setSelectedNettolagerRow] = useState<number | null>(null);
+  const [isBytBolagDialogOpen, setIsBytBolagDialogOpen] = useState(false);
+  const [bytBolagDraft, setBytBolagDraft] = useState({ senderCompany: "", senderWarehouse: "", responsibleCompany: "" });
   const [newLineItemDraft, setNewLineItemDraft] = useState<NewLineItemDraft>({
     ...(isNewLineItem ? emptyNewLineItemDraft : existingLineItemDraft),
     ...newDraftSeed
