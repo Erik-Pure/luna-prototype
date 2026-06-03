@@ -2322,6 +2322,12 @@
   justify-content: space-between;
   padding-bottom: 8px;
   min-height: 32px;
+  position: sticky;
+  top: -10;
+  z-index: 10;
+  background-color: #fafafa;
+  margin: -10px -12px 0;
+  padding: 10px 12px;
 }
 
 .contractSectionsPanelMinimizeBtn {
@@ -5247,6 +5253,7 @@
 
 :global(html[data-color-mode="dark"]) .contractSectionsPanelHeader {
   border-color: #3a3f4a;
+  background-color: #1a1d24;
 }
 
 :global(html[data-color-mode="dark"]) .contractSectionsPanelMinimizeBtn {
@@ -7079,12 +7086,13 @@
   border-radius: 8px;
   background-color: #f9fafc;
   margin-bottom: 18px;
-  width: 900px;
+  width: 700px;
 }
 
 .avropFormCard {
   display: flex;
   flex-direction: column;
+
   gap: 12px;
   padding: 12px 14px;
   border: 1px solid #e2e7f0;

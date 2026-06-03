@@ -13,7 +13,7 @@ import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { Accordion, AccordionDetails, AccordionSummary, Button, Chip, Divider, IconButton, Menu, MenuItem, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Button, Chip, Divider, IconButton, Menu, MenuItem, Tooltip, Typography } from "@mui/material";
 import { useState, useSyncExternalStore, type MouseEvent, type RefObject } from "react";
 import { CallOffTab } from "./contract-tabs/CallOffTab";
 import { ContractRowsTab } from "./contract-tabs/ContractRowsTab";
@@ -217,14 +217,6 @@ export function ContractDetailView({
               <IconButton
                 size="small"
                 className={styles.contractHeaderDotsButton}
-                aria-label="Skriv ut"
-                title="Skriv ut"
-              >
-                <PrintOutlinedIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                className={styles.contractHeaderDotsButton}
                 aria-label="Fler åtgärder"
                 onClick={openMoreMenu}
               >
@@ -276,14 +268,17 @@ export function ContractDetailView({
 
               {/* Panel header: minimize button left + Redigera button right */}
               <div className={styles.contractSectionsPanelHeader}>
-                <IconButton
-                  size="small"
-                  className={styles.contractSectionsPanelMinimizeBtn}
-                  onClick={() => setIsSectionsPanelCollapsed((v) => !v)}
-                  title={isSectionsPanelCollapsed ? "Expandera sidopanel" : "Minimera sidopanel"}
-                >
-                  {isSectionsPanelCollapsed ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
-                </IconButton>
+                <Tooltip title={isSectionsPanelCollapsed ? "Expandera kontrakshuvud" : "Minimera kontrakshuvud"}>
+                  <IconButton
+                    size="small"
+                    // className={styles.columnsIconButton}
+                    className={styles.contractSectionsPanelMinimizeBtn}
+                    onClick={() => setIsSectionsPanelCollapsed((v) => !v)}
+                  // title={isSectionsPanelCollapsed ? "Expandera sidopanel" : "Minimera sidopanel"}
+                  >
+                    {isSectionsPanelCollapsed ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+                  </IconButton>
+                </Tooltip>
                 {!isSectionsPanelCollapsed ? (
                   <Button className={styles.contractSaveButton} size="small" startIcon={<EditOutlinedIcon fontSize="small" />}>
                     Redigera

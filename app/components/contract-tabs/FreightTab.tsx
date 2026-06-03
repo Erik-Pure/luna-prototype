@@ -353,7 +353,7 @@ export function FreightTab() {
   return (
     <div className={[styles.freightTabContent, styles.freightTabContentAdditionalInfo].join(" ")}>
       <div className={styles.freightSection}>
-        <div className={styles.freightSectionHeader} style={{ margin: "0 auto", width: 900 }}>
+        <div className={styles.freightSectionHeader} style={{ margin: "0 auto", width: 700 }}>
           <Typography className={styles.freightFormTitle}>Gemensamma fraktkostnader per rad</Typography>
           <Tooltip title="Info" placement="top">
             <IconButton
@@ -402,7 +402,7 @@ export function FreightTab() {
             })}
             <div className={styles.freightGlobalReadOnlyDivider} />
             <div className={styles.freightFormField}>
-              <Typography className={styles.freightFormLabel}>Totalt tillägg per rad</Typography>
+              <Typography className={styles.freightFormLabel}>Totalt frakttillägg per rad</Typography>
               <Typography className={`${styles.freightGlobalReadOnlyValue} ${styles.freightGlobalReadOnlyTotal}`}>
                 {getGlobalTotalSummary(globalCosts) === "–" ? "0 SEK" : getGlobalTotalSummary(globalCosts)}
               </Typography>
@@ -461,7 +461,7 @@ export function FreightTab() {
           </DialogContent>
           <DialogActions className={styles.freightDialogActions}>
             <div className={styles.freightTotalCostWrap}>
-              <Typography className={styles.freightTotalCostLabel}>Totalt tillägg per rad</Typography>
+              <Typography className={styles.freightTotalCostLabel}>Totalt frakttillägg per rad</Typography>
               <Typography className={styles.freightTotalCostValue}>
                 {globalCostsDraft
                   ? (getGlobalTotalSummary(globalCostsDraft) === "–" ? "0 SEK" : getGlobalTotalSummary(globalCostsDraft))
