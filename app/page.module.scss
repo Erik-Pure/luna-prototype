@@ -7029,6 +7029,115 @@
   margin-bottom: 12px !important;
 }
 
+/* ── Leveransbokade paket ── */
+.paketbokningFiltersRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0 8px;
+  border-bottom: 1px solid #e8ecf2;
+  margin-bottom: 12px;
+}
+
+.paketbokningFilterField {
+  min-width: 160px;
+}
+
+.paketbokningFilterShort {
+  width: 96px;
+}
+
+.paketbokningSearchBtn {
+  background-color: var(--color-champagne, #c8963e) !important;
+  color: #fff !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  border-radius: 6px !important;
+  padding: 5px 16px !important;
+}
+
+.paketbokningActionsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+}
+
+.paketbokningActionBtn {
+  text-transform: none !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+  border-color: #d0d5de !important;
+  color: #2b3244 !important;
+
+  &:disabled {
+    opacity: 0.45;
+  }
+}
+
+.paketbokningActionBtnDanger {
+  text-transform: none !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+  border-color: #f5c2c2 !important;
+  color: #c0392b !important;
+
+  &:disabled {
+    opacity: 0.45;
+  }
+}
+
+.paketbokningActionSep {
+  width: 1px;
+  height: 22px;
+  background: #dde2ea;
+  margin: 0 2px;
+}
+
+.paketbokningListTitle {
+  margin-bottom: 6px;
+  color: #2b3244;
+}
+
+.paketbokningFooter {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: #f8f8f8;
+  // border: 1px solid #c3dff0;
+  border-radius: 0 0 6px 6px;
+  padding: 6px 14px;
+  margin-top: -1px;
+  font-size: 12px;
+}
+
+.paketbokningFooterItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paketbokningFooterLabel {
+  color: #5a6477;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.paketbokningFooterValue {
+  color: #1a2233;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fff;
+  // border: 1px solid #b8d4e8;
+  border-radius: 3px;
+  padding: 1px 8px;
+  min-width: 48px;
+  text-align: center;
+}
+
 .freightCostBreakdown {
   margin-top: 14px;
   padding: 10px 12px;

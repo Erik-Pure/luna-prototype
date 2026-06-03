@@ -1624,6 +1624,20 @@ export function LineItemDetailView({
               <Button className={styles.contractSaveButton} size="small" startIcon={<EditOutlinedIcon fontSize="small" />}>
                 Redigera
               </Button>
+              <Button
+                className={styles.contractQuickActionButton}
+                size="small"
+                onClick={() => {
+                  setBytBolagDraft({
+                    senderCompany: newLineItemDraft.senderCompany,
+                    senderWarehouse: newLineItemDraft.senderWarehouse,
+                    responsibleCompany: newLineItemDraft.responsibleCompany,
+                  });
+                  setIsBytBolagDialogOpen(true);
+                }}
+              >
+                Byt bolag
+              </Button>
               <Button className={styles.contractQuickActionButton} size="small">
                 Visa träd
               </Button>
@@ -2679,7 +2693,7 @@ export function LineItemDetailView({
                         <div className={`${styles.periodiseringStatCardCombined}${periodiseringArIbalans ? ` ${styles.periodiseringStatCardCombinedDone}` : ""}`}>
                           <div className={styles.periodiseringStatCardSide}>
                             <div className={styles.periodiseringStatCardHeader}>
-                              <Inventory2OutlinedIcon className={styles.periodiseringStatCardIcon} />
+                              {/* <Inventory2OutlinedIcon className={styles.periodiseringStatCardIcon} /> */}
                               <span>Återstår</span>
                             </div>
                             <div className={styles.periodiseringStatCardValue}>
@@ -2690,7 +2704,7 @@ export function LineItemDetailView({
                           <div className={styles.periodiseringStatCardDivider} />
                           <div className={styles.periodiseringStatCardSide}>
                             <div className={styles.periodiseringStatCardHeader}>
-                              <EventOutlinedIcon className={styles.periodiseringStatCardIcon} />
+                              {/* <EventOutlinedIcon className={styles.periodiseringStatCardIcon} /> */}
                               <span>Periodiserat</span>
                               {periodiseringArIbalans ? (
                                 <CheckCircleIcon className={styles.periodiseringStatDoneIcon} />
@@ -3528,6 +3542,77 @@ export function LineItemDetailView({
           Fyll i alla obligatoriska fält innan du går vidare
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={isBytBolagDialogOpen}
+        onClose={() => setIsBytBolagDialogOpen(false)}
+        fullWidth
+        maxWidth="md"
+        classes={{ paper: styles.freightDialogPaper }}
+      >
+        <DialogTitle className={styles.freightDialogTitle}>
+          <div className={styles.freightDialogTitleRow}>
+            <span>Byt bolag</span>
+          </div>
+        </DialogTitle>
+        <DialogContent className={styles.freightDialogContent}>
+          <div className={styles.avropFormGrid}>
+            <div className={styles.freightFormField}>
+              <Typography className={styles.freightFormLabel}>Utlastande enhet</Typography>
+              <FormControl size="small" className={styles.freightFormInput}>
+                <Select
+                  value={bytBolagDraft.senderCompany}
+                  onChange={(e) => setBytBolagDraft((prev) => ({ ...prev, senderCompany: e.target.value }))}
+                >
+                  <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
+                  <MenuItem value="Moelven">Moelven</MenuItem>
+                </Select>
+              </FormControl>
+            </div>
+            <div className={styles.freightFormField}>
+              <Typography className={styles.freightFormLabel}>Ansvarig enhet</Typography>
+              <FormControl size="small" className={styles.freightFormInput}>
+                <Select
+                  value={bytBolagDraft.responsibleCompany}
+                  onChange={(e) => setBytBolagDraft((prev) => ({ ...prev, responsibleCompany: e.target.value }))}
+                >
+                  <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
+                  <MenuItem value="Moelven">Moelven</MenuItem>
+                </Select>
+              </FormControl>
+            </div>
+            <div className={styles.freightFormField}>
+              <Typography className={styles.freightFormLabel}>Utlastande lagerställe</Typography>
+              <FormControl size="small" className={styles.freightFormInput}>
+                <Select
+                  value={bytBolagDraft.senderWarehouse}
+                  onChange={(e) => setBytBolagDraft((prev) => ({ ...prev, senderWarehouse: e.target.value }))}
+                >
+                  <MenuItem value="Krokom">Krokom</MenuItem>
+                  <MenuItem value="Hissmofors">Hissmofors</MenuItem>
+                </Select>
+              </FormControl>
+            </div>
+          </div>
+        </DialogContent>
+        <DialogActions className={styles.freightDialogActions}>
+          <Button
+            size="small"
+            className={styles.freightSaveButton}
+            onClick={() => {
+              updateDraftField("senderCompany", bytBolagDraft.senderCompany);
+              updateDraftField("senderWarehouse", bytBolagDraft.senderWarehouse);
+              updateDraftField("responsibleCompany", bytBolagDraft.responsibleCompany);
+              setIsBytBolagDialogOpen(false);
+            }}
+          >
+            Spara
+          </Button>
+          <Button size="small" className={styles.freightCancelButton} onClick={() => setIsBytBolagDialogOpen(false)}>
+            Avbryt
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }
