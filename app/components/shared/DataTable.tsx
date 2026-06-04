@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, type ReactNode } from "react";
+import type React from "react";
 import styles from "../../page.module.scss";
 
 type DataTableColumn = {
@@ -19,8 +20,9 @@ type DataTableProps<TRow extends Record<string, string | undefined>> = {
   rows: TRow[];
   rowKey: (row: TRow, index: number) => string;
   selectedRowIndex: number | null;
-  onRowClick: (index: number) => void;
+  onRowClick: (index: number, event?: React.MouseEvent) => void;
   renderCell?: (row: TRow, column: DataTableColumn, rowIndex: number, columnIndex: number) => ReactNode;
+  renderHeaderCell?: (column: DataTableColumn, columnIndex: number) => ReactNode;
   fillRemainingSpace?: boolean;
 };
 
@@ -32,6 +34,7 @@ export function DataTable<TRow extends Record<string, string | undefined>>({
   selectedRowIndex,
   onRowClick,
   renderCell,
+  renderHeaderCell,
   fillRemainingSpace = false
 }: DataTableProps<TRow>) {
   const headerClass = variant === "main" ? styles.tableHeader : styles.lineItemsHeaderRow;
@@ -123,7 +126,7 @@ export function DataTable<TRow extends Record<string, string | undefined>>({
                   : undefined
               }
             >
-              {column.label}
+              {renderHeaderCell ? renderHeaderCell(column, columnIndex) : column.label}
             </div>
           </Fragment>
         ))}
@@ -136,7 +139,7 @@ export function DataTable<TRow extends Record<string, string | undefined>>({
         <div
           key={rowKey(row, rowIndex)}
           className={`${rowClass} ${selectedRowIndex === rowIndex ? selectedClass : ""}`}
-          onClick={() => onRowClick(rowIndex)}
+          onClick={(e) => onRowClick(rowIndex, e)}
         >
           {columns.map((column, columnIndex) => (
             <Fragment key={`${rowKey(row, rowIndex)}-${column.key}`}>

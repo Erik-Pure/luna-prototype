@@ -95,6 +95,11 @@ type AppShellLayoutProps = {
   isCreatingPriceRow: boolean;
   priceListDetailHref: string | null;
   customerListHref: string;
+  isAvropDetailOpen: boolean;
+  selectedAvropsradId: string | null;
+  isCreatingAvrop: boolean;
+  returnLineItemId: string | null;
+  lineItemDetailHref: string | null;
   children: ReactNode;
 };
 
@@ -140,6 +145,11 @@ export function AppShellLayout({
   isCreatingPriceRow,
   priceListDetailHref,
   customerListHref,
+  isAvropDetailOpen,
+  selectedAvropsradId,
+  isCreatingAvrop,
+  returnLineItemId,
+  lineItemDetailHref,
   children
 }: AppShellLayoutProps) {
   return (
@@ -345,6 +355,24 @@ export function AppShellLayout({
                 <ChevronRightIcon className={styles.breadcrumbArrow} />
                 {isCustomerDetailOpen ? (
                   <Typography className={styles.breadcrumbActive}>{selectedCustomerName}</Typography>
+                ) : isAvropDetailOpen ? (
+                  <>
+                    <Typography component={Link} href={contractDetailHref ?? contractListHref} className={styles.breadcrumbLinkButton}>
+                      Kontrakt {selectedContractId}
+                    </Typography>
+                    {returnLineItemId ? (
+                      <>
+                        <ChevronRightIcon className={styles.breadcrumbArrow} />
+                        <Typography component={Link} href={lineItemDetailHref ?? contractDetailHref ?? contractListHref} className={styles.breadcrumbLinkButton}>
+                          Kontraktsrad {returnLineItemId}
+                        </Typography>
+                      </>
+                    ) : null}
+                    <ChevronRightIcon className={styles.breadcrumbArrow} />
+                    <Typography className={styles.breadcrumbActive}>
+                      {isCreatingAvrop ? "Ny avropsrad" : `Avropsrad ${selectedAvropsradId}`}
+                    </Typography>
+                  </>
                 ) : isLineItemDetailOpen ? (
                   <>
                     <Typography component={Link} href={contractDetailHref ?? contractListHref} className={styles.breadcrumbLinkButton}>

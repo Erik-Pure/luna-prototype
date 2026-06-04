@@ -1643,6 +1643,11 @@ export default function Home() {
         isCreatingPriceRow={isCreatingPriceRow}
         priceListDetailHref={selectedPriceListId ? `/${sectionSlug}/${menuSlug}/${selectedPriceListId}` : null}
         customerListHref="/marknad/kundlista"
+        isAvropDetailOpen={isAvropDetailOpen}
+        selectedAvropsradId={selectedAvropsradId}
+        isCreatingAvrop={isCreatingAvrop}
+        returnLineItemId={_savedReturnLineItemId}
+        lineItemDetailHref={_savedReturnLineItemId && selectedContractId ? `/${sectionSlug}/${menuSlug}/${selectedContractId}/${_savedReturnLineItemId}` : null}
       >
 
         {isHomePage ? (

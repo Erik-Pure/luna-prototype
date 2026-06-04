@@ -2,7 +2,6 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
@@ -25,12 +24,13 @@ import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox,
 import { getContractDetails, type ContractDocument } from "./contractDetails";
 import { DataTable } from "../shared/DataTable";
 import styles from "../../page.module.scss";
+import { PaketbokningView, type BokadPaketRow } from "./PaketbokningView";
 
 const lineItemDetailTabs = [
   "Längdfördelning",
   "Periodisering",
   "Nettolager",
-  "Avropsrad",
+  "Avropsrader",
   "Produktionsplanering",
   "Leveransbokade paket"
 ] as const;
@@ -453,28 +453,7 @@ const NETTOLAGER_FETCHED_ROWS: NettolagerRow[] = [
 ];
 
 // ── Leveransbokade paket ──────────────────────────────────────
-type BokadPaketRow = {
-  paketnr: string;
-  lpm: string;
-  produkt: string;
-  lagerstalle: string;
-  lagerplats: string;
-  mdlangd: string;
-  skaLastasUt: string;
-};
-
-type PaketbokningResultRow = {
-  paketnr: string;
-  lpm: string;
-  produkt: string;
-  lagerstalle: string;
-  lagerplats: string;
-  mdlangd: string;
-  status: string;
-};
-
 type BokadPaketColumnKey = keyof BokadPaketRow | "_actions";
-type PaketbokningColumnKey = "_select" | keyof PaketbokningResultRow;
 
 const BOKADE_PAKET_COLUMNS: Array<{ key: BokadPaketColumnKey; label: string; pinnedRight?: boolean }> = [
   { key: "paketnr", label: "Paketnr" },
@@ -487,37 +466,13 @@ const BOKADE_PAKET_COLUMNS: Array<{ key: BokadPaketColumnKey; label: string; pin
   { key: "_actions", label: "", pinnedRight: true },
 ];
 
-const PAKETBOKNING_RESULT_COLUMNS: Array<{ key: PaketbokningColumnKey; label: string; pinnedRight?: boolean }> = [
-  { key: "_select", label: "" },
-  { key: "paketnr", label: "Paketnr" },
-  { key: "lpm", label: "Lpm" },
-  { key: "produkt", label: "Produkt" },
-  { key: "lagerstalle", label: "Lagerställe" },
-  { key: "lagerplats", label: "Lagerplats" },
-  { key: "mdlangd", label: "Mdlängd" },
-  { key: "status", label: "Status" },
-];
-
 const INITIAL_BOKADE_PAKET: BokadPaketRow[] = [
   { paketnr: "15134", lpm: "123", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "A1-01", mdlangd: "123", skaLastasUt: "Ja" },
 ];
 
-const PAKETBOKNING_MOCK_RESULTS: PaketbokningResultRow[] = [
-  { paketnr: "15201", lpm: "45", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "A1-02", mdlangd: "300", status: "Tillgänglig" },
-  { paketnr: "15202", lpm: "62", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "A1-03", mdlangd: "360", status: "Tillgänglig" },
-  { paketnr: "15203", lpm: "38", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "B2-01", mdlangd: "420", status: "Tillgänglig" },
-  { paketnr: "15204", lpm: "71", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "BP Hammerdal", lagerplats: "C3-05", mdlangd: "300", status: "Tillgänglig" },
-  { paketnr: "15205", lpm: "55", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "BP Hammerdal", lagerplats: "C3-06", mdlangd: "360", status: "Tillgänglig" },
-];
-
-const RESERVATIONSTYP_OPTIONS = ["Kontraktrad", "Reservationsorder", "Intern"] as const;
-
 type PaketbokningNavState =
   | { open: false }
   | { open: true; reservationstyp: string; returnTo: "leveransbokadePaket" | "callOffForm" };
-const ENHET_OPTIONS = ["BP Hammerdal Byggprodukter", "BP Hissmofors Byggprodukter", "BP Kåge Byggprodukter", "NT Hissmofors Såg", "NT Kåge Såg"] as const;
-const VFL_GRUPP_OPTIONS = ["Grupp A", "Grupp B", "Grupp C"] as const;
-const KONTRAKT_PRODUKT_OPTIONS = ["163508: 5x150 Furu Svarvad Stolp", "163509: 22x95 Gran Ytterpanel", "163510: 45x145 Gran Konstruktionsvirke"] as const;
 
 const emptyPeriodiseringRow = (): Omit<PeriodiseringRow, "id"> => ({
   leveransvecka: "",
@@ -834,17 +789,6 @@ export function LineItemDetailView({
   const [bokadePaketRows, setBokadePaketRows] = useState<BokadPaketRow[]>(INITIAL_BOKADE_PAKET);
   const [paketbokningNav, setPaketbokningNav] = useState<PaketbokningNavState>({ open: false });
   const [callOffFormTab, setCallOffFormTab] = useState<"form" | "leveransbokadePaket">("form");
-  const [paketbokningFilters, setPaketbokningFilters] = useState({
-    reservationstyp: "Kontraktrad" as string,
-    kontraktProdukt: "163508: 5x150 Furu Svarvad Stolp" as string,
-    enhet: "BP Hammerdal Byggprodukter" as string,
-    langdMin: "",
-    langdMax: "",
-    vflGrupp: "",
-  });
-  const [paketbokningResults, setPaketbokningResults] = useState<PaketbokningResultRow[]>([]);
-  const [paketbokningSearched, setPaketbokningSearched] = useState(false);
-  const [selectedPaketRows, setSelectedPaketRows] = useState<Set<number>>(new Set());
   const [isBytBolagDialogOpen, setIsBytBolagDialogOpen] = useState(false);
   const [bytBolagDraft, setBytBolagDraft] = useState({ senderCompany: "", senderWarehouse: "", responsibleCompany: "" });
   const [newLineItemDraft, setNewLineItemDraft] = useState<NewLineItemDraft>({
@@ -1584,10 +1528,6 @@ export function LineItemDetailView({
   const isCreateCallOffView = callOffForm.mode === "add";
 
   const openPaketbokning = (reservationstyp: string, returnTo: "leveransbokadePaket" | "callOffForm") => {
-    setPaketbokningFilters((prev) => ({ ...prev, reservationstyp }));
-    setPaketbokningResults([]);
-    setPaketbokningSearched(false);
-    setSelectedPaketRows(new Set());
     setPaketbokningNav({ open: true, reservationstyp, returnTo });
   };
 
@@ -2432,185 +2372,18 @@ export function LineItemDetailView({
             </div>
             <div className={styles.contractDetailMainContent}>
               {paketbokningNav.open ? (
-                <div className={styles.freightTabContent}>
-                  <div className={styles.paketbokningViewHeader}>
-                    <Button
-                      size="small"
-                      startIcon={<ArrowBackIcon fontSize="small" />}
-                      className={styles.paketbokningBackButton}
-                      onClick={closePaketbokning}
-                    >
-                      Tillbaka
-                    </Button>
-                    <Typography className={styles.paketbokningViewTitle}>Paketbokning</Typography>
-                  </div>
-                  <div className={styles.paketbokningFiltersRow}>
-                    <FormControl size="small" className={styles.paketbokningFilterField}>
-                      <InputLabel>Reservationstyp</InputLabel>
-                      <Select
-                        value={paketbokningFilters.reservationstyp}
-                        label="Reservationstyp"
-                        onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, reservationstyp: e.target.value }))}
-                      >
-                        {RESERVATIONSTYP_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                    <FormControl size="small" className={styles.paketbokningFilterField} style={{ minWidth: 220 }}>
-                      <InputLabel>Kontrakt:Produkt</InputLabel>
-                      <Select
-                        value={paketbokningFilters.kontraktProdukt}
-                        label="Kontrakt:Produkt"
-                        onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, kontraktProdukt: e.target.value }))}
-                      >
-                        {KONTRAKT_PRODUKT_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                    <FormControl size="small" className={styles.paketbokningFilterField} style={{ minWidth: 200 }}>
-                      <InputLabel>Enhet</InputLabel>
-                      <Select
-                        value={paketbokningFilters.enhet}
-                        label="Enhet"
-                        onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, enhet: e.target.value }))}
-                      >
-                        {ENHET_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                    <TextField
-                      size="small"
-                      label="Längd min"
-                      value={paketbokningFilters.langdMin}
-                      onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, langdMin: e.target.value }))}
-                      className={styles.paketbokningFilterShort}
-                    />
-                    <TextField
-                      size="small"
-                      label="Längd max"
-                      value={paketbokningFilters.langdMax}
-                      onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, langdMax: e.target.value }))}
-                      className={styles.paketbokningFilterShort}
-                    />
-                    <FormControl size="small" className={styles.paketbokningFilterField}>
-                      <InputLabel>VFL grupp</InputLabel>
-                      <Select
-                        value={paketbokningFilters.vflGrupp}
-                        label="VFL grupp"
-                        onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, vflGrupp: e.target.value }))}
-                      >
-                        <MenuItem value=""><em>Alla</em></MenuItem>
-                        {VFL_GRUPP_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                    <Button
-                      size="small"
-                      variant="contained"
-                      className={styles.paketbokningSearchBtn}
-                      onClick={() => {
-                        setPaketbokningResults(PAKETBOKNING_MOCK_RESULTS);
-                        setPaketbokningSearched(true);
-                        setSelectedPaketRows(new Set());
-                      }}
-                    >
-                      Sök
-                    </Button>
-                  </div>
-
-                  <div className={styles.paketbokningActionsRow}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      className={styles.paketbokningActionBtn}
-                      disabled={selectedPaketRows.size === 0}
-                      onClick={() => {
-                        const newRows: BokadPaketRow[] = [...selectedPaketRows].map((idx) => {
-                          const r = paketbokningResults[idx]!;
-                          return { paketnr: r.paketnr, lpm: r.lpm, produkt: r.produkt, lagerstalle: r.lagerstalle, lagerplats: r.lagerplats, mdlangd: r.mdlangd, skaLastasUt: "Nej" };
-                        });
-                        setBokadePaketRows((prev) => [...prev, ...newRows]);
-                        setPaketbokningResults((prev) => prev.filter((_, i) => !selectedPaketRows.has(i)));
-                        setSelectedPaketRows(new Set());
-                        closePaketbokning();
-                      }}
-                    >
-                      Reservera
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      className={styles.paketbokningActionBtn}
-                      // startIcon={<RefreshOutlinedIcon fontSize="small" />}
-                      disabled={selectedPaketRows.size === 0}
-                      onClick={() => {
-                        const newRows: BokadPaketRow[] = [...selectedPaketRows].map((idx) => {
-                          const r = paketbokningResults[idx]!;
-                          return { paketnr: r.paketnr, lpm: r.lpm, produkt: r.produkt, lagerstalle: r.lagerstalle, lagerplats: r.lagerplats, mdlangd: r.mdlangd, skaLastasUt: "Ja" };
-                        });
-                        setBokadePaketRows((prev) => [...prev, ...newRows]);
-                        setPaketbokningResults((prev) => prev.filter((_, i) => !selectedPaketRows.has(i)));
-                        setSelectedPaketRows(new Set());
-                        closePaketbokning();
-                      }}
-                    >
-                      Ska lastas ut
-                    </Button>
-                    <div className={styles.paketbokningActionSep} />
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      className={styles.paketbokningActionBtnDanger}
-                      disabled={selectedPaketRows.size === 0}
-                      onClick={() => {
-                        setPaketbokningResults((prev) => prev.filter((_, i) => !selectedPaketRows.has(i)));
-                        setSelectedPaketRows(new Set());
-                      }}
-                    >
-                      Ta bort reservation
-                    </Button>
-                  </div>
-
-                  {paketbokningSearched ? (
-                    <div className={styles.lineItemsTableFrame}>
-                      <div className={styles.freightTableWrap}>
-                        <div className={styles.freightTable}>
-                          <DataTable
-                            variant="line"
-                            fillRemainingSpace
-                            columns={PAKETBOKNING_RESULT_COLUMNS}
-                            rows={paketbokningResults}
-                            rowKey={(row, index) => `pbr-${row.paketnr}-${index}`}
-                            selectedRowIndex={null}
-                            onRowClick={(index) => {
-                              setSelectedPaketRows((prev) => {
-                                const next = new Set(prev);
-                                if (next.has(index)) { next.delete(index); } else { next.add(index); }
-                                return next;
-                              });
-                            }}
-                            renderCell={(row, column, rowIndex) => {
-                              if (column.key === "_select") {
-                                return (
-                                  <Checkbox
-                                    size="small"
-                                    checked={selectedPaketRows.has(rowIndex)}
-                                    onChange={() => {
-                                      setSelectedPaketRows((prev) => {
-                                        const next = new Set(prev);
-                                        if (next.has(rowIndex)) { next.delete(rowIndex); } else { next.add(rowIndex); }
-                                        return next;
-                                      });
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                    sx={{ padding: "2px" }}
-                                  />
-                                );
-                              }
-                              return row[column.key as keyof PaketbokningResultRow] ?? "-";
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
+                <PaketbokningView
+                  initialReservationstyp={paketbokningNav.reservationstyp}
+                  onBack={closePaketbokning}
+                  onReservera={(rows) => {
+                    setBokadePaketRows((prev) => [...prev, ...rows]);
+                    closePaketbokning();
+                  }}
+                  onSkaLastasUt={(rows) => {
+                    setBokadePaketRows((prev) => [...prev, ...rows]);
+                    closePaketbokning();
+                  }}
+                />
               ) : activeTab === "Längdfördelning" ? (
                 <div className={styles.freightTabContent}>
                   <div className={styles.freightSection}>
@@ -2621,7 +2394,7 @@ export function LineItemDetailView({
                           startIcon={<AddIcon />}
                           onClick={openLengthDistributionAdd}
                         >
-                          Ny
+                          Ny längdfördelning
                         </Button>
                         <span className={styles.lengthDistributionControlsDivider} aria-hidden="true" />
                         <label className={styles.freightDialogKeepOpen}>
@@ -2794,7 +2567,7 @@ export function LineItemDetailView({
                     </Alert>
                   </Snackbar>
                 </div>
-              ) : activeTab === "Avropsrad" ? (
+              ) : activeTab === "Avropsrader" ? (
                 <div className={styles.freightTabContent}>
                   {callOffForm.mode !== "closed" ? (
                     <div className={styles.callOffFormView}>
@@ -2974,7 +2747,7 @@ export function LineItemDetailView({
                           startIcon={<AddIcon />}
                           onClick={openCallOffAdd}
                         >
-                          Ny
+                          Ny avropsrad
                         </Button>
                       </div>
 
@@ -3083,7 +2856,7 @@ export function LineItemDetailView({
                           onClick={openPeriodiseringAdd}
                           disabled={periodiseringArIbalans}
                         >
-                          Ny rad
+                          Ny periodiseringsrad
                         </Button>
                         <Button
                           className={styles.periodiseringAutoButton}
@@ -3857,7 +3630,7 @@ export function LineItemDetailView({
                       <div className={styles.bokadePaketToolbar}>
                         {/* <Typography className={styles.bokadePaketTitle}>Bokade paket</Typography> */}
                         <button type="button" className={styles.bokadePaketAddBtn} onClick={() => openPaketbokning("Kontraktrad", "leveransbokadePaket")}>
-                          <AddIcon fontSize="inherit" />
+                          <Inventory2OutlinedIcon fontSize="inherit" />
                           Hantera paket
                         </button>
                       </div>
