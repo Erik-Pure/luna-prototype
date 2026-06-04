@@ -64,6 +64,8 @@ type ContractDetailViewProps = {
   onToggleLineColumnPin: (key: string) => void;
   onOpenLineItemDetail: (lineItemId: string) => void;
   onCreateLineItem: () => void;
+  onOpenAvropsrad: (id: string) => void;
+  onCreateAvropsrad: () => void;
 };
 
 export function ContractDetailView({
@@ -97,7 +99,9 @@ export function ContractDetailView({
   onResetLineColumnChanges,
   onToggleLineColumnPin,
   onOpenLineItemDetail,
-  onCreateLineItem
+  onCreateLineItem,
+  onOpenAvropsrad,
+  onCreateAvropsrad
 }: ContractDetailViewProps) {
   const contractDetails = getContractDetails(selectedContractId);
   const leveransAllmant = [
@@ -192,6 +196,8 @@ export function ContractDetailView({
           onToggleKeepOpenAfterSave={onToggleKeepLineItemOpenAfterSave}
           onSaveAndCreateNew={onSaveAndCreateNewLineItem}
           onSaveAndClose={onSaveAndCloseLineItem}
+          onOpenAvropsrad={onOpenAvropsrad}
+          onCreateAvropsrad={onCreateAvropsrad}
         />
       ) : (
         <>

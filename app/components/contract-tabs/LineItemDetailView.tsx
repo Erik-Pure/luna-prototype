@@ -2,6 +2,7 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
@@ -451,6 +452,73 @@ const NETTOLAGER_FETCHED_ROWS: NettolagerRow[] = [
   },
 ];
 
+// ── Leveransbokade paket ──────────────────────────────────────
+type BokadPaketRow = {
+  paketnr: string;
+  lpm: string;
+  produkt: string;
+  lagerstalle: string;
+  lagerplats: string;
+  mdlangd: string;
+  skaLastasUt: string;
+};
+
+type PaketbokningResultRow = {
+  paketnr: string;
+  lpm: string;
+  produkt: string;
+  lagerstalle: string;
+  lagerplats: string;
+  mdlangd: string;
+  status: string;
+};
+
+type BokadPaketColumnKey = keyof BokadPaketRow | "_actions";
+type PaketbokningColumnKey = "_select" | keyof PaketbokningResultRow;
+
+const BOKADE_PAKET_COLUMNS: Array<{ key: BokadPaketColumnKey; label: string; pinnedRight?: boolean }> = [
+  { key: "paketnr", label: "Paketnr" },
+  { key: "lpm", label: "Lpm" },
+  { key: "produkt", label: "Produkt" },
+  { key: "lagerstalle", label: "Lagerställe" },
+  { key: "lagerplats", label: "Lagerplats" },
+  { key: "mdlangd", label: "Mdlängd" },
+  { key: "skaLastasUt", label: "Ska lastas ut" },
+  { key: "_actions", label: "", pinnedRight: true },
+];
+
+const PAKETBOKNING_RESULT_COLUMNS: Array<{ key: PaketbokningColumnKey; label: string; pinnedRight?: boolean }> = [
+  { key: "_select", label: "" },
+  { key: "paketnr", label: "Paketnr" },
+  { key: "lpm", label: "Lpm" },
+  { key: "produkt", label: "Produkt" },
+  { key: "lagerstalle", label: "Lagerställe" },
+  { key: "lagerplats", label: "Lagerplats" },
+  { key: "mdlangd", label: "Mdlängd" },
+  { key: "status", label: "Status" },
+];
+
+const INITIAL_BOKADE_PAKET: BokadPaketRow[] = [
+  { paketnr: "15134", lpm: "123", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "A1-01", mdlangd: "123", skaLastasUt: "Ja" },
+];
+
+const PAKETBOKNING_MOCK_RESULTS: PaketbokningResultRow[] = [
+  { paketnr: "15201", lpm: "45", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "A1-02", mdlangd: "300", status: "Tillgänglig" },
+  { paketnr: "15202", lpm: "62", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "A1-03", mdlangd: "360", status: "Tillgänglig" },
+  { paketnr: "15203", lpm: "38", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "B2-01", mdlangd: "420", status: "Tillgänglig" },
+  { paketnr: "15204", lpm: "71", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "BP Hammerdal", lagerplats: "C3-05", mdlangd: "300", status: "Tillgänglig" },
+  { paketnr: "15205", lpm: "55", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "BP Hammerdal", lagerplats: "C3-06", mdlangd: "360", status: "Tillgänglig" },
+];
+
+const RESERVATIONSTYP_OPTIONS = ["Kontraktrad", "Reservationsorder", "Intern"] as const;
+
+type PaketbokningNavState =
+  | { open: false }
+  | { open: true; reservationstyp: string; returnTo: "leveransbokadePaket" | "callOffForm" };
+const ENHET_OPTIONS = ["BP Hammerdal Byggprodukter", "BP Hissmofors Byggprodukter", "BP Kåge Byggprodukter", "NT Hissmofors Såg", "NT Kåge Såg"] as const;
+const VFL_GRUPP_OPTIONS = ["Grupp A", "Grupp B", "Grupp C"] as const;
+const KONTRAKT_PRODUKT_OPTIONS = ["163508: 5x150 Furu Svarvad Stolp", "163509: 22x95 Gran Ytterpanel", "163510: 45x145 Gran Konstruktionsvirke"] as const;
+
 const emptyPeriodiseringRow = (): Omit<PeriodiseringRow, "id"> => ({
   leveransvecka: "",
   mangd: "",
@@ -558,6 +626,8 @@ type LineItemDetailViewProps = {
   onToggleKeepOpenAfterSave: (checked: boolean) => void;
   onSaveAndCreateNew?: (draft: NewLineItemDraft) => void;
   onSaveAndClose?: () => void;
+  onOpenAvropsrad?: (id: string) => void;
+  onCreateAvropsrad?: () => void;
 };
 
 type FieldLabelProps = {
@@ -718,7 +788,9 @@ export function LineItemDetailView({
   keepOpenAfterSave,
   onToggleKeepOpenAfterSave,
   onSaveAndCreateNew,
-  onSaveAndClose
+  onSaveAndClose,
+  onOpenAvropsrad,
+  onCreateAvropsrad,
 }: LineItemDetailViewProps) {
   const isNewLineItem = lineItemId === "new";
   const accordionWrapRef = useRef<HTMLDivElement | null>(null);
@@ -747,7 +819,6 @@ export function LineItemDetailView({
   const [callOffRows, setCallOffRows] = useState<CallOffRow[]>(initialCallOffRows);
   const [selectedCallOffRow, setSelectedCallOffRow] = useState<number | null>(null);
   const [callOffForm, setCallOffForm] = useState<CallOffFormState>({ mode: "closed" });
-  const [keepCallOffDialogOpen, setKeepCallOffDialogOpen] = useState(false);
   const [keepCallOffValues, setKeepCallOffValues] = useState(false);
   const [lastCallOffDraft, setLastCallOffDraft] = useState<Omit<CallOffRow, "id"> | null>(null);
   const [productionPlanningRows, setProductionPlanningRows] = useState<ProductionPlanningRow[]>(initialProductionPlanningRows);
@@ -759,6 +830,21 @@ export function LineItemDetailView({
   const [productionPlanningCreateFeedback, setProductionPlanningCreateFeedback] = useState({ open: false, key: 0 });
   const [nettolagerRows] = useState<NettolagerRow[]>(NETTOLAGER_FETCHED_ROWS);
   const [selectedNettolagerRow, setSelectedNettolagerRow] = useState<number | null>(null);
+  // ── Leveransbokade paket state ──
+  const [bokadePaketRows, setBokadePaketRows] = useState<BokadPaketRow[]>(INITIAL_BOKADE_PAKET);
+  const [paketbokningNav, setPaketbokningNav] = useState<PaketbokningNavState>({ open: false });
+  const [callOffFormTab, setCallOffFormTab] = useState<"form" | "leveransbokadePaket">("form");
+  const [paketbokningFilters, setPaketbokningFilters] = useState({
+    reservationstyp: "Kontraktrad" as string,
+    kontraktProdukt: "163508: 5x150 Furu Svarvad Stolp" as string,
+    enhet: "BP Hammerdal Byggprodukter" as string,
+    langdMin: "",
+    langdMax: "",
+    vflGrupp: "",
+  });
+  const [paketbokningResults, setPaketbokningResults] = useState<PaketbokningResultRow[]>([]);
+  const [paketbokningSearched, setPaketbokningSearched] = useState(false);
+  const [selectedPaketRows, setSelectedPaketRows] = useState<Set<number>>(new Set());
   const [isBytBolagDialogOpen, setIsBytBolagDialogOpen] = useState(false);
   const [bytBolagDraft, setBytBolagDraft] = useState({ senderCompany: "", senderWarehouse: "", responsibleCompany: "" });
   const [newLineItemDraft, setNewLineItemDraft] = useState<NewLineItemDraft>({
@@ -1396,37 +1482,51 @@ export function LineItemDetailView({
   };
 
   const openCallOffAdd = () => {
+    if (onCreateAvropsrad) {
+      onCreateAvropsrad();
+      return;
+    }
     setKeepCallOffValues(false);
     const initialDraft = keepCallOffValues && lastCallOffDraft
       ? lastCallOffDraft
       : emptyCallOffRow();
     setCallOffForm({ mode: "add", draft: initialDraft });
     setSelectedCallOffRow(null);
+    setCallOffFormTab("form");
   };
 
   const openCallOffEdit = (index: number) => {
-    setKeepCallOffValues(false);
     const row = callOffRows[index];
     if (!row) {
       return;
     }
-
+    if (onOpenAvropsrad) {
+      setSelectedCallOffRow(index);
+      onOpenAvropsrad(row.id);
+      return;
+    }
+    setKeepCallOffValues(false);
     const { id, ...draft } = row;
     setCallOffForm({ mode: "edit", id, draft });
     setSelectedCallOffRow(index);
+    setCallOffFormTab("form");
   };
 
   const openCallOffClone = (index: number) => {
+    if (onCreateAvropsrad) {
+      onCreateAvropsrad();
+      return;
+    }
     setKeepCallOffValues(false);
     const row = callOffRows[index];
     if (!row) {
       return;
     }
-
     const { id, ...draft } = row;
     void id;
     setCallOffForm({ mode: "add", draft });
     setSelectedCallOffRow(null);
+    setCallOffFormTab("form");
   };
 
   const deleteCallOffRow = (index: number) => {
@@ -1468,15 +1568,6 @@ export function LineItemDetailView({
       setCallOffRows((previous) => [...previous, rowToInsert]);
 
       setLastCallOffDraft(keepCallOffValues ? nextDraft : null);
-      if (keepCallOffDialogOpen) {
-        setCallOffForm({
-          mode: "add",
-          draft: keepCallOffValues ? nextDraft : emptyCallOffRow()
-        });
-        setSelectedCallOffRow(null);
-        return;
-      }
-
       closeCallOffForm();
       return;
     }
@@ -1485,17 +1576,27 @@ export function LineItemDetailView({
       previous.map((row) => (row.id === callOffForm.id ? { ...row, ...nextDraft } : row))
     );
 
-    if (keepCallOffDialogOpen) {
-      setCallOffForm({ mode: "edit", id: callOffForm.id, draft: nextDraft });
-      return;
-    }
-
     closeCallOffForm();
   };
 
   const callOffDraft = callOffForm.mode !== "closed" ? callOffForm.draft : null;
   const isCallOffDialogOpen = callOffDraft !== null;
   const isCreateCallOffView = callOffForm.mode === "add";
+
+  const openPaketbokning = (reservationstyp: string, returnTo: "leveransbokadePaket" | "callOffForm") => {
+    setPaketbokningFilters((prev) => ({ ...prev, reservationstyp }));
+    setPaketbokningResults([]);
+    setPaketbokningSearched(false);
+    setSelectedPaketRows(new Set());
+    setPaketbokningNav({ open: true, reservationstyp, returnTo });
+  };
+
+  const closePaketbokning = () => {
+    if (paketbokningNav.open && paketbokningNav.returnTo === "callOffForm") {
+      setCallOffFormTab("leveransbokadePaket");
+    }
+    setPaketbokningNav({ open: false });
+  };
 
   const openProductionPlanningAdd = () => {
     setKeepProductionPlanningValues(false);
@@ -1640,9 +1741,6 @@ export function LineItemDetailView({
               >
                 Byt enhet
               </Button>
-              <Button className={styles.contractQuickActionButton} size="small">
-                Visa träd
-              </Button>
               <IconButton
                 size="small"
                 className={styles.contractHeaderDotsButton}
@@ -1663,7 +1761,7 @@ export function LineItemDetailView({
                   variant="contained"
                   onClick={handleNextStep}
                 >
-                  Gå vidare
+                  Fortsätt
                 </Button>
                 <Button
                   className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
@@ -1886,18 +1984,34 @@ export function LineItemDetailView({
                       <MenuItem value="Pausad">Pausad</MenuItem>
                     </LabeledSelect>
                   </div>
-                  <div className={`${styles.lineItemField}${fieldHide("priceList")}`}>
-                    <FieldLabel fieldKey="priceList" label="Prislista" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="Prislista" value={newLineItemDraft.priceList} onChange={(v) => updateDraftField("priceList", v)} className={getFieldControlClassName("priceList")}>
-                      <MenuItem value="">-</MenuItem>
-                      <MenuItem value="PL-2024-A">PL-2024-A</MenuItem>
-                      <MenuItem value="PL-2024-B">PL-2024-B</MenuItem>
-                      <MenuItem value="PL-2024-C">PL-2024-C</MenuItem>
-                    </LabeledSelect>
-                  </div>
                   <div className={`${styles.lineItemField}${fieldHide("certification")}`}>
                     <FieldLabel fieldKey="certification" label="Certifiering" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Certifiering" value={newLineItemDraft.certification} size="small" className={getFieldControlClassName("certification")} InputProps={{ readOnly: true }} helperText="Bestäms av kontraktet" />
+                  </div>
+                  <div className={`${styles.lineItemField}${fieldHide("priceList")}`}>
+                    <FieldLabel fieldKey="priceList" label="Prislista" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField
+                      label="Prislista"
+                      size="small"
+                      className={getFieldControlClassName("priceList")}
+                      value={newLineItemDraft.priceList !== "" ? "BP Trävaruprislista 2025" : ""}
+                      InputLabelProps={{ shrink: true }}
+                      InputProps={{
+                        readOnly: true,
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Checkbox
+                              size="small"
+                              checked={newLineItemDraft.priceList !== ""}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(event) => updateDraftField("priceList", event.target.checked ? "BP Trävaruprislista 2025" : "")}
+                            />
+                          </InputAdornment>
+                        ),
+                      }}
+                      inputProps={{ style: { cursor: "pointer", caretColor: "transparent" } }}
+                      onClick={() => updateDraftField("priceList", newLineItemDraft.priceList !== "" ? "" : "BP Trävaruprislista 2025")}
+                    />
                   </div>
                 </div>
               </AccordionDetails>
@@ -1916,15 +2030,7 @@ export function LineItemDetailView({
               </AccordionSummary>
               <AccordionDetails>
                 <div className={styles.lineItemSectionGrid3}>
-                  <div className={`${styles.lineItemField}${fieldHide("nobbNumber")}`}>
-                    <FieldLabel fieldKey="nobbNumber" label="NOBBnr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
-                    <LabeledSelect label="NOBBnr" value={newLineItemDraft.nobbNumber} onChange={(v) => updateDraftField("nobbNumber", v)} className={getFieldControlClassName("nobbNumber")}>
-                      <MenuItem value="">-</MenuItem>
-                      <MenuItem value="10110001">10110001</MenuItem>
-                      <MenuItem value="10110002">10110002</MenuItem>
-                      <MenuItem value="10110003">10110003</MenuItem>
-                    </LabeledSelect>
-                  </div>
+
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="artNr" label={getFieldLabel("artNr", "ArtNr")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <div className={styles.lineItemFieldWithAction}>
@@ -1945,6 +2051,15 @@ export function LineItemDetailView({
                         <OpenInNewIcon fontSize="small" />
                       </IconButton>
                     </div>
+                  </div>
+                  <div className={`${styles.lineItemField}${fieldHide("nobbNumber")}`}>
+                    <FieldLabel fieldKey="nobbNumber" label="NOBBnr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <LabeledSelect label="NOBBnr" value={newLineItemDraft.nobbNumber} onChange={(v) => updateDraftField("nobbNumber", v)} className={getFieldControlClassName("nobbNumber")}>
+                      <MenuItem value="">-</MenuItem>
+                      <MenuItem value="10110001">10110001</MenuItem>
+                      <MenuItem value="10110002">10110002</MenuItem>
+                      <MenuItem value="10110003">10110003</MenuItem>
+                    </LabeledSelect>
                   </div>
                   <div className={`${styles.lineItemField}${fieldHide("deliverArtNr")}`}>
                     <FieldLabel fieldKey="deliverArtNr" label="Leverera ArtNr" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
@@ -1982,7 +2097,7 @@ export function LineItemDetailView({
                     <TextField label="Fakturatext" value={newLineItemDraft.invoiceText} onChange={(event) => updateDraftField("invoiceText", event.target.value)} size="small" className={getFieldControlClassName("invoiceText")} />
                   </div>
                 </div>
-                <div className={styles.lineItemSectionGrid2}>
+                <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="packageType" label={getFieldLabel("packageType", "Pakettyp")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <LabeledSelect label={getFieldLabel("packageType", "Pakettyp")} value={newLineItemDraft.packageType} onChange={(v) => updateDraftField("packageType", v)} className={getFieldControlClassName("packageType")}>
@@ -1998,8 +2113,6 @@ export function LineItemDetailView({
                       <MenuItem value="Paket">Paket</MenuItem>
                     </LabeledSelect>
                   </div>
-                </div>
-                <div className={styles.lineItemSectionGrid4}>
                   <div className={`${styles.lineItemField}${fieldHide("length")}`}>
                     <FieldLabel fieldKey="length" label="Längd" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Längd" value={newLineItemDraft.length} onChange={(event) => updateDraftField("length", event.target.value)} size="small" className={getFieldControlClassName("length")} />
@@ -2042,7 +2155,7 @@ export function LineItemDetailView({
                 </div>
               </AccordionSummary>
               <AccordionDetails>
-                <div className={styles.lineItemSectionGrid4}>
+                <div className={styles.lineItemSectionGrid3}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="quantity" label={getFieldLabel("quantity", "Mängd")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label={getFieldLabel("quantity", "Mängd")} value={newLineItemDraft.quantity} onChange={(event) => updateDraftField("quantity", event.target.value)} size="small" className={getFieldControlClassName("quantity")} />
@@ -2063,8 +2176,6 @@ export function LineItemDetailView({
                     <FieldLabel fieldKey="finalVolume" label="Slutvolym" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Slutvolym" value={newLineItemDraft.finalVolume} onChange={(event) => updateDraftField("finalVolume", event.target.value)} size="small" className={getFieldControlClassName("finalVolume")} InputProps={{ endAdornment: <InputAdornment position="end">m3</InputAdornment> }} />
                   </div>
-                </div>
-                <div className={styles.lineItemSectionGrid4}>
                   <div className={styles.lineItemField}>
                     <FieldLabel fieldKey="invoiceUnit" label={getFieldLabel("invoiceUnit", "Faktura enhet")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <LabeledSelect label={getFieldLabel("invoiceUnit", "Faktura enhet")} value={newLineItemDraft.invoiceUnit} onChange={(v) => updateDraftField("invoiceUnit", v)} className={getFieldControlClassName("invoiceUnit")}>
@@ -2085,8 +2196,6 @@ export function LineItemDetailView({
                     <FieldLabel fieldKey="amount" label="Belopp" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Belopp" value={newLineItemDraft.amount} onChange={(event) => updateDraftField("amount", event.target.value)} size="small" className={getFieldControlClassName("amount")} InputProps={{ endAdornment: <InputAdornment position="end">SEK</InputAdornment> }} />
                   </div>
-                </div>
-                <div className={styles.lineItemSectionGrid4}>
                   <div className={`${styles.lineItemField}${fieldHide("sponsorship")}`}>
                     <FieldLabel fieldKey="sponsorship" label="Sponsring" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Sponsring" value={newLineItemDraft.sponsorship} onChange={(event) => updateDraftField("sponsorship", event.target.value)} size="small" className={getFieldControlClassName("sponsorship")} InputProps={{ endAdornment: <InputAdornment position="end">USD/m3 nomin</InputAdornment> }} />
@@ -2106,13 +2215,44 @@ export function LineItemDetailView({
                       <MenuItem value="Handelsvara">Handelsvara</MenuItem>
                     </LabeledSelect>
                   </div>
+                  <div className={`${styles.lineItemField}${fieldHide("pickingSurchargeEnabled")}`}>
+                    <FieldLabel fieldKey="pickingSurchargeEnabled" label="Plocktillägg" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField
+                      label="Plocktillägg"
+                      size="small"
+                      className={getFieldControlClassName("pickingSurchargeEnabled")}
+                      value={newLineItemDraft.pickingSurchargeEnabled ? "Ja" : ""}
+                      InputLabelProps={{ shrink: true }}
+                      InputProps={{
+                        readOnly: true,
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Checkbox
+                              size="small"
+                              checked={Boolean(newLineItemDraft.pickingSurchargeEnabled)}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(event) => updateDraftField("pickingSurchargeEnabled", event.target.checked)}
+                            />
+                          </InputAdornment>
+                        ),
+                      }}
+                      inputProps={{ style: { cursor: "pointer", caretColor: "transparent" } }}
+                      onClick={() => updateDraftField("pickingSurchargeEnabled", !newLineItemDraft.pickingSurchargeEnabled)}
+                    />
+                  </div>
+                  <div className={`${styles.lineItemField}${fieldHide("pickingSurchargeQuantity")}`}>
+                    <FieldLabel fieldKey="pickingSurchargeQuantity" label="Plocktillägg antal" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField
+                      label="Plocktillägg antal"
+                      size="small"
+                      className={getFieldControlClassName("pickingSurchargeQuantity")}
+                      value={newLineItemDraft.pickingSurchargeQuantity}
+                      onChange={(event) => updateDraftField("pickingSurchargeQuantity", event.target.value)}
+                      InputProps={{ endAdornment: <InputAdornment position="end">st</InputAdornment> }}
+                      helperText="vilket ger 15% minst 300 SEK"
+                    />
+                  </div>
                 </div>
-                <label className={`${getFieldControlClassName("pickingSurchargeEnabled", styles.lineItemCheckboxRow)}${fieldHide("pickingSurchargeEnabled")}`}>
-                  <Checkbox size="small" checked={Boolean(newLineItemDraft.pickingSurchargeEnabled)} onChange={(event) => updateDraftField("pickingSurchargeEnabled", event.target.checked)} />
-                  <Typography className={styles.searchFieldLabel}>Plocktillägg</Typography>
-                  <TextField value={newLineItemDraft.pickingSurchargeQuantity} onChange={(event) => updateDraftField("pickingSurchargeQuantity", event.target.value)} size="small" className={getFieldControlClassName("pickingSurchargeQuantity", styles.lineItemSmallInlineInput)} />
-                  <Typography className={styles.lineItemInlineHint}>st vilket ger 15 % minst 300 SEK</Typography>
-                </label>
               </AccordionDetails>
             </Accordion>
 
@@ -2128,7 +2268,7 @@ export function LineItemDetailView({
                 </div>
               </AccordionSummary>
               <AccordionDetails>
-                <div className={styles.lineItemSectionGrid4}>
+                <div className={styles.lineItemSectionGrid3}>
                   <div className={`${styles.lineItemField}${fieldHide("deliveryWeek")}`}>
                     <FieldLabel fieldKey="deliveryWeek" label="Leveransvecka" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Leveransvecka" value={newLineItemDraft.deliveryWeek} onChange={(event) => updateDraftField("deliveryWeek", event.target.value)} size="small" className={getFieldControlClassName("deliveryWeek")} />
@@ -2152,8 +2292,6 @@ export function LineItemDetailView({
                     <FieldLabel fieldKey="deliveryWindowMax" label={getFieldLabel("deliveryWindowMax", "Lev. fönster max")} isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label={getFieldLabel("deliveryWindowMax", "Lev. fönster max")} value={newLineItemDraft.deliveryWindowMax} onChange={(event) => updateDraftField("deliveryWindowMax", event.target.value)} size="small" className={getFieldControlClassName("deliveryWindowMax")} />
                   </div>
-                </div>
-                <div className={styles.lineItemSectionGrid3}>
                   <div className={`${styles.lineItemField}${fieldHide("deliveryPeriodDocument")}`}>
                     <FieldLabel fieldKey="deliveryPeriodDocument" label="Leveransperiod kunddokument" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Leveransperiod kunddokument" value={newLineItemDraft.deliveryPeriodDocument} onChange={(event) => updateDraftField("deliveryPeriodDocument", event.target.value)} size="small" className={getFieldControlClassName("deliveryPeriodDocument")} />
@@ -2185,11 +2323,33 @@ export function LineItemDetailView({
                   </div>
                 </div>
                 <hr className={styles.contractFlatDivider} />
-                <label className={`${getFieldControlClassName("showOnInvoice", styles.lineItemCheckboxRow)}${fieldHide("showOnInvoice")}`}>
-                  <Checkbox size="small" checked={Boolean(newLineItemDraft.showOnInvoice)} onChange={(event) => updateDraftField("showOnInvoice", event.target.checked)} />
-                  <Typography className={styles.searchFieldLabel}>Visa extern kommentar på följesedel och faktura</Typography>
-                </label>
                 <div className={styles.lineItemSectionGrid3}>
+                  <div className={`${styles.lineItemField}${fieldHide("showOnInvoice")}`}>
+                    <FieldLabel fieldKey="showOnInvoice" label="Visa på följesedel" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
+                    <TextField
+                      label="Visa på följesedel"
+                      size="small"
+                      className={getFieldControlClassName("showOnInvoice")}
+                      value={newLineItemDraft.showOnInvoice ? "Ja" : ""}
+                      InputLabelProps={{ shrink: true }}
+                      InputProps={{
+                        readOnly: true,
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Checkbox
+                              size="small"
+                              checked={Boolean(newLineItemDraft.showOnInvoice)}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(event) => updateDraftField("showOnInvoice", event.target.checked)}
+                            />
+                          </InputAdornment>
+                        ),
+                      }}
+                      inputProps={{ style: { cursor: "pointer", caretColor: "transparent" } }}
+                      helperText="Extern kommentar visas på följesedel och faktura"
+                      onClick={() => updateDraftField("showOnInvoice", !newLineItemDraft.showOnInvoice)}
+                    />
+                  </div>
                   <div className={`${styles.lineItemField}${fieldHide("internalComment")}`}>
                     <FieldLabel fieldKey="internalComment" label="Intern kommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Intern kommentar" value={newLineItemDraft.internalComment} onChange={(event) => updateDraftField("internalComment", event.target.value)} size="small" className={getFieldControlClassName("internalComment")} multiline rows={3} />
@@ -2203,8 +2363,6 @@ export function LineItemDetailView({
                     <FieldLabel fieldKey="customerComment" label="Kundkommentar" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Kundkommentar" value={newLineItemDraft.customerComment} onChange={(event) => updateDraftField("customerComment", event.target.value)} size="small" className={getFieldControlClassName("customerComment")} multiline rows={3} />
                   </div>
-                </div>
-                <div className={styles.lineItemSectionGrid3}>
                   <div className={`${styles.lineItemField}${fieldHide("customerBrand")}`}>
                     <FieldLabel fieldKey="customerBrand" label="Kundens märke" isNewLineItem={isNewLineItem} pinnedFields={pinnedFields} onTogglePinnedField={onTogglePinnedField} />
                     <TextField label="Kundens märke" value={newLineItemDraft.customerBrand} onChange={(event) => updateDraftField("customerBrand", event.target.value)} size="small" className={getFieldControlClassName("customerBrand")} />
@@ -2216,57 +2374,6 @@ export function LineItemDetailView({
                     <Typography className={styles.lineItemFieldHelperText}>Följer med till lastorder och visas på fraktsedel och i C-Load.</Typography>
                   </div>
                 </div>
-              </AccordionDetails>
-            </Accordion>
-
-            <Accordion
-              expanded={expandedPanels.includes("dokument")}
-              onChange={() => togglePanel("dokument")}
-              className={styles.contractModernAccordion}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                <div className={styles.contractModernAccordionTitleRow}>
-                  <FolderOutlinedIcon className={styles.contractModernAccordionIcon} />
-                  <Typography className={styles.contractModernAccordionTitle}>Dokument</Typography>
-                  {lineItemDocuments.length > 0 ? (
-                    <Chip
-                      label={lineItemDocuments.length}
-                      size="small"
-                      className={styles.contractSectionCountChip}
-                    />
-                  ) : null}
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                {isNewLineItem ? (
-                  <div className={styles.contractDropZone}>
-                    <p className={styles.contractDropZoneTitle}>Uppladdning av dokument</p>
-                    <p className={styles.contractDropZoneOrText}>Klicka nedan för att simulera uppladdning</p>
-                    <button type="button" className={styles.contractDropZoneButton} onClick={handleMockDocumentUpload}>
-                      Välj filer
-                    </button>
-                  </div>
-                ) : null}
-                {isNewLineItem && lineItemDocuments.length > 0 ? <hr className={styles.contractFlatDivider} /> : null}
-                {lineItemDocuments.length === 0 ? (
-                  <Typography className={styles.contractDataLabel} style={{ padding: "4px 0", fontStyle: "italic" }}>
-                    Inga dokument uppladdade.
-                  </Typography>
-                ) : (
-                  <div className={styles.contractDocumentList}>
-                    {lineItemDocuments.map((doc) => (
-                      <div key={`${doc.name}-${doc.addedAt}`} className={styles.contractFileRow}>
-                        <span className={styles.contractFileRowIcon}>
-                          {doc.name.endsWith(".pdf") ? "📄" : doc.name.endsWith(".doc") || doc.name.endsWith(".docx") ? "📝" : doc.name.endsWith(".xls") || doc.name.endsWith(".xlsx") ? "📊" : "📁"}
-                        </span>
-                        <div className={styles.contractFileRowInfo}>
-                          <p className={styles.contractFileName}>{doc.name}</p>
-                          <p className={styles.contractFileSize}>{doc.size} — {doc.addedAt}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </AccordionDetails>
             </Accordion>
           </div>
@@ -2324,7 +2431,187 @@ export function LineItemDetailView({
               ))}
             </div>
             <div className={styles.contractDetailMainContent}>
-              {activeTab === "Längdfördelning" ? (
+              {paketbokningNav.open ? (
+                <div className={styles.freightTabContent}>
+                  <div className={styles.paketbokningViewHeader}>
+                    <Button
+                      size="small"
+                      startIcon={<ArrowBackIcon fontSize="small" />}
+                      className={styles.paketbokningBackButton}
+                      onClick={closePaketbokning}
+                    >
+                      Tillbaka
+                    </Button>
+                    <Typography className={styles.paketbokningViewTitle}>Paketbokning</Typography>
+                  </div>
+                  <div className={styles.paketbokningFiltersRow}>
+                    <FormControl size="small" className={styles.paketbokningFilterField}>
+                      <InputLabel>Reservationstyp</InputLabel>
+                      <Select
+                        value={paketbokningFilters.reservationstyp}
+                        label="Reservationstyp"
+                        onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, reservationstyp: e.target.value }))}
+                      >
+                        {RESERVATIONSTYP_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                    <FormControl size="small" className={styles.paketbokningFilterField} style={{ minWidth: 220 }}>
+                      <InputLabel>Kontrakt:Produkt</InputLabel>
+                      <Select
+                        value={paketbokningFilters.kontraktProdukt}
+                        label="Kontrakt:Produkt"
+                        onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, kontraktProdukt: e.target.value }))}
+                      >
+                        {KONTRAKT_PRODUKT_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                    <FormControl size="small" className={styles.paketbokningFilterField} style={{ minWidth: 200 }}>
+                      <InputLabel>Enhet</InputLabel>
+                      <Select
+                        value={paketbokningFilters.enhet}
+                        label="Enhet"
+                        onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, enhet: e.target.value }))}
+                      >
+                        {ENHET_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                    <TextField
+                      size="small"
+                      label="Längd min"
+                      value={paketbokningFilters.langdMin}
+                      onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, langdMin: e.target.value }))}
+                      className={styles.paketbokningFilterShort}
+                    />
+                    <TextField
+                      size="small"
+                      label="Längd max"
+                      value={paketbokningFilters.langdMax}
+                      onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, langdMax: e.target.value }))}
+                      className={styles.paketbokningFilterShort}
+                    />
+                    <FormControl size="small" className={styles.paketbokningFilterField}>
+                      <InputLabel>VFL grupp</InputLabel>
+                      <Select
+                        value={paketbokningFilters.vflGrupp}
+                        label="VFL grupp"
+                        onChange={(e) => setPaketbokningFilters((prev) => ({ ...prev, vflGrupp: e.target.value }))}
+                      >
+                        <MenuItem value=""><em>Alla</em></MenuItem>
+                        {VFL_GRUPP_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      className={styles.paketbokningSearchBtn}
+                      onClick={() => {
+                        setPaketbokningResults(PAKETBOKNING_MOCK_RESULTS);
+                        setPaketbokningSearched(true);
+                        setSelectedPaketRows(new Set());
+                      }}
+                    >
+                      Sök
+                    </Button>
+                  </div>
+
+                  <div className={styles.paketbokningActionsRow}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      className={styles.paketbokningActionBtn}
+                      disabled={selectedPaketRows.size === 0}
+                      onClick={() => {
+                        const newRows: BokadPaketRow[] = [...selectedPaketRows].map((idx) => {
+                          const r = paketbokningResults[idx]!;
+                          return { paketnr: r.paketnr, lpm: r.lpm, produkt: r.produkt, lagerstalle: r.lagerstalle, lagerplats: r.lagerplats, mdlangd: r.mdlangd, skaLastasUt: "Nej" };
+                        });
+                        setBokadePaketRows((prev) => [...prev, ...newRows]);
+                        setPaketbokningResults((prev) => prev.filter((_, i) => !selectedPaketRows.has(i)));
+                        setSelectedPaketRows(new Set());
+                        closePaketbokning();
+                      }}
+                    >
+                      Reservera
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      className={styles.paketbokningActionBtn}
+                      // startIcon={<RefreshOutlinedIcon fontSize="small" />}
+                      disabled={selectedPaketRows.size === 0}
+                      onClick={() => {
+                        const newRows: BokadPaketRow[] = [...selectedPaketRows].map((idx) => {
+                          const r = paketbokningResults[idx]!;
+                          return { paketnr: r.paketnr, lpm: r.lpm, produkt: r.produkt, lagerstalle: r.lagerstalle, lagerplats: r.lagerplats, mdlangd: r.mdlangd, skaLastasUt: "Ja" };
+                        });
+                        setBokadePaketRows((prev) => [...prev, ...newRows]);
+                        setPaketbokningResults((prev) => prev.filter((_, i) => !selectedPaketRows.has(i)));
+                        setSelectedPaketRows(new Set());
+                        closePaketbokning();
+                      }}
+                    >
+                      Ska lastas ut
+                    </Button>
+                    <div className={styles.paketbokningActionSep} />
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      className={styles.paketbokningActionBtnDanger}
+                      disabled={selectedPaketRows.size === 0}
+                      onClick={() => {
+                        setPaketbokningResults((prev) => prev.filter((_, i) => !selectedPaketRows.has(i)));
+                        setSelectedPaketRows(new Set());
+                      }}
+                    >
+                      Ta bort reservation
+                    </Button>
+                  </div>
+
+                  {paketbokningSearched ? (
+                    <div className={styles.lineItemsTableFrame}>
+                      <div className={styles.freightTableWrap}>
+                        <div className={styles.freightTable}>
+                          <DataTable
+                            variant="line"
+                            fillRemainingSpace
+                            columns={PAKETBOKNING_RESULT_COLUMNS}
+                            rows={paketbokningResults}
+                            rowKey={(row, index) => `pbr-${row.paketnr}-${index}`}
+                            selectedRowIndex={null}
+                            onRowClick={(index) => {
+                              setSelectedPaketRows((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(index)) { next.delete(index); } else { next.add(index); }
+                                return next;
+                              });
+                            }}
+                            renderCell={(row, column, rowIndex) => {
+                              if (column.key === "_select") {
+                                return (
+                                  <Checkbox
+                                    size="small"
+                                    checked={selectedPaketRows.has(rowIndex)}
+                                    onChange={() => {
+                                      setSelectedPaketRows((prev) => {
+                                        const next = new Set(prev);
+                                        if (next.has(rowIndex)) { next.delete(rowIndex); } else { next.add(rowIndex); }
+                                        return next;
+                                      });
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    sx={{ padding: "2px" }}
+                                  />
+                                );
+                              }
+                              return row[column.key as keyof PaketbokningResultRow] ?? "-";
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : activeTab === "Längdfördelning" ? (
                 <div className={styles.freightTabContent}>
                   <div className={styles.freightSection}>
                     <div className={styles.freightSectionHeader}>
@@ -2509,183 +2796,251 @@ export function LineItemDetailView({
                 </div>
               ) : activeTab === "Avropsrad" ? (
                 <div className={styles.freightTabContent}>
-                  <div className={styles.freightSection}>
-                    <div className={styles.freightSectionHeader}>
-                      <Button
-                        className={styles.freightNewButton}
-                        startIcon={<AddIcon />}
-                        onClick={openCallOffAdd}
-                      >
-                        Ny
-                      </Button>
-                    </div>
-
-                    <div className={styles.lineItemsTableFrame}>
-                      <div className={styles.freightTableWrap}>
-                        <div className={styles.freightTable}>
-                          <DataTable
-                            variant="line"
-                            fillRemainingSpace
-                            columns={CALLOFF_COLUMNS}
-                            rows={callOffRows}
-                            rowKey={(row, index) => `${row.id}-${index}`}
-                            selectedRowIndex={selectedCallOffRow}
-                            onRowClick={(index) =>
-                              setSelectedCallOffRow((previous) => (previous === index ? null : index))
-                            }
-                            renderCell={(row, column, rowIndex) => {
-                              if (column.key === "_nr") {
-                                return String(rowIndex + 1);
-                              }
-                              if (column.key === "_actions") {
-                                return (
-                                  <span className={styles.freightActionCell}>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        openCallOffEdit(rowIndex);
-                                      }}
-                                      title="Redigera rad"
-                                    >
-                                      <EditOutlinedIcon className={styles.freightActionIcon} />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        openCallOffClone(rowIndex);
-                                      }}
-                                      title="Kopiera rad"
-                                    >
-                                      <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        deleteCallOffRow(rowIndex);
-                                      }}
-                                      title="Ta bort rad"
-                                    >
-                                      <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                                    </IconButton>
-                                  </span>
-                                );
-                              }
-
-                              const value = row[column.key as keyof Omit<CallOffRow, "id">];
-                              return value?.trim() ? value : "-";
-                            }}
-                          />
+                  {callOffForm.mode !== "closed" ? (
+                    <div className={styles.callOffFormView}>
+                      <div className={styles.callOffFormViewHeader}>
+                        <span className={styles.callOffFormViewTitle}>
+                          {isCreateCallOffView ? "Ny avropsrad" : "Redigera avropsrad"}
+                        </span>
+                        <div className={styles.callOffFormViewHeaderRight}>
+                          {isCreateCallOffView ? (
+                            <div className={styles.freightDialogToggles}>
+                              <label className={styles.freightDialogKeepOpen}>
+                                <Checkbox
+                                  size="small"
+                                  checked={keepCallOffValues}
+                                  onChange={(event) => {
+                                    setKeepCallOffValues(event.target.checked);
+                                  }}
+                                />
+                                <span>Behåll värden</span>
+                              </label>
+                            </div>
+                          ) : null}
+                          <IconButton size="small" onClick={closeCallOffForm} title="Stäng">
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  <Dialog
-                    open={isCallOffDialogOpen}
-                    onClose={closeCallOffForm}
-                    fullWidth
-                    maxWidth="md"
-                    classes={{ paper: styles.freightDialogPaper }}
-                  >
-                    <DialogTitle className={styles.freightDialogTitle}>
-                      <div className={styles.freightDialogTitleRow}>
-                        <span>{isCreateCallOffView ? "Ny avropsrad" : "Redigera avropsrad"}</span>
-                        {isCreateCallOffView ? (
-                          <div className={styles.freightDialogToggles}>
-                            <label className={styles.freightDialogKeepOpen}>
-                              <Checkbox
-                                size="small"
-                                checked={keepCallOffDialogOpen}
-                                onChange={(event) => setKeepCallOffDialogOpen(event.target.checked)}
-                              />
-                              <span>Behåll öppen</span>
-                            </label>
-                            <label className={styles.freightDialogKeepOpen}>
-                              <Checkbox
-                                size="small"
-                                checked={keepCallOffValues}
-                                onChange={(event) => {
-                                  setKeepCallOffValues(event.target.checked);
-                                  if (event.target.checked) setKeepCallOffDialogOpen(true);
-                                }}
-                              />
-                              <span>Behåll värden</span>
-                            </label>
-                          </div>
+                      <div className={styles.contractMudTabBar}>
+                        <button
+                          type="button"
+                          className={`${styles.contractMudTabItem} ${callOffFormTab === "form" ? styles.contractMudTabItemActive : ""}`}
+                          onClick={() => setCallOffFormTab("form")}
+                        >
+                          Formulär
+                        </button>
+                        {!isCreateCallOffView ? (
+                          <button
+                            type="button"
+                            className={`${styles.contractMudTabItem} ${callOffFormTab === "leveransbokadePaket" ? styles.contractMudTabItemActive : ""}`}
+                            onClick={() => setCallOffFormTab("leveransbokadePaket")}
+                          >
+                            Leveransbokade paket
+                          </button>
                         ) : null}
                       </div>
-                    </DialogTitle>
-                    <DialogContent className={styles.freightDialogContent}>
-                      {callOffDraft !== null ? (
+
+                      {callOffFormTab === "form" ? (
                         <>
                           <div className={styles.avropFormCard}>
                             <Typography className={styles.callOffSectionTitle}>Artikel</Typography>
                             <div className={styles.avropFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>ArtNr</Typography><Select size="small" value={callOffDraft.artNr} onChange={(e) => setCallOffDraftField("artNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera ArtNr</Typography><Select size="small" value={callOffDraft.levereraArtNr} onChange={(e) => setCallOffDraftField("levereraArtNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Fakturatext</Typography><TextField size="small" value={callOffDraft.fakturatext} onChange={(e) => setCallOffDraftField("fakturatext", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera Produkt</Typography><TextField size="small" value={callOffDraft.levereraProdukt} onChange={(e) => setCallOffDraftField("levereraProdukt", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Pakettyp</Typography><Select size="small" value={callOffDraft.pakettyp} onChange={(e) => setCallOffDraftField("pakettyp", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Lp">Lp</MenuItem><MenuItem value="Paket">Paket</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera pakettyp</Typography><Select size="small" value={callOffDraft.levereraPakettyp} onChange={(e) => setCallOffDraftField("levereraPakettyp", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Lp">Lp</MenuItem><MenuItem value="Paket">Paket</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Certifiering</Typography><Select size="small" value={callOffDraft.certifiering} onChange={(e) => setCallOffDraftField("certifiering", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Ocertifierat">Ocertifierat</MenuItem><MenuItem value="FSC">FSC</MenuItem><MenuItem value="PEFC">PEFC</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>ArtNr</Typography><Select size="small" value={callOffDraft!.artNr} onChange={(e) => setCallOffDraftField("artNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera ArtNr</Typography><Select size="small" value={callOffDraft!.levereraArtNr} onChange={(e) => setCallOffDraftField("levereraArtNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Fakturatext</Typography><TextField size="small" value={callOffDraft!.fakturatext} onChange={(e) => setCallOffDraftField("fakturatext", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera Produkt</Typography><TextField size="small" value={callOffDraft!.levereraProdukt} onChange={(e) => setCallOffDraftField("levereraProdukt", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Pakettyp</Typography><Select size="small" value={callOffDraft!.pakettyp} onChange={(e) => setCallOffDraftField("pakettyp", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Lp">Lp</MenuItem><MenuItem value="Paket">Paket</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera pakettyp</Typography><Select size="small" value={callOffDraft!.levereraPakettyp} onChange={(e) => setCallOffDraftField("levereraPakettyp", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Lp">Lp</MenuItem><MenuItem value="Paket">Paket</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Certifiering</Typography><Select size="small" value={callOffDraft!.certifiering} onChange={(e) => setCallOffDraftField("certifiering", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Ocertifierat">Ocertifierat</MenuItem><MenuItem value="FSC">FSC</MenuItem><MenuItem value="PEFC">PEFC</MenuItem></Select></div>
                             </div>
                           </div>
 
                           <div className={styles.avropFormCard}>
                             <Typography className={styles.callOffSectionTitle}>Volym &amp; pris</Typography>
                             <div className={styles.avropFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Mängd</Typography><TextField size="small" value={callOffDraft.mangd} onChange={(e) => setCallOffDraftField("mangd", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Apris</Typography><TextField size="small" value={callOffDraft.aPris} onChange={(e) => setCallOffDraftField("aPris", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Beställd enhet</Typography><Select size="small" value={callOffDraft.enhet} onChange={(e) => setCallOffDraftField("enhet", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="m3 nominell">m3 nominell</MenuItem><MenuItem value="m3 fast">m3 fast</MenuItem><MenuItem value="lpm">lpm</MenuItem><MenuItem value="st">st</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Volym</Typography><TextField size="small" value={callOffDraft.volym} onChange={(e) => setCallOffDraftField("volym", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Emballage</Typography><Select size="small" value={callOffDraft.emballage} onChange={(e) => setCallOffDraftField("emballage", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Standard">Standard</MenuItem><MenuItem value="Skydd">Skydd</MenuItem><MenuItem value="Export">Export</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Bunt</Typography><TextField size="small" value={callOffDraft.bunt} onChange={(e) => setCallOffDraftField("bunt", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Folie</Typography><Select size="small" value={callOffDraft.folie} onChange={(e) => setCallOffDraftField("folie", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Ingen">Ingen</MenuItem><MenuItem value="Vit">Vit</MenuItem><MenuItem value="Transparent">Transparent</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Mängd</Typography><TextField size="small" value={callOffDraft!.mangd} onChange={(e) => setCallOffDraftField("mangd", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Apris</Typography><TextField size="small" value={callOffDraft!.aPris} onChange={(e) => setCallOffDraftField("aPris", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Beställd enhet</Typography><Select size="small" value={callOffDraft!.enhet} onChange={(e) => setCallOffDraftField("enhet", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="m3 nominell">m3 nominell</MenuItem><MenuItem value="m3 fast">m3 fast</MenuItem><MenuItem value="lpm">lpm</MenuItem><MenuItem value="st">st</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Volym</Typography><TextField size="small" value={callOffDraft!.volym} onChange={(e) => setCallOffDraftField("volym", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Emballage</Typography><Select size="small" value={callOffDraft!.emballage} onChange={(e) => setCallOffDraftField("emballage", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Standard">Standard</MenuItem><MenuItem value="Skydd">Skydd</MenuItem><MenuItem value="Export">Export</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Bunt</Typography><TextField size="small" value={callOffDraft!.bunt} onChange={(e) => setCallOffDraftField("bunt", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Folie</Typography><Select size="small" value={callOffDraft!.folie} onChange={(e) => setCallOffDraftField("folie", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Ingen">Ingen</MenuItem><MenuItem value="Vit">Vit</MenuItem><MenuItem value="Transparent">Transparent</MenuItem></Select></div>
                             </div>
                           </div>
 
                           <div className={styles.avropFormCard}>
                             <Typography className={styles.callOffSectionTitle}>Leverans</Typography>
                             <div className={styles.avropFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransvecka</Typography><TextField size="small" value={callOffDraft.leveransvecka} onChange={(e) => setCallOffDraftField("leveransvecka", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransdag</Typography><Select size="small" value={callOffDraft.leveransdag} onChange={(e) => setCallOffDraftField("leveransdag", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Måndag">Måndag</MenuItem><MenuItem value="Tisdag">Tisdag</MenuItem><MenuItem value="Onsdag">Onsdag</MenuItem><MenuItem value="Torsdag">Torsdag</MenuItem><MenuItem value="Fredag">Fredag</MenuItem></Select></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransvecka</Typography><TextField size="small" value={callOffDraft!.leveransvecka} onChange={(e) => setCallOffDraftField("leveransvecka", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransdag</Typography><Select size="small" value={callOffDraft!.leveransdag} onChange={(e) => setCallOffDraftField("leveransdag", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Måndag">Måndag</MenuItem><MenuItem value="Tisdag">Tisdag</MenuItem><MenuItem value="Onsdag">Onsdag</MenuItem><MenuItem value="Torsdag">Torsdag</MenuItem><MenuItem value="Fredag">Fredag</MenuItem></Select></div>
                             </div>
                           </div>
 
                           <div className={styles.avropFormCard}>
                             <Typography className={styles.callOffSectionTitle}>Tillägg</Typography>
                             <div className={styles.avropFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg min</Typography><TextField size="small" value={callOffDraft.plocktillaggMin} onChange={(e) => setCallOffDraftField("plocktillaggMin", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg</Typography><TextField size="small" value={callOffDraft.plocktillagg} onChange={(e) => setCallOffDraftField("plocktillagg", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg</Typography><TextField size="small" value={callOffDraft.malningstillagg} onChange={(e) => setCallOffDraftField("malningstillagg", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg tröskel</Typography><TextField size="small" helperText="Tillägg vid mindre än detta värde" value={callOffDraft.malningstillaggTroskel} onChange={(e) => setCallOffDraftField("malningstillaggTroskel", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">lpm</InputAdornment> } }} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg min</Typography><TextField size="small" value={callOffDraft!.plocktillaggMin} onChange={(e) => setCallOffDraftField("plocktillaggMin", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg</Typography><TextField size="small" value={callOffDraft!.plocktillagg} onChange={(e) => setCallOffDraftField("plocktillagg", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg</Typography><TextField size="small" value={callOffDraft!.malningstillagg} onChange={(e) => setCallOffDraftField("malningstillagg", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg tröskel</Typography><TextField size="small" helperText="Tillägg vid mindre än detta värde" value={callOffDraft!.malningstillaggTroskel} onChange={(e) => setCallOffDraftField("malningstillaggTroskel", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">lpm</InputAdornment> } }} /></div>
                             </div>
                           </div>
 
                           <div className={styles.avropFormCard}>
                             <Typography className={styles.callOffSectionTitle}>Övrigt</Typography>
                             <div className={styles.avropFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Lastorder volym</Typography><TextField size="small" value={callOffDraft.lastorderVolym} onChange={(e) => setCallOffDraftField("lastorderVolym", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Levererad volym</Typography><TextField size="small" value={callOffDraft.leveradVolym} onChange={(e) => setCallOffDraftField("leveradVolym", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Intern kommentar</Typography><TextField size="small" value={callOffDraft.internKommentar} onChange={(e) => setCallOffDraftField("internKommentar", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Kundmärke</Typography><TextField size="small" value={callOffDraft.kundmarke} onChange={(e) => setCallOffDraftField("kundmarke", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Lastorder volym</Typography><TextField size="small" value={callOffDraft!.lastorderVolym} onChange={(e) => setCallOffDraftField("lastorderVolym", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Levererad volym</Typography><TextField size="small" value={callOffDraft!.leveradVolym} onChange={(e) => setCallOffDraftField("leveradVolym", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Intern kommentar</Typography><TextField size="small" value={callOffDraft!.internKommentar} onChange={(e) => setCallOffDraftField("internKommentar", e.target.value)} className={styles.freightFormInput} /></div>
+                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Kundmärke</Typography><TextField size="small" value={callOffDraft!.kundmarke} onChange={(e) => setCallOffDraftField("kundmarke", e.target.value)} className={styles.freightFormInput} /></div>
                             </div>
                           </div>
+
+                          <div className={styles.callOffFormViewActions}>
+                            <Button size="small" className={styles.freightSaveButton} onClick={saveCallOffForm}>
+                              {isCreateCallOffView ? "Lägg till" : "Spara"}
+                            </Button>
+                            <Button size="small" className={styles.freightCancelButton} onClick={closeCallOffForm}>
+                              Avbryt
+                            </Button>
+                          </div>
                         </>
-                      ) : null}
-                    </DialogContent>
-                    <DialogActions className={styles.freightDialogActions}>
-                      <Button size="small" className={styles.freightSaveButton} onClick={saveCallOffForm}>
-                        {isCreateCallOffView ? "Lägg till" : "Spara"}
-                      </Button>
-                      <Button size="small" className={styles.freightCancelButton} onClick={closeCallOffForm}>
-                        Avbryt
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
+                      ) : (
+                        <div className={styles.freightSection}>
+                          <div className={styles.freightSectionHeader}>
+                            <Button
+                              className={styles.freightNewButton}
+                              onClick={() => openPaketbokning("Reservationsorder", "callOffForm")}
+                            >
+                              Gå till paketbokning
+                            </Button>
+                          </div>
+                          <div className={styles.paketbokningListTitle}>
+                            <Typography variant="body2" fontWeight={600}>Bokade paket på avropsrad</Typography>
+                          </div>
+                          <div className={styles.lineItemsTableFrame}>
+                            <div className={styles.freightTableWrap}>
+                              <div className={styles.freightTable}>
+                                <DataTable
+                                  variant="line"
+                                  fillRemainingSpace
+                                  columns={BOKADE_PAKET_COLUMNS}
+                                  rows={bokadePaketRows}
+                                  rowKey={(row, index) => `bp-co-${row.paketnr}-${index}`}
+                                  selectedRowIndex={null}
+                                  onRowClick={() => { }}
+                                  renderCell={(row, column, rowIndex) => {
+                                    if (column.key === "_actions") {
+                                      return (
+                                        <span className={styles.freightActionCell}>
+                                          <IconButton
+                                            size="small"
+                                            onClick={(e) => { e.stopPropagation(); setBokadePaketRows((prev) => prev.filter((_, i) => i !== rowIndex)); }}
+                                            title="Ta bort"
+                                          >
+                                            <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                                          </IconButton>
+                                        </span>
+                                      );
+                                    }
+                                    return row[column.key as keyof BokadPaketRow] ?? "-";
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className={styles.paketbokningFooter}>
+                            <span className={styles.paketbokningFooterItem}>
+                              <span className={styles.paketbokningFooterLabel}>Summa lpm:</span>
+                              <span className={styles.paketbokningFooterValue}>
+                                {bokadePaketRows.reduce((sum, r) => sum + (Number(r.lpm) || 0), 0).toFixed(1)}
+                              </span>
+                            </span>
+                            <span className={styles.paketbokningFooterItem}>
+                              <span className={styles.paketbokningFooterLabel}>Summa bitar:</span>
+                              <span className={styles.paketbokningFooterValue}>{bokadePaketRows.length}</span>
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={styles.freightSection}>
+                      <div className={styles.freightSectionHeader}>
+                        <Button
+                          className={styles.freightNewButton}
+                          startIcon={<AddIcon />}
+                          onClick={openCallOffAdd}
+                        >
+                          Ny
+                        </Button>
+                      </div>
+
+                      <div className={styles.lineItemsTableFrame}>
+                        <div className={styles.freightTableWrap}>
+                          <div className={styles.freightTable}>
+                            <DataTable
+                              variant="line"
+                              fillRemainingSpace
+                              columns={CALLOFF_COLUMNS}
+                              rows={callOffRows}
+                              rowKey={(row, index) => `${row.id}-${index}`}
+                              selectedRowIndex={selectedCallOffRow}
+                              onRowClick={(index) =>
+                                setSelectedCallOffRow((previous) => (previous === index ? null : index))
+                              }
+                              renderCell={(row, column, rowIndex) => {
+                                if (column.key === "_nr") {
+                                  return String(rowIndex + 1);
+                                }
+                                if (column.key === "_actions") {
+                                  return (
+                                    <span className={styles.freightActionCell}>
+                                      <IconButton
+                                        size="small"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          openCallOffEdit(rowIndex);
+                                        }}
+                                        title="Redigera rad"
+                                      >
+                                        <EditOutlinedIcon className={styles.freightActionIcon} />
+                                      </IconButton>
+                                      <IconButton
+                                        size="small"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          openCallOffClone(rowIndex);
+                                        }}
+                                        title="Kopiera rad"
+                                      >
+                                        <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
+                                      </IconButton>
+                                      <IconButton
+                                        size="small"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          deleteCallOffRow(rowIndex);
+                                        }}
+                                        title="Ta bort rad"
+                                      >
+                                        <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                                      </IconButton>
+                                    </span>
+                                  );
+                                }
+
+                                const value = row[column.key as keyof Omit<CallOffRow, "id">];
+                                return value?.trim() ? value : "-";
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : activeTab === "Periodisering" ? (
                 <div className={styles.freightTabContent}>
@@ -3495,31 +3850,100 @@ export function LineItemDetailView({
                     </Snackbar>
                   </div>
                 </div>
-              ) : activeTab === "Nettolager" ? (
+              ) : activeTab === "Leveransbokade paket" ? (
                 <div className={styles.freightTabContent}>
                   <div className={styles.freightSection}>
-                    <Tooltip title="Uppdatera" placement="top">
-                      <IconButton size="small" className={styles.contractHeaderDotsButton} style={{ display: "flex", alignSelf: "flex-end" }} onClick={() => { }}>
-                        <RefreshOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <div className={styles.freightSectionHeader}>
+                      <div className={styles.bokadePaketToolbar}>
+                        {/* <Typography className={styles.bokadePaketTitle}>Bokade paket</Typography> */}
+                        <button type="button" className={styles.bokadePaketAddBtn} onClick={() => openPaketbokning("Kontraktrad", "leveransbokadePaket")}>
+                          <AddIcon fontSize="inherit" />
+                          Hantera paket
+                        </button>
+                      </div>
+                      {/* <Button
+                        className={styles.freightNewButton}
+                        onClick={() => openPaketbokning("Kontraktrad", "leveransbokadePaket")}
+                      >
+                        Gå till paketbokning
+                      </Button> */}
+                    </div>
+                    <div className={styles.paketbokningListTitle}>
+                      <Typography variant="body2" fontWeight={600}>Bokade paket på kontraktsrad</Typography>
+                    </div>
                     <div className={styles.lineItemsTableFrame}>
                       <div className={styles.freightTableWrap}>
                         <div className={styles.freightTable}>
                           <DataTable
                             variant="line"
                             fillRemainingSpace
-                            columns={NETTOLAGER_COLUMNS}
-                            rows={nettolagerRows}
-                            rowKey={(row, index) => `${row.bolag}-${row.fakturatext}-${index}`}
-                            selectedRowIndex={selectedNettolagerRow}
-                            onRowClick={(index) => setSelectedNettolagerRow((previous) => (previous === index ? null : index))}
+                            columns={BOKADE_PAKET_COLUMNS}
+                            rows={bokadePaketRows}
+                            rowKey={(row, index) => `bp-${row.paketnr}-${index}`}
+                            selectedRowIndex={null}
+                            onRowClick={() => { }}
+                            renderCell={(row, column, rowIndex) => {
+                              if (column.key === "_actions") {
+                                return (
+                                  <span className={styles.freightActionCell}>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => { e.stopPropagation(); setBokadePaketRows((prev) => prev.filter((_, i) => i !== rowIndex)); }}
+                                      title="Ta bort"
+                                    >
+                                      <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                                    </IconButton>
+                                  </span>
+                                );
+                              }
+                              return row[column.key as keyof BokadPaketRow] ?? "-";
+                            }}
                           />
                         </div>
                       </div>
                     </div>
+                    <div className={styles.paketbokningFooter}>
+                      <span className={styles.paketbokningFooterItem}>
+                        <span className={styles.paketbokningFooterLabel}>Summa lpm:</span>
+                        <span className={styles.paketbokningFooterValue}>
+                          {bokadePaketRows.reduce((sum, r) => sum + (Number(r.lpm) || 0), 0).toFixed(1)}
+                        </span>
+                      </span>
+                      <span className={styles.paketbokningFooterItem}>
+                        <span className={styles.paketbokningFooterLabel}>Summa nom.vol:</span>
+                        <span className={styles.paketbokningFooterValue}>0,000</span>
+                      </span>
+                      <span className={styles.paketbokningFooterItem}>
+                        <span className={styles.paketbokningFooterLabel}>Summa bitar:</span>
+                        <span className={styles.paketbokningFooterValue}>{bokadePaketRows.length}</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
+              ) : activeTab === "Nettolager" ? (<div className={styles.freightTabContent}>
+                <div className={styles.freightSection}>
+                  <Tooltip title="Uppdatera" placement="top">
+                    <IconButton size="small" className={styles.contractHeaderDotsButton} style={{ display: "flex", alignSelf: "flex-end" }} onClick={() => { }}>
+                      <RefreshOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <div className={styles.lineItemsTableFrame}>
+                    <div className={styles.freightTableWrap}>
+                      <div className={styles.freightTable}>
+                        <DataTable
+                          variant="line"
+                          fillRemainingSpace
+                          columns={NETTOLAGER_COLUMNS}
+                          rows={nettolagerRows}
+                          rowKey={(row, index) => `${row.bolag}-${row.fakturatext}-${index}`}
+                          selectedRowIndex={selectedNettolagerRow}
+                          onRowClick={(index) => setSelectedNettolagerRow((previous) => (previous === index ? null : index))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               ) : (
                 <div className={styles.contractTabPlaceholder}>
                   <Typography className={styles.contractInfoValue}>{activeTab} - tabell-/detaljvy för kontraktsrad.</Typography>

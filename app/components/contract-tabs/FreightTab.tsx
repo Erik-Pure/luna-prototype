@@ -1,9 +1,10 @@
 "use client";
 
+import CloseIcon from "@mui/icons-material/Close";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
-import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, Snackbar, TextField, Tooltip, Typography } from "@mui/material";
+import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, MenuItem, Select, Snackbar, TextField, Tooltip, Typography } from "@mui/material";
 import { useState } from "react";
 import { DataTable } from "../shared/DataTable";
 import styles from "../../page.module.scss";
@@ -226,7 +227,7 @@ type FormState =
 
 export function FreightTab() {
   const [virkeRows, setVirkeRows] = useState<VirkeRow[]>(INITIAL_VIRKE_ROWS);
-  const [globalCosts, setGlobalCosts] = useState<GlobalFreightCosts>({
+  const [globalCosts] = useState<GlobalFreightCosts>({
     sped: "",
     spedCurrency: DEFAULT_CURRENCY,
     sjofrakt: "",
@@ -234,8 +235,6 @@ export function FreightTab() {
     haulage: "",
     haulageCurrency: DEFAULT_CURRENCY,
   });
-  const [globalCostsDialogOpen, setGlobalCostsDialogOpen] = useState(false);
-  const [globalCostsDraft, setGlobalCostsDraft] = useState<GlobalFreightCosts | null>(null);
   const [selectedSnittRow, setSelectedSnittRow] = useState<number | null>(null);
   const [freightInfoOpen, setFreightInfoOpen] = useState(false);
   const [selectedVirkeRow, setSelectedVirkeRow] = useState<number | null>(null);
@@ -244,24 +243,6 @@ export function FreightTab() {
   const [keepDialogValues, setKeepDialogValues] = useState(false);
   const [createFeedback, setCreateFeedback] = useState({ open: false, key: 0 });
   const [deleteDialogRow, setDeleteDialogRow] = useState<{ index: number; row: VirkeRow } | null>(null);
-
-  const startGlobalCostsEdit = () => {
-    setGlobalCostsDraft({ ...globalCosts });
-    setGlobalCostsDialogOpen(true);
-  };
-
-  const saveGlobalCosts = () => {
-    if (globalCostsDraft) {
-      setGlobalCosts(globalCostsDraft);
-    }
-    setGlobalCostsDialogOpen(false);
-    setGlobalCostsDraft(null);
-  };
-
-  const cancelGlobalCostsEdit = () => {
-    setGlobalCostsDialogOpen(false);
-    setGlobalCostsDraft(null);
-  };
 
   const openEdit = (index: number) => {
     setForm({ mode: "edit", index, draft: normalizeVirkeRow(virkeRows[index]) });
@@ -353,7 +334,7 @@ export function FreightTab() {
   return (
     <div className={[styles.freightTabContent, styles.freightTabContentAdditionalInfo].join(" ")}>
       <div className={styles.freightSection}>
-        <div className={styles.freightSectionHeader} style={{ margin: "0 auto", width: 700 }}>
+        <div className={styles.freightSectionHeader} style={{ margin: "0 auto", width: 600 }}>
           <Typography className={styles.freightFormTitle}>Gemensamma fraktkostnader per rad</Typography>
           <Tooltip title="Info" placement="top">
             <IconButton
@@ -375,10 +356,10 @@ export function FreightTab() {
           <DialogTitle fontSize={16}>Fraktrader skapas automatiskt</DialogTitle>
           <DialogContent>
             <Typography className={styles.freightInfoText}>
-              Fraktrader för virke och ströprodukter läggs till automatiskt utifrån avtalsrutt. Värdet för Frakt Bil / Jvg hämtas från C-Load och kan, likt eventuella övriga fraktkostnader, justeras manuellt.
+              Fraktrader för virke och ströprodukter läggs till automatiskt utifrån avtalsrutt. Värdet för Frakt Bil / Jvg hämtas från C-Load och kan justeras manuellt. Övriga gemensamma fraktkostnader kan redigeras i kontraktet.
             </Typography>
             <Typography className={styles.freightInfoText} style={{ marginTop: 16 }}>
-              Gemensamma fraktkostnader läggs på varje rad i tabellen och summeras i kolumnen Total fraktkostnad.
+              Gemensamma fraktkostnader från kontraktet appliceras på varje rad i tabellen och inkluderas i kolumnen Total fraktkostnad.
             </Typography>
           </DialogContent>
           <DialogActions>
@@ -400,82 +381,14 @@ export function FreightTab() {
                 </div>
               );
             })}
-            <div className={styles.freightGlobalReadOnlyDivider} />
-            <div className={styles.freightFormField}>
+            <div className={styles.freightFormField} style={{ marginLeft: "auto" }}>
               <Typography className={styles.freightFormLabel}>Totalt frakttillägg per rad</Typography>
               <Typography className={`${styles.freightGlobalReadOnlyValue} ${styles.freightGlobalReadOnlyTotal}`}>
                 {getGlobalTotalSummary(globalCosts) === "–" ? "0 SEK" : getGlobalTotalSummary(globalCosts)}
               </Typography>
             </div>
-            <div style={{ marginLeft: "auto", alignSelf: "center", display: "flex", gap: 6, flexShrink: 0 }}>
-              <Button size="small" className={styles.freightSaveButton} style={{ paddingLeft: "12px", paddingRight: "12px" }} onClick={startGlobalCostsEdit}>
-                Redigera
-              </Button>
-            </div>
           </div>
         </div>
-
-        {/* Dialog: Redigera gemensamma fraktkostnader */}
-        <Dialog
-          open={globalCostsDialogOpen}
-          onClose={cancelGlobalCostsEdit}
-          maxWidth="md"
-          fullWidth
-          classes={{ paper: styles.freightDialogPaper }}
-        >
-          <DialogTitle className={styles.freightDialogTitle}>Gemensamma fraktkostnader per rad</DialogTitle>
-          <DialogContent className={styles.freightDialogContent}>
-            <div className={styles.freightFormGrid}>
-              {GLOBAL_FREIGHT_FIELDS.map((field) => (
-                <div key={field.amountKey} className={styles.freightFormField}>
-                  <Typography className={styles.freightFormLabel}>{field.label}</Typography>
-                  <div className={styles.freightAmountCurrencyRow}>
-                    <TextField
-                      size="small"
-                      value={globalCostsDraft?.[field.amountKey] ?? ""}
-                      onChange={(e) =>
-                        setGlobalCostsDraft((prev) => prev ? { ...prev, [field.amountKey]: e.target.value } : prev)
-                      }
-                      className={`${styles.freightFormInput} ${styles.freightAmountInput}`}
-                      placeholder="0"
-                      variant="outlined"
-                    />
-                    <Select
-                      size="small"
-                      value={globalCostsDraft?.[field.currencyKey] ?? DEFAULT_CURRENCY}
-                      onChange={(e) =>
-                        setGlobalCostsDraft((prev) => prev ? { ...prev, [field.currencyKey]: e.target.value as CurrencyCode } : prev)
-                      }
-                      className={`${styles.freightFormInput} ${styles.freightCurrencyInput}`}
-                    >
-                      {CURRENCY_OPTIONS.map((currency) => (
-                        <MenuItem key={currency} value={currency}>
-                          {currency}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-          <DialogActions className={styles.freightDialogActions}>
-            <div className={styles.freightTotalCostWrap}>
-              <Typography className={styles.freightTotalCostLabel}>Totalt frakttillägg per rad</Typography>
-              <Typography className={styles.freightTotalCostValue}>
-                {globalCostsDraft
-                  ? (getGlobalTotalSummary(globalCostsDraft) === "–" ? "0 SEK" : getGlobalTotalSummary(globalCostsDraft))
-                  : "0 SEK"}
-              </Typography>
-            </div>
-            <Button size="small" className={styles.freightSaveButton} onClick={saveGlobalCosts}>
-              Spara
-            </Button>
-            <Button size="small" className={styles.freightCancelButton} onClick={cancelGlobalCostsEdit}>
-              Avbryt
-            </Button>
-          </DialogActions>
-        </Dialog>
 
         <div className={styles.freightTableWrap}>
           <div className={styles.freightTable}>
@@ -575,6 +488,7 @@ export function FreightTab() {
                       value={draft.bolag}
                       onChange={(e) => setDraftField("bolag", e.target.value)}
                       className={styles.freightFormInput}
+                      disabled
                     >
                       {UNIT_OPTIONS.map((unit) => (
                         <MenuItem key={unit} value={unit}>
@@ -590,6 +504,15 @@ export function FreightTab() {
                       value={draft.avtalsrutt}
                       onChange={(e) => setDraftField("avtalsrutt", e.target.value)}
                       className={styles.freightFormInput}
+                      endAdornment={
+                        draft.avtalsrutt ? (
+                          <InputAdornment position="end" sx={{ marginRight: 1 }}>
+                            <IconButton size="small" onClick={() => setDraftField("avtalsrutt", "")} tabIndex={-1}>
+                              <CloseIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </InputAdornment>
+                        ) : undefined
+                      }
                     >
                       {ROUTE_OPTIONS.map((route) => (
                         <MenuItem key={route} value={route}>

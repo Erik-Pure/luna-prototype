@@ -5,7 +5,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import TableRowsOutlinedIcon from "@mui/icons-material/TableRowsOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 import { ActionRow } from "./shared/ActionRow";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
@@ -144,6 +144,16 @@ export function ContractListView({
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleToggleSearch = () => {
     setIsSearchOpen((prev) => {
       if (!prev) {
@@ -197,7 +207,7 @@ export function ContractListView({
           <>
             <div className={styles.tableSearchWrapper} ref={searchWrapperRef}>
               <Button
-                className={`${styles.lineItemsToggleButton} ${isSearchOpen ? styles.tableSearchButtonActive : ""}`}
+                className={`${styles.lineItemsToggleButton} ${isSearchOpen || globalSearchValue ? styles.tableSearchButtonActive : ""}`}
                 variant="outlined"
                 size="small"
                 startIcon={<SearchIcon fontSize="small" />}

@@ -5,8 +5,8 @@ import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import SearchIcon from "@mui/icons-material/Search";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, TextField, Tooltip, Typography } from "@mui/material";
-import { useRef, useState, type RefObject } from "react";
+import { Button, IconButton, MenuItem, Select, TextField, Tooltip } from "@mui/material";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { ActionRow } from "../shared/ActionRow";
 import { ColumnManagerDropdown } from "../shared/ColumnManagerDropdown";
 import { DataTable } from "../shared/DataTable";
@@ -79,16 +79,26 @@ export function ContractRowsTab({
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [editedRowValues, setEditedRowValues] = useState<Record<number, Partial<Record<"aPris" | "enhet", string>>>>({});
   const [isPriceEditMode, setIsPriceEditMode] = useState(false);
-  const [isBulkUnitDialogOpen, setIsBulkUnitDialogOpen] = useState(false);
-  const [bulkUnitValue, setBulkUnitValue] = useState<string>(INVOICE_UNIT_OPTIONS[0]);
+  const [openSelectIndex, setOpenSelectIndex] = useState<number | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [filterValue, setFilterValue] = useState("");
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const priceEditTableRef = useRef<HTMLDivElement>(null);
 
   const selectRow = (rowIndex: number) => {
     setSelectedRow((previous) => (previous === rowIndex ? null : rowIndex));
   };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleToggleSearch = () => {
     setIsSearchOpen((prev) => {
@@ -120,6 +130,10 @@ export function ContractRowsTab({
 
   const handleEditPrice = () => {
     setIsPriceEditMode(true);
+    requestAnimationFrame(() => {
+      const first = priceEditTableRef.current?.querySelector<HTMLElement>('[data-price-edit="true"]');
+      first?.focus();
+    });
   };
 
   const handleSavePrice = () => {
@@ -137,35 +151,20 @@ export function ContractRowsTab({
     setIsPriceEditMode(false);
   };
 
-  const getRowInvoiceUnit = (row: Record<string, string>, rowIndex: number): string =>
-    editedRowValues[rowIndex]?.enhet ?? row.enhet ?? "";
-
-  const handleOpenBulkUnitDialog = () => {
-    const firstExisting = rows.length > 0 ? getRowInvoiceUnit(rows[0], 0) : "";
-    setBulkUnitValue(
-      INVOICE_UNIT_OPTIONS.includes(firstExisting as (typeof INVOICE_UNIT_OPTIONS)[number])
-        ? firstExisting
-        : INVOICE_UNIT_OPTIONS[0]
+  const handlePriceEditKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!isPriceEditMode || e.key !== "Tab" || openSelectIndex !== null) return;
+    const fields = Array.from(
+      e.currentTarget.querySelectorAll<HTMLElement>('[data-price-edit="true"]')
     );
-    setIsBulkUnitDialogOpen(true);
-  };
-
-  const handleCloseBulkUnitDialog = () => {
-    setIsBulkUnitDialogOpen(false);
-  };
-
-  const handleApplyBulkUnit = () => {
-    setEditedRowValues((previous) => {
-      const next = { ...previous };
-      rows.forEach((_row, rowIndex) => {
-        next[rowIndex] = {
-          ...next[rowIndex],
-          enhet: bulkUnitValue,
-        };
-      });
-      return next;
-    });
-    handleCloseBulkUnitDialog();
+    if (fields.length === 0) return;
+    const activeEl = document.activeElement as HTMLElement | null;
+    const currentIndex = fields.findIndex((f) => f === activeEl || f.contains(activeEl));
+    if (currentIndex === -1) return;
+    e.preventDefault();
+    const nextIndex = e.shiftKey
+      ? (currentIndex - 1 + fields.length) % fields.length
+      : (currentIndex + 1) % fields.length;
+    fields[nextIndex]?.focus();
   };
 
   const actionRowItems = [
@@ -193,12 +192,6 @@ export function ContractRowsTab({
     ...(isPriceEditMode
       ? [
         {
-          key: "bulk-unit",
-          label: "Ändra alla",
-          enabled: true,
-          onClick: handleOpenBulkUnitDialog
-        },
-        {
           key: "cancel-price",
           label: "Avbryt",
           icon: <CloseOutlinedIcon fontSize="small" />,
@@ -223,7 +216,7 @@ export function ContractRowsTab({
           <>
             <div className={styles.tableSearchWrapper} ref={searchWrapperRef}>
               <Button
-                className={`${styles.lineItemsToggleButton} ${isSearchOpen ? styles.tableSearchButtonActive : ""}`}
+                className={`${styles.lineItemsToggleButton} ${isSearchOpen || filterValue ? styles.tableSearchButtonActive : ""}`}
                 variant="outlined"
                 size="small"
                 startIcon={<SearchIcon fontSize="small" />}
@@ -286,7 +279,7 @@ export function ContractRowsTab({
       />
 
       <div className={styles.lineItemsTableWrap}>
-        <div className={styles.lineItemsTable}>
+        <div className={styles.lineItemsTable} ref={priceEditTableRef} onKeyDown={handlePriceEditKeyDown}>
           <DataTable
             variant="line"
             columns={visibleColumns}
@@ -314,6 +307,7 @@ export function ContractRowsTab({
                   onClick={(event) => event.stopPropagation()}
                   onChange={(event) => updateDraftRowField(rowIndex, column.key as "aPris" | "enhet", event.target.value)}
                   className={styles.contractRowInlineInput}
+                  inputProps={{ "data-price-edit": "true" }}
                 />
               ) : isPriceEditMode && column.key === "enhet" ? (
                 <Select
@@ -322,6 +316,9 @@ export function ContractRowsTab({
                   onClick={(event) => event.stopPropagation()}
                   onChange={(event) => updateDraftRowField(rowIndex, "enhet", event.target.value)}
                   className={styles.contractRowInlineInput}
+                  onOpen={() => setOpenSelectIndex(rowIndex)}
+                  onClose={() => setOpenSelectIndex(null)}
+                  SelectDisplayProps={{ "data-price-edit": "true" } as React.HTMLAttributes<HTMLDivElement>}
                 >
                   {INVOICE_UNIT_OPTIONS.map((option) => (
                     <MenuItem key={option} value={option}>
@@ -338,44 +335,6 @@ export function ContractRowsTab({
           />
         </div>
       </div>
-
-      <Dialog open={isBulkUnitDialogOpen} onClose={handleCloseBulkUnitDialog} maxWidth="xs" fullWidth>
-        <DialogTitle fontSize={16}>Ändra Enhet faktura på alla rader</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ mb: 1 }}>Välj enhet som ska sättas på samtliga rader</Typography>
-          <Select
-            value={bulkUnitValue}
-            onChange={(event) => setBulkUnitValue(event.target.value)}
-            size="small"
-            fullWidth
-          >
-            {INVOICE_UNIT_OPTIONS.map((option) => (
-              <MenuItem key={option} value={option}>
-                {option}
-              </MenuItem>
-            ))}
-          </Select>
-        </DialogContent>
-        <DialogActions sx={{ margin: "0 12px 12px 0" }}>
-          <button
-            type="button"
-            className={styles.actionItemPrimary}
-            onClick={handleApplyBulkUnit}
-          >
-            Spara
-          </button>
-          <Button
-            size="small"
-            variant="outlined"
-            color="inherit"
-            className={styles.lineItemsToggleButton}
-            onClick={handleCloseBulkUnitDialog}
-            sx={{ textTransform: "none" }}
-          >
-            Avbryt
-          </Button>
-        </DialogActions>
-      </Dialog>
     </div>
   );
 }

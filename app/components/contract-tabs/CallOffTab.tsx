@@ -32,6 +32,7 @@ type AvropSummary = {
   avropadVolym: string;
   leveradVolym: string;
   resterandeVolym: string;
+  enhet: string;
 };
 
 type AvropsradRow = {
@@ -68,6 +69,7 @@ const SUMMARY: AvropSummary = {
   avropadVolym: "6543",
   leveradVolym: "0",
   resterandeVolym: "6543",
+  enhet: "m³",
 };
 
 const INITIAL_AVROPSRADER: AvropsradRow[] = [
@@ -204,18 +206,90 @@ function EditAvropDialog({ open, onClose, fields, onSave }: EditAvropDialogProps
   );
 }
 
+// ── Edit avropsrad dialog ──────────────────────────────────────────────────────
+
+type EditAvropsradDialogProps = {
+  open: boolean;
+  onClose: () => void;
+  row: AvropsradRow;
+  onSave: (row: AvropsradRow) => void;
+};
+
+function EditAvropsradDialog({ open, onClose, row, onSave }: EditAvropsradDialogProps) {
+  const [draft, setDraft] = useState<AvropsradRow>(row);
+
+  const set = (field: keyof AvropsradRow) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setDraft((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const handleSave = () => {
+    onSave(draft);
+    onClose();
+  };
+
+  const field = (label: string, key: keyof AvropsradRow) => (
+    <div style={{ flex: 1, minWidth: 140, display: "flex", flexDirection: "column", gap: 4 }}>
+      <Typography className={styles.searchFieldLabel}>{label}</Typography>
+      <TextField value={draft[key]} onChange={set(key)} size="small" fullWidth />
+    </div>
+  );
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth classes={{ paper: styles.freightDialogPaper }}>
+      <DialogTitle className={styles.freightDialogTitle}>
+        <div className={styles.freightDialogTitleRow}>
+          <span>Redigera avropsrad {row.avropsradNr}</span>
+        </div>
+      </DialogTitle>
+      <DialogContent style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 8 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          {field("Avropsradsstatus", "avropsradsstatus")}
+          {field("Enhet", "enhet")}
+          {field("Fakturatext", "fakturatext")}
+          {field("Pakettyp", "pakettyp")}
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          {field("Mängd", "mangd")}
+          {field("Beställd enhet", "bestelldEnhet")}
+          {field("Volym", "volym")}
+          {field("Levvecka", "levvecka")}
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          {field("Emballage", "emballage")}
+          {field("Bunt", "bunt")}
+          {field("Folie", "folie")}
+          {field("Kundmärke", "kundmarke")}
+          {field("Certifiering", "certifiering")}
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          {field("Intern kommentar", "internKommentar")}
+          {field("Extern kommentar", "externKommentar")}
+        </div>
+      </DialogContent>
+      <DialogActions className={styles.freightDialogActions}>
+        <Button size="small" className={styles.freightSaveButton} onClick={handleSave}>
+          Spara
+        </Button>
+        <Button size="small" className={styles.freightCancelButton} onClick={onClose}>
+          Avbryt
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 // ── Main CallOffTab ────────────────────────────────────────────────────────────
 
 export function CallOffTab() {
   const [fields, setFields] = useState<AvropFields>(INITIAL_FIELDS);
-  const [avropsrader] = useState<AvropsradRow[]>(INITIAL_AVROPSRADER);
+  const [avropsrader, setAvropsrader] = useState<AvropsradRow[]>(INITIAL_AVROPSRADER);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
+  const [editRowIndex, setEditRowIndex] = useState<number | null>(null);
 
-  const summaryItems: { label: string; value: string }[] = [
+  const summaryItems: { label: string; value: string; total?: string; unit?: string }[] = [
     { label: "Levvecka (min)", value: SUMMARY.levveckaMin },
     { label: "Avropad volym", value: SUMMARY.avropadVolym },
-    { label: "Levererad volym", value: SUMMARY.leveradVolym },
+    { label: "Levererad volym", value: SUMMARY.leveradVolym, total: SUMMARY.avropadVolym, unit: SUMMARY.enhet },
     { label: "Resterande volym", value: SUMMARY.resterandeVolym },
   ];
 
@@ -224,10 +298,15 @@ export function CallOffTab() {
       {/* ── Summary card ── */}
       <div className={styles.avropSummaryWrap}>
         <div className={styles.avropSummaryCard}>
-          {summaryItems.map(({ label, value }) => (
+          {summaryItems.map(({ label, value, total, unit }) => (
             <div key={label} className={styles.avropSummaryItem}>
               <div className={styles.avropSummaryLabel}>{label}</div>
-              <div className={styles.avropSummaryValue}>{value}</div>
+              <div className={styles.avropSummaryValue}>
+                {value}
+                {total !== undefined ? (
+                  <span className={styles.avropSummaryValueFraction}>/ {total}{unit ? ` ${unit}` : ""}</span>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>
@@ -284,6 +363,7 @@ export function CallOffTab() {
               rowKey={(_row, index) => `avropsrad-${index}`}
               selectedRowIndex={selectedRow}
               onRowClick={(index) => setSelectedRow((prev) => (prev === index ? null : index))}
+              renderCell={(_row, column) => _row[column.key]}
             />
           </div>
         </div>
@@ -295,6 +375,19 @@ export function CallOffTab() {
           onClose={() => setEditOpen(false)}
           fields={fields}
           onSave={setFields}
+        />
+      )}
+
+      {editRowIndex !== null && (
+        <EditAvropsradDialog
+          open={editRowIndex !== null}
+          onClose={() => setEditRowIndex(null)}
+          row={avropsrader[editRowIndex]}
+          onSave={(updated) => {
+            setAvropsrader((prev) =>
+              prev.map((r, i) => (i === editRowIndex ? updated : r))
+            );
+          }}
         />
       )}
     </div>

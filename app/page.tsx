@@ -33,10 +33,15 @@ import {
   PriceListView
 } from "./components/views";
 import { CustomerDetailView, type CustomerDetailData } from "./components/CustomerDetailView";
+import { AvropsradDetailView } from "./components/contract-tabs/AvropsradDetailView";
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
 type SectionKey = "hem" | "marknad" | "produktion" | "leverans" | "rapporter" | "systemhantering" | "system";
+
+// Remembers the line item ID to return to when saving an avropsrad (null = came from contract Avrop tab).
+// Not affected by StrictMode double-invoke since it's only written/read in event handlers.
+let _savedReturnLineItemId: string | null = null;
 
 type TopMenuItemDef = {
   slug: string;
@@ -205,6 +210,10 @@ type LineItemColumnKey =
   | "transport"
   | "nettoSek"
   | "radKommentar"
+  | "valuta"
+  | "kontraktsrest"
+  | "nettolager"
+  | "nettoPrisM3"
   | keyof NewLineItemDraft;
 
 type LineItemColumnConfig = {
@@ -671,23 +680,36 @@ const LINE_ITEM_CREATE_FIELD_COLUMNS: Array<{ key: keyof NewLineItemDraft; label
 ];
 
 const baseLineItemColumns: LineItemColumnConfig[] = [
-  { key: "idRad", label: "ID-rad", visible: true, pinned: true },
+  { key: "idRad", label: "KontraktsradsID", visible: true, pinned: true },
   { key: "status", label: "Status", visible: true, pinned: false },
-  { key: "underkonto", label: "Underkonto", visible: true, pinned: false },
-  { key: "artikelNr", label: "Artikelnr", visible: true, pinned: false },
+  { key: "senderCompany", label: "Utlastande enhet", visible: true, pinned: false },
+  { key: "artikelNr", label: "ArtNr", visible: true, pinned: false },
   { key: "produkt", label: "Produkt", visible: true, pinned: false },
+  { key: "packageType", label: "Pakettyp", visible: true, pinned: false },
   { key: "langd", label: "Längd", visible: true, pinned: false },
   { key: "mangd", label: "Mängd", visible: true, pinned: false },
-  { key: "enhet", label: "Enhet faktura", visible: true, pinned: false },
-  { key: "aPris", label: "A-pris", visible: true, pinned: false },
-  { key: "rabatt", label: "Rabatt", visible: true, pinned: false },
-  { key: "volym", label: "Volym", visible: false, pinned: false },
-  { key: "leverans", label: "Leverans", visible: true, pinned: false },
+  { key: "orderedUnit", label: "Beställd enhet", visible: true, pinned: false },
+  { key: "enhet", label: "Faktura enhet", visible: true, pinned: false },
+  { key: "aPris", label: "À-pris", visible: true, pinned: false },
+  { key: "valuta", label: "Valuta", visible: true, pinned: false },
+  { key: "volym", label: "Kontraktsvolym", visible: true, pinned: false },
+  { key: "leverans", label: "Lev", visible: true, pinned: false },
+  { key: "kontraktsrest", label: "Kontraktsrest", visible: true, pinned: false },
+  { key: "internalComment", label: "Intern kommentar", visible: true, pinned: false },
+  { key: "externalComment", label: "Extern kommentar", visible: true, pinned: false },
+  { key: "deliveryPeriodDocument", label: "Levperiod", visible: true, pinned: false },
+  { key: "deliveryWeek", label: "Levvecka", visible: true, pinned: false },
+  { key: "deliveryDay", label: "Levdag", visible: true, pinned: false },
+  { key: "salesType", label: "Säljtyp", visible: true, pinned: false },
+  { key: "responsibleCompany", label: "Ansvarig enhet", visible: true, pinned: false },
+  { key: "priceList", label: "Prislista", visible: true, pinned: false },
+  { key: "nettoSek", label: "Belopp SEK", visible: true, pinned: false },
+  { key: "adjustedPrice", label: "Prisjust", visible: true, pinned: false },
+  { key: "vflGroup", label: "VFL grupp", visible: true, pinned: false },
+  { key: "senderWarehouse", label: "Utlastande lagerställe", visible: true, pinned: false },
   { key: "lager", label: "Lager", visible: true, pinned: false },
-  { key: "prisOrt", label: "Prisort", visible: false, pinned: false },
-  { key: "transport", label: "Transport", visible: false, pinned: false },
-  { key: "nettoSek", label: "Netto SEK", visible: true, pinned: false },
-  { key: "radKommentar", label: "Radkommentar", visible: false, pinned: false }
+  { key: "nettolager", label: "Nettolager", visible: true, pinned: false },
+  { key: "nettoPrisM3", label: "Nettopris/m3", visible: true, pinned: false },
 ];
 
 const defaultLineItemColumns: LineItemColumnConfig[] = [
@@ -760,6 +782,10 @@ const lineItemRows: LineItemRow[] = Array.from({ length: 12 }).map((_, idx) => (
   customerBrand: "",
   recipientBrand: "",
   callOffStatus: "Sales planned",
+  valuta: "SEK",
+  kontraktsrest: `${(idx + 1) * 10}`,
+  nettolager: `${(idx + 5) * 100}`,
+  nettoPrisM3: `${(850 + idx * 12).toFixed(2)}`,
 }));
 
 export default function Home() {
@@ -775,10 +801,15 @@ export default function Home() {
     sectionDefinitions.find((section) => section.slug === sectionSlug) ?? sectionDefinitions[0];
   const menuSlug = pathParts[1] ?? sectionConfig.defaultMenuSlug;
   const contractId = pathParts[2] ?? null;
-  const lineItemId = pathParts[3] ?? null;
   const isContractDetailRoute = sectionSlug === "marknad" && menuSlug === "kontraktlista";
   const isCustomerDetailRoute = sectionSlug === "marknad" && menuSlug === "kundlista";
   const isPriceListRoute = sectionSlug === "marknad" && menuSlug === "prislistor";
+  const rawSegment3 = pathParts[3] ?? null;
+  const isAvropRoute = isContractDetailRoute && rawSegment3 === "avrop";
+  const selectedAvropsradId = isAvropRoute ? (pathParts[4] ?? null) : null;
+  const lineItemId = isAvropRoute ? null : rawSegment3;
+  const isAvropDetailOpen = isAvropRoute && Boolean(selectedAvropsradId);
+  const isCreatingAvrop = selectedAvropsradId === "new";
   const isContractDetailOpen = isContractDetailRoute && Boolean(contractId);
   const isCustomerDetailOpen = isCustomerDetailRoute && Boolean(contractId);
   const isPriceListDetailOpen = isPriceListRoute && Boolean(contractId);
@@ -818,8 +849,12 @@ export default function Home() {
   >(
     []
   );
-  const [activeContractTab, setActiveContractTab] = useState<ContractTab>("Kontraktsrader");
-  const [activeLineItemTab, setActiveLineItemTab] = useState<LineItemDetailTab>("Längdfördelning");
+  const [activeContractTab, setActiveContractTab] = useState<ContractTab>(() =>
+    typeof window !== "undefined" && window.location.hash === "#avrop" ? "Avrop" : "Kontraktsrader"
+  );
+  const [activeLineItemTab, setActiveLineItemTab] = useState<LineItemDetailTab>(() =>
+    typeof window !== "undefined" && window.location.hash === "#avropsrad" ? "Avropsrad" : "Längdfördelning"
+  );
   const [selectedCompany, setSelectedCompany] = useState(fakeCompanies[0]);
   const [isCompanyMenuOpen, setIsCompanyMenuOpen] = useState(false);
   const [searchValues, setSearchValues] = useState<SearchValueMap>(initialSearchValues);
@@ -1353,6 +1388,40 @@ export default function Home() {
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/new`);
   };
 
+  const openAvropsradDetail = (id: string) => {
+    if (!selectedContractId) return;
+    _savedReturnLineItemId = selectedLineItemId;
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/avrop/${id}`);
+  };
+
+  const openNewAvropsrad = () => {
+    if (!selectedContractId) return;
+    _savedReturnLineItemId = selectedLineItemId;
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/avrop/new`);
+  };
+
+  const closeAvropsradDetail = () => {
+    if (!selectedContractId) return;
+    const returnLineItemId = _savedReturnLineItemId;
+    _savedReturnLineItemId = null;
+    if (returnLineItemId) {
+      navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/${returnLineItemId}`);
+    } else {
+      navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`);
+    }
+  };
+
+  const saveAvropsradDetail = () => {
+    if (!selectedContractId) return;
+    const returnLineItemId = _savedReturnLineItemId;
+    _savedReturnLineItemId = null;
+    if (returnLineItemId) {
+      navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/${returnLineItemId}#avropsrad`);
+    } else {
+      navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}#avrop`);
+    }
+  };
+
   const togglePinnedLineItemField = (key: keyof NewLineItemDraft) => {
     setPinnedLineItemFields((previous) => {
       const next = new Set(previous);
@@ -1444,6 +1513,10 @@ export default function Home() {
       return selectedPriceListId === "new" ? "Ny prislista" : `Prislista ${selectedPriceListId}`;
     }
 
+    if (isAvropDetailOpen && selectedAvropsradId) {
+      return isCreatingAvrop ? "Ny avropsrad" : `Avropsrad ${selectedAvropsradId}`;
+    }
+
     if (isLineItemDetailOpen && selectedLineItemId) {
       return isCreatingLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${selectedLineItemId}`;
     }
@@ -1462,6 +1535,9 @@ export default function Home() {
     isCustomerDetailOpen,
     selectedCustomerName,
     selectedContractId,
+    isAvropDetailOpen,
+    selectedAvropsradId,
+    isCreatingAvrop,
     isLineItemDetailOpen,
     selectedLineItemId,
     isCreatingLineItem,
@@ -1475,6 +1551,19 @@ export default function Home() {
   useEffect(() => {
     document.title = `${deepestBreadcrumb} (${selectedCompany})`;
   }, [deepestBreadcrumb, selectedCompany]);
+
+  // Clean up the navigation hash after tabs have been initialised from it.
+  // State is read in the useState initialisers above (not here) to avoid setState-in-effect.
+  // The cleanup cancels the timer so the hash survives StrictMode's unmount/remount cycle.
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === "#avropsrad" || hash === "#avrop") {
+      const timer = setTimeout(() => {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isRouteLoading) {
@@ -1647,41 +1736,51 @@ export default function Home() {
             />
           )
         ) : isContractDetailOpen ? (
-          <ContractDetailView
-            isLineItemDetailOpen={isLineItemDetailOpen}
-            selectedLineItemId={selectedLineItemId}
-            newLineItemDraftVersion={newLineItemDraftVersion}
-            activeLineItemTab={activeLineItemTab}
-            onChangeLineItemTab={setActiveLineItemTab}
-            newLineItemDraftSeed={newLineItemDraftSeed}
-            pinnedLineItemFields={pinnedLineItemFields}
-            onTogglePinnedLineItemField={togglePinnedLineItemField}
-            keepLineItemOpenAfterSave={keepLineItemOpenAfterSave}
-            onToggleKeepLineItemOpenAfterSave={setKeepLineItemOpenAfterSave}
-            onSaveAndCreateNewLineItem={saveAndCreateNewLineItem}
-            onSaveAndCloseLineItem={closeLineItemDetail}
-            contractTabs={contractTabs}
-            activeContractTabForView={activeContractTabForView}
-            onChangeContractTab={(tab) => handleContractTabChange(tab as ContractTab)}
-            selectedContractId={selectedContractId}
-            visibleLineColumns={visibleLineColumns}
-            lineItemRows={lineItemRows}
-            draftLineColumns={draftLineColumns}
-            isLineColumnsMenuOpen={isLineColumnsMenuOpen}
-            lineColumnsMenuRef={lineColumnsMenuRef}
-            lineColumnsButtonRef={lineColumnsButtonRef}
-            onOpenLineColumnsMenu={openLineColumnsMenu}
-            onCancelLineColumnsMenu={cancelLineColumnChanges}
-            onToggleLineColumnVisibility={(key) => toggleLineColumnVisibility(key as LineItemColumnKey)}
-            onMoveLineColumn={(key, direction) =>
-              moveLineColumn(key as LineItemColumnKey, direction)
-            }
-            onSaveLineColumnChanges={saveLineColumnChanges}
-            onResetLineColumnChanges={resetLineColumnChanges}
-            onToggleLineColumnPin={(key) => toggleLineColumnPin(key as LineItemColumnKey)}
-            onOpenLineItemDetail={openLineItemDetail}
-            onCreateLineItem={openNewLineItem}
-          />
+          isAvropDetailOpen && selectedAvropsradId ? (
+            <AvropsradDetailView
+              avropsradId={selectedAvropsradId}
+              onClose={closeAvropsradDetail}
+              onSave={saveAvropsradDetail}
+            />
+          ) : (
+            <ContractDetailView
+              isLineItemDetailOpen={isLineItemDetailOpen}
+              selectedLineItemId={selectedLineItemId}
+              newLineItemDraftVersion={newLineItemDraftVersion}
+              activeLineItemTab={activeLineItemTab}
+              onChangeLineItemTab={setActiveLineItemTab}
+              newLineItemDraftSeed={newLineItemDraftSeed}
+              pinnedLineItemFields={pinnedLineItemFields}
+              onTogglePinnedLineItemField={togglePinnedLineItemField}
+              keepLineItemOpenAfterSave={keepLineItemOpenAfterSave}
+              onToggleKeepLineItemOpenAfterSave={setKeepLineItemOpenAfterSave}
+              onSaveAndCreateNewLineItem={saveAndCreateNewLineItem}
+              onSaveAndCloseLineItem={closeLineItemDetail}
+              contractTabs={contractTabs}
+              activeContractTabForView={activeContractTabForView}
+              onChangeContractTab={(tab) => handleContractTabChange(tab as ContractTab)}
+              selectedContractId={selectedContractId}
+              visibleLineColumns={visibleLineColumns}
+              lineItemRows={lineItemRows}
+              draftLineColumns={draftLineColumns}
+              isLineColumnsMenuOpen={isLineColumnsMenuOpen}
+              lineColumnsMenuRef={lineColumnsMenuRef}
+              lineColumnsButtonRef={lineColumnsButtonRef}
+              onOpenLineColumnsMenu={openLineColumnsMenu}
+              onCancelLineColumnsMenu={cancelLineColumnChanges}
+              onToggleLineColumnVisibility={(key) => toggleLineColumnVisibility(key as LineItemColumnKey)}
+              onMoveLineColumn={(key, direction) =>
+                moveLineColumn(key as LineItemColumnKey, direction)
+              }
+              onSaveLineColumnChanges={saveLineColumnChanges}
+              onResetLineColumnChanges={resetLineColumnChanges}
+              onToggleLineColumnPin={(key) => toggleLineColumnPin(key as LineItemColumnKey)}
+              onOpenLineItemDetail={openLineItemDetail}
+              onCreateLineItem={openNewLineItem}
+              onOpenAvropsrad={openAvropsradDetail}
+              onCreateAvropsrad={openNewAvropsrad}
+            />
+          )
         ) : isSystemPage ? (
           <div className={styles.contractDetailPanel}>
             <div className={styles.systemSettingsPanel}>
