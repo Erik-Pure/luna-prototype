@@ -1669,6 +1669,9 @@ export function LineItemDetailView({
                 className={styles.contractQuickActionButton}
                 size="small"
                 onClick={() => onSaveAndCreateNew?.({ ...emptyNewLineItemDraft })}
+                startIcon={
+                  <ContentCopyOutlinedIcon fontSize="small" />
+                }
               >
                 Kopiera
               </Button>
@@ -2249,9 +2252,11 @@ export function LineItemDetailView({
                             ) : (
                               <> {volumeUnit}</>
                             )}
-                            <span className={styles.periodiseringAccordionAterstar}>
-                              · återstår {formatSvVolume(aterstarAttPeriodisera ?? 0)} {volumeUnit}
-                            </span>
+                            {aterstarAttPeriodisera ?
+                              <span className={styles.periodiseringAccordionAterstar}>
+                                · återstår {formatSvVolume(aterstarAttPeriodisera ?? 0)} {volumeUnit}
+                              </span>
+                              : null}
 
                             {periodiseringArIbalans ? <CheckCircleIcon className={styles.periodiseringAccordionDoneIcon} /> : null}
                           </span>
