@@ -28,7 +28,6 @@ import { PaketbokningView, type BokadPaketRow } from "./PaketbokningView";
 
 const lineItemDetailTabs = [
   "Längdfördelning",
-  "Periodisering",
   "Nettolager",
   "Avropsrader",
   "Produktionsplanering",
@@ -758,6 +757,7 @@ export function LineItemDetailView({
   const [keepLengthDistributionValues, setKeepLengthDistributionValues] = useState(false);
   const [lastLengthDistributionDraft, setLastLengthDistributionDraft] = useState<Omit<LengthDistributionRow, "id"> | null>(null);
   const [lengthDistributionCreateFeedback, setLengthDistributionCreateFeedback] = useState({ open: false, key: 0 });
+  const [periodiseringEnabled, setPeriodiseringEnabled] = useState(false);
   const [periodiseringRows, setPeriodiseringRows] = useState<PeriodiseringRow[]>([]);
   const [selectedPeriodiseringRow, setSelectedPeriodiseringRow] = useState<number | null>(null);
   const [periodiseringForm, setPeriodiseringForm] = useState<PeriodiseringFormState>({ mode: "closed" });
@@ -789,8 +789,6 @@ export function LineItemDetailView({
   const [bokadePaketRows, setBokadePaketRows] = useState<BokadPaketRow[]>(INITIAL_BOKADE_PAKET);
   const [paketbokningNav, setPaketbokningNav] = useState<PaketbokningNavState>({ open: false });
   const [callOffFormTab, setCallOffFormTab] = useState<"form" | "leveransbokadePaket">("form");
-  const [isBytBolagDialogOpen, setIsBytBolagDialogOpen] = useState(false);
-  const [bytBolagDraft, setBytBolagDraft] = useState({ senderCompany: "", senderWarehouse: "", responsibleCompany: "" });
   const [newLineItemDraft, setNewLineItemDraft] = useState<NewLineItemDraft>({
     ...(isNewLineItem ? emptyNewLineItemDraft : existingLineItemDraft),
     ...newDraftSeed
@@ -1670,16 +1668,9 @@ export function LineItemDetailView({
               <Button
                 className={styles.contractQuickActionButton}
                 size="small"
-                onClick={() => {
-                  setBytBolagDraft({
-                    senderCompany: newLineItemDraft.senderCompany,
-                    senderWarehouse: newLineItemDraft.senderWarehouse,
-                    responsibleCompany: newLineItemDraft.responsibleCompany,
-                  });
-                  setIsBytBolagDialogOpen(true);
-                }}
+                onClick={() => onSaveAndCreateNew?.({ ...emptyNewLineItemDraft })}
               >
-                Byt enhet
+                Kopiera
               </Button>
               <IconButton
                 size="small"
@@ -2237,6 +2228,121 @@ export function LineItemDetailView({
                     <TextField label="Leveransperiod kunddokument" value={newLineItemDraft.deliveryPeriodDocument} onChange={(event) => updateDraftField("deliveryPeriodDocument", event.target.value)} size="small" className={getFieldControlClassName("deliveryPeriodDocument")} />
                   </div>
                 </div>
+                <>
+                  <hr className={styles.contractFlatDivider} />
+                  <label className={styles.periodiseringCheckboxRow}>
+                    <Checkbox
+                      size="small"
+                      checked={periodiseringEnabled}
+                      onChange={(e) => setPeriodiseringEnabled(e.target.checked)}
+                    />
+                    <span className={styles.periodiseringAccordionTitle}>Periodisering</span>
+                  </label>
+                  {periodiseringEnabled ? (
+                    <>
+                      <div className={styles.periodiseringAccordionHeader}>
+                        <div className={styles.periodiseringAccordionLeft}>
+                          <span className={styles.periodiseringAccordionSummary}>
+                            {formatSvVolume(periodiseradVolym)}
+                            {contractVolume !== null ? (
+                              <> / {formatSvVolume(contractVolume)} {volumeUnit}</>
+                            ) : (
+                              <> {volumeUnit}</>
+                            )}
+                            <span className={styles.periodiseringAccordionAterstar}>
+                              · återstår {formatSvVolume(aterstarAttPeriodisera ?? 0)} {volumeUnit}
+                            </span>
+
+                            {periodiseringArIbalans ? <CheckCircleIcon className={styles.periodiseringAccordionDoneIcon} /> : null}
+                          </span>
+                        </div>
+                        <Button
+                          className={styles.freightNewButton}
+                          startIcon={<AddIcon />}
+                          onClick={openPeriodiseringAdd}
+                          disabled={periodiseringArIbalans}
+                        >
+                          Ny periodiseringsrad
+                        </Button>
+                      </div>
+                      <div className={styles.lineItemsTableFrame}>
+                        <div className={styles.freightTableWrap}>
+                          <div className={styles.freightTable}>
+                            <DataTable
+                              variant="line"
+                              fillRemainingSpace
+                              columns={PERIODISERING_COLUMNS}
+                              rows={periodiseringRows}
+                              rowKey={(row, index) => `${row.id}-${index}`}
+                              selectedRowIndex={selectedPeriodiseringRow}
+                              onRowClick={(index) => setSelectedPeriodiseringRow((previous) => (previous === index ? null : index))}
+                              renderCell={(row, column, rowIndex) => {
+                                if (column.key === "_actions") {
+                                  return (
+                                    <span className={styles.freightActionCell}>
+                                      <IconButton
+                                        size="small"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          openPeriodiseringEdit(rowIndex);
+                                        }}
+                                        title="Redigera rad"
+                                      >
+                                        <EditOutlinedIcon className={styles.freightActionIcon} />
+                                      </IconButton>
+                                      <IconButton
+                                        size="small"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          openPeriodiseringClone(rowIndex);
+                                        }}
+                                        title="Klona rad"
+                                      >
+                                        <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
+                                      </IconButton>
+                                      <IconButton
+                                        size="small"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          deletePeriodiseringRow(rowIndex);
+                                        }}
+                                        title="Ta bort rad"
+                                      >
+                                        <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                                      </IconButton>
+                                    </span>
+                                  );
+                                }
+                                if (column.key === "kundensMarke" || column.key === "godsmottagarensMarke") {
+                                  const markeKey = column.key;
+                                  const value = row[markeKey as "kundensMarke" | "godsmottagarensMarke"];
+                                  return (
+                                    <input
+                                      type="text"
+                                      value={value}
+                                      placeholder="—"
+                                      onClick={(event) => event.stopPropagation()}
+                                      onChange={(event) =>
+                                        setPeriodiseringRowMarke(
+                                          row.id,
+                                          markeKey as "kundensMarke" | "godsmottagarensMarke",
+                                          event.target.value
+                                        )
+                                      }
+                                      className={styles.periodiseringMarkGhostInput}
+                                    />
+                                  );
+                                }
+                                const value = row[column.key as keyof Omit<PeriodiseringRow, "id">];
+                                return value?.trim() ? value : "-";
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : null}
+                </>
               </AccordionDetails>
             </Accordion>
 
@@ -2815,620 +2921,6 @@ export function LineItemDetailView({
                     </div>
                   )}
                 </div>
-              ) : activeTab === "Periodisering" ? (
-                <div className={styles.freightTabContent}>
-                  <div className={styles.freightSection}>
-                    {hasContractVolume && contractVolume !== null ? (
-                      <div className={styles.periodiseringStatsRow}>
-                        <div className={`${styles.periodiseringStatCardCombined}${periodiseringArIbalans ? ` ${styles.periodiseringStatCardCombinedDone}` : ""}`}>
-                          <div className={styles.periodiseringStatCardSide}>
-                            <div className={styles.periodiseringStatCardHeader}>
-                              {/* <Inventory2OutlinedIcon className={styles.periodiseringStatCardIcon} /> */}
-                              <span>Återstår</span>
-                            </div>
-                            <div className={styles.periodiseringStatCardValue}>
-                              {formatSvVolume(aterstarAttPeriodisera ?? 0)}
-                              <span className={styles.periodiseringStatCardUnit}>{volumeUnit}</span>
-                            </div>
-                          </div>
-                          <div className={styles.periodiseringStatCardDivider} />
-                          <div className={styles.periodiseringStatCardSide}>
-                            <div className={styles.periodiseringStatCardHeader}>
-                              {/* <EventOutlinedIcon className={styles.periodiseringStatCardIcon} /> */}
-                              <span>Periodiserat</span>
-                              {periodiseringArIbalans ? (
-                                <CheckCircleIcon className={styles.periodiseringStatDoneIcon} />
-                              ) : null}
-                            </div>
-                            <div className={styles.periodiseringStatCardValue}>
-                              {formatSvVolume(periodiseradVolym)}
-                              <span className={styles.periodiseringStatCardFraction}>/ {formatSvVolume(contractVolume)} {volumeUnit}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
-                    <div className={styles.periodiseringToolbar}>
-                      <div className={styles.periodiseringToolbarLeft}>
-                        <Button
-                          className={styles.freightNewButton}
-                          startIcon={<AddIcon />}
-                          onClick={openPeriodiseringAdd}
-                          disabled={periodiseringArIbalans}
-                        >
-                          Ny periodiseringsrad
-                        </Button>
-                        <Button
-                          className={styles.periodiseringAutoButton}
-                          onClick={openAutoPeriodisering}
-                          disabled={periodiseringArIbalans}
-                        >
-                          Automatisk periodisering (implementera inte denna)
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className={styles.lineItemsTableFrame}>
-                      <div className={styles.freightTableWrap}>
-                        <div className={styles.freightTable}>
-                          <DataTable
-                            variant="line"
-                            fillRemainingSpace
-                            columns={PERIODISERING_COLUMNS}
-                            rows={periodiseringRows}
-                            rowKey={(row, index) => `${row.id}-${index}`}
-                            selectedRowIndex={selectedPeriodiseringRow}
-                            onRowClick={(index) => setSelectedPeriodiseringRow((previous) => (previous === index ? null : index))}
-                            renderCell={(row, column, rowIndex) => {
-                              if (column.key === "_actions") {
-                                return (
-                                  <span className={styles.freightActionCell}>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        openPeriodiseringEdit(rowIndex);
-                                      }}
-                                      title="Redigera rad"
-                                    >
-                                      <EditOutlinedIcon className={styles.freightActionIcon} />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        openPeriodiseringClone(rowIndex);
-                                      }}
-                                      title="Klona rad"
-                                    >
-                                      <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        deletePeriodiseringRow(rowIndex);
-                                      }}
-                                      title="Ta bort rad"
-                                    >
-                                      <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                                    </IconButton>
-                                  </span>
-                                );
-                              }
-
-                              if (column.key === "kundensMarke" || column.key === "godsmottagarensMarke") {
-                                const markeKey = column.key;
-                                const value = row[markeKey as "kundensMarke" | "godsmottagarensMarke"];
-
-                                return (
-                                  <input
-                                    type="text"
-                                    value={value}
-                                    placeholder="—"
-                                    onClick={(event) => event.stopPropagation()}
-                                    onChange={(event) =>
-                                      setPeriodiseringRowMarke(
-                                        row.id,
-                                        markeKey as "kundensMarke" | "godsmottagarensMarke",
-                                        event.target.value
-                                      )
-                                    }
-                                    className={styles.periodiseringMarkGhostInput}
-                                  />
-                                );
-                              }
-
-                              const value = row[column.key as keyof Omit<PeriodiseringRow, "id">];
-                              return value?.trim() ? value : "-";
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Dialog
-                    open={isPeriodiseringDialogOpen}
-                    onClose={closePeriodiseringForm}
-                    fullWidth
-                    maxWidth="md"
-                    classes={{ paper: styles.freightDialogPaper }}
-                  >
-                    <DialogTitle className={styles.freightDialogTitle}>
-                      <div className={styles.freightDialogTitleRow}>
-                        <span>{periodiseringForm.mode === "add" ? "Ny periodiseringsrad" : "Redigera periodiseringsrad"}</span>
-                        {periodiseringForm.mode === "add" ? (
-                          <div className={styles.freightDialogToggles}>
-                            <label className={styles.freightDialogKeepOpen}>
-                              <Checkbox
-                                size="small"
-                                checked={keepPeriodiseringDialogOpen}
-                                onChange={(event) => setKeepPeriodiseringDialogOpen(event.target.checked)}
-                              />
-                              <span>Behåll öppen</span>
-                            </label>
-                            <label className={styles.freightDialogKeepOpen}>
-                              <Checkbox
-                                size="small"
-                                checked={keepPeriodiseringValues}
-                                onChange={(event) => {
-                                  setKeepPeriodiseringValues(event.target.checked);
-                                  if (event.target.checked) setKeepPeriodiseringDialogOpen(true);
-                                }}
-                              />
-                              <span>Behåll värden</span>
-                            </label>
-                          </div>
-                        ) : null}
-                      </div>
-                    </DialogTitle>
-                    <DialogContent className={styles.freightDialogContent}>
-                      {periodiseringDraft !== null ? (
-                        <div className={styles.avropFormGrid}>
-                          <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Leveransvecka</Typography>
-                            <TextField
-                              size="small"
-                              placeholder="202550"
-                              value={periodiseringDraft.leveransvecka}
-                              onChange={(e) => setPeriodiseringDraftField("leveransvecka", e.target.value)}
-                              className={styles.freightFormInput}
-                            />
-                          </div>
-                          <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Mängd</Typography>
-                            <TextField
-                              size="small"
-                              placeholder="0"
-                              value={periodiseringDraft.mangd}
-                              onChange={(e) => setPeriodiseringDraftField("mangd", e.target.value)}
-                              className={styles.freightFormInput}
-                            />
-                          </div>
-                          <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Enhet</Typography>
-                            <Select
-                              size="small"
-                              value={periodiseringDraft.enhet}
-                              onChange={(e) => setPeriodiseringDraftField("enhet", String(e.target.value))}
-                              className={styles.freightFormInput}
-                            >
-                              <MenuItem value="m3 nominell">m3 nominell</MenuItem>
-                              <MenuItem value="m3 fast">m3 fast</MenuItem>
-                              <MenuItem value="ton">ton</MenuItem>
-                              <MenuItem value="st">st</MenuItem>
-                            </Select>
-                          </div>
-                          <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Avropsradsstatus</Typography>
-                            <Select
-                              size="small"
-                              value={periodiseringDraft.avropsradsstatus}
-                              onChange={(e) => setPeriodiseringDraftField("avropsradsstatus", String(e.target.value))}
-                              className={styles.freightFormInput}
-                            >
-                              <MenuItem value="Planerad">Planerad</MenuItem>
-                              <MenuItem value="Aktiv">Aktiv</MenuItem>
-                              <MenuItem value="Pausad">Pausad</MenuItem>
-                              <MenuItem value="Avslutad">Avslutad</MenuItem>
-                            </Select>
-                          </div>
-                          <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Kundens märke</Typography>
-                            <TextField
-                              size="small"
-                              placeholder="Referens"
-                              value={periodiseringDraft.kundensMarke}
-                              onChange={(e) => setPeriodiseringDraftField("kundensMarke", e.target.value)}
-                              className={styles.freightFormInput}
-                            />
-                          </div>
-                          <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Godsmottagarens märke</Typography>
-                            <TextField
-                              size="small"
-                              placeholder="Referens"
-                              value={periodiseringDraft.godsmottagarensMarke}
-                              onChange={(e) => setPeriodiseringDraftField("godsmottagarensMarke", e.target.value)}
-                              className={styles.freightFormInput}
-                            />
-                          </div>
-                        </div>
-                      ) : null}
-                    </DialogContent>
-                    <DialogActions className={styles.freightDialogActions}>
-                      <Button size="small" className={styles.freightSaveButton} onClick={savePeriodiseringForm}>
-                        {periodiseringForm.mode === "add" ? "Lägg till" : "Spara"}
-                      </Button>
-                      <Button size="small" className={styles.freightCancelButton} onClick={closePeriodiseringForm}>
-                        Avbryt
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
-
-                  <Dialog
-                    open={isAutoPeriodiseringDialogOpen}
-                    onClose={closeAutoPeriodisering}
-                    fullWidth
-                    maxWidth="md"
-                    classes={{ paper: styles.freightDialogPaper }}
-                  >
-                    <DialogTitle className={styles.freightDialogTitle}>
-                      <div className={styles.freightDialogTitleRow}>
-                        <span>Automatisk periodisering</span>
-                        <Button
-                          size="small"
-                          className={styles.freightCancelButton}
-                          onClick={closeAutoPeriodisering}
-                        >
-                          Avbryt
-                        </Button>
-                      </div>
-                      <div className={styles.autoPeriodiseringStepTopRow}>
-                        <div className={styles.autoPeriodiseringStepBar}>
-                          {(["Antal rader", "Leveransvecka", "Märken"] as const).map((label, i) => (
-                            <div key={label} className={styles.autoPeriodiseringStepBarItem}>
-                              {i > 0 && <div className={styles.autoPeriodiseringStepConnector} />}
-                              <button
-                                type="button"
-                                className={styles.autoPeriodiseringStepBtn}
-                                onClick={() => handleGoToStep(i as 0 | 1 | 2)}
-                                disabled={
-                                  i > autoPeriodiseringStep + 1 ||
-                                  (i === 1 && !autoCanProceedStep0) ||
-                                  (i === 2 && !autoCanProceedStep1)
-                                }
-                              >
-                                <div
-                                  className={[
-                                    styles.autoPeriodiseringStepCircle,
-                                    autoPeriodiseringStep > i ? styles.autoPeriodiseringStepDone : "",
-                                    autoPeriodiseringStep === i ? styles.autoPeriodiseringStepActive : "",
-                                  ].filter(Boolean).join(" ")}
-                                >
-                                  {i + 1}
-                                </div>
-                                <span
-                                  className={[
-                                    styles.autoPeriodiseringStepLabel,
-                                    autoPeriodiseringStep === i ? styles.autoPeriodiseringStepLabelActive : "",
-                                  ].filter(Boolean).join(" ")}
-                                >
-                                  {label}
-                                </span>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </DialogTitle>
-
-                    <DialogContent className={styles.freightDialogContent}>
-                      {autoPeriodiseringStep === 0 ? (
-                        <div className={styles.autoPeriodiseringStepContent}>
-                          <div className={styles.autoPeriodiseringModeToggle}>
-                            <button
-                              type="button"
-                              className={[
-                                styles.autoPeriodiseringModeBtn,
-                                autoPeriodiseringDraft.step0Mode === "mangdPerRad"
-                                  ? styles.autoPeriodiseringModeBtnActive
-                                  : "",
-                              ].filter(Boolean).join(" ")}
-                              onClick={() =>
-                                setAutoPeriodiseringDraft((prev) => ({ ...prev, step0Mode: "mangdPerRad" }))
-                              }
-                            >
-                              Mängd per rad
-                            </button>
-                            <button
-                              type="button"
-                              className={[
-                                styles.autoPeriodiseringModeBtn,
-                                autoPeriodiseringDraft.step0Mode === "antalRader"
-                                  ? styles.autoPeriodiseringModeBtnActive
-                                  : "",
-                              ].filter(Boolean).join(" ")}
-                              onClick={() =>
-                                setAutoPeriodiseringDraft((prev) => ({ ...prev, step0Mode: "antalRader" }))
-                              }
-                            >
-                              Antal rader
-                            </button>
-                          </div>
-                          <div className={styles.avropFormGrid}>
-                            {autoPeriodiseringDraft.step0Mode === "antalRader" ? (
-                              <div className={styles.freightFormField}>
-                                <Typography className={styles.freightFormLabel}>Antal periodiseringsrader</Typography>
-                                <TextField
-                                  size="small"
-                                  type="number"
-                                  placeholder="4"
-                                  inputProps={{ min: 1, step: 1 }}
-                                  value={autoPeriodiseringDraft.antalRader}
-                                  onChange={(e) =>
-                                    setAutoPeriodiseringDraft((prev) => ({ ...prev, antalRader: e.target.value }))
-                                  }
-                                  className={styles.freightFormInput}
-                                  autoFocus
-                                />
-                              </div>
-                            ) : (
-                              <div className={styles.freightFormField}>
-                                <Typography className={styles.freightFormLabel}>Mängd per rad ({volumeUnit})</Typography>
-                                <TextField
-                                  size="small"
-                                  placeholder={formatSvVolume(autoTotalAttFordela / 4)}
-                                  value={autoPeriodiseringDraft.mangdPerRad}
-                                  onChange={(e) =>
-                                    setAutoPeriodiseringDraft((prev) => ({ ...prev, mangdPerRad: e.target.value }))
-                                  }
-                                  className={styles.freightFormInput}
-                                  autoFocus
-                                />
-                              </div>
-                            )}
-                          </div>
-                          {(autoPeriodiseringDraft.step0Mode === "antalRader"
-                            ? autoPeriodiseringDraft.antalRader.trim() !== ""
-                            : autoPeriodiseringDraft.mangdPerRad.trim() !== "") ? (
-                            <div className={styles.periodiseringAutoPreview}>
-                              {autoAntalRader > 0 && autoMangdPerRad !== null ? (
-                                <span className={styles.periodiseringAutoPreviewText}>
-                                  Skapar{" "}
-                                  <strong>{autoAntalRader} rader</strong> à{" "}
-                                  <strong>{formatSvVolume(autoMangdPerRad)} {volumeUnit}</strong>
-                                  {autoAntalRader > 1 && autoSistaRadVolym !== null &&
-                                    Math.abs(autoSistaRadVolym - autoMangdPerRad) > PERIODISERING_SUM_EPSILON
-                                    ? ` (sista: ${formatSvVolume(Math.max(0, autoSistaRadVolym))} ${volumeUnit})`
-                                    : ""}
-                                </span>
-                              ) : (
-                                <span className={styles.periodiseringAutoPreviewTextDim}>
-                                  {autoPeriodiseringDraft.step0Mode === "antalRader"
-                                    ? "Ange ett giltigt antal rader."
-                                    : "Ange en giltig mängd per rad."}
-                                </span>
-                              )}
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : autoPeriodiseringStep === 1 ? (
-                        <div className={styles.autoPeriodiseringStepContent}>
-                          <div className={styles.autoPeriodiseringModeToggle}>
-                            {(["sprid", "olika"] as const).map((mode) => (
-                              <button
-                                key={mode}
-                                type="button"
-                                className={[
-                                  styles.autoPeriodiseringModeBtn,
-                                  autoPeriodiseringDraft.step1Mode === mode
-                                    ? styles.autoPeriodiseringModeBtnActive
-                                    : "",
-                                ].filter(Boolean).join(" ")}
-                                onClick={() =>
-                                  setAutoPeriodiseringDraft((prev) => ({ ...prev, step1Mode: mode }))
-                                }
-                              >
-                                {mode === "sprid" ? "Sprid jämnt" : "Välj veckor"}
-                              </button>
-                            ))}
-                          </div>
-                          {autoPeriodiseringDraft.step1Mode === "sprid" ? (
-                            <div className={styles.autoPeriodiseringSpreadPreview}>
-                              <div className={styles.autoPeriodiseringSpreadPreviewInfo}>
-                                <span className={styles.freightFormLabel}>Lev. fönster min</span>
-                                <span className={styles.autoPeriodiseringSpreadValue}>
-                                  {newLineItemDraft.deliveryWindowMin || "—"}
-                                </span>
-                                <ArrowForwardIcon style={{ fontSize: 14, color: "#748195" }} />
-                                <span className={styles.freightFormLabel}>Lev. fönster max</span>
-                                <span className={styles.autoPeriodiseringSpreadValue}>
-                                  {newLineItemDraft.deliveryWindowMax || "—"}
-                                </span>
-                              </div>
-                              {autoAntalRader > 0 ? (
-                                <div className={styles.autoPeriodiseringWeekList}>
-                                  {autoWeeks.map((week, i) => (
-                                    <div key={i} className={styles.autoPeriodiseringWeekChip}>
-                                      <span className={styles.autoPeriodiseringWeekChipIndex}>Rad {i + 1}</span>
-                                      <span className={styles.autoPeriodiseringWeekChipWeek}>{week || "—"}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : null}
-                            </div>
-                          ) : (
-                            <>
-                              <div className={styles.autoPeriodiseringMarkFillRow} style={{ marginTop: 8 }}>
-                                <Typography className={styles.freightFormLabel}>Fyll alla:</Typography>
-                                <input
-                                  type="text"
-                                  placeholder="202550"
-                                  className={styles.autoPeriodiseringMarkInput}
-                                  onChange={(e) => {
-                                    const v = e.target.value;
-                                    setAutoPeriodiseringDraft((prev) => ({
-                                      ...prev,
-                                      rowWeeks: prev.rowWeeks.map(() => v),
-                                    }));
-                                  }}
-                                />
-                              </div>
-                              <div className={styles.autoPeriodiseringMarkTable}>
-                                <div className={styles.autoPeriodiseringMarkTableHead} style={{ gridTemplateColumns: "40px 1fr" }}>
-                                  <span className={styles.autoPeriodiseringMarkCol}>Rad</span>
-                                  <span className={styles.autoPeriodiseringMarkCol}>Leveransvecka</span>
-                                </div>
-                                {autoPeriodiseringDraft.rowWeeks.map((week, i) => (
-                                  <div key={i} className={styles.autoPeriodiseringMarkTableRow} style={{ gridTemplateColumns: "40px 1fr" }}>
-                                    <span className={`${styles.autoPeriodiseringMarkCol} ${styles.autoPeriodiseringMarkRowNum}`}>
-                                      {i + 1}
-                                    </span>
-                                    <span className={styles.autoPeriodiseringMarkCol}>
-                                      <input
-                                        type="text"
-                                        placeholder="202550"
-                                        value={week}
-                                        className={styles.periodiseringMarkGhostInput}
-                                        onChange={(e) => setAutoRowWeek(i, e.target.value)}
-                                      />
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      ) : (
-                        <div className={styles.autoPeriodiseringStepContent}>
-                          <div className={styles.autoPeriodiseringMarkenFillRow}>
-                            <Typography className={styles.freightFormLabel}>Fyll alla:</Typography>
-                            <div style={{ display: "flex", gap: "10px" }}>
-                              <input
-                                type="text"
-                                placeholder="Kundens märke"
-                                className={styles.autoPeriodiseringMarkInput}
-                                onChange={(e) => setAllAutoRowMarks("kundensMarke", e.target.value)}
-                              />
-                              <input
-                                type="text"
-                                placeholder="Godsmottagarens märke"
-                                className={styles.autoPeriodiseringMarkInput}
-                                onChange={(e) => setAllAutoRowMarks("godsmottagarensMarke", e.target.value)}
-                              />
-                            </div>
-                          </div>
-                          <div className={styles.autoPeriodiseringMarkTable}>
-                            <div className={styles.autoPeriodiseringMarkTableHead}>
-                              <span className={styles.autoPeriodiseringMarkCol}>Rad</span>
-                              <span className={styles.autoPeriodiseringMarkCol}>Leveransvecka</span>
-                              <span className={styles.autoPeriodiseringMarkCol}>Kundens märke</span>
-                              <span className={styles.autoPeriodiseringMarkCol}>Godsmottagarens märke</span>
-                            </div>
-                            {autoPeriodiseringDraft.rowMarks.map((mark, i) => (
-                              <div key={i} className={styles.autoPeriodiseringMarkTableRow}>
-                                <span
-                                  className={`${styles.autoPeriodiseringMarkCol} ${styles.autoPeriodiseringMarkRowNum}`}
-                                >
-                                  {i + 1}
-                                </span>
-                                <span className={styles.autoPeriodiseringMarkCol}>
-                                  {autoWeeks[i] || "—"}
-                                </span>
-                                <span className={styles.autoPeriodiseringMarkCol}>
-                                  <input
-                                    type="text"
-                                    placeholder="—"
-                                    value={mark.kundensMarke}
-                                    className={styles.periodiseringMarkGhostInput}
-                                    onChange={(e) => setAutoRowMark(i, "kundensMarke", e.target.value)}
-                                  />
-                                </span>
-                                <span className={styles.autoPeriodiseringMarkCol}>
-                                  <input
-                                    type="text"
-                                    placeholder="—"
-                                    value={mark.godsmottagarensMarke}
-                                    className={styles.periodiseringMarkGhostInput}
-                                    onChange={(e) =>
-                                      setAutoRowMark(i, "godsmottagarensMarke", e.target.value)
-                                    }
-                                  />
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </DialogContent>
-
-                    <DialogActions className={styles.freightDialogActions}>
-                      {autoPeriodiseringStep !== 0 && (
-                        <Button
-                          size="small"
-                          className={styles.freightCancelButton}
-                          onClick={() =>
-                            setAutoPeriodiseringStep((prev) => (prev - 1) as 0 | 1 | 2)
-                          }
-                        >
-                          Tillbaka
-                        </Button>
-                      )}
-                      {autoPeriodiseringStep < 2 ? (
-                        <Button
-                          size="small"
-                          className={styles.freightSaveButton}
-                          onClick={handleNextStepAuto}
-                          disabled={!autoCanProceedCurrentStep}
-                        >
-                          Nästa
-                        </Button>
-                      ) : (
-                        <Button
-                          size="small"
-                          className={styles.freightSaveButton}
-                          onClick={createAutoPeriodiseringRows}
-                        >
-                          Skapa periodiseringsrader
-                        </Button>
-                      )}
-                    </DialogActions>
-                  </Dialog>
-
-                  <Snackbar
-                    key={`periodiering-create-${periodiseringCreateFeedback.key}`}
-                    open={periodiseringCreateFeedback.open}
-                    autoHideDuration={2200}
-                    onClose={() => setPeriodiseringCreateFeedback((previous) => ({ ...previous, open: false }))}
-                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                  >
-                    <Alert
-                      onClose={() => setPeriodiseringCreateFeedback((previous) => ({ ...previous, open: false }))}
-                      severity="success"
-                      variant="filled"
-                    >
-                      Post skapad
-                    </Alert>
-                  </Snackbar>
-
-                  <Snackbar
-                    key={`periodiering-validation-${periodiseringValidationFeedback.key}`}
-                    open={periodiseringValidationFeedback.open}
-                    autoHideDuration={3600}
-                    onClose={() => setPeriodiseringValidationFeedback((previous) => ({ ...previous, open: false }))}
-                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                  >
-                    <Alert
-                      onClose={() => setPeriodiseringValidationFeedback((previous) => ({ ...previous, open: false }))}
-                      severity="warning"
-                      variant="filled"
-                    >
-                      {periodiseringValidationFeedback.message}
-                    </Alert>
-                  </Snackbar>
-                </div>
               ) : activeTab === "Produktionsplanering" ? (
                 <div className={styles.freightTabContent}>
                   <div className={styles.freightSection}>
@@ -3727,6 +3219,487 @@ export function LineItemDetailView({
         </div>
       </div>
 
+      <Dialog
+        open={isPeriodiseringDialogOpen}
+        onClose={closePeriodiseringForm}
+        fullWidth
+        maxWidth="md"
+        classes={{ paper: styles.freightDialogPaper }}
+      >
+        <DialogTitle className={styles.freightDialogTitle}>
+          <div className={styles.freightDialogTitleRow}>
+            <span>{periodiseringForm.mode === "add" ? "Ny periodiseringsrad" : "Redigera periodiseringsrad"}</span>
+            {periodiseringForm.mode === "add" ? (
+              <div className={styles.freightDialogToggles}>
+                <label className={styles.freightDialogKeepOpen}>
+                  <Checkbox
+                    size="small"
+                    checked={keepPeriodiseringDialogOpen}
+                    onChange={(event) => setKeepPeriodiseringDialogOpen(event.target.checked)}
+                  />
+                  <span>Behåll öppen</span>
+                </label>
+                <label className={styles.freightDialogKeepOpen}>
+                  <Checkbox
+                    size="small"
+                    checked={keepPeriodiseringValues}
+                    onChange={(event) => {
+                      setKeepPeriodiseringValues(event.target.checked);
+                      if (event.target.checked) setKeepPeriodiseringDialogOpen(true);
+                    }}
+                  />
+                  <span>Behåll värden</span>
+                </label>
+              </div>
+            ) : null}
+          </div>
+        </DialogTitle>
+        <DialogContent className={styles.freightDialogContent}>
+          {periodiseringDraft !== null ? (
+            <div className={styles.avropFormGrid}>
+              <div className={styles.freightFormField}>
+                <Typography className={styles.freightFormLabel}>Leveransvecka</Typography>
+                <TextField
+                  size="small"
+                  placeholder="202550"
+                  value={periodiseringDraft.leveransvecka}
+                  onChange={(e) => setPeriodiseringDraftField("leveransvecka", e.target.value)}
+                  className={styles.freightFormInput}
+                />
+              </div>
+              <div className={styles.freightFormField}>
+                <Typography className={styles.freightFormLabel}>Mängd</Typography>
+                <TextField
+                  size="small"
+                  placeholder="0"
+                  value={periodiseringDraft.mangd}
+                  onChange={(e) => setPeriodiseringDraftField("mangd", e.target.value)}
+                  className={styles.freightFormInput}
+                />
+              </div>
+              <div className={styles.freightFormField}>
+                <Typography className={styles.freightFormLabel}>Enhet</Typography>
+                <Select
+                  size="small"
+                  value={periodiseringDraft.enhet}
+                  onChange={(e) => setPeriodiseringDraftField("enhet", String(e.target.value))}
+                  className={styles.freightFormInput}
+                >
+                  <MenuItem value="m3 nominell">m3 nominell</MenuItem>
+                  <MenuItem value="m3 fast">m3 fast</MenuItem>
+                  <MenuItem value="ton">ton</MenuItem>
+                  <MenuItem value="st">st</MenuItem>
+                </Select>
+              </div>
+              <div className={styles.freightFormField}>
+                <Typography className={styles.freightFormLabel}>Avropsradsstatus</Typography>
+                <Select
+                  size="small"
+                  value={periodiseringDraft.avropsradsstatus}
+                  onChange={(e) => setPeriodiseringDraftField("avropsradsstatus", String(e.target.value))}
+                  className={styles.freightFormInput}
+                >
+                  <MenuItem value="Planerad">Planerad</MenuItem>
+                  <MenuItem value="Aktiv">Aktiv</MenuItem>
+                  <MenuItem value="Pausad">Pausad</MenuItem>
+                  <MenuItem value="Avslutad">Avslutad</MenuItem>
+                </Select>
+              </div>
+              <div className={styles.freightFormField}>
+                <Typography className={styles.freightFormLabel}>Kundens märke</Typography>
+                <TextField
+                  size="small"
+                  placeholder="Referens"
+                  value={periodiseringDraft.kundensMarke}
+                  onChange={(e) => setPeriodiseringDraftField("kundensMarke", e.target.value)}
+                  className={styles.freightFormInput}
+                />
+              </div>
+              <div className={styles.freightFormField}>
+                <Typography className={styles.freightFormLabel}>Godsmottagarens märke</Typography>
+                <TextField
+                  size="small"
+                  placeholder="Referens"
+                  value={periodiseringDraft.godsmottagarensMarke}
+                  onChange={(e) => setPeriodiseringDraftField("godsmottagarensMarke", e.target.value)}
+                  className={styles.freightFormInput}
+                />
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+        <DialogActions className={styles.freightDialogActions}>
+          <Button size="small" className={styles.freightSaveButton} onClick={savePeriodiseringForm}>
+            {periodiseringForm.mode === "add" ? "Lägg till" : "Spara"}
+          </Button>
+          <Button size="small" className={styles.freightCancelButton} onClick={closePeriodiseringForm}>
+            Avbryt
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={isAutoPeriodiseringDialogOpen}
+        onClose={closeAutoPeriodisering}
+        fullWidth
+        maxWidth="md"
+        classes={{ paper: styles.freightDialogPaper }}
+      >
+        <DialogTitle className={styles.freightDialogTitle}>
+          <div className={styles.freightDialogTitleRow}>
+            <span>Automatisk periodisering</span>
+            <Button
+              size="small"
+              className={styles.freightCancelButton}
+              onClick={closeAutoPeriodisering}
+            >
+              Avbryt
+            </Button>
+          </div>
+          <div className={styles.autoPeriodiseringStepTopRow}>
+            <div className={styles.autoPeriodiseringStepBar}>
+              {(["Antal rader", "Leveransvecka", "Märken"] as const).map((label, i) => (
+                <div key={label} className={styles.autoPeriodiseringStepBarItem}>
+                  {i > 0 && <div className={styles.autoPeriodiseringStepConnector} />}
+                  <button
+                    type="button"
+                    className={styles.autoPeriodiseringStepBtn}
+                    onClick={() => handleGoToStep(i as 0 | 1 | 2)}
+                    disabled={
+                      i > autoPeriodiseringStep + 1 ||
+                      (i === 1 && !autoCanProceedStep0) ||
+                      (i === 2 && !autoCanProceedStep1)
+                    }
+                  >
+                    <div
+                      className={[
+                        styles.autoPeriodiseringStepCircle,
+                        autoPeriodiseringStep > i ? styles.autoPeriodiseringStepDone : "",
+                        autoPeriodiseringStep === i ? styles.autoPeriodiseringStepActive : "",
+                      ].filter(Boolean).join(" ")}
+                    >
+                      {i + 1}
+                    </div>
+                    <span
+                      className={[
+                        styles.autoPeriodiseringStepLabel,
+                        autoPeriodiseringStep === i ? styles.autoPeriodiseringStepLabelActive : "",
+                      ].filter(Boolean).join(" ")}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </DialogTitle>
+
+        <DialogContent className={styles.freightDialogContent}>
+          {autoPeriodiseringStep === 0 ? (
+            <div className={styles.autoPeriodiseringStepContent}>
+              <div className={styles.autoPeriodiseringModeToggle}>
+                <button
+                  type="button"
+                  className={[
+                    styles.autoPeriodiseringModeBtn,
+                    autoPeriodiseringDraft.step0Mode === "mangdPerRad"
+                      ? styles.autoPeriodiseringModeBtnActive
+                      : "",
+                  ].filter(Boolean).join(" ")}
+                  onClick={() =>
+                    setAutoPeriodiseringDraft((prev) => ({ ...prev, step0Mode: "mangdPerRad" }))
+                  }
+                >
+                  Mängd per rad
+                </button>
+                <button
+                  type="button"
+                  className={[
+                    styles.autoPeriodiseringModeBtn,
+                    autoPeriodiseringDraft.step0Mode === "antalRader"
+                      ? styles.autoPeriodiseringModeBtnActive
+                      : "",
+                  ].filter(Boolean).join(" ")}
+                  onClick={() =>
+                    setAutoPeriodiseringDraft((prev) => ({ ...prev, step0Mode: "antalRader" }))
+                  }
+                >
+                  Antal rader
+                </button>
+              </div>
+              <div className={styles.avropFormGrid}>
+                {autoPeriodiseringDraft.step0Mode === "antalRader" ? (
+                  <div className={styles.freightFormField}>
+                    <Typography className={styles.freightFormLabel}>Antal periodiseringsrader</Typography>
+                    <TextField
+                      size="small"
+                      type="number"
+                      placeholder="4"
+                      inputProps={{ min: 1, step: 1 }}
+                      value={autoPeriodiseringDraft.antalRader}
+                      onChange={(e) =>
+                        setAutoPeriodiseringDraft((prev) => ({ ...prev, antalRader: e.target.value }))
+                      }
+                      className={styles.freightFormInput}
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <div className={styles.freightFormField}>
+                    <Typography className={styles.freightFormLabel}>Mängd per rad ({volumeUnit})</Typography>
+                    <TextField
+                      size="small"
+                      placeholder={formatSvVolume(autoTotalAttFordela / 4)}
+                      value={autoPeriodiseringDraft.mangdPerRad}
+                      onChange={(e) =>
+                        setAutoPeriodiseringDraft((prev) => ({ ...prev, mangdPerRad: e.target.value }))
+                      }
+                      className={styles.freightFormInput}
+                      autoFocus
+                    />
+                  </div>
+                )}
+              </div>
+              {(autoPeriodiseringDraft.step0Mode === "antalRader"
+                ? autoPeriodiseringDraft.antalRader.trim() !== ""
+                : autoPeriodiseringDraft.mangdPerRad.trim() !== "") ? (
+                <div className={styles.periodiseringAutoPreview}>
+                  {autoAntalRader > 0 && autoMangdPerRad !== null ? (
+                    <span className={styles.periodiseringAutoPreviewText}>
+                      Skapar{" "}
+                      <strong>{autoAntalRader} rader</strong> à{" "}
+                      <strong>{formatSvVolume(autoMangdPerRad)} {volumeUnit}</strong>
+                      {autoAntalRader > 1 && autoSistaRadVolym !== null &&
+                        Math.abs(autoSistaRadVolym - autoMangdPerRad) > PERIODISERING_SUM_EPSILON
+                        ? ` (sista: ${formatSvVolume(Math.max(0, autoSistaRadVolym))} ${volumeUnit})`
+                        : ""}
+                    </span>
+                  ) : (
+                    <span className={styles.periodiseringAutoPreviewTextDim}>
+                      {autoPeriodiseringDraft.step0Mode === "antalRader"
+                        ? "Ange ett giltigt antal rader."
+                        : "Ange en giltig mängd per rad."}
+                    </span>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : autoPeriodiseringStep === 1 ? (
+            <div className={styles.autoPeriodiseringStepContent}>
+              <div className={styles.autoPeriodiseringModeToggle}>
+                {(["sprid", "olika"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={[
+                      styles.autoPeriodiseringModeBtn,
+                      autoPeriodiseringDraft.step1Mode === mode
+                        ? styles.autoPeriodiseringModeBtnActive
+                        : "",
+                    ].filter(Boolean).join(" ")}
+                    onClick={() =>
+                      setAutoPeriodiseringDraft((prev) => ({ ...prev, step1Mode: mode }))
+                    }
+                  >
+                    {mode === "sprid" ? "Sprid jämnt" : "Välj veckor"}
+                  </button>
+                ))}
+              </div>
+              {autoPeriodiseringDraft.step1Mode === "sprid" ? (
+                <div className={styles.autoPeriodiseringSpreadPreview}>
+                  <div className={styles.autoPeriodiseringSpreadPreviewInfo}>
+                    <span className={styles.freightFormLabel}>Lev. fönster min</span>
+                    <span className={styles.autoPeriodiseringSpreadValue}>
+                      {newLineItemDraft.deliveryWindowMin || "—"}
+                    </span>
+                    <ArrowForwardIcon style={{ fontSize: 14, color: "#748195" }} />
+                    <span className={styles.freightFormLabel}>Lev. fönster max</span>
+                    <span className={styles.autoPeriodiseringSpreadValue}>
+                      {newLineItemDraft.deliveryWindowMax || "—"}
+                    </span>
+                  </div>
+                  {autoAntalRader > 0 ? (
+                    <div className={styles.autoPeriodiseringWeekList}>
+                      {autoWeeks.map((week, i) => (
+                        <div key={i} className={styles.autoPeriodiseringWeekChip}>
+                          <span className={styles.autoPeriodiseringWeekChipIndex}>Rad {i + 1}</span>
+                          <span className={styles.autoPeriodiseringWeekChipWeek}>{week || "—"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <>
+                  <div className={styles.autoPeriodiseringMarkFillRow} style={{ marginTop: 8 }}>
+                    <Typography className={styles.freightFormLabel}>Fyll alla:</Typography>
+                    <input
+                      type="text"
+                      placeholder="202550"
+                      className={styles.autoPeriodiseringMarkInput}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setAutoPeriodiseringDraft((prev) => ({
+                          ...prev,
+                          rowWeeks: prev.rowWeeks.map(() => v),
+                        }));
+                      }}
+                    />
+                  </div>
+                  <div className={styles.autoPeriodiseringMarkTable}>
+                    <div className={styles.autoPeriodiseringMarkTableHead} style={{ gridTemplateColumns: "40px 1fr" }}>
+                      <span className={styles.autoPeriodiseringMarkCol}>Rad</span>
+                      <span className={styles.autoPeriodiseringMarkCol}>Leveransvecka</span>
+                    </div>
+                    {autoPeriodiseringDraft.rowWeeks.map((week, i) => (
+                      <div key={i} className={styles.autoPeriodiseringMarkTableRow} style={{ gridTemplateColumns: "40px 1fr" }}>
+                        <span className={`${styles.autoPeriodiseringMarkCol} ${styles.autoPeriodiseringMarkRowNum}`}>
+                          {i + 1}
+                        </span>
+                        <span className={styles.autoPeriodiseringMarkCol}>
+                          <input
+                            type="text"
+                            placeholder="202550"
+                            value={week}
+                            className={styles.periodiseringMarkGhostInput}
+                            onChange={(e) => setAutoRowWeek(i, e.target.value)}
+                          />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className={styles.autoPeriodiseringStepContent}>
+              <div className={styles.autoPeriodiseringMarkenFillRow}>
+                <Typography className={styles.freightFormLabel}>Fyll alla:</Typography>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <input
+                    type="text"
+                    placeholder="Kundens märke"
+                    className={styles.autoPeriodiseringMarkInput}
+                    onChange={(e) => setAllAutoRowMarks("kundensMarke", e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Godsmottagarens märke"
+                    className={styles.autoPeriodiseringMarkInput}
+                    onChange={(e) => setAllAutoRowMarks("godsmottagarensMarke", e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className={styles.autoPeriodiseringMarkTable}>
+                <div className={styles.autoPeriodiseringMarkTableHead}>
+                  <span className={styles.autoPeriodiseringMarkCol}>Rad</span>
+                  <span className={styles.autoPeriodiseringMarkCol}>Leveransvecka</span>
+                  <span className={styles.autoPeriodiseringMarkCol}>Kundens märke</span>
+                  <span className={styles.autoPeriodiseringMarkCol}>Godsmottagarens märke</span>
+                </div>
+                {autoPeriodiseringDraft.rowMarks.map((mark, i) => (
+                  <div key={i} className={styles.autoPeriodiseringMarkTableRow}>
+                    <span
+                      className={`${styles.autoPeriodiseringMarkCol} ${styles.autoPeriodiseringMarkRowNum}`}
+                    >
+                      {i + 1}
+                    </span>
+                    <span className={styles.autoPeriodiseringMarkCol}>
+                      {autoWeeks[i] || "—"}
+                    </span>
+                    <span className={styles.autoPeriodiseringMarkCol}>
+                      <input
+                        type="text"
+                        placeholder="—"
+                        value={mark.kundensMarke}
+                        className={styles.periodiseringMarkGhostInput}
+                        onChange={(e) => setAutoRowMark(i, "kundensMarke", e.target.value)}
+                      />
+                    </span>
+                    <span className={styles.autoPeriodiseringMarkCol}>
+                      <input
+                        type="text"
+                        placeholder="—"
+                        value={mark.godsmottagarensMarke}
+                        className={styles.periodiseringMarkGhostInput}
+                        onChange={(e) =>
+                          setAutoRowMark(i, "godsmottagarensMarke", e.target.value)
+                        }
+                      />
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+
+        <DialogActions className={styles.freightDialogActions}>
+          {autoPeriodiseringStep !== 0 && (
+            <Button
+              size="small"
+              className={styles.freightCancelButton}
+              onClick={() =>
+                setAutoPeriodiseringStep((prev) => (prev - 1) as 0 | 1 | 2)
+              }
+            >
+              Tillbaka
+            </Button>
+          )}
+          {autoPeriodiseringStep < 2 ? (
+            <Button
+              size="small"
+              className={styles.freightSaveButton}
+              onClick={handleNextStepAuto}
+              disabled={!autoCanProceedCurrentStep}
+            >
+              Nästa
+            </Button>
+          ) : (
+            <Button
+              size="small"
+              className={styles.freightSaveButton}
+              onClick={createAutoPeriodiseringRows}
+            >
+              Skapa periodiseringsrader
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        key={`periodiering-create-${periodiseringCreateFeedback.key}`}
+        open={periodiseringCreateFeedback.open}
+        autoHideDuration={2200}
+        onClose={() => setPeriodiseringCreateFeedback((previous) => ({ ...previous, open: false }))}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setPeriodiseringCreateFeedback((previous) => ({ ...previous, open: false }))}
+          severity="success"
+          variant="filled"
+        >
+          Post skapad
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        key={`periodiering-validation-${periodiseringValidationFeedback.key}`}
+        open={periodiseringValidationFeedback.open}
+        autoHideDuration={3600}
+        onClose={() => setPeriodiseringValidationFeedback((previous) => ({ ...previous, open: false }))}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setPeriodiseringValidationFeedback((previous) => ({ ...previous, open: false }))}
+          severity="warning"
+          variant="filled"
+        >
+          {periodiseringValidationFeedback.message}
+        </Alert>
+      </Snackbar>
+
       <Snackbar
         open={isNewLineItem && showStepErrors}
         autoHideDuration={2600}
@@ -3742,76 +3715,6 @@ export function LineItemDetailView({
         </Alert>
       </Snackbar>
 
-      <Dialog
-        open={isBytBolagDialogOpen}
-        onClose={() => setIsBytBolagDialogOpen(false)}
-        fullWidth
-        maxWidth="md"
-        classes={{ paper: styles.freightDialogPaper }}
-      >
-        <DialogTitle className={styles.freightDialogTitle}>
-          <div className={styles.freightDialogTitleRow}>
-            <span>Byt enhet</span>
-          </div>
-        </DialogTitle>
-        <DialogContent className={styles.freightDialogContent}>
-          <div className={styles.avropFormGrid}>
-            <div className={styles.freightFormField}>
-              <Typography className={styles.freightFormLabel}>Utlastande enhet</Typography>
-              <FormControl size="small" className={styles.freightFormInput}>
-                <Select
-                  value={bytBolagDraft.senderCompany}
-                  onChange={(e) => setBytBolagDraft((prev) => ({ ...prev, senderCompany: e.target.value }))}
-                >
-                  <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
-                  <MenuItem value="Moelven">Moelven</MenuItem>
-                </Select>
-              </FormControl>
-            </div>
-            <div className={styles.freightFormField}>
-              <Typography className={styles.freightFormLabel}>Ansvarig enhet</Typography>
-              <FormControl size="small" className={styles.freightFormInput}>
-                <Select
-                  value={bytBolagDraft.responsibleCompany}
-                  onChange={(e) => setBytBolagDraft((prev) => ({ ...prev, responsibleCompany: e.target.value }))}
-                >
-                  <MenuItem value="BP Hissmofors Byggprodukter">BP Hissmofors Byggprodukter</MenuItem>
-                  <MenuItem value="Moelven">Moelven</MenuItem>
-                </Select>
-              </FormControl>
-            </div>
-            <div className={styles.freightFormField}>
-              <Typography className={styles.freightFormLabel}>Utlastande lagerställe</Typography>
-              <FormControl size="small" className={styles.freightFormInput}>
-                <Select
-                  value={bytBolagDraft.senderWarehouse}
-                  onChange={(e) => setBytBolagDraft((prev) => ({ ...prev, senderWarehouse: e.target.value }))}
-                >
-                  <MenuItem value="Krokom">Krokom</MenuItem>
-                  <MenuItem value="Hissmofors">Hissmofors</MenuItem>
-                </Select>
-              </FormControl>
-            </div>
-          </div>
-        </DialogContent>
-        <DialogActions className={styles.freightDialogActions}>
-          <Button
-            size="small"
-            className={styles.freightSaveButton}
-            onClick={() => {
-              updateDraftField("senderCompany", bytBolagDraft.senderCompany);
-              updateDraftField("senderWarehouse", bytBolagDraft.senderWarehouse);
-              updateDraftField("responsibleCompany", bytBolagDraft.responsibleCompany);
-              setIsBytBolagDialogOpen(false);
-            }}
-          >
-            Spara
-          </Button>
-          <Button size="small" className={styles.freightCancelButton} onClick={() => setIsBytBolagDialogOpen(false)}>
-            Avbryt
-          </Button>
-        </DialogActions>
-      </Dialog>
     </div>
   );
 }

@@ -265,7 +265,7 @@ export function PaketbokningView({
           >
             Ska lastas ut
           </Button>
-          <div className={styles.paketbokningActionSep} />
+          {/* <div className={styles.paketbokningActionSep} />
           <Button
             size="small"
             variant="outlined"
@@ -277,7 +277,7 @@ export function PaketbokningView({
             }}
           >
             Ta bort reservation
-          </Button>
+          </Button> */}
           {/* {selectedRows.size > 0 && (
             <Typography className={styles.paketbokningSelCount}>{selectedRows.size} valda</Typography>
           )} */}

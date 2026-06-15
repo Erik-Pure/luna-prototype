@@ -853,7 +853,7 @@ export default function Home() {
     typeof window !== "undefined" && window.location.hash === "#avrop" ? "Avrop" : "Kontraktsrader"
   );
   const [activeLineItemTab, setActiveLineItemTab] = useState<LineItemDetailTab>(() =>
-    typeof window !== "undefined" && window.location.hash === "#avropsrad" ? "Avropsrad" : "Längdfördelning"
+    typeof window !== "undefined" && window.location.hash === "#avropsrad" ? "Avropsrader" : "Längdfördelning"
   );
   const [selectedCompany, setSelectedCompany] = useState(fakeCompanies[0]);
   const [isCompanyMenuOpen, setIsCompanyMenuOpen] = useState(false);

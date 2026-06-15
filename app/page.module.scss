@@ -6322,6 +6322,53 @@
   width: fit-content;
 }
 
+.periodiseringAccordionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.periodiseringAccordionLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.periodiseringAccordionTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2a3749;
+  white-space: nowrap;
+}
+
+.periodiseringAccordionDoneIcon {
+  margin-left:6px;
+  margin-bottom: -2px;
+  font-size: 15px !important;
+  color: #1e7a3c;
+  flex-shrink: 0;
+}
+
+.periodiseringAccordionSummary {
+  font-size: 12px;
+  font-weight: 500;
+  color: #748195;
+  white-space: nowrap;
+}
+
+.periodiseringAccordionAterstar {
+  margin-left: 2px;
+  font-weight: 400;
+  color: #9eaabb;
+}
+
 .periodiseringStatsRow {
   display: flex;
   gap: 12px;
