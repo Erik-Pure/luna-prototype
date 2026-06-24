@@ -6,14 +6,14 @@ import styles from "../../page.module.scss";
 
 type ActionRowItem =
   | {
-      key?: string;
-      kind?: "button";
-      label: string;
-      icon?: ReactNode;
-      enabled?: boolean;
-      onClick?: () => void;
-      tone?: "default" | "primary";
-    }
+    key?: string;
+    kind?: "button";
+    label: string;
+    icon?: ReactNode;
+    enabled?: boolean;
+    onClick?: () => void;
+    tone?: "default" | "primary";
+  }
   | { key?: string; kind: "divider"; label?: string }
   | { key?: string; kind: "node"; node: ReactNode; label?: string };
 
