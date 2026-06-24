@@ -79,6 +79,7 @@ type AppShellLayoutProps = {
   currentSectionLabel: string;
   currentMenuLabel: string;
   isCustomerDetailOpen: boolean;
+  isCreatingCustomer: boolean;
   selectedCustomerName: string | null;
   isContractDetailOpen: boolean;
   isLineItemDetailOpen: boolean;
@@ -100,6 +101,7 @@ type AppShellLayoutProps = {
   isCreatingAvrop: boolean;
   returnLineItemId: string | null;
   lineItemDetailHref: string | null;
+  isContainerRoute: boolean;
   children: ReactNode;
 };
 
@@ -129,6 +131,7 @@ export function AppShellLayout({
   currentSectionLabel,
   currentMenuLabel,
   isCustomerDetailOpen,
+  isCreatingCustomer,
   selectedCustomerName,
   isContractDetailOpen,
   isLineItemDetailOpen,
@@ -150,6 +153,7 @@ export function AppShellLayout({
   isCreatingAvrop,
   returnLineItemId,
   lineItemDetailHref,
+  isContainerRoute,
   children
 }: AppShellLayoutProps) {
   return (
@@ -323,8 +327,16 @@ export function AppShellLayout({
           <div className={styles.breadcrumbs}>
             <Typography className={styles.breadcrumbMuted}>{currentSectionLabel}</Typography>
             <ChevronRightIcon className={styles.breadcrumbArrow} />
-            {!isContractDetailOpen && !isPriceListDetailOpen && !isCustomerDetailOpen ? (
+            {!isContractDetailOpen && !isPriceListDetailOpen && !isCustomerDetailOpen && !isCreatingCustomer ? (
               <Typography className={styles.breadcrumbActive}>{currentMenuLabel}</Typography>
+            ) : isCreatingCustomer ? (
+              <>
+                <Typography component={Link} href={customerListHref} className={styles.breadcrumbLinkButton}>
+                  {currentMenuLabel}
+                </Typography>
+                <ChevronRightIcon className={styles.breadcrumbArrow} />
+                <Typography className={styles.breadcrumbActive}>Ny kund</Typography>
+              </>
             ) : isPriceListDetailOpen ? (
               <>
                 <Typography component={Link} href={priceListHref} className={styles.breadcrumbLinkButton}>
@@ -355,6 +367,14 @@ export function AppShellLayout({
                 <ChevronRightIcon className={styles.breadcrumbArrow} />
                 {isCustomerDetailOpen ? (
                   <Typography className={styles.breadcrumbActive}>{selectedCustomerName}</Typography>
+                ) : isContainerRoute ? (
+                  <>
+                    <Typography component={Link} href={contractDetailHref ?? contractListHref} className={styles.breadcrumbLinkButton}>
+                      Kontrakt {selectedContractId}
+                    </Typography>
+                    <ChevronRightIcon className={styles.breadcrumbArrow} />
+                    <Typography className={styles.breadcrumbActive}>Container</Typography>
+                  </>
                 ) : isAvropDetailOpen ? (
                   <>
                     <Typography component={Link} href={contractDetailHref ?? contractListHref} className={styles.breadcrumbLinkButton}>

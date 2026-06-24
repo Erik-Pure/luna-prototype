@@ -2,6 +2,7 @@
 
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
@@ -29,6 +30,7 @@ import { PrintOptionsTab } from "./contract-tabs/PrintOptionsTab";
 import { TermsTab } from "./contract-tabs/TermsTab";
 import { TilläggsTab } from "./contract-tabs/TilläggsTab";
 import { getContractDetails } from "./contract-tabs/contractDetails";
+import { BytPrislistaDialog } from "./contract-tabs/BytPrislistaDialog";
 import { ContractCreateView } from "./ContractCreateView";
 import styles from "../page.module.scss";
 
@@ -64,8 +66,9 @@ type ContractDetailViewProps = {
   onToggleLineColumnPin: (key: string) => void;
   onOpenLineItemDetail: (lineItemId: string) => void;
   onCreateLineItem: () => void;
-  onOpenAvropsrad: (id: string) => void;
+  onOpenContainer: () => void;
   onCreateAvropsrad: () => void;
+  onOpenAvropsrad: (id: string, data?: Record<string, string>) => void;
 };
 
 export function ContractDetailView({
@@ -100,8 +103,9 @@ export function ContractDetailView({
   onToggleLineColumnPin,
   onOpenLineItemDetail,
   onCreateLineItem,
+  onOpenContainer,
+  onCreateAvropsrad,
   onOpenAvropsrad,
-  onCreateAvropsrad
 }: ContractDetailViewProps) {
   const contractDetails = getContractDetails(selectedContractId);
   const leveransAllmant = [
@@ -125,6 +129,7 @@ export function ContractDetailView({
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<HTMLElement | null>(null);
   const [sectionsPanelWidth, setSectionsPanelWidth] = useState<number | null>(null);
   const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
+  const [isBytPrislistaOpen, setIsBytPrislistaOpen] = useState(false);
 
   const isWide = useSyncExternalStore(
     (cb) => {
@@ -196,8 +201,8 @@ export function ContractDetailView({
           onToggleKeepOpenAfterSave={onToggleKeepLineItemOpenAfterSave}
           onSaveAndCreateNew={onSaveAndCreateNewLineItem}
           onSaveAndClose={onSaveAndCloseLineItem}
-          onOpenAvropsrad={onOpenAvropsrad}
           onCreateAvropsrad={onCreateAvropsrad}
+          onOpenAvropsrad={onOpenAvropsrad}
         />
       ) : (
         <>
@@ -220,6 +225,15 @@ export function ContractDetailView({
               <Button className={styles.contractQuickActionButton} size="small" startIcon={<DescriptionOutlinedIcon fontSize="small" />}>
                 Granska
               </Button>
+              <Tooltip title="Kopiera kontrakt">
+                <IconButton
+                  size="small"
+                  className={styles.contractHeaderDotsButton}
+                  aria-label="Kopiera kontrakt"
+                >
+                  <ContentCopyOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <IconButton
                 size="small"
                 className={styles.contractHeaderDotsButton}
@@ -239,7 +253,7 @@ export function ContractDetailView({
                 <MenuItem className={styles.contractMoreMenuItem} onClick={closeMoreMenu}>
                   Skapa prislista
                 </MenuItem>
-                <MenuItem className={styles.contractMoreMenuItem} onClick={closeMoreMenu}>
+                <MenuItem className={styles.contractMoreMenuItem} onClick={() => { closeMoreMenu(); setIsBytPrislistaOpen(true); }}>
                   Byt prislista
                 </MenuItem>
                 <Divider className={styles.contractMoreMenuDivider} />
@@ -530,6 +544,7 @@ export function ContractDetailView({
                       onToggleColumnPin={onToggleLineColumnPin}
                       onOpenRowDetail={onOpenLineItemDetail}
                       onCreateRow={onCreateLineItem}
+                      onOpenContainer={onOpenContainer}
                     />
                   ) : null}
                   {activeContractTabForView === "Frakt" ? <FreightTab /> : null}
@@ -545,6 +560,11 @@ export function ContractDetailView({
           </div>
         </>
       )}
+      <BytPrislistaDialog
+        open={isBytPrislistaOpen}
+        onClose={() => setIsBytPrislistaOpen(false)}
+        onConfirm={() => setIsBytPrislistaOpen(false)}
+      />
     </div>
   );
 }

@@ -12,7 +12,7 @@ import styles from "../../page.module.scss";
 type SearchFieldConfig = {
   key: string;
   label: string;
-  control: "text" | "select" | "checkbox";
+  control: "text" | "date" | "select" | "checkbox";
 };
 
 type SearchFiltersPanelProps = {
@@ -313,6 +313,8 @@ export function SearchFiltersPanel({
                         key={field.key}
                         size="small"
                         label={field.label}
+                        type={field.control === "date" ? "date" : undefined}
+                        slotProps={field.control === "date" ? { inputLabel: { shrink: true } } : undefined}
                         className={styles.searchFieldControl}
                         value={String(values[field.key] ?? "")}
                         onChange={(event) => onTextChange(field.key, event.target.value)}
@@ -359,11 +361,13 @@ export function SearchFiltersPanel({
                       <hr className={styles.advancedFiltersDivider} />
                       <div className={styles.advancedFiltersGrid}>
                         {sortedMoreNonCheckboxFields.map((field) =>
-                          field.control === "text" ? (
+                          field.control === "text" || field.control === "date" ? (
                             <TextField
                               key={field.key}
                               size="small"
                               label={field.label}
+                              type={field.control === "date" ? "date" : undefined}
+                              slotProps={field.control === "date" ? { inputLabel: { shrink: true } } : undefined}
                               className={styles.searchFieldControl}
                               value={String(values[field.key] ?? "")}
                               onChange={(event) => onTextChange(field.key, event.target.value)}

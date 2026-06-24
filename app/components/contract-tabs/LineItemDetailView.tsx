@@ -2,6 +2,7 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
@@ -9,16 +10,15 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
+import CategoryOutlinedIcon from "@mui/icons-material/CategoryOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
+import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, Switch, TextField, Tooltip, Typography } from "@mui/material";
 import { getContractDetails, type ContractDocument } from "./contractDetails";
@@ -27,11 +27,9 @@ import styles from "../../page.module.scss";
 import { PaketbokningView, type BokadPaketRow } from "./PaketbokningView";
 
 const lineItemDetailTabs = [
-  "Längdfördelning",
-  "Nettolager",
   "Avropsrader",
   "Produktionsplanering",
-  "Leveransbokade paket"
+  "Nettolager",
 ] as const;
 
 export type LineItemDetailTab = (typeof lineItemDetailTabs)[number];
@@ -460,7 +458,7 @@ const BOKADE_PAKET_COLUMNS: Array<{ key: BokadPaketColumnKey; label: string; pin
   { key: "produkt", label: "Produkt" },
   { key: "lagerstalle", label: "Lagerställe" },
   { key: "lagerplats", label: "Lagerplats" },
-  { key: "mdlangd", label: "Mdlängd" },
+  { key: "mdlangd", label: "Mdllängd" },
   { key: "skaLastasUt", label: "Ska lastas ut" },
   { key: "_actions", label: "", pinnedRight: true },
 ];
@@ -580,8 +578,8 @@ type LineItemDetailViewProps = {
   onToggleKeepOpenAfterSave: (checked: boolean) => void;
   onSaveAndCreateNew?: (draft: NewLineItemDraft) => void;
   onSaveAndClose?: () => void;
-  onOpenAvropsrad?: (id: string) => void;
   onCreateAvropsrad?: () => void;
+  onOpenAvropsrad?: (id: string, data?: Record<string, string>) => void;
 };
 
 type FieldLabelProps = {
@@ -650,6 +648,7 @@ const REQUIRED_FIELD_DEFS: { key: keyof NewLineItemDraft; label: string }[] = [
   { key: "status", label: "Status" },
   { key: "responsibleCompany", label: "Ansvarig enhet" },
   { key: "artNr", label: "ArtNr" },
+  { key: "product", label: "Produkt" },
   { key: "packageType", label: "Pakettyp" },
   { key: "quantity", label: "Mängd" },
   { key: "orderedUnit", label: "Beställd enhet" },
@@ -663,7 +662,7 @@ const REQUIRED_FIELD_DEFS: { key: keyof NewLineItemDraft; label: string }[] = [
   { key: "packaging", label: "Emballage" },
 ];
 
-const REQUIRED_STEP_PANEL_IDS = ["allmant", "produkt", "affar", "leverans", "ovrigt"] as const;
+const REQUIRED_STEP_PANEL_IDS = ["allmant", "produkt", "affar", "leverans", "ovrigt", "langdfordelning"] as const;
 const REQUIRED_FIELD_KEYS = new Set<keyof NewLineItemDraft>(REQUIRED_FIELD_DEFS.map(({ key }) => key));
 const OPTIONAL_FAST_TRACK_GROUPS: Array<{
   title: string;
@@ -728,9 +727,34 @@ const REVIEW_HIGHLIGHT_KEYS: Array<keyof NewLineItemDraft> = [
   "senderCompany",
   "senderWarehouse",
   "artNr",
+  "product",
   "quantity",
-  "price",
 ];
+
+function ReviewFieldItem({
+  fieldLabel,
+  displayVal,
+}: {
+  fieldLabel: string;
+  displayVal: string;
+}) {
+  const valueRef = useRef<HTMLSpanElement>(null);
+  const [truncated, setTruncated] = useState(false);
+
+  useEffect(() => {
+    const el = valueRef.current;
+    if (el) setTruncated(el.scrollWidth > el.clientWidth);
+  }, [displayVal]);
+
+  return (
+    <Tooltip title={truncated ? displayVal : ""} placement="top" arrow>
+      <div className={styles.lineItemWizardReviewField}>
+        <span className={styles.lineItemWizardReviewFieldLabel}>{fieldLabel}</span>
+        <span ref={valueRef} className={styles.lineItemWizardReviewFieldValue}>{displayVal}</span>
+      </div>
+    </Tooltip>
+  );
+}
 
 export function LineItemDetailView({
   lineItemId,
@@ -743,8 +767,8 @@ export function LineItemDetailView({
   onToggleKeepOpenAfterSave,
   onSaveAndCreateNew,
   onSaveAndClose,
-  onOpenAvropsrad,
   onCreateAvropsrad,
+  onOpenAvropsrad,
 }: LineItemDetailViewProps) {
   const isNewLineItem = lineItemId === "new";
   const accordionWrapRef = useRef<HTMLDivElement | null>(null);
@@ -788,14 +812,17 @@ export function LineItemDetailView({
   // ── Leveransbokade paket state ──
   const [bokadePaketRows, setBokadePaketRows] = useState<BokadPaketRow[]>(INITIAL_BOKADE_PAKET);
   const [paketbokningNav, setPaketbokningNav] = useState<PaketbokningNavState>({ open: false });
-  const [callOffFormTab, setCallOffFormTab] = useState<"form" | "leveransbokadePaket">("form");
+  const [leveransbokaForRow, setLeveransbokaForRow] = useState<number | null>(null);
   const [newLineItemDraft, setNewLineItemDraft] = useState<NewLineItemDraft>({
     ...(isNewLineItem ? emptyNewLineItemDraft : existingLineItemDraft),
     ...newDraftSeed
   });
   const [expandedPanels, setExpandedPanels] = useState<string[]>(isNewLineItem ? [...REQUIRED_STEP_PANEL_IDS] : ["allmant"]);
   const [createStep, setCreateStep] = useState<0 | 1>(0);
+  const [isEditing, setIsEditing] = useState(isNewLineItem);
   const [showStepErrors, setShowStepErrors] = useState(false);
+  const [savedDraftNr, setSavedDraftNr] = useState<string | null>(null);
+  const [showSavedSnackbar, setShowSavedSnackbar] = useState(false);
   const [showAllReviewFields, setShowAllReviewFields] = useState(false);
   const [fastTrackEnabled, setFastTrackEnabled] = useState(true);
   const [optionalFastTrackKeys, setOptionalFastTrackKeys] = useState<Set<keyof NewLineItemDraft>>(new Set());
@@ -979,10 +1006,7 @@ export function LineItemDetailView({
     const displayVal = typeof val === "boolean" ? (val ? "Ja" : "Nej") : (String(val || "") || "—");
 
     return (
-      <div key={key} className={styles.lineItemWizardReviewField}>
-        <span className={styles.lineItemWizardReviewFieldLabel}>{getFieldLabel(key, label)}</span>
-        <span className={styles.lineItemWizardReviewFieldValue}>{displayVal}</span>
-      </div>
+      <ReviewFieldItem key={key} fieldLabel={getFieldLabel(key, label)} displayVal={displayVal} />
     );
   };
 
@@ -992,6 +1016,10 @@ export function LineItemDetailView({
       openRequiredPanels();
     } else {
       setShowStepErrors(false);
+      if (!savedDraftNr) {
+        setSavedDraftNr(String(Math.floor(Math.random() * 90000) + 10000));
+        setShowSavedSnackbar(true);
+      }
       setCreateStep(1);
     }
   };
@@ -1434,24 +1462,20 @@ export function LineItemDetailView({
       : emptyCallOffRow();
     setCallOffForm({ mode: "add", draft: initialDraft });
     setSelectedCallOffRow(null);
-    setCallOffFormTab("form");
   };
 
   const openCallOffEdit = (index: number) => {
     const row = callOffRows[index];
-    if (!row) {
-      return;
-    }
+    if (!row) return;
     if (onOpenAvropsrad) {
       setSelectedCallOffRow(index);
-      onOpenAvropsrad(row.id);
+      onOpenAvropsrad(row.id, row as Record<string, string>);
       return;
     }
     setKeepCallOffValues(false);
     const { id, ...draft } = row;
     setCallOffForm({ mode: "edit", id, draft });
     setSelectedCallOffRow(index);
-    setCallOffFormTab("form");
   };
 
   const openCallOffClone = (index: number) => {
@@ -1468,7 +1492,6 @@ export function LineItemDetailView({
     void id;
     setCallOffForm({ mode: "add", draft });
     setSelectedCallOffRow(null);
-    setCallOffFormTab("form");
   };
 
   const deleteCallOffRow = (index: number) => {
@@ -1530,9 +1553,6 @@ export function LineItemDetailView({
   };
 
   const closePaketbokning = () => {
-    if (paketbokningNav.open && paketbokningNav.returnTo === "callOffForm") {
-      setCallOffFormTab("leveransbokadePaket");
-    }
     setPaketbokningNav({ open: false });
   };
 
@@ -1643,7 +1663,7 @@ export function LineItemDetailView({
       <div className={styles.contractModernTopRow}>
         <div className={styles.contractModernTitleWrap}>
           <Typography className={styles.contractModernTitle}>
-            {isNewLineItem ? "Ny kontraktsrad" : `Kontraktsrad ${lineItemId}`}
+            {isNewLineItem ? (savedDraftNr ? `Kontraktsrad ${savedDraftNr}` : "Ny kontraktsrad") : `Kontraktsrad ${lineItemId}`}
           </Typography>
           <Chip
             label="Kunden har överskriden limit"
@@ -1662,16 +1682,11 @@ export function LineItemDetailView({
                 Nästa
               </Button>
               <span className={styles.lineItemTopActionDivider} aria-hidden="true" />
-              <Button className={styles.contractSaveButton} size="small" startIcon={<EditOutlinedIcon fontSize="small" />}>
-                Redigera
-              </Button>
               <Button
                 className={styles.contractQuickActionButton}
                 size="small"
                 onClick={() => onSaveAndCreateNew?.({ ...emptyNewLineItemDraft })}
-                startIcon={
-                  <ContentCopyOutlinedIcon fontSize="small" />
-                }
+                startIcon={<ContentCopyOutlinedIcon fontSize="small" />}
               >
                 Kopiera
               </Button>
@@ -1695,7 +1710,7 @@ export function LineItemDetailView({
                   variant="contained"
                   onClick={handleNextStep}
                 >
-                  Fortsätt
+                  Spara och fortsätt
                 </Button>
                 <Button
                   className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
@@ -1703,30 +1718,30 @@ export function LineItemDetailView({
                   variant="outlined"
                   onClick={onSaveAndClose}
                 >
-                  Avbryt
+                  Stäng
                 </Button>
               </>
             ) : (
               <>
-                <Button
+                {/* <Button
                   className={styles.lineItemBackButton2}
                   size="small"
                   onClick={() => setCreateStep(0)}
                 >
                   Tillbaka
-                </Button>
-                <span className={styles.lineItemTopActionDivider} aria-hidden="true" />
-                <label className={styles.freightDialogKeepOpen}>
+                </Button> */}
+                {/* <span className={styles.lineItemTopActionDivider} aria-hidden="true" /> */}
+                {/* <label className={styles.freightDialogKeepOpen}>
                   <Checkbox
                     size="small"
                     checked={keepOpenAfterSave}
                     onChange={(event) => onToggleKeepOpenAfterSave(event.target.checked)}
                   />
                   <span>Skapa fler</span>
-                </label>
-                <span className={styles.lineItemTopActionDivider} aria-hidden="true" />
-                <Button className={styles.lineItemSaveButton} size="small" variant="contained" onClick={handleSave}>
-                  Skapa kontraktsrad
+                </label> */}
+                {/* <span className={styles.lineItemTopActionDivider} aria-hidden="true" /> */}
+                <Button startIcon={<AddIcon />} className={styles.lineItemSaveButton} size="small" variant="contained" onClick={handleSave}>
+                  Nästa kontraktsrad
                 </Button>
                 <Button
                   className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
@@ -1734,7 +1749,7 @@ export function LineItemDetailView({
                   variant="outlined"
                   onClick={onSaveAndClose}
                 >
-                  Avbryt
+                  Stäng
                 </Button>
               </>
             )
@@ -1760,6 +1775,40 @@ export function LineItemDetailView({
           <span className={styles.lineItemWizardStepDot}>2</span>
           <span className={styles.lineItemWizardStepLabel}>Distribution & planering</span>
         </button>
+        {!isNewLineItem && createStep === 0 && (
+          <div className={styles.lineItemWizardEditActions}>
+            {isEditing ? (
+              <>
+                <Button
+                  className={styles.lineItemSaveButton}
+                  size="small"
+                  variant="contained"
+                  onClick={() => setIsEditing(false)}
+                >
+                  Spara
+                </Button>
+                <Button
+                  className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setIsEditing(false)}
+                >
+                  Avbryt
+                </Button>
+              </>
+            ) : (
+              <Button
+                className={styles.lineItemSaveButton}
+                size="small"
+                variant="contained"
+                startIcon={<EditOutlinedIcon fontSize="small" />}
+                onClick={() => setIsEditing(true)}
+              >
+                Redigera
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <div
@@ -1768,7 +1817,7 @@ export function LineItemDetailView({
         <div className={styles.detailFormColumn}>
           <div
             ref={accordionWrapRef}
-            className={styles.contractModernAccordionWrap}
+            className={`${styles.contractModernAccordionWrap} ${!isEditing ? styles.lineItemFormViewMode : ""}`}
             onKeyDownCapture={handleFastTrackKeyDown}
           >
             {isNewLineItem && createStep === 0 ? (
@@ -1884,7 +1933,7 @@ export function LineItemDetailView({
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
                 <div className={styles.contractModernAccordionTitleRow}>
-                  <TableChartOutlinedIcon className={styles.contractModernAccordionIcon} />
+                  <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
                   <Typography className={styles.contractModernAccordionTitle}>Allmänt</Typography>
                 </div>
               </AccordionSummary>
@@ -1958,7 +2007,7 @@ export function LineItemDetailView({
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
                 <div className={styles.contractModernAccordionTitleRow}>
-                  <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
+                  <Inventory2OutlinedIcon className={styles.contractModernAccordionIcon} />
                   <Typography className={styles.contractModernAccordionTitle}>Produkt</Typography>
                 </div>
               </AccordionSummary>
@@ -2358,7 +2407,7 @@ export function LineItemDetailView({
             >
               <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
                 <div className={styles.contractModernAccordionTitleRow}>
-                  <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
+                  <CategoryOutlinedIcon className={styles.contractModernAccordionIcon} />
                   <Typography className={styles.contractModernAccordionTitle}>Övrigt</Typography>
                 </div>
               </AccordionSummary>
@@ -2427,6 +2476,196 @@ export function LineItemDetailView({
                 </div>
               </AccordionDetails>
             </Accordion>
+
+            <Accordion
+              expanded={expandedPanels.includes("langdfordelning")}
+              onChange={() => togglePanel("langdfordelning")}
+              className={styles.contractModernAccordion}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
+                <div className={styles.contractModernAccordionTitleRow}>
+                  <BarChartOutlinedIcon className={styles.contractModernAccordionIcon} />
+                  <Typography className={styles.contractModernAccordionTitle}>Längdfördelning</Typography>
+                </div>
+              </AccordionSummary>
+              <AccordionDetails>
+                <div className={styles.freightSectionHeader} style={{ marginBottom: 12 }}>
+                  <div className={styles.lengthDistributionControls}>
+                    <Button
+                      className={styles.freightNewButton}
+                      startIcon={<AddIcon />}
+                      onClick={openLengthDistributionAdd}
+                    >
+                      Längdfördelning
+                    </Button>
+                    <label className={styles.freightDialogKeepOpen} style={{ marginLeft: "auto" }}>
+                      <Checkbox
+                        size="small"
+                        checked={showLengthOnPrint}
+                        onChange={(event) => setShowLengthOnPrint(event.target.checked)}
+                      />
+                      <span>Visa längd vid utskrift</span>
+                    </label>
+                  </div>
+                </div>
+                <div className={styles.lineItemsTableFrame}>
+                  <div className={styles.freightTableWrap}>
+                    <div className={styles.freightTable}>
+                      <DataTable
+                        variant="line"
+                        fillRemainingSpace
+                        columns={LENGTH_DISTRIBUTION_COLUMNS}
+                        rows={lengthDistributionRows}
+                        rowKey={(row, index) => `${row.id}-${index}`}
+                        selectedRowIndex={selectedLengthDistributionRow}
+                        onRowClick={(index) =>
+                          setSelectedLengthDistributionRow((previous) => (previous === index ? null : index))
+                        }
+                        renderCell={(row, column, rowIndex) => {
+                          if (column.key === "_actions") {
+                            return (
+                              <span className={styles.freightActionCell}>
+                                <IconButton
+                                  size="small"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    openLengthDistributionEdit(rowIndex);
+                                  }}
+                                  title="Redigera rad"
+                                >
+                                  <EditOutlinedIcon className={styles.freightActionIcon} />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    openLengthDistributionClone(rowIndex);
+                                  }}
+                                  title="Duplicera rad"
+                                >
+                                  <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    deleteLengthDistributionRow(rowIndex);
+                                  }}
+                                  title="Ta bort rad"
+                                >
+                                  <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                                </IconButton>
+                              </span>
+                            );
+                          }
+                          const value = row[column.key as keyof Omit<LengthDistributionRow, "id">];
+                          return value?.trim() ? value : "-";
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </AccordionDetails>
+            </Accordion>
+
+            <Dialog
+              open={isLengthDistributionDialogOpen}
+              onClose={closeLengthDistributionForm}
+              fullWidth
+              maxWidth="md"
+              classes={{ paper: styles.freightDialogPaper }}
+            >
+              <DialogTitle className={styles.freightDialogTitle}>
+                <div className={styles.freightDialogTitleRow}>
+                  <span>{lengthDistributionForm.mode === "add" ? "Ny längdfördelning" : "Redigera längdfördelning"}</span>
+                  {lengthDistributionForm.mode === "add" ? (
+                    <div className={styles.freightDialogToggles}>
+                      <label className={styles.freightDialogKeepOpen}>
+                        <Checkbox
+                          size="small"
+                          checked={keepLengthDistributionDialogOpen}
+                          onChange={(event) => setKeepLengthDistributionDialogOpen(event.target.checked)}
+                        />
+                        <span>Behåll öppen</span>
+                      </label>
+                      <label className={styles.freightDialogKeepOpen}>
+                        <Checkbox
+                          size="small"
+                          checked={keepLengthDistributionValues}
+                          onChange={(event) => {
+                            setKeepLengthDistributionValues(event.target.checked);
+                            if (event.target.checked) setKeepLengthDistributionDialogOpen(true);
+                          }}
+                        />
+                        <span>Behåll värden</span>
+                      </label>
+                    </div>
+                  ) : null}
+                </div>
+              </DialogTitle>
+              <DialogContent className={styles.freightDialogContent}>
+                {lengthDistributionDraft !== null ? (
+                  <div className={styles.avropFormGrid}>
+                    <div className={styles.freightFormField}>
+                      <Typography className={styles.freightFormLabel}>Längd</Typography>
+                      <TextField
+                        size="small"
+                        value={lengthDistributionDraft.langd}
+                        onChange={(e) => setLengthDistributionDraftField("langd", e.target.value)}
+                        className={styles.freightFormInput}
+                      />
+                    </div>
+                    <div className={styles.freightFormField}>
+                      <Typography className={styles.freightFormLabel}>Mängd</Typography>
+                      <TextField
+                        size="small"
+                        value={lengthDistributionDraft.mangd}
+                        onChange={(e) => setLengthDistributionDraftField("mangd", e.target.value)}
+                        className={styles.freightFormInput}
+                      />
+                    </div>
+                    <div className={styles.freightFormField}>
+                      <Typography className={styles.freightFormLabel}>Enhet</Typography>
+                      <Select
+                        size="small"
+                        value={lengthDistributionDraft.enhet}
+                        onChange={(e) => setLengthDistributionDraftField("enhet", String(e.target.value))}
+                        className={styles.freightFormInput}
+                      >
+                        <MenuItem value="m3 nominell">m3 nominell</MenuItem>
+                        <MenuItem value="m3 fast">m3 fast</MenuItem>
+                        <MenuItem value="lpm">lpm</MenuItem>
+                        <MenuItem value="st">st</MenuItem>
+                      </Select>
+                    </div>
+                  </div>
+                ) : null}
+              </DialogContent>
+              <DialogActions className={styles.freightDialogActions}>
+                <Button size="small" className={styles.freightSaveButton} onClick={saveLengthDistributionForm}>
+                  {lengthDistributionForm.mode === "add" ? "Lägg till" : "Spara"}
+                </Button>
+                <Button size="small" className={styles.freightCancelButton} onClick={closeLengthDistributionForm}>
+                  Avbryt
+                </Button>
+              </DialogActions>
+            </Dialog>
+
+            <Snackbar
+              key={`length-create-${lengthDistributionCreateFeedback.key}`}
+              open={lengthDistributionCreateFeedback.open}
+              autoHideDuration={2200}
+              onClose={() => setLengthDistributionCreateFeedback((previous) => ({ ...previous, open: false }))}
+              anchorOrigin={{ vertical: "top", horizontal: "center" }}
+            >
+              <Alert
+                onClose={() => setLengthDistributionCreateFeedback((previous) => ({ ...previous, open: false }))}
+                severity="success"
+                variant="filled"
+              >
+                Post skapad
+              </Alert>
+            </Snackbar>
           </div>
         </div>
         <div className={styles.detailTabsColumn}>
@@ -2434,39 +2673,31 @@ export function LineItemDetailView({
             {createStep === 1 ? (
               <div className={styles.lineItemWizardReviewCard}>
                 <div className={styles.lineItemWizardReviewHeader}>
-                  <span className={styles.lineItemWizardReviewTitle}>{isNewLineItem ? "Obligatoriska uppgifter från kontraktsradshuvud" : "Obligatoriska uppgifter från kontraktsradshuvud"}</span>
+                  <span className={styles.lineItemWizardReviewTitle}>Obligatoriska uppgifter från kontraktsradshuvud</span>
                   {remainingReviewFields.length > 0 ? (
-                    <>
-                      <Button
-                        type="button"
-                        size="small"
-                        className={styles.lineItemWizardReviewToggleBtnInline}
-                        endIcon={
-                          <ExpandMoreIcon
-                            className={`${styles.lineItemWizardReviewToggleIcon} ${showAllReviewFields ? styles.lineItemWizardReviewToggleIconOpen : ""}`}
-                          />
-                        }
-                        onClick={() => setShowAllReviewFields((previous) => !previous)}
-                      >
-                        {showAllReviewFields ? "Visa färre" : "Visa alla"}
-                      </Button>
-                    </>
+                    <Button
+                      type="button"
+                      size="small"
+                      className={styles.lineItemWizardReviewToggleBtnInline}
+                      endIcon={<ExpandMoreIcon style={{ transition: "transform 0.2s", transform: showAllReviewFields ? "rotate(180deg)" : "none" }} />}
+                      onClick={() => setShowAllReviewFields((previous) => !previous)}
+                    >
+                      {showAllReviewFields ? "Visa färre" : "Visa alla"}
+                    </Button>
                   ) : null}
                 </div>
-                <div className={styles.lineItemWizardReviewFields}>
-                  {highlightedReviewFields.map(renderReviewField)}
-                </div>
-                {remainingReviewFields.length > 0 ? (
-                  <>
-                    {showAllReviewFields ? (
-                      <div className={styles.lineItemWizardReviewFieldsExtra}>
-                        <div className={styles.lineItemWizardReviewFields}>
-                          {remainingReviewFields.map(renderReviewField)}
-                        </div>
+                <div>
+                  <div className={styles.lineItemWizardReviewFields}>
+                    {highlightedReviewFields.map(renderReviewField)}
+                  </div>
+                  {remainingReviewFields.length > 0 && showAllReviewFields ? (
+                    <div className={styles.lineItemWizardReviewFieldsExtra}>
+                      <div className={styles.lineItemWizardReviewFields}>
+                        {remainingReviewFields.map(renderReviewField)}
                       </div>
-                    ) : null}
-                  </>
-                ) : null}
+                    </div>
+                  ) : null}
+                </div>
               </div>
             ) : null}
             <div className={styles.contractMudTabBar} style={{ paddingLeft: 16, paddingRight: 16 }}>
@@ -2475,7 +2706,9 @@ export function LineItemDetailView({
                   key={tab}
                   type="button"
                   className={`${styles.contractMudTabItem} ${activeTab === tab ? styles.contractMudTabItemActive : ""}`}
-                  onClick={() => onChangeTab(tab)}
+                  onClick={() => !paketbokningNav.open && onChangeTab(tab)}
+                  disabled={paketbokningNav.open}
+                  style={paketbokningNav.open ? { opacity: 0.4, cursor: "default", pointerEvents: "none" } : undefined}
                 >
                   {tab}
                 </button>
@@ -2495,370 +2728,83 @@ export function LineItemDetailView({
                     closePaketbokning();
                   }}
                 />
-              ) : activeTab === "Längdfördelning" ? (
-                <div className={styles.freightTabContent}>
-                  <div className={styles.freightSection}>
-                    <div className={styles.freightSectionHeader}>
-                      <div className={styles.lengthDistributionControls}>
+              ) : activeTab === "Avropsrader" ? (
+                leveransbokaForRow !== null ? (
+                  <>
+                    <div className={styles.contractModernTopRow}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <IconButton size="small" onClick={() => setLeveransbokaForRow(null)} title="Tillbaka">
+                          <ArrowBackIcon fontSize="small" />
+                        </IconButton>
+                        <Typography className={styles.contractModernTitle}>Leveransbokade paket - Avropsrad {leveransbokaForRow + 1}</Typography>
+                      </div>
+                    </div>
+                    <div style={{ padding: 12 }}>
+                      <div style={{ marginBottom: 8 }}>
                         <Button
                           className={styles.freightNewButton}
-                          startIcon={<AddIcon />}
-                          onClick={openLengthDistributionAdd}
+                          startIcon={<Inventory2OutlinedIcon />}
+                          size="small"
+                          onClick={() => openPaketbokning("Avroprad", "leveransbokadePaket")}
                         >
-                          Ny längdfördelning
+                          Hantera paket
                         </Button>
-                        <span className={styles.lengthDistributionControlsDivider} aria-hidden="true" />
-                        <label className={styles.freightDialogKeepOpen}>
-                          <Checkbox
-                            size="small"
-                            checked={showLengthOnPrint}
-                            onChange={(event) => setShowLengthOnPrint(event.target.checked)}
-                          />
-                          <span>Visa längd vid utskrift</span>
-                        </label>
                       </div>
-                    </div>
-
-                    <div className={styles.lineItemsTableFrame}>
-                      <div className={styles.freightTableWrap}>
-                        <div className={styles.freightTable}>
-                          <DataTable
-                            variant="line"
-                            fillRemainingSpace
-                            columns={LENGTH_DISTRIBUTION_COLUMNS}
-                            rows={lengthDistributionRows}
-                            rowKey={(row, index) => `${row.id}-${index}`}
-                            selectedRowIndex={selectedLengthDistributionRow}
-                            onRowClick={(index) =>
-                              setSelectedLengthDistributionRow((previous) => (previous === index ? null : index))
+                      <div className={styles.bokadePaketTableWrap}>
+                        <DataTable
+                          variant="line"
+                          fillRemainingSpace
+                          columns={BOKADE_PAKET_COLUMNS}
+                          rows={bokadePaketRows}
+                          rowKey={(row, index) => `bp-lv-${row.paketnr}-${index}`}
+                          selectedRowIndex={null}
+                          onRowClick={() => { }}
+                          renderCell={(row, column, rowIndex) => {
+                            if (column.key === "_actions") {
+                              return (
+                                <span className={styles.freightActionCell}>
+                                  <IconButton size="small" onClick={(e) => { e.stopPropagation(); setBokadePaketRows((prev) => prev.filter((_, i) => i !== rowIndex)); }} title="Ta bort">
+                                    <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                                  </IconButton>
+                                </span>
+                              );
                             }
-                            renderCell={(row, column, rowIndex) => {
-                              if (column.key === "_actions") {
-                                return (
-                                  <span className={styles.freightActionCell}>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        openLengthDistributionEdit(rowIndex);
-                                      }}
-                                      title="Redigera rad"
-                                    >
-                                      <EditOutlinedIcon className={styles.freightActionIcon} />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        openLengthDistributionClone(rowIndex);
-                                      }}
-                                      title="Duplicera rad"
-                                    >
-                                      <ContentCopyOutlinedIcon className={styles.freightActionIcon} />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        deleteLengthDistributionRow(rowIndex);
-                                      }}
-                                      title="Ta bort rad"
-                                    >
-                                      <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                                    </IconButton>
-                                  </span>
-                                );
-                              }
-
-                              const value = row[column.key as keyof Omit<LengthDistributionRow, "id">];
-                              return value?.trim() ? value : "-";
-                            }}
-                          />
-                        </div>
+                            return row[column.key as keyof BokadPaketRow] ?? "-";
+                          }}
+                        />
                       </div>
-                    </div>
-                  </div>
-
-                  <Dialog
-                    open={isLengthDistributionDialogOpen}
-                    onClose={closeLengthDistributionForm}
-                    fullWidth
-                    maxWidth="md"
-                    classes={{ paper: styles.freightDialogPaper }}
-                  >
-                    <DialogTitle className={styles.freightDialogTitle}>
-                      <div className={styles.freightDialogTitleRow}>
-                        <span>{lengthDistributionForm.mode === "add" ? "Ny längdfördelning" : "Redigera längdfördelning"}</span>
-                        {lengthDistributionForm.mode === "add" ? (
-                          <div className={styles.freightDialogToggles}>
-                            <label className={styles.freightDialogKeepOpen}>
-                              <Checkbox
-                                size="small"
-                                checked={keepLengthDistributionDialogOpen}
-                                onChange={(event) => setKeepLengthDistributionDialogOpen(event.target.checked)}
-                              />
-                              <span>Behåll öppen</span>
-                            </label>
-                            <label className={styles.freightDialogKeepOpen}>
-                              <Checkbox
-                                size="small"
-                                checked={keepLengthDistributionValues}
-                                onChange={(event) => {
-                                  setKeepLengthDistributionValues(event.target.checked);
-                                  if (event.target.checked) setKeepLengthDistributionDialogOpen(true);
-                                }}
-                              />
-                              <span>Behåll värden</span>
-                            </label>
-                          </div>
-                        ) : null}
-                      </div>
-                    </DialogTitle>
-                    <DialogContent className={styles.freightDialogContent}>
-                      {lengthDistributionDraft !== null ? (
-                        <div className={styles.avropFormGrid}>
-                          <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Längd</Typography>
-                            <TextField
-                              size="small"
-                              value={lengthDistributionDraft.langd}
-                              onChange={(e) => setLengthDistributionDraftField("langd", e.target.value)}
-                              className={styles.freightFormInput}
-                            />
-                          </div>
-                          <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Mängd</Typography>
-                            <TextField
-                              size="small"
-                              value={lengthDistributionDraft.mangd}
-                              onChange={(e) => setLengthDistributionDraftField("mangd", e.target.value)}
-                              className={styles.freightFormInput}
-                            />
-                          </div>
-                          <div className={styles.freightFormField}>
-                            <Typography className={styles.freightFormLabel}>Enhet</Typography>
-                            <Select
-                              size="small"
-                              value={lengthDistributionDraft.enhet}
-                              onChange={(e) => setLengthDistributionDraftField("enhet", String(e.target.value))}
-                              className={styles.freightFormInput}
-                            >
-                              <MenuItem value="m3 nominell">m3 nominell</MenuItem>
-                              <MenuItem value="m3 fast">m3 fast</MenuItem>
-                              <MenuItem value="lpm">lpm</MenuItem>
-                              <MenuItem value="st">st</MenuItem>
-                            </Select>
-                          </div>
-                        </div>
-                      ) : null}
-                    </DialogContent>
-                    <DialogActions className={styles.freightDialogActions}>
-                      <Button size="small" className={styles.freightSaveButton} onClick={saveLengthDistributionForm}>
-                        {lengthDistributionForm.mode === "add" ? "Lägg till" : "Spara"}
-                      </Button>
-                      <Button size="small" className={styles.freightCancelButton} onClick={closeLengthDistributionForm}>
-                        Avbryt
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
-
-                  <Snackbar
-                    key={`length-create-${lengthDistributionCreateFeedback.key}`}
-                    open={lengthDistributionCreateFeedback.open}
-                    autoHideDuration={2200}
-                    onClose={() => setLengthDistributionCreateFeedback((previous) => ({ ...previous, open: false }))}
-                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
-                  >
-                    <Alert
-                      onClose={() => setLengthDistributionCreateFeedback((previous) => ({ ...previous, open: false }))}
-                      severity="success"
-                      variant="filled"
-                    >
-                      Post skapad
-                    </Alert>
-                  </Snackbar>
-                </div>
-              ) : activeTab === "Avropsrader" ? (
-                <div className={styles.freightTabContent}>
-                  {callOffForm.mode !== "closed" ? (
-                    <div className={styles.callOffFormView}>
-                      <div className={styles.callOffFormViewHeader}>
-                        <span className={styles.callOffFormViewTitle}>
-                          {isCreateCallOffView ? "Ny avropsrad" : "Redigera avropsrad"}
+                      <div className={styles.bokadePaketFooter}>
+                        <span className={styles.bokadePaketStat}>
+                          <span className={styles.bokadePaketStatLabel}>Summa lpm</span>
+                          <span className={styles.bokadePaketStatValue}>{bokadePaketRows.reduce((sum, r) => sum + (Number(r.lpm) || 0), 0).toFixed(1)}</span>
                         </span>
-                        <div className={styles.callOffFormViewHeaderRight}>
-                          {isCreateCallOffView ? (
-                            <div className={styles.freightDialogToggles}>
-                              <label className={styles.freightDialogKeepOpen}>
-                                <Checkbox
-                                  size="small"
-                                  checked={keepCallOffValues}
-                                  onChange={(event) => {
-                                    setKeepCallOffValues(event.target.checked);
-                                  }}
-                                />
-                                <span>Behåll värden</span>
-                              </label>
-                            </div>
-                          ) : null}
-                          <IconButton size="small" onClick={closeCallOffForm} title="Stäng">
-                            <CloseIcon fontSize="small" />
-                          </IconButton>
-                        </div>
+                        <span className={styles.bokadePaketStat}>
+                          <span className={styles.bokadePaketStatLabel}>Antal paket</span>
+                          <span className={styles.bokadePaketStatValue}>{bokadePaketRows.length}</span>
+                        </span>
                       </div>
-
-                      <div className={styles.contractMudTabBar}>
-                        <button
-                          type="button"
-                          className={`${styles.contractMudTabItem} ${callOffFormTab === "form" ? styles.contractMudTabItemActive : ""}`}
-                          onClick={() => setCallOffFormTab("form")}
-                        >
-                          Formulär
-                        </button>
-                        {!isCreateCallOffView ? (
-                          <button
-                            type="button"
-                            className={`${styles.contractMudTabItem} ${callOffFormTab === "leveransbokadePaket" ? styles.contractMudTabItemActive : ""}`}
-                            onClick={() => setCallOffFormTab("leveransbokadePaket")}
-                          >
-                            Leveransbokade paket
-                          </button>
-                        ) : null}
-                      </div>
-
-                      {callOffFormTab === "form" ? (
-                        <>
-                          <div className={styles.avropFormCard}>
-                            <Typography className={styles.callOffSectionTitle}>Artikel</Typography>
-                            <div className={styles.avropFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>ArtNr</Typography><Select size="small" value={callOffDraft!.artNr} onChange={(e) => setCallOffDraftField("artNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera ArtNr</Typography><Select size="small" value={callOffDraft!.levereraArtNr} onChange={(e) => setCallOffDraftField("levereraArtNr", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="2202209500002000">2202209500002000</MenuItem><MenuItem value="2515012000000000">2515012000000000</MenuItem><MenuItem value="4512014500000000">4512014500000000</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Fakturatext</Typography><TextField size="small" value={callOffDraft!.fakturatext} onChange={(e) => setCallOffDraftField("fakturatext", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera Produkt</Typography><TextField size="small" value={callOffDraft!.levereraProdukt} onChange={(e) => setCallOffDraftField("levereraProdukt", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Pakettyp</Typography><Select size="small" value={callOffDraft!.pakettyp} onChange={(e) => setCallOffDraftField("pakettyp", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Lp">Lp</MenuItem><MenuItem value="Paket">Paket</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leverera pakettyp</Typography><Select size="small" value={callOffDraft!.levereraPakettyp} onChange={(e) => setCallOffDraftField("levereraPakettyp", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Lp">Lp</MenuItem><MenuItem value="Paket">Paket</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Certifiering</Typography><Select size="small" value={callOffDraft!.certifiering} onChange={(e) => setCallOffDraftField("certifiering", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Ocertifierat">Ocertifierat</MenuItem><MenuItem value="FSC">FSC</MenuItem><MenuItem value="PEFC">PEFC</MenuItem></Select></div>
-                            </div>
-                          </div>
-
-                          <div className={styles.avropFormCard}>
-                            <Typography className={styles.callOffSectionTitle}>Volym &amp; pris</Typography>
-                            <div className={styles.avropFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Mängd</Typography><TextField size="small" value={callOffDraft!.mangd} onChange={(e) => setCallOffDraftField("mangd", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Apris</Typography><TextField size="small" value={callOffDraft!.aPris} onChange={(e) => setCallOffDraftField("aPris", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Beställd enhet</Typography><Select size="small" value={callOffDraft!.enhet} onChange={(e) => setCallOffDraftField("enhet", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="m3 nominell">m3 nominell</MenuItem><MenuItem value="m3 fast">m3 fast</MenuItem><MenuItem value="lpm">lpm</MenuItem><MenuItem value="st">st</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Volym</Typography><TextField size="small" value={callOffDraft!.volym} onChange={(e) => setCallOffDraftField("volym", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Emballage</Typography><Select size="small" value={callOffDraft!.emballage} onChange={(e) => setCallOffDraftField("emballage", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Standard">Standard</MenuItem><MenuItem value="Skydd">Skydd</MenuItem><MenuItem value="Export">Export</MenuItem></Select></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Bunt</Typography><TextField size="small" value={callOffDraft!.bunt} onChange={(e) => setCallOffDraftField("bunt", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Folie</Typography><Select size="small" value={callOffDraft!.folie} onChange={(e) => setCallOffDraftField("folie", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="Ingen">Ingen</MenuItem><MenuItem value="Vit">Vit</MenuItem><MenuItem value="Transparent">Transparent</MenuItem></Select></div>
-                            </div>
-                          </div>
-
-                          <div className={styles.avropFormCard}>
-                            <Typography className={styles.callOffSectionTitle}>Leverans</Typography>
-                            <div className={styles.avropFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransvecka</Typography><TextField size="small" value={callOffDraft!.leveransvecka} onChange={(e) => setCallOffDraftField("leveransvecka", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Leveransdag</Typography><Select size="small" value={callOffDraft!.leveransdag} onChange={(e) => setCallOffDraftField("leveransdag", String(e.target.value))} className={styles.freightFormInput}><MenuItem value="">-</MenuItem><MenuItem value="Måndag">Måndag</MenuItem><MenuItem value="Tisdag">Tisdag</MenuItem><MenuItem value="Onsdag">Onsdag</MenuItem><MenuItem value="Torsdag">Torsdag</MenuItem><MenuItem value="Fredag">Fredag</MenuItem></Select></div>
-                            </div>
-                          </div>
-
-                          <div className={styles.avropFormCard}>
-                            <Typography className={styles.callOffSectionTitle}>Tillägg</Typography>
-                            <div className={styles.avropFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg min</Typography><TextField size="small" value={callOffDraft!.plocktillaggMin} onChange={(e) => setCallOffDraftField("plocktillaggMin", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Plocktillägg</Typography><TextField size="small" value={callOffDraft!.plocktillagg} onChange={(e) => setCallOffDraftField("plocktillagg", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg</Typography><TextField size="small" value={callOffDraft!.malningstillagg} onChange={(e) => setCallOffDraftField("malningstillagg", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Målningstillägg tröskel</Typography><TextField size="small" helperText="Tillägg vid mindre än detta värde" value={callOffDraft!.malningstillaggTroskel} onChange={(e) => setCallOffDraftField("malningstillaggTroskel", e.target.value)} className={styles.freightFormInput} slotProps={{ input: { endAdornment: <InputAdornment position="end">lpm</InputAdornment> } }} /></div>
-                            </div>
-                          </div>
-
-                          <div className={styles.avropFormCard}>
-                            <Typography className={styles.callOffSectionTitle}>Övrigt</Typography>
-                            <div className={styles.avropFormGrid}>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Lastorder volym</Typography><TextField size="small" value={callOffDraft!.lastorderVolym} onChange={(e) => setCallOffDraftField("lastorderVolym", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Levererad volym</Typography><TextField size="small" value={callOffDraft!.leveradVolym} onChange={(e) => setCallOffDraftField("leveradVolym", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Intern kommentar</Typography><TextField size="small" value={callOffDraft!.internKommentar} onChange={(e) => setCallOffDraftField("internKommentar", e.target.value)} className={styles.freightFormInput} /></div>
-                              <div className={styles.freightFormField}><Typography className={styles.freightFormLabel}>Kundmärke</Typography><TextField size="small" value={callOffDraft!.kundmarke} onChange={(e) => setCallOffDraftField("kundmarke", e.target.value)} className={styles.freightFormInput} /></div>
-                            </div>
-                          </div>
-
-                          <div className={styles.callOffFormViewActions}>
-                            <Button size="small" className={styles.freightSaveButton} onClick={saveCallOffForm}>
-                              {isCreateCallOffView ? "Lägg till" : "Spara"}
-                            </Button>
-                            <Button size="small" className={styles.freightCancelButton} onClick={closeCallOffForm}>
-                              Avbryt
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <div className={styles.freightSection}>
-                          <div className={styles.freightSectionHeader}>
-                            <Button
-                              className={styles.freightNewButton}
-                              onClick={() => openPaketbokning("Reservationsorder", "callOffForm")}
-                            >
-                              Gå till paketbokning
-                            </Button>
-                          </div>
-                          <div className={styles.paketbokningListTitle}>
-                            <Typography variant="body2" fontWeight={600}>Bokade paket på avropsrad</Typography>
-                          </div>
-                          <div className={styles.lineItemsTableFrame}>
-                            <div className={styles.freightTableWrap}>
-                              <div className={styles.freightTable}>
-                                <DataTable
-                                  variant="line"
-                                  fillRemainingSpace
-                                  columns={BOKADE_PAKET_COLUMNS}
-                                  rows={bokadePaketRows}
-                                  rowKey={(row, index) => `bp-co-${row.paketnr}-${index}`}
-                                  selectedRowIndex={null}
-                                  onRowClick={() => { }}
-                                  renderCell={(row, column, rowIndex) => {
-                                    if (column.key === "_actions") {
-                                      return (
-                                        <span className={styles.freightActionCell}>
-                                          <IconButton
-                                            size="small"
-                                            onClick={(e) => { e.stopPropagation(); setBokadePaketRows((prev) => prev.filter((_, i) => i !== rowIndex)); }}
-                                            title="Ta bort"
-                                          >
-                                            <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                                          </IconButton>
-                                        </span>
-                                      );
-                                    }
-                                    return row[column.key as keyof BokadPaketRow] ?? "-";
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                          <div className={styles.paketbokningFooter}>
-                            <span className={styles.paketbokningFooterItem}>
-                              <span className={styles.paketbokningFooterLabel}>Summa lpm:</span>
-                              <span className={styles.paketbokningFooterValue}>
-                                {bokadePaketRows.reduce((sum, r) => sum + (Number(r.lpm) || 0), 0).toFixed(1)}
-                              </span>
-                            </span>
-                            <span className={styles.paketbokningFooterItem}>
-                              <span className={styles.paketbokningFooterLabel}>Summa bitar:</span>
-                              <span className={styles.paketbokningFooterValue}>{bokadePaketRows.length}</span>
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  ) : (
+                  </>
+                ) : (
+                  <div className={styles.freightTabContent}>
                     <div className={styles.freightSection}>
-                      <div className={styles.freightSectionHeader}>
+                      <div className={styles.avropsraderSectionHeader}>
                         <Button
                           className={styles.freightNewButton}
                           startIcon={<AddIcon />}
                           onClick={openCallOffAdd}
                         >
-                          Ny avropsrad
+                          Avropsrad
+                        </Button>
+                        <Button
+                          className={styles.freightCancelButton}
+                          startIcon={<Inventory2OutlinedIcon />}
+                          disabled={selectedCallOffRow === null}
+                          onClick={() => {
+                            if (selectedCallOffRow !== null) setLeveransbokaForRow(selectedCallOffRow);
+                          }}
+                        >
+                          Leveransbokade paket
                         </Button>
                       </div>
 
@@ -2924,8 +2870,8 @@ export function LineItemDetailView({
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )
               ) : activeTab === "Produktionsplanering" ? (
                 <div className={styles.freightTabContent}>
                   <div className={styles.freightSection}>
@@ -2935,7 +2881,7 @@ export function LineItemDetailView({
                         startIcon={<AddIcon />}
                         onClick={openProductionPlanningAdd}
                       >
-                        Ny
+                        Produktionsplanering
                       </Button>
                     </div>
 
@@ -3120,76 +3066,6 @@ export function LineItemDetailView({
                     </Snackbar>
                   </div>
                 </div>
-              ) : activeTab === "Leveransbokade paket" ? (
-                <div className={styles.freightTabContent}>
-                  <div className={styles.freightSection}>
-                    <div className={styles.freightSectionHeader}>
-                      <div className={styles.bokadePaketToolbar}>
-                        {/* <Typography className={styles.bokadePaketTitle}>Bokade paket</Typography> */}
-                        <button type="button" className={styles.bokadePaketAddBtn} onClick={() => openPaketbokning("Kontraktrad", "leveransbokadePaket")}>
-                          <Inventory2OutlinedIcon fontSize="inherit" />
-                          Hantera paket
-                        </button>
-                      </div>
-                      {/* <Button
-                        className={styles.freightNewButton}
-                        onClick={() => openPaketbokning("Kontraktrad", "leveransbokadePaket")}
-                      >
-                        Gå till paketbokning
-                      </Button> */}
-                    </div>
-                    <div className={styles.paketbokningListTitle}>
-                      <Typography variant="body2" fontWeight={600}>Bokade paket på kontraktsrad</Typography>
-                    </div>
-                    <div className={styles.lineItemsTableFrame}>
-                      <div className={styles.freightTableWrap}>
-                        <div className={styles.freightTable}>
-                          <DataTable
-                            variant="line"
-                            fillRemainingSpace
-                            columns={BOKADE_PAKET_COLUMNS}
-                            rows={bokadePaketRows}
-                            rowKey={(row, index) => `bp-${row.paketnr}-${index}`}
-                            selectedRowIndex={null}
-                            onRowClick={() => { }}
-                            renderCell={(row, column, rowIndex) => {
-                              if (column.key === "_actions") {
-                                return (
-                                  <span className={styles.freightActionCell}>
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => { e.stopPropagation(); setBokadePaketRows((prev) => prev.filter((_, i) => i !== rowIndex)); }}
-                                      title="Ta bort"
-                                    >
-                                      <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                                    </IconButton>
-                                  </span>
-                                );
-                              }
-                              return row[column.key as keyof BokadPaketRow] ?? "-";
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className={styles.paketbokningFooter}>
-                      <span className={styles.paketbokningFooterItem}>
-                        <span className={styles.paketbokningFooterLabel}>Summa lpm:</span>
-                        <span className={styles.paketbokningFooterValue}>
-                          {bokadePaketRows.reduce((sum, r) => sum + (Number(r.lpm) || 0), 0).toFixed(1)}
-                        </span>
-                      </span>
-                      <span className={styles.paketbokningFooterItem}>
-                        <span className={styles.paketbokningFooterLabel}>Summa nom.vol:</span>
-                        <span className={styles.paketbokningFooterValue}>0,000</span>
-                      </span>
-                      <span className={styles.paketbokningFooterItem}>
-                        <span className={styles.paketbokningFooterLabel}>Summa bitar:</span>
-                        <span className={styles.paketbokningFooterValue}>{bokadePaketRows.length}</span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
               ) : activeTab === "Nettolager" ? (<div className={styles.freightTabContent}>
                 <div className={styles.freightSection}>
                   <Tooltip title="Uppdatera" placement="top">
@@ -3266,7 +3142,6 @@ export function LineItemDetailView({
                 <Typography className={styles.freightFormLabel}>Leveransvecka</Typography>
                 <TextField
                   size="small"
-                  placeholder="202550"
                   value={periodiseringDraft.leveransvecka}
                   onChange={(e) => setPeriodiseringDraftField("leveransvecka", e.target.value)}
                   className={styles.freightFormInput}
@@ -3276,7 +3151,6 @@ export function LineItemDetailView({
                 <Typography className={styles.freightFormLabel}>Mängd</Typography>
                 <TextField
                   size="small"
-                  placeholder="0"
                   value={periodiseringDraft.mangd}
                   onChange={(e) => setPeriodiseringDraftField("mangd", e.target.value)}
                   className={styles.freightFormInput}
@@ -3314,7 +3188,6 @@ export function LineItemDetailView({
                 <Typography className={styles.freightFormLabel}>Kundens märke</Typography>
                 <TextField
                   size="small"
-                  placeholder="Referens"
                   value={periodiseringDraft.kundensMarke}
                   onChange={(e) => setPeriodiseringDraftField("kundensMarke", e.target.value)}
                   className={styles.freightFormInput}
@@ -3324,7 +3197,6 @@ export function LineItemDetailView({
                 <Typography className={styles.freightFormLabel}>Godsmottagarens märke</Typography>
                 <TextField
                   size="small"
-                  placeholder="Referens"
                   value={periodiseringDraft.godsmottagarensMarke}
                   onChange={(e) => setPeriodiseringDraftField("godsmottagarensMarke", e.target.value)}
                   className={styles.freightFormInput}
@@ -3717,6 +3589,17 @@ export function LineItemDetailView({
           variant="filled"
         >
           Fyll i alla obligatoriska fält innan du går vidare
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={showSavedSnackbar}
+        autoHideDuration={2800}
+        onClose={() => setShowSavedSnackbar(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={() => setShowSavedSnackbar(false)} severity="success" variant="filled">
+          Kontraktsrad sparad
         </Alert>
       </Snackbar>
 

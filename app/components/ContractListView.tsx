@@ -200,8 +200,8 @@ export function ContractListView({
           label: item.label,
           icon: item.icon,
           enabled: !item.requiresSelection || hasSelectedRows,
-          onClick: item.label === "Nytt kontrakt" ? onCreateContract : undefined,
-          tone: item.label === "Nytt kontrakt" ? "primary" : "default"
+          onClick: item.label === "Kontrakt" ? onCreateContract : undefined,
+          tone: item.label === "Kontrakt" ? "primary" : "default"
         }))}
         rightSlot={
           <>

@@ -34,10 +34,11 @@ type ContractRowsTabProps = {
   onToggleColumnPin: (key: string) => void;
   onOpenRowDetail: (rowId: string) => void;
   onCreateRow: () => void;
+  onOpenContainer: () => void;
 };
 
 const tableActionItems = [
-  { label: "Ny kontraktsrad", icon: <AddIcon fontSize="small" />, requiresSelection: false },
+  { label: "Kontraktsrad", icon: <AddIcon fontSize="small" />, requiresSelection: false },
   { label: "Ändra pris", icon: <EditOutlinedIcon fontSize="small" />, requiresSelection: false },
 ];
 
@@ -74,7 +75,8 @@ export function ContractRowsTab({
   onResetColumnChanges,
   onToggleColumnPin,
   onOpenRowDetail,
-  onCreateRow
+  onCreateRow,
+  onOpenContainer
 }: ContractRowsTabProps) {
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [editedRowValues, setEditedRowValues] = useState<Record<number, Partial<Record<"aPris" | "enhet", string>>>>({});
@@ -204,7 +206,8 @@ export function ContractRowsTab({
     {
       key: "container",
       label: "Container",
-      enabled: !isPriceEditMode
+      enabled: !isPriceEditMode,
+      onClick: onOpenContainer
     },
   ];
 

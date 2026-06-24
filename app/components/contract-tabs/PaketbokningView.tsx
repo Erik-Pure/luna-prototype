@@ -1,6 +1,8 @@
 "use client";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import EventAvailable from "@mui/icons-material/EventAvailableOutlined";
+import LabelImportantOutlinedIcon from "@mui/icons-material/LabelImportantOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import {
   Button,
@@ -27,38 +29,54 @@ export type BokadPaketRow = {
 
 type PaketbokningResultRow = {
   paketnr: string;
-  lpm: string;
   produkt: string;
+  volym: string;
+  pakettyp: string;
+  langd: string;
+  antal: string;
+  lpm: string;
+  produktionsdatum: string;
   lagerstalle: string;
   lagerplats: string;
-  mdlangd: string;
-  status: string;
+  kondition: string;
+  reservation: string;
+  skaLastasUt: string;
+  leverantor: string;
+  kommentar: string;
 };
 
 const PAKETBOKNING_RESULT_COLUMNS = [
   { key: "_select", label: "" },
-  { key: "paketnr", label: "Paketnr" },
-  { key: "lpm", label: "Lpm" },
+  { key: "paketnr", label: "PaketNr" },
   { key: "produkt", label: "Produkt" },
+  { key: "volym", label: "Volym" },
+  { key: "pakettyp", label: "Pakettyp" },
+  { key: "langd", label: "Längd" },
+  { key: "antal", label: "Antal" },
+  { key: "lpm", label: "Löpmeter" },
+  { key: "produktionsdatum", label: "Produktionsdatum" },
   { key: "lagerstalle", label: "Lagerställe" },
   { key: "lagerplats", label: "Lagerplats" },
-  { key: "mdlangd", label: "Mdlängd" },
-  { key: "status", label: "Status" },
+  { key: "kondition", label: "Kondition" },
+  { key: "reservation", label: "Reservation" },
+  { key: "skaLastasUt", label: "SkaLastasUt" },
+  { key: "leverantor", label: "Leverantör" },
+  { key: "kommentar", label: "Kommentar" },
 ];
 
 const PAKETBOKNING_MOCK_RESULTS: PaketbokningResultRow[] = [
-  { paketnr: "15201", lpm: "45", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "A1-02", mdlangd: "300", status: "Tillgänglig" },
-  { paketnr: "15202", lpm: "62", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "A1-03", mdlangd: "360", status: "Tillgänglig" },
-  { paketnr: "15203", lpm: "38", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "Krokom", lagerplats: "B2-01", mdlangd: "420", status: "Tillgänglig" },
-  { paketnr: "15204", lpm: "71", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "BP Hammerdal", lagerplats: "C3-05", mdlangd: "300", status: "Tillgänglig" },
-  { paketnr: "15205", lpm: "55", produkt: "5x150 Furu Svarvad Stolp", lagerstalle: "BP Hammerdal", lagerplats: "C3-06", mdlangd: "360", status: "Tillgänglig" },
+  { paketnr: "15201", produkt: "5x150 Furu Svarvad Stolp", volym: "0.34", pakettyp: "Paket", langd: "300", antal: "120", lpm: "45", produktionsdatum: "2025-03-12", lagerstalle: "Krokom", lagerplats: "A1-02", kondition: "Fri", reservation: "", skaLastasUt: "Nej", leverantor: "Såg AB", kommentar: "" },
+  { paketnr: "15202", produkt: "5x150 Furu Svarvad Stolp", volym: "0.47", pakettyp: "Paket", langd: "360", antal: "110", lpm: "62", produktionsdatum: "2025-03-14", lagerstalle: "Krokom", lagerplats: "A1-03", kondition: "Fri", reservation: "", skaLastasUt: "Nej", leverantor: "Såg AB", kommentar: "" },
+  { paketnr: "15203", produkt: "5x150 Furu Svarvad Stolp", volym: "0.29", pakettyp: "Paket", langd: "420", antal: "90", lpm: "38", produktionsdatum: "2025-03-15", lagerstalle: "Krokom", lagerplats: "B2-01", kondition: "Fri", reservation: "", skaLastasUt: "Nej", leverantor: "Såg AB", kommentar: "" },
+  { paketnr: "15204", produkt: "5x150 Furu Svarvad Stolp", volym: "0.54", pakettyp: "Paket", langd: "300", antal: "150", lpm: "71", produktionsdatum: "2025-03-18", lagerstalle: "BP Hammerdal", lagerplats: "C3-05", kondition: "Fri", reservation: "", skaLastasUt: "Nej", leverantor: "Såg AB", kommentar: "" },
+  { paketnr: "15205", produkt: "5x150 Furu Svarvad Stolp", volym: "0.42", pakettyp: "Paket", langd: "360", antal: "130", lpm: "55", produktionsdatum: "2025-03-19", lagerstalle: "BP Hammerdal", lagerplats: "C3-06", kondition: "Fri", reservation: "", skaLastasUt: "Nej", leverantor: "Såg AB", kommentar: "" },
 ];
 
-export const RESERVATIONSTYP_OPTIONS = ["Kontraktrad", "Reservationsorder", "Intern"] as const;
+export const RESERVATIONSTYP_OPTIONS = ["Kontraktrad", "Avroprad", "Intern"] as const;
 export const KONTRAKT_PRODUKT_OPTIONS = [
-  "163508: 5x150 Furu Svarvad Stolp",
-  "163509: 22x95 Gran Ytterpanel",
-  "163510: 45x145 Gran Konstruktionsvirke",
+  "163508",
+  "163509",
+  "163510"
 ] as const;
 export const ENHET_OPTIONS = [
   "BP Hammerdal Byggprodukter",
@@ -77,7 +95,7 @@ type PaketbokningViewProps = {
 };
 
 export function PaketbokningView({
-  initialReservationstyp = "Reservationsorder",
+  initialReservationstyp = "Avroprad",
   onBack,
   onReservera,
   onSkaLastasUt,
@@ -138,7 +156,7 @@ export function PaketbokningView({
         produkt: r.produkt,
         lagerstalle: r.lagerstalle,
         lagerplats: r.lagerplats,
-        mdlangd: r.mdlangd,
+        mdlangd: r.langd,
         skaLastasUt,
       };
     });
@@ -150,14 +168,14 @@ export function PaketbokningView({
           <IconButton size="small" onClick={onBack} title="Tillbaka">
             <ArrowBackIcon fontSize="small" />
           </IconButton>
-          <Typography className={styles.contractModernTitle}>Paketbokning</Typography>
+          <Typography className={styles.contractModernTitle}>Paketbokning {"- " + filters.reservationstyp}</Typography>
         </div>
         <div className={styles.contractModernTopActions} />
       </div>
 
       <div className={styles.paketbokningLayout}>
         <div className={styles.paketbokningFilterStrip}>
-          <div className={`${styles.freightFormField} ${styles.paketbokningFieldWide}`}>
+          {/* <div className={`${styles.freightFormField} ${styles.paketbokningFieldWide}`}>
             <Typography className={styles.freightFormLabel}>Reservationstyp</Typography>
             <Select
               size="small"
@@ -167,10 +185,10 @@ export function PaketbokningView({
             >
               {RESERVATIONSTYP_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
             </Select>
-          </div>
+          </div> */}
 
           <div className={`${styles.freightFormField} ${styles.paketbokningFieldXWide}`}>
-            <Typography className={styles.freightFormLabel}>Kontrakt:Produkt</Typography>
+            <Typography className={styles.freightFormLabel}>Avroprad</Typography>
             <Select
               size="small"
               value={filters.kontraktProdukt}
@@ -178,7 +196,6 @@ export function PaketbokningView({
               className={styles.pbFilterInput}
               onChange={(e) => setFilters((p) => ({ ...p, kontraktProdukt: e.target.value }))}
             >
-              <MenuItem value=""><em>Alla</em></MenuItem>
               {KONTRAKT_PRODUKT_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
             </Select>
           </div>
@@ -250,6 +267,7 @@ export function PaketbokningView({
             size="small"
             variant="outlined"
             className={styles.paketbokningActionBtn}
+            startIcon={<EventAvailable fontSize="small" style={{ marginRight: -3 }} />}
             disabled={selectedRows.size === 0}
             onClick={() => onReservera(buildSelectedRows("Nej"))}
           >
@@ -259,7 +277,7 @@ export function PaketbokningView({
             size="small"
             variant="outlined"
             className={styles.paketbokningActionBtn}
-            // startIcon={<RefreshOutlinedIcon fontSize="small" />}
+            startIcon={<LabelImportantOutlinedIcon fontSize="small" style={{ marginRight: -3 }} />}
             disabled={selectedRows.size === 0}
             onClick={() => onSkaLastasUt(buildSelectedRows("Ja"))}
           >
@@ -323,6 +341,20 @@ export function PaketbokningView({
               return (row as Record<string, string>)[column.key as string] ?? "-";
             }}
           />
+          <div className={styles.paketbokningFooter}>
+            <div className={styles.paketbokningFooterItem}>
+              <span className={styles.paketbokningFooterLabel}>Antal valda paket</span>
+              <span className={styles.paketbokningFooterValue}>{selectedRows.size}</span>
+            </div>
+            <div className={styles.paketbokningFooterItem}>
+              <span className={styles.paketbokningFooterLabel}>Vald volym</span>
+              <span className={styles.paketbokningFooterValue}>
+                {[...selectedRows]
+                  .reduce((sum, i) => sum + (parseFloat(results[i]?.volym ?? "0") || 0), 0)
+                  .toFixed(2)} m³
+              </span>
+            </div>
+          </div>
         </div>
         {/* ) : null} */}
       </div>

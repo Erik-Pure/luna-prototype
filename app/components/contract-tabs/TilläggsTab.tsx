@@ -147,7 +147,7 @@ export function TilläggsTab() {
             <ActionRow
                 items={[
                     {
-                        label: "Nytt tillägg",
+                        label: "Tillägg",
                         icon: <AddIcon fontSize="small" />,
                         tone: "primary",
                         onClick: openDialog,

@@ -2,20 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import AddIcon from "@mui/icons-material/Add";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DvrOutlinedIcon from "@mui/icons-material/DvrOutlined";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
-import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FactoryOutlinedIcon from "@mui/icons-material/FactoryOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import {
-  Alert,
   CircularProgress,
-  Snackbar,
   Switch,
   Typography
 } from "@mui/material";
@@ -26,6 +23,7 @@ import {
   AppShellLayout,
   ContractDetailView,
   ContractListView,
+  CustomerListView,
   DeliveryListView,
   HomeView,
   PriceListDetailView,
@@ -33,7 +31,9 @@ import {
   PriceListView
 } from "./components/views";
 import { CustomerDetailView, type CustomerDetailData } from "./components/CustomerDetailView";
+import { CustomerCreateView } from "./components/CustomerCreateView";
 import { AvropsradDetailView } from "./components/contract-tabs/AvropsradDetailView";
+import { ContainerView } from "./components/contract-tabs/ContainerView";
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
@@ -42,6 +42,7 @@ type SectionKey = "hem" | "marknad" | "produktion" | "leverans" | "rapporter" | 
 // Remembers the line item ID to return to when saving an avropsrad (null = came from contract Avrop tab).
 // Not affected by StrictMode double-invoke since it's only written/read in event handlers.
 let _savedReturnLineItemId: string | null = null;
+let _savedAvropsradEditData: Record<string, string> | null = null;
 
 type TopMenuItemDef = {
   slug: string;
@@ -136,9 +137,7 @@ const topMenusBySection: Record<SectionKey, TopMenuItemDef[]> = {
 };
 
 const actionItems = [
-  { label: "Nytt kontrakt", icon: <AddIcon fontSize="small" />, requiresSelection: false },
-  { label: "Ta bort", icon: <DeleteOutlineOutlinedIcon fontSize="small" />, requiresSelection: true },
-  { label: "Kopiera", icon: <ContentCopyOutlinedIcon fontSize="small" />, requiresSelection: true },
+  { label: "Kontrakt", icon: <AddIcon fontSize="small" />, requiresSelection: false },
   { label: "Inaktivera", icon: <BlockOutlinedIcon fontSize="small" />, requiresSelection: true }
 ];
 
@@ -471,7 +470,15 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     priceList: "PL-202600",
     creditLimit: "500 000 SEK",
     limitStatus: "ok",
-    comment: "Strategisk kund med löpande projektleveranser och hög prognosprecision."
+    comment: "Strategisk kund med löpande projektleveranser och hög prognosprecision.",
+    kortnamn: "ACME",
+    tillhor: "Marknad Nord",
+    giltiFran: "2022-01-01",
+    giltigTom: "2027-12-31",
+    skapadAv: "Jane Doe",
+    skapad: "2022-01-15 08:45",
+    andradAv: "Jane Doe",
+    andrad: "2026-03-10 14:22"
   },
   "Globex Corp": {
     customerNumber: "K-1002",
@@ -486,7 +493,15 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     priceList: "PL-202601",
     creditLimit: "1 200 000 SEK",
     limitStatus: "ok",
-    comment: "Kräver engelska dokument och samlad avisering inför varje delleverans."
+    comment: "Kräver engelska dokument och samlad avisering inför varje delleverans.",
+    kortnamn: "GLOBEX",
+    tillhor: "Marknad Export",
+    giltiFran: "2021-06-01",
+    giltigTom: "2027-05-31",
+    skapadAv: "Erik Andersson",
+    skapad: "2021-06-03 10:10",
+    andradAv: "Erik Andersson",
+    andrad: "2026-01-20 09:05"
   },
   "Initech HB": {
     customerNumber: "K-1003",
@@ -501,7 +516,15 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     priceList: "PL-202602",
     creditLimit: "350 000 SEK",
     limitStatus: "error",
-    comment: "Limitöverskridande kund. Kontrollera godkännande innan ny order släpps vidare."
+    comment: "Limitöverskridande kund. Kontrollera godkännande innan ny order släpps vidare.",
+    kortnamn: "INITECH",
+    tillhor: "Marknad Export",
+    giltiFran: "2023-03-01",
+    giltigTom: "2026-06-30",
+    skapadAv: "Jane Doe",
+    skapad: "2023-03-05 11:30",
+    andradAv: "Jane Doe",
+    andrad: "2026-04-02 15:48"
   },
   "Nordic Sten & Mark AB": {
     customerNumber: "K-1004",
@@ -516,7 +539,15 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     priceList: "PL-202603",
     creditLimit: "800 000 SEK",
     limitStatus: "warning",
-    comment: "Föredrar leveransfönster tisdag till torsdag och avisering senast dagen före."
+    comment: "Föredrar leveransfönster tisdag till torsdag och avisering senast dagen före.",
+    kortnamn: "NSM",
+    tillhor: "Marknad Nord",
+    giltiFran: "2020-09-01",
+    giltigTom: "2026-12-31",
+    skapadAv: "Erik Andersson",
+    skapad: "2020-09-10 13:00",
+    andradAv: "Erik Andersson",
+    andrad: "2025-11-18 10:34"
   },
   "Luna Infrastruktur AB": {
     customerNumber: "K-1005",
@@ -531,7 +562,15 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     priceList: "PL-202604",
     creditLimit: "2 100 000 SEK",
     limitStatus: "ok",
-    comment: "Stor kund med flera parallella projekt. Samordna prislista och kontraktsförlängningar."
+    comment: "Stor kund med flera parallella projekt. Samordna prislista och kontraktsförlängningar.",
+    kortnamn: "LUNA",
+    tillhor: "Marknad Nord",
+    giltiFran: "2019-01-01",
+    giltigTom: "2027-03-31",
+    skapadAv: "Jane Doe",
+    skapad: "2019-01-07 08:15",
+    andradAv: "Jane Doe",
+    andrad: "2026-02-28 16:00"
   },
   "Skandinavisk Industriservice": {
     customerNumber: "K-1006",
@@ -546,7 +585,15 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     priceList: "PL-202605",
     creditLimit: "660 000 SEK",
     limitStatus: "warning",
-    comment: "Kund med tät uppföljning på leveransprecision och månatlig avstämning av limit."
+    comment: "Kund med tät uppföljning på leveransprecision och månatlig avstämning av limit.",
+    kortnamn: "SKIS",
+    tillhor: "Marknad Export",
+    giltiFran: "2021-11-01",
+    giltigTom: "2026-12-31",
+    skapadAv: "Erik Andersson",
+    skapad: "2021-11-03 09:20",
+    andradAv: "Erik Andersson",
+    andrad: "2026-05-05 11:11"
   }
 };
 
@@ -788,6 +835,242 @@ const lineItemRows: LineItemRow[] = Array.from({ length: 12 }).map((_, idx) => (
   nettoPrisM3: `${(850 + idx * 12).toFixed(2)}`,
 }));
 
+// ─── Customer list ────────────────────────────────────────────────────────────
+
+type CustomerSearchFieldKey =
+  | "kundnr" | "fakturanamn" | "kortnamn" | "postadress" | "land" | "hyvelprofil" | "kategori"
+  | "tillhor" | "orgNr" | "vatNr" | "varningsnivaFordran" | "varningsnivaLimit"
+  | "kundansvarig" | "saljare" | "agent" | "limitDatumFran" | "limitDatumTill"
+  | "kundgrupp" | "kopmonster" | "aktiv" | "utlastningssparr";
+
+type CustomerColumnKey =
+  | "kundnr" | "kundansvarig" | "kontrakt12Man" | "leveransnamn" | "kortnamn"
+  | "fakturanamn" | "adress" | "postadress" | "telefon" | "aktiv" | "tillhor"
+  | "utlastningssparr" | "ediFaktura" | "fordran" | "kreditforsakring"
+  | "internLimit" | "internLimitTom" | "limit" | "omsattning2025" | "omsattning2026"
+  | "kundgrupp" | "kategori" | "kopmonster" | "kommentarSaljare";
+
+type CustomerSearchFieldConfig = {
+  key: CustomerSearchFieldKey;
+  label: string;
+  control: "text" | "date" | "select" | "checkbox";
+  visible: boolean;
+  favorite: boolean;
+};
+
+type CustomerColumnConfig = {
+  key: CustomerColumnKey;
+  label: string;
+  visible: boolean;
+  pinned: boolean;
+  width?: number;
+};
+
+type CustomerSearchValueMap = Record<CustomerSearchFieldKey, string | boolean>;
+
+type CustomerRow = Record<CustomerColumnKey, string>;
+
+const defaultCustomerSearchFields: CustomerSearchFieldConfig[] = [
+  { key: "kundnr", label: "Kundnr", control: "text", visible: true, favorite: true },
+  { key: "kortnamn", label: "Kortnamn", control: "text", visible: true, favorite: true },
+  { key: "kundansvarig", label: "Kundansvarig", control: "select", visible: true, favorite: true },
+  { key: "saljare", label: "Säljare/innesäljare", control: "select", visible: true, favorite: true },
+  { key: "fakturanamn", label: "Fakturanamn", control: "text", visible: false, favorite: false },
+  { key: "postadress", label: "Postadress", control: "text", visible: false, favorite: false },
+  { key: "land", label: "Land", control: "select", visible: false, favorite: false },
+  { key: "hyvelprofil", label: "Hyvelprofil", control: "select", visible: false, favorite: false },
+  { key: "kategori", label: "Kategori", control: "select", visible: false, favorite: false },
+  { key: "tillhor", label: "Tillhör", control: "text", visible: false, favorite: false },
+  { key: "orgNr", label: "OrgNr", control: "text", visible: false, favorite: false },
+  { key: "vatNr", label: "VatNr", control: "text", visible: false, favorite: false },
+  { key: "varningsnivaFordran", label: "Varningsnivå fordran", control: "select", visible: false, favorite: false },
+  { key: "varningsnivaLimit", label: "Varningsnivå limit", control: "select", visible: false, favorite: false },
+  { key: "agent", label: "Agent", control: "select", visible: false, favorite: false },
+  { key: "limitDatumFran", label: "Limit datum från", control: "date", visible: false, favorite: false },
+  { key: "limitDatumTill", label: "Limit datum till", control: "date", visible: false, favorite: false },
+  { key: "kundgrupp", label: "Kundgrupp", control: "select", visible: false, favorite: false },
+  { key: "kopmonster", label: "Köpmönster", control: "select", visible: false, favorite: false },
+  { key: "aktiv", label: "Aktiv", control: "checkbox", visible: false, favorite: false },
+  { key: "utlastningssparr", label: "Utlastningsspärr", control: "checkbox", visible: false, favorite: false },
+];
+
+const customerSelectOptionsByField: Partial<Record<CustomerSearchFieldKey, string[]>> = {
+  land: ["SE", "NO", "FI", "DK", "DE", "EE"],
+  hyvelprofil: ["Aktiv", "Inaktiv", "Alla"],
+  kategori: ["Bygghandel", "Industri", "Sågverk"],
+  varningsnivaFordran: ["Ingen", "Låg", "Medium", "Hög"],
+  varningsnivaLimit: ["Ingen", "Låg", "Medium", "Hög"],
+  kundansvarig: ["Jane Doe", "Erik Andersson", "Maria Lindqvist"],
+  saljare: ["Jane Doe", "Erik Andersson", "Maria Lindqvist", "Oskar Berg"],
+  agent: ["Nordic Agent AB", "Baltic Trade AB"],
+  kundgrupp: ["A", "B", "C"],
+  kopmonster: ["Regelbunden", "Oregelbunden", "Säsongsbetonad"],
+};
+
+const initialCustomerSearchValues: CustomerSearchValueMap = {
+  kundnr: "", fakturanamn: "", kortnamn: "", postadress: "", land: "", hyvelprofil: "",
+  kategori: "", tillhor: "", orgNr: "", vatNr: "", varningsnivaFordran: "", varningsnivaLimit: "",
+  kundansvarig: "", saljare: "", agent: "", limitDatumFran: "", limitDatumTill: "",
+  kundgrupp: "", kopmonster: "", aktiv: false, utlastningssparr: false,
+};
+
+const defaultCustomerColumns: CustomerColumnConfig[] = [
+  { key: "kundnr", label: "Kundnr", visible: true, pinned: false, width: 100 },
+  { key: "kundansvarig", label: "Kundansvarig", visible: true, pinned: false, width: 150 },
+  { key: "kontrakt12Man", label: "Kontrakt 12 mån", visible: true, pinned: false, width: 130 },
+  { key: "leveransnamn", label: "Leveransnamn", visible: true, pinned: false, width: 200 },
+  { key: "kortnamn", label: "Kortnamn", visible: true, pinned: false, width: 110 },
+  { key: "fakturanamn", label: "Fakturanamn", visible: true, pinned: false, width: 200 },
+  { key: "adress", label: "Adress", visible: true, pinned: false, width: 180 },
+  { key: "postadress", label: "Postadress", visible: true, pinned: false, width: 160 },
+  { key: "telefon", label: "Telefon", visible: true, pinned: false, width: 140 },
+  { key: "aktiv", label: "Aktiv", visible: true, pinned: false, width: 80 },
+  { key: "tillhor", label: "Tillhör", visible: true, pinned: false, width: 150 },
+  { key: "utlastningssparr", label: "Utlastningsspärr", visible: true, pinned: false, width: 150 },
+  { key: "ediFaktura", label: "EDI Faktura", visible: true, pinned: false, width: 110 },
+  { key: "fordran", label: "Fordran", visible: true, pinned: false, width: 130 },
+  { key: "kreditforsakring", label: "Kreditförsäkring", visible: true, pinned: false, width: 150 },
+  { key: "internLimit", label: "Intern limit", visible: true, pinned: false, width: 120 },
+  { key: "internLimitTom", label: "Intern limit t.o.m.", visible: true, pinned: false, width: 150 },
+  { key: "limit", label: "Limit", visible: true, pinned: false, width: 130 },
+  { key: "omsattning2025", label: "Omsättning 2025", visible: true, pinned: false, width: 150 },
+  { key: "omsattning2026", label: "Omsättning 2026", visible: true, pinned: false, width: 150 },
+  { key: "kundgrupp", label: "Kundgrupp", visible: true, pinned: false, width: 100 },
+  { key: "kategori", label: "Kategori", visible: true, pinned: false, width: 120 },
+  { key: "kopmonster", label: "Köpmönster", visible: true, pinned: false, width: 130 },
+  { key: "kommentarSaljare", label: "Kommentar (säljare)", visible: true, pinned: false, width: 220 },
+];
+
+const customerTableRows: CustomerRow[] = [
+  {
+    kundnr: "K-1001", kundansvarig: "Jane Doe", kontrakt12Man: "14",
+    leveransnamn: "Acme AB", kortnamn: "ACME", fakturanamn: "Acme AB",
+    adress: "Industrivägen 12", postadress: "123 45 Stockholm", telefon: "08-120 45 100",
+    aktiv: "Ja", tillhor: "Marknad Nord", utlastningssparr: "Nej", ediFaktura: "Ja",
+    fordran: "125 000", kreditforsakring: "500 000", internLimit: "750 000",
+    internLimitTom: "2026-12-31", limit: "500 000", omsattning2025: "2 340 000",
+    omsattning2026: "1 890 000", kundgrupp: "A", kategori: "Bygghandel",
+    kopmonster: "Regelbunden", kommentarSaljare: "Strategisk kund med löpande projektleveranser."
+  },
+  {
+    kundnr: "K-1002", kundansvarig: "Erik Andersson", kontrakt12Man: "9",
+    leveransnamn: "Globex Corp", kortnamn: "GLOBEX", fakturanamn: "Globex Corp AS",
+    adress: "Oslofjordveien 5", postadress: "0277 Oslo", telefon: "+47 22 44 10 20",
+    aktiv: "Ja", tillhor: "Marknad Export", utlastningssparr: "Nej", ediFaktura: "Nej",
+    fordran: "340 000", kreditforsakring: "1 200 000", internLimit: "1 500 000",
+    internLimitTom: "2027-06-30", limit: "1 200 000", omsattning2025: "4 120 000",
+    omsattning2026: "3 880 000", kundgrupp: "A", kategori: "Industri",
+    kopmonster: "Regelbunden", kommentarSaljare: "Kräver engelska dokument och samlad avisering."
+  },
+  {
+    kundnr: "K-1003", kundansvarig: "Jane Doe", kontrakt12Man: "6",
+    leveransnamn: "Initech HB", kortnamn: "INITECH", fakturanamn: "Initech HB",
+    adress: "Vasakajen 3", postadress: "65100 Vasa", telefon: "+358 10 320 4400",
+    aktiv: "Ja", tillhor: "Marknad Export", utlastningssparr: "Nej", ediFaktura: "Nej",
+    fordran: "410 000", kreditforsakring: "350 000", internLimit: "400 000",
+    internLimitTom: "2026-06-30", limit: "350 000", omsattning2025: "980 000",
+    omsattning2026: "760 000", kundgrupp: "B", kategori: "Bygghandel",
+    kopmonster: "Oregelbunden", kommentarSaljare: "Limitöverskridande. Kräver godkännande."
+  },
+  {
+    kundnr: "K-1004", kundansvarig: "Erik Andersson", kontrakt12Man: "11",
+    leveransnamn: "Nordic Sten & Mark AB", kortnamn: "NSM", fakturanamn: "Nordic Sten & Mark AB",
+    adress: "Storsjögatan 22", postadress: "831 34 Östersund", telefon: "063-440 18 00",
+    aktiv: "Ja", tillhor: "Marknad Nord", utlastningssparr: "Nej", ediFaktura: "Ja",
+    fordran: "210 000", kreditforsakring: "800 000", internLimit: "1 000 000",
+    internLimitTom: "2026-12-31", limit: "800 000", omsattning2025: "3 450 000",
+    omsattning2026: "2 970 000", kundgrupp: "A", kategori: "Bygghandel",
+    kopmonster: "Regelbunden", kommentarSaljare: "Föredrar leveransfönster tisdag–torsdag."
+  },
+  {
+    kundnr: "K-1005", kundansvarig: "Jane Doe", kontrakt12Man: "18",
+    leveransnamn: "Luna Infrastruktur AB", kortnamn: "LUNA", fakturanamn: "Luna Infrastruktur AB",
+    adress: "Norrmalmsvägen 44", postadress: "852 30 Sundsvall", telefon: "060-220 45 10",
+    aktiv: "Ja", tillhor: "Marknad Nord", utlastningssparr: "Nej", ediFaktura: "Ja",
+    fordran: "80 000", kreditforsakring: "2 100 000", internLimit: "2 500 000",
+    internLimitTom: "2027-03-31", limit: "2 100 000", omsattning2025: "7 800 000",
+    omsattning2026: "6 450 000", kundgrupp: "A", kategori: "Industri",
+    kopmonster: "Regelbunden", kommentarSaljare: "Stor kund med parallella projekt."
+  },
+  {
+    kundnr: "K-1006", kundansvarig: "Erik Andersson", kontrakt12Man: "7",
+    leveransnamn: "Skandinavisk Industriservice", kortnamn: "SKIS", fakturanamn: "Skandinavisk Industriservice A/S",
+    adress: "Havnegade 12", postadress: "8000 Aarhus", telefon: "+45 86 11 42 30",
+    aktiv: "Ja", tillhor: "Marknad Export", utlastningssparr: "Nej", ediFaktura: "Nej",
+    fordran: "520 000", kreditforsakring: "660 000", internLimit: "700 000",
+    internLimitTom: "2026-12-31", limit: "660 000", omsattning2025: "2 100 000",
+    omsattning2026: "1 750 000", kundgrupp: "B", kategori: "Industri",
+    kopmonster: "Regelbunden", kommentarSaljare: "Månatlig avstämning av limit och leveransprecision."
+  },
+  {
+    kundnr: "K-1007", kundansvarig: "Maria Lindqvist", kontrakt12Man: "3",
+    leveransnamn: "Björk & Ek Bygg AB", kortnamn: "BJEK", fakturanamn: "Björk & Ek Bygg AB",
+    adress: "Skogsvägen 7", postadress: "791 30 Falun", telefon: "023-560 12 00",
+    aktiv: "Ja", tillhor: "Marknad Syd", utlastningssparr: "Ja", ediFaktura: "Nej",
+    fordran: "45 000", kreditforsakring: "250 000", internLimit: "300 000",
+    internLimitTom: "2026-09-30", limit: "250 000", omsattning2025: "620 000",
+    omsattning2026: "540 000", kundgrupp: "C", kategori: "Bygghandel",
+    kopmonster: "Säsongsbetonad", kommentarSaljare: "Aktiv framför allt under Q2–Q3."
+  },
+  {
+    kundnr: "K-1008", kundansvarig: "Maria Lindqvist", kontrakt12Man: "5",
+    leveransnamn: "Granit & Grus HB", kortnamn: "GGRU", fakturanamn: "Granit & Grus HB",
+    adress: "Grustaget 1", postadress: "431 37 Mölndal", telefon: "031-440 23 10",
+    aktiv: "Ja", tillhor: "Marknad Syd", utlastningssparr: "Nej", ediFaktura: "Nej",
+    fordran: "90 000", kreditforsakring: "400 000", internLimit: "450 000",
+    internLimitTom: "2026-12-31", limit: "400 000", omsattning2025: "1 240 000",
+    omsattning2026: "1 080 000", kundgrupp: "B", kategori: "Bygghandel",
+    kopmonster: "Oregelbunden", kommentarSaljare: ""
+  },
+  {
+    kundnr: "K-1009", kundansvarig: "Jane Doe", kontrakt12Man: "2",
+    leveransnamn: "Norrlands Trä AB", kortnamn: "NORTR", fakturanamn: "Norrlands Trä AB",
+    adress: "Sågverksgatan 3", postadress: "961 30 Boden", telefon: "0921-420 11 00",
+    aktiv: "Nej", tillhor: "Marknad Nord", utlastningssparr: "Ja", ediFaktura: "Nej",
+    fordran: "0", kreditforsakring: "150 000", internLimit: "200 000",
+    internLimitTom: "2025-12-31", limit: "150 000", omsattning2025: "310 000",
+    omsattning2026: "0", kundgrupp: "C", kategori: "Sågverk",
+    kopmonster: "Oregelbunden", kommentarSaljare: "Kund pausad. Kontaktas Q1 2027."
+  },
+  {
+    kundnr: "K-1010", kundansvarig: "Erik Andersson", kontrakt12Man: "8",
+    leveransnamn: "Bygg & Handel Syd AB", kortnamn: "BHS", fakturanamn: "Bygg & Handel Syd AB",
+    adress: "Handelsvägen 15", postadress: "211 24 Malmö", telefon: "040-340 56 00",
+    aktiv: "Ja", tillhor: "Marknad Syd", utlastningssparr: "Nej", ediFaktura: "Ja",
+    fordran: "165 000", kreditforsakring: "600 000", internLimit: "650 000",
+    internLimitTom: "2026-12-31", limit: "600 000", omsattning2025: "2 890 000",
+    omsattning2026: "2 540 000", kundgrupp: "A", kategori: "Bygghandel",
+    kopmonster: "Regelbunden", kommentarSaljare: "Bra betalningshistorik. EDI aktiverat 2025."
+  },
+  {
+    kundnr: "K-1011", kundansvarig: "Maria Lindqvist", kontrakt12Man: "4",
+    leveransnamn: "Timra Hus AB", kortnamn: "TIMHU", fakturanamn: "Timra Hus AB",
+    adress: "Hantverksgatan 8", postadress: "861 80 Timrå", telefon: "060-570 30 20",
+    aktiv: "Ja", tillhor: "Marknad Nord", utlastningssparr: "Nej", ediFaktura: "Nej",
+    fordran: "55 000", kreditforsakring: "300 000", internLimit: "350 000",
+    internLimitTom: "2026-09-30", limit: "300 000", omsattning2025: "780 000",
+    omsattning2026: "690 000", kundgrupp: "B", kategori: "Bygghandel",
+    kopmonster: "Regelbunden", kommentarSaljare: ""
+  },
+  {
+    kundnr: "K-1012", kundansvarig: "Jane Doe", kontrakt12Man: "12",
+    leveransnamn: "BalticBuild OÜ", kortnamn: "BLTB", fakturanamn: "BalticBuild OÜ",
+    adress: "Pärnu mnt 22", postadress: "10141 Tallinn", telefon: "+372 600 3400",
+    aktiv: "Ja", tillhor: "Marknad Export", utlastningssparr: "Nej", ediFaktura: "Ja",
+    fordran: "280 000", kreditforsakring: "900 000", internLimit: "1 000 000",
+    internLimitTom: "2027-12-31", limit: "900 000", omsattning2025: "3 200 000",
+    omsattning2026: "2 980 000", kundgrupp: "A", kategori: "Bygghandel",
+    kopmonster: "Regelbunden", kommentarSaljare: "Exportkund. EDI faktura via PEPPOL."
+  },
+];
+
+const customerActionItems = [
+  { label: "Kund", icon: <AddIcon fontSize="small" />, requiresSelection: false },
+  { label: "Ändra kundgrupp", icon: <EditOutlinedIcon fontSize="small" />, requiresSelection: true },
+];
+
+// ──────────────────────────────────────────────────────────────────────────────
+
 export default function Home() {
   const router = useRouter();
   const pathname = usePathname();
@@ -806,12 +1089,14 @@ export default function Home() {
   const isPriceListRoute = sectionSlug === "marknad" && menuSlug === "prislistor";
   const rawSegment3 = pathParts[3] ?? null;
   const isAvropRoute = isContractDetailRoute && rawSegment3 === "avrop";
+  const isContainerRoute = isContractDetailRoute && rawSegment3 === "container";
   const selectedAvropsradId = isAvropRoute ? (pathParts[4] ?? null) : null;
   const lineItemId = isAvropRoute ? null : rawSegment3;
   const isAvropDetailOpen = isAvropRoute && Boolean(selectedAvropsradId);
   const isCreatingAvrop = selectedAvropsradId === "new";
   const isContractDetailOpen = isContractDetailRoute && Boolean(contractId);
-  const isCustomerDetailOpen = isCustomerDetailRoute && Boolean(contractId);
+  const isCreatingCustomer = isCustomerDetailRoute && contractId === "new";
+  const isCustomerDetailOpen = isCustomerDetailRoute && Boolean(contractId) && !isCreatingCustomer;
   const isPriceListDetailOpen = isPriceListRoute && Boolean(contractId);
   const selectedContractId = isContractDetailRoute ? contractId : null;
   const selectedCustomerName = isCustomerDetailRoute && contractId ? decodePathSegment(contractId) : null;
@@ -852,9 +1137,7 @@ export default function Home() {
   const [activeContractTab, setActiveContractTab] = useState<ContractTab>(() =>
     typeof window !== "undefined" && window.location.hash === "#avrop" ? "Avrop" : "Kontraktsrader"
   );
-  const [activeLineItemTab, setActiveLineItemTab] = useState<LineItemDetailTab>(() =>
-    typeof window !== "undefined" && window.location.hash === "#avropsrad" ? "Avropsrader" : "Längdfördelning"
-  );
+  const [activeLineItemTab, setActiveLineItemTab] = useState<LineItemDetailTab>("Avropsrader");
   const [selectedCompany, setSelectedCompany] = useState(fakeCompanies[0]);
   const [isCompanyMenuOpen, setIsCompanyMenuOpen] = useState(false);
   const [searchValues, setSearchValues] = useState<SearchValueMap>(initialSearchValues);
@@ -874,7 +1157,6 @@ export default function Home() {
   const [newLineItemDraftVersion, setNewLineItemDraftVersion] = useState(0);
   const [pinnedLineItemFields, setPinnedLineItemFields] = useState<Set<keyof NewLineItemDraft>>(new Set());
   const [keepLineItemOpenAfterSave, setKeepLineItemOpenAfterSave] = useState(true);
-  const [isLineItemToastOpen, setIsLineItemToastOpen] = useState(false);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
   const [isViewLoading, setIsViewLoading] = useState(false);
   const routeLoadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -888,6 +1170,21 @@ export default function Home() {
   const companyMenuRef = useRef<HTMLDivElement | null>(null);
   const companyButtonRef = useRef<HTMLButtonElement | null>(null);
   const { mode, toggleMode } = useColorMode();
+
+  // Customer list state
+  const [customerSearchValues, setCustomerSearchValues] = useState<CustomerSearchValueMap>(initialCustomerSearchValues);
+  const [customerGlobalSearchValue, setCustomerGlobalSearchValue] = useState("");
+  const [isCustomerSearchMenuOpen, setIsCustomerSearchMenuOpen] = useState(false);
+  const [appliedCustomerSearchFields, setAppliedCustomerSearchFields] = useState<CustomerSearchFieldConfig[]>(defaultCustomerSearchFields);
+  const [draftCustomerSearchFields, setDraftCustomerSearchFields] = useState<CustomerSearchFieldConfig[]>(defaultCustomerSearchFields);
+  const [isCustomerColumnsMenuOpen, setIsCustomerColumnsMenuOpen] = useState(false);
+  const [appliedCustomerColumns, setAppliedCustomerColumns] = useState<CustomerColumnConfig[]>(defaultCustomerColumns);
+  const [draftCustomerColumns, setDraftCustomerColumns] = useState<CustomerColumnConfig[]>(defaultCustomerColumns);
+  const [selectedCustomerRowId, setSelectedCustomerRowId] = useState<number | null>(null);
+  const customerSearchMenuRef = useRef<HTMLDivElement | null>(null);
+  const customerSearchButtonRef = useRef<HTMLButtonElement | null>(null);
+  const customerColumnsMenuRef = useRef<HTMLDivElement | null>(null);
+  const customerColumnsButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const handleSearchSelectChange = (key: SearchFieldKey, value: string) => {
     setSearchValues((previous) => ({ ...previous, [key]: value }));
@@ -1042,8 +1339,72 @@ export default function Home() {
     });
   }, [globalSearchValue, searchValues, selectedCompany]);
 
+  const orderedVisibleCustomerColumns = useMemo(() => {
+    const pinned = appliedCustomerColumns.filter((col) => col.visible && col.pinned);
+    const regular = appliedCustomerColumns.filter((col) => col.visible && !col.pinned);
+    return [...pinned, ...regular];
+  }, [appliedCustomerColumns]);
+
+  const visibleCustomerSearchFields = useMemo(
+    () => appliedCustomerSearchFields.filter((f) => f.visible),
+    [appliedCustomerSearchFields]
+  );
+
+  const customerTextSearchFields = useMemo(
+    () => visibleCustomerSearchFields.filter((f) => f.control === "text" || f.control === "date"),
+    [visibleCustomerSearchFields]
+  );
+
+  const customerSelectSearchFields = useMemo(
+    () => visibleCustomerSearchFields.filter((f) => f.control === "select"),
+    [visibleCustomerSearchFields]
+  );
+
+  const customerCheckboxSearchFields = useMemo(
+    () => visibleCustomerSearchFields.filter((f) => f.control === "checkbox"),
+    [visibleCustomerSearchFields]
+  );
+
+  const allCustomerTextSearchFields = useMemo(
+    () => defaultCustomerSearchFields.filter((f) => f.control === "text" || f.control === "date"),
+    []
+  );
+
+  const allCustomerSelectSearchFields = useMemo(
+    () => defaultCustomerSearchFields.filter((f) => f.control === "select"),
+    []
+  );
+
+  const allCustomerCheckboxSearchFields = useMemo(
+    () => defaultCustomerSearchFields.filter((f) => f.control === "checkbox"),
+    []
+  );
+
+  const filteredCustomerRows = useMemo(() => {
+    const normalizedGlobal = customerGlobalSearchValue.trim().toLowerCase();
+    return customerTableRows.filter((row) => {
+      if (normalizedGlobal.length > 0) {
+        const matches = Object.values(row).some((v) => v.toLowerCase().includes(normalizedGlobal));
+        if (!matches) return false;
+      }
+      for (const field of defaultCustomerSearchFields) {
+        if (field.control === "checkbox") {
+          if (!customerSearchValues[field.key]) continue;
+          if (field.key === "aktiv" && row.aktiv !== "Ja") return false;
+          if (field.key === "utlastningssparr" && row.utlastningssparr !== "Ja") return false;
+          continue;
+        }
+        const filterValue = String(customerSearchValues[field.key] ?? "").trim().toLowerCase();
+        if (!filterValue) continue;
+        const rowValue = (row[field.key as CustomerColumnKey] ?? "").toLowerCase();
+        if (!rowValue.includes(filterValue)) return false;
+      }
+      return true;
+    });
+  }, [customerGlobalSearchValue, customerSearchValues]);
+
   useEffect(() => {
-    if (!isColumnsMenuOpen && !isLineColumnsMenuOpen && !isSearchMenuOpen && !isCompanyMenuOpen) {
+    if (!isColumnsMenuOpen && !isLineColumnsMenuOpen && !isSearchMenuOpen && !isCompanyMenuOpen && !isCustomerSearchMenuOpen && !isCustomerColumnsMenuOpen) {
       return;
     }
 
@@ -1057,6 +1418,10 @@ export default function Home() {
       const clickedLineButton = lineColumnsButtonRef.current?.contains(target);
       const clickedInsideCompanyMenu = companyMenuRef.current?.contains(target);
       const clickedCompanyButton = companyButtonRef.current?.contains(target);
+      const clickedInsideCustomerSearchMenu = customerSearchMenuRef.current?.contains(target);
+      const clickedCustomerSearchButton = customerSearchButtonRef.current?.contains(target);
+      const clickedInsideCustomerColumnsMenu = customerColumnsMenuRef.current?.contains(target);
+      const clickedCustomerColumnsButton = customerColumnsButtonRef.current?.contains(target);
 
       if (isSearchMenuOpen && !clickedInsideSearchMenu && !clickedSearchButton) {
         setDraftSearchFields(appliedSearchFields);
@@ -1076,6 +1441,16 @@ export default function Home() {
       if (isCompanyMenuOpen && !clickedInsideCompanyMenu && !clickedCompanyButton) {
         setIsCompanyMenuOpen(false);
       }
+
+      if (isCustomerSearchMenuOpen && !clickedInsideCustomerSearchMenu && !clickedCustomerSearchButton) {
+        setDraftCustomerSearchFields(appliedCustomerSearchFields);
+        setIsCustomerSearchMenuOpen(false);
+      }
+
+      if (isCustomerColumnsMenuOpen && !clickedInsideCustomerColumnsMenu && !clickedCustomerColumnsButton) {
+        setDraftCustomerColumns(appliedCustomerColumns);
+        setIsCustomerColumnsMenuOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -1085,9 +1460,13 @@ export default function Home() {
     isLineColumnsMenuOpen,
     isSearchMenuOpen,
     isCompanyMenuOpen,
+    isCustomerSearchMenuOpen,
+    isCustomerColumnsMenuOpen,
     appliedColumns,
     appliedLineColumns,
-    appliedSearchFields
+    appliedSearchFields,
+    appliedCustomerSearchFields,
+    appliedCustomerColumns,
   ]);
 
   const openSearchMenu = () => {
@@ -1288,6 +1667,108 @@ export default function Home() {
     return selectOptionsByField[key] ?? ["Ja", "Nej"];
   };
 
+  // Customer list handlers
+  const openCustomerSearchMenu = () => {
+    setDraftCustomerSearchFields(appliedCustomerSearchFields);
+    setIsCustomerColumnsMenuOpen(false);
+    setIsCustomerSearchMenuOpen(true);
+  };
+
+  const toggleCustomerSearchFieldVisibility = (key: CustomerSearchFieldKey) => {
+    setDraftCustomerSearchFields((prev) =>
+      prev.map((f) => f.key === key ? { ...f, visible: !f.visible } : f)
+    );
+  };
+
+  const toggleCustomerSearchFieldFavorite = (key: CustomerSearchFieldKey) => {
+    setDraftCustomerSearchFields((prev) =>
+      prev.map((f) => f.key === key ? { ...f, favorite: !f.favorite } : f)
+    );
+  };
+
+  const saveCustomerFavoriteKeys = (orderedKeys: string[]) => {
+    setDraftCustomerSearchFields((prev) => {
+      const orderedSet = new Set(orderedKeys);
+      const nonFavorites = prev.filter((f) => !orderedSet.has(f.key));
+      const favorites = orderedKeys
+        .map((key) => prev.find((f) => f.key === key))
+        .filter((f): f is CustomerSearchFieldConfig => f !== undefined)
+        .map((f) => ({ ...f, favorite: true }));
+      return [...favorites, ...nonFavorites.map((f) => ({ ...f, favorite: false }))];
+    });
+  };
+
+  const saveCustomerSearchFieldChanges = () => {
+    setAppliedCustomerSearchFields(draftCustomerSearchFields);
+    setIsCustomerSearchMenuOpen(false);
+    triggerViewLoading();
+  };
+
+  const cancelCustomerSearchFieldChanges = () => {
+    setDraftCustomerSearchFields(appliedCustomerSearchFields);
+    setIsCustomerSearchMenuOpen(false);
+  };
+
+  const clearCustomerSearchFieldChanges = () => {
+    setDraftCustomerSearchFields((prev) => prev.map((f) => ({ ...f, visible: false })));
+  };
+
+  const clearCustomerSearchValues = () => {
+    setCustomerSearchValues(initialCustomerSearchValues);
+    setCustomerGlobalSearchValue("");
+    triggerViewLoading();
+  };
+
+  const openCustomerColumnsMenu = () => {
+    setDraftCustomerColumns(appliedCustomerColumns);
+    setIsCustomerSearchMenuOpen(false);
+    setIsCustomerColumnsMenuOpen(true);
+  };
+
+  const toggleCustomerColumnVisibility = (key: CustomerColumnKey) => {
+    setDraftCustomerColumns((prev) =>
+      prev.map((col) => col.key === key ? { ...col, visible: !col.visible } : col)
+    );
+  };
+
+  const toggleCustomerColumnPin = (key: CustomerColumnKey) => {
+    setDraftCustomerColumns((prev) =>
+      prev.map((col) => col.key === key ? { ...col, pinned: !col.pinned } : col)
+    );
+  };
+
+  const moveCustomerColumn = (key: CustomerColumnKey, direction: "up" | "down") => {
+    setDraftCustomerColumns((prev) => {
+      const index = prev.findIndex((col) => col.key === key);
+      if (index < 0) return prev;
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(index, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+  };
+
+  const saveCustomerColumnChanges = () => {
+    setAppliedCustomerColumns(draftCustomerColumns);
+    setIsCustomerColumnsMenuOpen(false);
+    triggerViewLoading();
+  };
+
+  const cancelCustomerColumnChanges = () => {
+    setDraftCustomerColumns(appliedCustomerColumns);
+    setIsCustomerColumnsMenuOpen(false);
+  };
+
+  const resetCustomerColumnChanges = () => {
+    setDraftCustomerColumns(defaultCustomerColumns);
+  };
+
+  const getCustomerSelectOptions = (key: CustomerSearchFieldKey) => {
+    return customerSelectOptionsByField[key] ?? [];
+  };
+
   const toggleSidebar = () => {
     toggleSidebarCollapsed();
   };
@@ -1334,14 +1815,18 @@ export default function Home() {
 
   const openContractDetail = (contractId: string) => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Längdfördelning");
+    setActiveLineItemTab("Nettolager");
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${contractId}`);
   };
 
   const openNewContract = () => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Längdfördelning");
+    setActiveLineItemTab("Nettolager");
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/new`);
+  };
+
+  const openNewCustomer = () => {
+    navigateWithLoading(`/${sectionSlug}/kundlista/new`);
   };
 
   const openPriceListDetail = (priceListId: string) => {
@@ -1370,7 +1855,7 @@ export default function Home() {
 
   const openLineItemDetail = (lineItemId: string) => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Längdfördelning");
+    setActiveLineItemTab("Nettolager");
     if (!selectedContractId) {
       return;
     }
@@ -1379,7 +1864,7 @@ export default function Home() {
 
   const openNewLineItem = () => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Längdfördelning");
+    setActiveLineItemTab("Nettolager");
     setNewLineItemDraftSeed({});
     setNewLineItemDraftVersion((previous) => previous + 1);
     if (!selectedContractId) {
@@ -1388,20 +1873,28 @@ export default function Home() {
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/new`);
   };
 
-  const openAvropsradDetail = (id: string) => {
+  const openContainerView = () => {
     if (!selectedContractId) return;
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/container`);
+  };
+
+  const openAvropsradDetail = (avropsradId: string, data?: Record<string, string>) => {
+    if (!selectedContractId) return;
+    _savedAvropsradEditData = data ?? null;
     _savedReturnLineItemId = selectedLineItemId;
-    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/avrop/${id}`);
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/avrop/${avropsradId}`);
   };
 
   const openNewAvropsrad = () => {
     if (!selectedContractId) return;
+    _savedAvropsradEditData = null;
     _savedReturnLineItemId = selectedLineItemId;
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/avrop/new`);
   };
 
   const closeAvropsradDetail = () => {
     if (!selectedContractId) return;
+    _savedAvropsradEditData = null;
     const returnLineItemId = _savedReturnLineItemId;
     _savedReturnLineItemId = null;
     if (returnLineItemId) {
@@ -1413,6 +1906,7 @@ export default function Home() {
 
   const saveAvropsradDetail = () => {
     if (!selectedContractId) return;
+    _savedAvropsradEditData = null;
     const returnLineItemId = _savedReturnLineItemId;
     _savedReturnLineItemId = null;
     if (returnLineItemId) {
@@ -1433,10 +1927,9 @@ export default function Home() {
 
   const saveAndCreateNewLineItem = (draft: NewLineItemDraft) => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Längdfördelning");
+    setActiveLineItemTab("Avropsrader");
     setNewLineItemDraftSeed(draft);
     setNewLineItemDraftVersion((previous) => previous + 1);
-    setIsLineItemToastOpen(true);
     if (!selectedContractId) {
       return;
     }
@@ -1445,7 +1938,7 @@ export default function Home() {
 
   const closeLineItemDetail = () => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Längdfördelning");
+    setActiveLineItemTab("Nettolager");
     if (!selectedContractId) {
       return;
     }
@@ -1456,7 +1949,7 @@ export default function Home() {
     setActiveContractTab(tab);
     triggerViewLoading();
     if (tab !== "Kontraktsrader" && isLineItemDetailOpen && selectedContractId) {
-      setActiveLineItemTab("Längdfördelning");
+      setActiveLineItemTab("Nettolager");
       navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`);
     }
   };
@@ -1465,10 +1958,6 @@ export default function Home() {
     setTopMenuAnchorEl(null);
     setTopMenuDropdownOwnerSlug(null);
     setTopMenuDropdownOptions([]);
-  };
-
-  const closeLineItemToast = () => {
-    setIsLineItemToastOpen(false);
   };
 
   const handleTopMenuClick = (item: TopMenuItemDef, event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -1513,6 +2002,10 @@ export default function Home() {
       return selectedPriceListId === "new" ? "Ny prislista" : `Prislista ${selectedPriceListId}`;
     }
 
+    if (isContainerRoute && selectedContractId) {
+      return "Container";
+    }
+
     if (isAvropDetailOpen && selectedAvropsradId) {
       return isCreatingAvrop ? "Ny avropsrad" : `Avropsrad ${selectedAvropsradId}`;
     }
@@ -1535,6 +2028,7 @@ export default function Home() {
     isCustomerDetailOpen,
     selectedCustomerName,
     selectedContractId,
+    isContainerRoute,
     isAvropDetailOpen,
     selectedAvropsradId,
     isCreatingAvrop,
@@ -1627,6 +2121,7 @@ export default function Home() {
         currentSectionLabel={currentSection.label.charAt(0) + currentSection.label.slice(1).toLowerCase()}
         currentMenuLabel={currentMenuLabel}
         isCustomerDetailOpen={isCustomerDetailOpen}
+        isCreatingCustomer={isCreatingCustomer}
         selectedCustomerName={selectedCustomerName}
         isContractDetailOpen={isContractDetailOpen}
         isLineItemDetailOpen={isLineItemDetailOpen}
@@ -1648,6 +2143,7 @@ export default function Home() {
         isCreatingAvrop={isCreatingAvrop}
         returnLineItemId={_savedReturnLineItemId}
         lineItemDetailHref={_savedReturnLineItemId && selectedContractId ? `/${sectionSlug}/${menuSlug}/${selectedContractId}/${_savedReturnLineItemId}` : null}
+        isContainerRoute={isContainerRoute}
       >
 
         {isHomePage ? (
@@ -1724,6 +2220,63 @@ export default function Home() {
             visibleLineColumns={visibleLineColumns}
             lineItemRows={lineItemRows}
           />
+        ) : isCreatingCustomer ? (
+          <div className={styles.contractDetailPanel}>
+            <CustomerCreateView
+              onSave={() => navigateWithLoading(`/${sectionSlug}/kundlista`)}
+              onCancel={() => navigateWithLoading(`/${sectionSlug}/kundlista`)}
+            />
+          </div>
+        ) : isCustomerDetailRoute && !isCustomerDetailOpen ? (
+          <CustomerListView
+            textFields={customerTextSearchFields}
+            selectFields={customerSelectSearchFields}
+            checkboxFields={customerCheckboxSearchFields}
+            allTextFields={allCustomerTextSearchFields}
+            allSelectFields={allCustomerSelectSearchFields}
+            allCheckboxFields={allCustomerCheckboxSearchFields}
+            searchValues={customerSearchValues as Record<string, string | boolean>}
+            globalSearchValue={customerGlobalSearchValue}
+            isSearchMenuOpen={isCustomerSearchMenuOpen}
+            draftSearchFields={draftCustomerSearchFields}
+            searchButtonRef={customerSearchButtonRef}
+            searchMenuRef={customerSearchMenuRef}
+            getSelectOptions={(key) => getCustomerSelectOptions(key as CustomerSearchFieldKey)}
+            onOpenSearchMenu={openCustomerSearchMenu}
+            onCancelSearchMenu={cancelCustomerSearchFieldChanges}
+            onToggleSearchFieldVisibility={(key) => toggleCustomerSearchFieldVisibility(key as CustomerSearchFieldKey)}
+            onToggleSearchFieldFavorite={(key) => toggleCustomerSearchFieldFavorite(key as CustomerSearchFieldKey)}
+            onSaveFavoriteKeys={saveCustomerFavoriteKeys}
+            onSaveSearchFieldChanges={saveCustomerSearchFieldChanges}
+            onClearSearchFieldChanges={clearCustomerSearchFieldChanges}
+            onClearSearchValues={clearCustomerSearchValues}
+            onGlobalSearchChange={setCustomerGlobalSearchValue}
+            onSearchTextChange={(key, value) => setCustomerSearchValues((prev) => ({ ...prev, [key]: value }))}
+            onSearchSelectChange={(key, value) => setCustomerSearchValues((prev) => ({ ...prev, [key]: value }))}
+            onSearchCheckboxChange={(key, checked) => setCustomerSearchValues((prev) => ({ ...prev, [key]: checked }))}
+            actionItems={customerActionItems}
+            hasSelectedRows={selectedCustomerRowId !== null}
+            onCreateCustomer={openNewCustomer}
+            isColumnsMenuOpen={isCustomerColumnsMenuOpen}
+            draftColumns={draftCustomerColumns}
+            columnsMenuRef={customerColumnsMenuRef}
+            columnsButtonRef={customerColumnsButtonRef}
+            onOpenColumnsMenu={openCustomerColumnsMenu}
+            onCancelColumnsMenu={cancelCustomerColumnChanges}
+            onToggleColumnVisibility={(key) => toggleCustomerColumnVisibility(key as CustomerColumnKey)}
+            onMoveColumn={(key, direction) => moveCustomerColumn(key as CustomerColumnKey, direction)}
+            onSaveColumnChanges={saveCustomerColumnChanges}
+            onResetColumnChanges={resetCustomerColumnChanges}
+            onToggleColumnPin={(key) => toggleCustomerColumnPin(key as CustomerColumnKey)}
+            orderedVisibleColumns={orderedVisibleCustomerColumns}
+            tableRows={filteredCustomerRows as Array<Record<string, string | undefined>>}
+            selectedRowId={selectedCustomerRowId}
+            onSelectRow={(idx) => setSelectedCustomerRowId((prev) => prev === idx ? null : idx)}
+            onOpenCustomerDetail={(kundnr) => {
+              const row = customerTableRows.find((r) => r.kundnr === kundnr);
+              if (row) navigateWithLoading(getCustomerDetailHref(row.leveransnamn));
+            }}
+          />
         ) : isCustomerDetailOpen && selectedCustomerName ? (
           <CustomerDetailView customerName={selectedCustomerName} detail={selectedCustomerDetail} />
         ) : !isContractDetailOpen && isDeliveryListPage ? (
@@ -1741,9 +2294,16 @@ export default function Home() {
             />
           )
         ) : isContractDetailOpen ? (
-          isAvropDetailOpen && selectedAvropsradId ? (
+          isContainerRoute && selectedContractId ? (
+            <div className={styles.contractDetailPanel}>
+              <ContainerView
+                onBack={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`)}
+              />
+            </div>
+          ) : isAvropDetailOpen && selectedAvropsradId ? (
             <AvropsradDetailView
               avropsradId={selectedAvropsradId}
+              initialData={_savedAvropsradEditData ?? undefined}
               onClose={closeAvropsradDetail}
               onSave={saveAvropsradDetail}
             />
@@ -1782,8 +2342,9 @@ export default function Home() {
               onToggleLineColumnPin={(key) => toggleLineColumnPin(key as LineItemColumnKey)}
               onOpenLineItemDetail={openLineItemDetail}
               onCreateLineItem={openNewLineItem}
-              onOpenAvropsrad={openAvropsradDetail}
+              onOpenContainer={openContainerView}
               onCreateAvropsrad={openNewAvropsrad}
+              onOpenAvropsrad={openAvropsradDetail}
             />
           )
         ) : isSystemPage ? (
@@ -1816,16 +2377,6 @@ export default function Home() {
           </div>
         )}
       </AppShellLayout>
-      <Snackbar
-        open={isLineItemToastOpen}
-        autoHideDuration={2800}
-        onClose={closeLineItemToast}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert onClose={closeLineItemToast} severity="success" variant="filled">
-          Kontraktsrad sparad. Ny rad skapad.
-        </Alert>
-      </Snackbar>
     </main>
   );
 }

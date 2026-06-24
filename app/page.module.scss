@@ -1813,6 +1813,12 @@
   overflow: hidden;
 }
 
+.customerDetailLevFonsterRow {
+  display: flex;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
 .customerDetailPanel {
   display: flex;
   flex: 1;
@@ -2958,6 +2964,10 @@
 }
 
 .lineItemsSection .actionRow {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: #ffffff;
   min-height: 52px;
   gap: 8px;
   padding: 10px 12px;
@@ -4046,11 +4056,11 @@
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 6px 16px;
+  padding: 8px 16px;
   background-color: #f5f7fa;
   border-bottom: 1px solid #e3e8f0;
   position: sticky;
-  top: 44px;
+  top: 50px;
   z-index: 5;
   flex-shrink: 0;
 }
@@ -4103,6 +4113,51 @@
 
 .lineItemWizardStepLabel {
   white-space: nowrap;
+}
+
+.lineItemAboveAccordionActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 16px 4px;
+}
+
+.lineItemWizardEditActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.lineItemAccordionEditBar {
+  width: 100%;
+  padding: 12px 0 4px 0
+  // border-bottom: 1px solid #eaecf0;
+  // background-color: #fafbfc;
+}
+
+.lineItemAccordionEditBarInner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 960px;
+}
+
+.lineItemFormViewMode {
+  :global(.MuiInputBase-root) {
+    pointer-events: none;
+    background-color: #f8f9fb !important;
+  }
+  :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: #e8eaf0 !important;
+  }
+  :global(.MuiSelect-icon) {
+    display: none;
+  }
+  :global(.MuiInputAdornment-root) {
+    opacity: 0;
+  }
 }
 
 .lineItemWizardConnector {
@@ -4210,95 +4265,75 @@
 
 // ── Step 2 review card ──────────────────────────────────────
 .lineItemWizardReviewCard {
-  width: min(100%, 1028px);
-  padding: 12px 16px 0 16px;
-  background-color: #f5f7fa;
-  border: 1px solid #e3e8f0;
-  border-radius: 14px;
-  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
-  margin: 12px auto 18px !important;
-  flex-shrink: 0;
-  position: relative;
+  background: #ffffff;
+  border: 1px solid #e0e5ee;
+  border-radius: 8px;
   overflow: hidden;
+  flex-shrink: 0;
+  width: fit-content;
+  max-width: calc(100% - 32px);
+  margin: 12px auto;
 }
 
 .lineItemWizardReviewHeader {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 0;
-  border-bottom: none;
-  background: transparent;
-  margin: 0;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #f5f7fb;
+  border-bottom: 1px solid #e0e5ee;
 }
 
 .lineItemWizardReviewTitle {
   font-size: 12px;
-  font-weight: 700;
-  color: #36393d;
-  text-transform: none;
-  letter-spacing: 0.01em;
-  flex-shrink: 0;
-  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  font-weight: 600;
+  color: #7a8699;
+  letter-spacing: 0.2px;
   line-height: 1.3;
-  margin-left: 0;
+  flex: 1;
 }
 
 .lineItemWizardReviewFields {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 12px 0 12px;
-  margin: 0;
-}
-
-.lineItemWizardReviewFieldsExtra {
-  padding: 0 0 12px;
-  margin: 0;
-
-  .lineItemWizardReviewFields {
-    padding: 0;
-    border-top: 1px solid #e3e8f0;
-    padding-top: 12px;
-    margin: 0;
-    gap: 10px;
-  }
+  display: grid;
+  grid-template-columns: repeat(5, minmax(115px, 0.75fr));
 }
 
 .lineItemWizardReviewField {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  min-width: 120px;
-  flex: 0 0 auto;
-  background: white;
-  border: 1px solid #e0e6ef;
-  border-radius: 6px;
-  transition: background 0.15s, border-color 0.15s;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 12px 22px;
+  border-right: 1px solid #e0e5ee;
+  border-bottom: 1px solid #e0e5ee;
+
+  &:nth-child(5n),
+  &:last-child {
+    border-right: none;
+  }
 }
 
 .lineItemWizardReviewFieldLabel {
+  display: block;
   font-size: 11px;
-  font-weight: 500;
-  color: #646464;
-  text-transform: none;
-  letter-spacing: 0.01em;
+  font-weight: 400;
+  color: #9aa2b0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .lineItemWizardReviewFieldValue {
-  font-size: 14px;
+  display: block;
+  font-size: 13px;
   font-weight: 600;
   color: #1e2a38;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.4;
 }
 
 .lineItemWizardReviewToggleBtn {
@@ -4368,28 +4403,17 @@
 
 // ── Dark mode overrides ─────────────────────────────────────
 :global(html[data-color-mode="dark"]) .lineItemWizardReviewCard {
-  background-color: #1e2330;
+  background: #1e2330;
   border-color: #2e333d;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-
-  &::before {
-    background: var(--color-champagne, #c8a96e);
-  }
-}
-
-:global(html[data-color-mode="dark"]) .lineItemWizardReviewCard {
-  background-color: #232733;
-  border-color: #2e333d;
-  box-shadow: 0 4px 18px 0 rgba(30, 41, 59, 0.28), 0 1.5px 4px 0 rgba(30, 41, 59, 0.10);
 }
 
 :global(html[data-color-mode="dark"]) .lineItemWizardReviewHeader {
-  background: #1a1f2b;
+  background: #181d28;
   border-bottom-color: #2e333d;
 }
 
 :global(html[data-color-mode="dark"]) .lineItemWizardReviewTitle {
-  color: #9daab8;
+  color: #636e7e;
 }
 
 :global(html[data-color-mode="dark"]) .lineItemWizardReviewField {
@@ -6078,6 +6102,12 @@
   align-items: center;
   justify-content: space-between;
 }
+
+.avropsraderSectionHeader{
+  display: flex;
+  gap:8px;
+}
+
 .freightSectionHeaderEnd {
   display: flex;
   align-items: center;
@@ -6726,6 +6756,7 @@
   flex-direction: row;
   align-items: center;
   gap: 8px;
+  width: 100%;
 }
 
 .lengthDistributionControlsDivider {
@@ -6753,6 +6784,8 @@
   font-weight: 600 !important;
   text-transform: none !important;
   box-shadow: none !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
 
   &:hover {
     background-color: var(--color-champagne-dark) !important;
@@ -7094,9 +7127,16 @@
 }
 
 .avropsradFormWrap {
+  flex: 1;
+  overflow-y: auto;
   max-width: 960px;
+  width: 100%;
   margin: 0 auto;
-  padding: 4px 0 24px;
+  padding: 12px 12px 32px;
+
+  .contractSectionAccordion {
+    margin-bottom: 12px !important;
+  }
 }
 
 .avropsradFormGrid {
@@ -7233,6 +7273,110 @@
   border: 1px solid #e2e7f0;
   border-radius: 8px;
 }
+
+/* ── Container table (MudBlazor-style) ─────────────────────────────────────── */
+
+.ctHeaderRow {
+  display: flex;
+  align-items: center;
+  background: #f4f6fb;
+  border-bottom: 1px solid #e3e7f0;
+  padding: 10px 16px;
+}
+
+.ctHeaderCell {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2f3743;
+  white-space: nowrap;
+}
+
+.ctCategoryRow {
+  display: flex;
+  align-items: center;
+  background: #eef1f7;
+  border-bottom: 1px solid #e3e7f0;
+  padding: 9px 16px;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: #e6eaf3;
+  }
+}
+
+.ctCategoryIcon {
+  color: #5b6478;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.ctCategoryLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5b6478;
+}
+
+.ctGroupRow {
+  display: flex;
+  align-items: center;
+  background: #f4f6fb;
+  border-top: 1px solid #e3e7f0;
+  border-bottom: 1px solid #e3e7f0;
+  padding: 6px 16px;
+  min-height: 32px;
+}
+
+.ctGroupRowTitle {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2f3743;
+}
+
+.ctGroupRowVolym {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8a93a6;
+  margin-left: 10px;
+}
+
+.ctItemRow {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f2f7;
+  min-height: 44px;
+  cursor: pointer;
+
+  &:hover {
+    background: #fafbfd;
+  }
+}
+
+.ctItemRowSelected {
+  background: var(--color-champagne-20);
+
+  &:hover {
+    background: var(--color-champagne-20);
+  }
+}
+
+.ctEmptyState {
+  padding: 10px 16px 14px 48px;
+  border-bottom: 1px solid #e3e7f0;
+  font-size: 13px;
+  color: #8a93a6;
+}
+
+.ctColCheck { width: 48px; flex-shrink: 0; }
+.ctColEnhet { width: 90px; flex-shrink: 0; font-size: 13px; color: #3f4754; }
+.ctColArtNr { width: 90px; flex-shrink: 0; font-size: 13px; color: #3f4754; }
+.ctColText  { flex: 1 1 auto; min-width: 160px; font-size: 13px; color: #3f4754; }
+.ctColPaket { width: 110px; flex-shrink: 0; font-size: 13px; color: #3f4754; }
+.ctColVolym { width: 90px; flex-shrink: 0; font-size: 13px; color: #3f4754; }
 
 .paketbokningSelCount {
   margin-left: auto;
@@ -7418,6 +7562,57 @@
   font-size: 13px;
   font-weight: 600;
   color: #1a2233;
+}
+
+
+.containerViewEnhetSelect {
+  min-height: 30px;
+  min-width: 140px;
+
+  :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: #d1d5db;
+  }
+
+  :global(.MuiSelect-select) {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    padding: 4px 28px 4px 10px !important;
+    min-height: 0 !important;
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+  }
+}
+
+.containerViewCellInput {
+  width: 100px;
+
+  :global(.MuiOutlinedInput-root) {
+    border-radius: 4px;
+  }
+
+  :global(.MuiInputBase-input) {
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+}
+
+.containerViewPlaceholder {
+  color: #7a8494 !important;
+  font-size: 13px !important;
+  padding: 16px 0 !important;
+}
+
+.containerViewFooterInput {
+  :global(.MuiOutlinedInput-root) {
+    min-height: 22px;
+    border-radius: 4px;
+  }
+
+  :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: #d1d5db;
+  }
 }
 
 .freightCostBreakdown {
@@ -7676,11 +7871,19 @@
 }
 
 .freightCancelButton {
-  min-height: 28px;
+  height: 32.5px !important;
   border: 1px solid #d4dae3 !important;
   color: #2f3743 !important;
   font-size: 12px !important;
   text-transform: none !important;
+
+  &:disabled {
+    border-color: #c8cfd8 !important;
+    color: #b0b9c5 !important;
+    opacity: 0.55 !important;
+    cursor: not-allowed !important;
+    pointer-events: auto !important;
+  }
 }
 
 /* ─── Home view ─────────────────────────────────────────── */
@@ -8400,4 +8603,225 @@
   width: 700px;
   border-bottom: 1px solid rgba(47, 55, 67, 0.15);
   margin: 14px 0;
+}
+
+/* ── Byt prislista dialog ── */
+
+.bytPrislistaDialogPaper {
+  border-radius: 12px !important;
+  border: 1px solid #dde3ec;
+}
+
+.bytPrislistaSelectorRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bytPrislistaSelectorLabel {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #2f3743;
+  white-space: nowrap;
+}
+
+.bytPrislistaSelect {
+  min-width: 340px;
+  font-size: 13px !important;
+}
+
+.bytPrislistaSectionTitle {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #2f3743;
+  margin-bottom: 10px !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bytPrislistaSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.bytPrislistaSelectAllRow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.bytPrislistaSelectAllLabel {
+  font-size: 12px !important;
+  color: #6a7483;
+  margin-right: 2px !important;
+}
+
+.bytPrislistaSelectAllBtn {
+  font-size: 12px !important;
+  text-transform: none !important;
+  font-weight: 500 !important;
+  min-width: 0 !important;
+  color: #4f5968 !important;
+  border-color: #c8d0da !important;
+
+  &:hover {
+    border-color: #8a93a0 !important;
+    background: #f5f7fa !important;
+  }
+}
+
+.bytPrislistaSectionCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8ecf1;
+  color: #4f5968;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+}
+
+.bytPrislistaEmpty {
+  font-size: 13px;
+  color: #9ba4b0;
+  font-style: italic;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.bytPrislistaTableWrap {
+  overflow-x: auto;
+  border: 1px solid #e8ecf1;
+  border-radius: 8px;
+}
+
+.bytPrislistaTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6a7483;
+    padding: 8px 14px;
+    border-bottom: 1px solid #e8ecf1;
+    white-space: nowrap;
+    background: #f8f9fb;
+
+    &:first-child {
+      border-radius: 8px 0 0 0;
+    }
+    &:last-child {
+      border-radius: 0 8px 0 0;
+    }
+  }
+
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid #f0f2f5;
+    color: #2f3743;
+    vertical-align: middle;
+
+    &:first-child {
+      color: #6a7483;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.bytPrislistaMonoCell {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bytPrislastaPriceInput {
+  width: 160px;
+
+  :global(.MuiInputBase-input) {
+    font-size: 13px;
+    padding: 5px 8px;
+  }
+
+  :global(.MuiInputAdornment-root p) {
+    font-size: 12px;
+    color: #6a7483;
+  }
+}
+
+.bytPrislastaPriceToggle {
+  :global(.MuiToggleButtonGroup-root) {
+    gap: 0;
+  }
+}
+
+.bytPrislastaPriceToggleBtn {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  padding: 3px 10px !important;
+  line-height: 1.4 !important;
+  border-color: #c8d0da !important;
+  color: #6a7483 !important;
+
+  &:global(.Mui-selected) {
+    background: #1976d2 !important;
+    color: #fff !important;
+    border-color: #1976d2 !important;
+  }
+}
+
+.bytPrislistaRadioLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  user-select: none;
+  color: #2f3743;
+
+  &:hover {
+    color: #1553a8;
+  }
+}
+
+.bytPrislistaRadio {
+  accent-color: #1976d2;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.bytPrislistaOkButton {
+  text-transform: none !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  min-width: 72px !important;
+}
+
+.bytPrislistaAvbrytButton {
+  text-transform: none !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  min-width: 72px !important;
+  color: #4f5968 !important;
+  border-color: #c8d0da !important;
 }
