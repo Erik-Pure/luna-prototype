@@ -27,6 +27,7 @@ import styles from "../../page.module.scss";
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type LimitDraft = {
+  kreditgivarensNr: string;
   kreditforsakradBelopp: string;
   kreditforsakradFrom: string;
   internLimitBelopp: string;
@@ -70,6 +71,7 @@ type FordranRow = {
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const EMPTY_DRAFT: LimitDraft = {
+  kreditgivarensNr: "",
   kreditforsakradBelopp: "",
   kreditforsakradFrom: "",
   internLimitBelopp: "",
@@ -86,42 +88,42 @@ const KREDITHISTORIK = [
 ];
 
 const LASS_COLUMNS = [
-  { key: "lassNr",      label: "LassNr" },
-  { key: "bolag",       label: "Bolag" },
-  { key: "levererad",   label: "Levererad" },
-  { key: "godkandDatum",label: "Godkänd datum" },
-  { key: "volym",       label: "Volym" },
+  { key: "lassNr", label: "LassNr" },
+  { key: "bolag", label: "Bolag" },
+  { key: "levererad", label: "Levererad" },
+  { key: "godkandDatum", label: "Godkänd datum" },
+  { key: "volym", label: "Volym" },
 ] satisfies Array<{ key: string; label: string }>;
 
 const LASS_ROWS: LassRow[] = [
   { lassNr: "L-00421", bolag: "Norra Timber", levererad: "2026-06-10", godkandDatum: "2026-06-12", volym: "42,3" },
   { lassNr: "L-00418", bolag: "Norra Timber", levererad: "2026-06-08", godkandDatum: "2026-06-09", volym: "38,7" },
-  { lassNr: "L-00415", bolag: "Norra Skog",   levererad: "2026-06-05", godkandDatum: "2026-06-06", volym: "50,1" },
+  { lassNr: "L-00415", bolag: "Norra Skog", levererad: "2026-06-05", godkandDatum: "2026-06-06", volym: "50,1" },
 ];
 
 const FORDRAN_EX_RANTA_COLUMNS = [
-  { key: "kundnr",                  label: "Kundnr",                  width: 80 },
-  { key: "kund",                    label: "Kund",                    width: 160 },
+  { key: "kundnr", label: "Kundnr", width: 80 },
+  { key: "kund", label: "Kund", width: 160 },
   { key: "kreditforsakringsbelopp", label: "Kreditförsäkringsbelopp", width: 130 },
-  { key: "internLimit",             label: "Intern limit",            width: 100 },
-  { key: "internLimitTom",          label: "Intern limit t.o.m.",     width: 120 },
-  { key: "antFordran",              label: "Ant fordran",             width: 90 },
-  { key: "belFordran",              label: "Bel fordran",             width: 90 },
-  { key: "antForfalletT",           label: "Ant förfallet",           width: 90 },
-  { key: "belForfalletT",           label: "Bel förfallet",           width: 90 },
-  { key: "antForf3_14",             label: "Ant förf 3-14",           width: 90 },
-  { key: "belForf3_14",             label: "Bel förf 3-14",           width: 90 },
-  { key: "antForf15_19",            label: "Ant förf 15-19",          width: 90 },
-  { key: "belForf15_19",            label: "Bel förf 15-19",          width: 90 },
-  { key: "antForf20",               label: "Ant förf 20-",            width: 90 },
-  { key: "belForf20",               label: "Bel förf 20-",            width: 90 },
-  { key: "utlastning202625",        label: "Utlastning 202625",       width: 110 },
-  { key: "utlastning202626",        label: "Utlastning 202626",       width: 110 },
-  { key: "utlastning202627",        label: "Utlastning 202627",       width: 110 },
-  { key: "utlastning202628",        label: "Utlastning 202628",       width: 110 },
-  { key: "tilhorKundnr",            label: "Tillhör kundnr",          width: 100 },
-  { key: "ediFaktura",              label: "EDI Faktura",             width: 90 },
-  { key: "senastHamtad",            label: "Senast hämtad",           width: 110 },
+  { key: "internLimit", label: "Intern limit", width: 100 },
+  { key: "internLimitTom", label: "Intern limit t.o.m.", width: 120 },
+  { key: "antFordran", label: "Ant fordran", width: 90 },
+  { key: "belFordran", label: "Bel fordran", width: 90 },
+  { key: "antForfalletT", label: "Ant förfallet", width: 90 },
+  { key: "belForfalletT", label: "Bel förfallet", width: 90 },
+  { key: "antForf3_14", label: "Ant förf 3-14", width: 90 },
+  { key: "belForf3_14", label: "Bel förf 3-14", width: 90 },
+  { key: "antForf15_19", label: "Ant förf 15-19", width: 90 },
+  { key: "belForf15_19", label: "Bel förf 15-19", width: 90 },
+  { key: "antForf20", label: "Ant förf 20-", width: 90 },
+  { key: "belForf20", label: "Bel förf 20-", width: 90 },
+  { key: "utlastning202625", label: "Utlastning 202625", width: 110 },
+  { key: "utlastning202626", label: "Utlastning 202626", width: 110 },
+  { key: "utlastning202627", label: "Utlastning 202627", width: 110 },
+  { key: "utlastning202628", label: "Utlastning 202628", width: 110 },
+  { key: "tilhorKundnr", label: "Tillhör kundnr", width: 100 },
+  { key: "ediFaktura", label: "EDI Faktura", width: 90 },
+  { key: "senastHamtad", label: "Senast hämtad", width: 110 },
 ] satisfies Array<{ key: string; label: string; width?: number }>;
 
 const FORDRAN_EX_RANTA_ROWS: FordranRow[] = [
@@ -198,6 +200,9 @@ function EditDialog({ open, initial, onClose, onSave }: {
       <DialogContent className={styles.freightDialogContent}>
         <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingTop: 4 }}>
           <div className={styles.contractModernFormGrid}>
+            <TextField fullWidth size="small" label="Kreditgivarens nr"
+              value={draft.kreditgivarensNr} onChange={(e) => set("kreditgivarensNr", e.target.value)}
+              style={{ gridColumn: "1 / -1" }} />
             <TextField fullWidth size="small" label="Kreditförsäkrad – belopp" type="number"
               value={draft.kreditforsakradBelopp} onChange={(e) => set("kreditforsakradBelopp", e.target.value)} />
             <TextField fullWidth size="small" label="fr.o.m" type="date"
@@ -271,7 +276,7 @@ export function FordranTab() {
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
 
       {/* ── Top overview ── */}
-      <div className={styles.contractFlatSection} style={{ maxWidth: 1100, margin: "0 auto", width: "100%" }}>
+      <div className={styles.contractFlatSection} style={{ maxWidth: 1000, margin: "0 auto", width: "100%" }}>
 
         <div className={styles.contractDataSection}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -282,6 +287,7 @@ export function FordranTab() {
             </Button>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+            <ROField label="Kreditgivarens nr" value={fmt(saved.kreditgivarensNr)} />
             <TextField fullWidth size="small" label="Kreditförsäkrad" value={fmt(saved.kreditforsakradBelopp)}
               slotProps={{
                 input: {
@@ -335,7 +341,7 @@ export function FordranTab() {
 
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <Typography style={{ fontSize: 12, color: "#6a7483" }}>Reskontra senast hämtad:</Typography>
-          <Typography style={{ fontSize: 12, color: "#2f3743", fontWeight: 600 }}>2026-06-15</Typography>
+          <Typography style={{ fontSize: 12, color: "#2f3743", fontWeight: 600 }}>2026-06-15 kl. 09:59</Typography>
         </div>
       </div>
 

@@ -1,196 +1,279 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
-import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
-import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import FileDownloadIcon from "@mui/icons-material/FileDownloadOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
-import { useEffect, useRef } from "react";
-import type { ReactNode } from "react";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import SearchIcon from "@mui/icons-material/Search";
+import { Button, IconButton, Tooltip } from "@mui/material";
+import { useMemo, useRef, useState } from "react";
 import { ActionRow } from "./shared/ActionRow";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
 import { DataTable } from "./shared/DataTable";
 import { SearchFiltersPanel } from "./shared/SearchFiltersPanel";
 import { useColumnManager } from "../hooks/useColumnManager";
 import { useRowSelection } from "../hooks/useRowSelection";
-import { useSearchFields } from "../hooks/useSearchFields";
 import styles from "../page.module.scss";
 
+type PriceListSearchFieldKey =
+  | "prislistenr"
+  | "artNr"
+  | "kund"
+  | "upprattatAv"
+  | "status"
+  | "externPrislistenr"
+  | "prisdatumFran"
+  | "prisdatumTill"
+  | "land"
+  | "tillhor";
+
 type PriceListSearchField = {
-  key: string;
+  key: PriceListSearchFieldKey;
   label: string;
-  control: "text" | "select" | "checkbox";
+  control: "text" | "date" | "select" | "checkbox";
   visible: boolean;
+  favorite: boolean;
 };
 
-type PriceListColumn = {
-  key: string;
-  label: string;
-  visible: boolean;
-  pinned: boolean;
-};
+type PriceListColumnKey =
+  | "prislistenr"
+  | "externPrislistenr"
+  | "kund"
+  | "land"
+  | "prisdatum"
+  | "giltigFrom"
+  | "giltigTom"
+  | "egenAnmarkning"
+  | "status"
+  | "upprattatAv"
+  | "tillhor";
 
-type PriceListRow = Record<string, string>;
+type PriceListRow = Record<PriceListColumnKey, string>;
 
 type PriceListViewProps = {
   onOpenPriceListDetail: (priceListId: string) => void;
   onCreatePriceList: () => void;
 };
 
-const priceListSearchFieldsDefault: PriceListSearchField[] = [
-  { key: "status", label: "Status", control: "select", visible: false },
-  { key: "prislistenr", label: "Prislistenr", control: "text", visible: true },
-  { key: "externPrislistenr", label: "Externt prislistenr", control: "text", visible: false },
-  { key: "prisdatum", label: "Prisdatum", control: "text", visible: false },
-  { key: "artNr", label: "ArtNr", control: "text", visible: false },
-  { key: "kund", label: "Kund", control: "text", visible: false },
-  { key: "land", label: "Land", control: "select", visible: false },
-  { key: "upprattatAv", label: "Registrerad av", control: "text", visible: false },
-  { key: "tillhor", label: "Tillhör", control: "text", visible: false }
+const defaultSearchFields: PriceListSearchField[] = [
+  { key: "prislistenr", label: "Prislistenr", control: "text", visible: true, favorite: true },
+  { key: "artNr", label: "ArtNr", control: "text", visible: true, favorite: true },
+  { key: "kund", label: "Kund", control: "select", visible: true, favorite: true },
+  { key: "upprattatAv", label: "Upprättat av", control: "select", visible: true, favorite: true },
+  { key: "status", label: "Status", control: "select", visible: true, favorite: false },
+  { key: "externPrislistenr", label: "Externt prislistenr", control: "text", visible: true, favorite: false },
+  { key: "prisdatumFran", label: "Prisdatum från", control: "date", visible: true, favorite: false },
+  { key: "prisdatumTill", label: "Prisdatum till", control: "date", visible: true, favorite: false },
+  { key: "land", label: "Land", control: "select", visible: true, favorite: false },
+  { key: "tillhor", label: "Tillhör", control: "text", visible: true, favorite: false },
 ];
 
-const priceListSearchSelectOptions: Record<string, string[]> = {
-  status: ["Godkänd", "Utkast", "Inaktiv", "Alla"],
-  land: ["SE", "NO", "FI", "DK"]
+const searchSelectOptions: Partial<Record<PriceListSearchFieldKey, string[]>> = {
+  kund: ["Martinsons", "Skogmo Bruk", "Hernes", "JäTre", "Moelv Tre"],
+  upprattatAv: ["Per-Ola Engerup", "Erik Högbom", "Hans Hemström"],
+  status: ["Godkänd", "Utkast", "Inaktiv"],
+  land: ["SE", "NO", "FI", "DK"],
 };
 
-const priceListColumnsDefault: PriceListColumn[] = [
-  { key: "prislistenr", label: "Prislistenr", visible: true, pinned: true },
-  { key: "externPrislistenr", label: "Externt prislistenr", visible: true, pinned: false },
-  { key: "kund", label: "Kund", visible: true, pinned: false },
-  { key: "land", label: "Land", visible: true, pinned: false },
-  { key: "prisdatum", label: "Prisdatum", visible: true, pinned: false },
-  { key: "giltigFrom", label: "Giltig f.o.m.", visible: true, pinned: false },
-  { key: "giltigTom", label: "Giltig t.o.m.", visible: true, pinned: false },
-  { key: "egenAnmarkning", label: "Egen anmärkning", visible: true, pinned: false },
-  { key: "status", label: "Status", visible: true, pinned: false },
-  { key: "upprattatAv", label: "Registrerad av", visible: true, pinned: false },
-  { key: "tillhor", label: "Tillhör", visible: true, pinned: false }
+const initialSearchValues: Record<PriceListSearchFieldKey, string | boolean> = {
+  prislistenr: "",
+  artNr: "",
+  kund: "",
+  upprattatAv: "",
+  status: "",
+  externPrislistenr: "",
+  prisdatumFran: "",
+  prisdatumTill: "",
+  land: "",
+  tillhor: "",
+};
+
+const defaultColumns = [
+  { key: "prislistenr" as PriceListColumnKey, label: "Prislistenr", visible: true, pinned: true },
+  { key: "externPrislistenr" as PriceListColumnKey, label: "Externt prislistenr", visible: true, pinned: false },
+  { key: "kund" as PriceListColumnKey, label: "Kund", visible: true, pinned: false },
+  { key: "land" as PriceListColumnKey, label: "Land", visible: true, pinned: false },
+  { key: "prisdatum" as PriceListColumnKey, label: "Prisdatum", visible: true, pinned: false },
+  { key: "giltigFrom" as PriceListColumnKey, label: "Giltig från", visible: true, pinned: false },
+  { key: "giltigTom" as PriceListColumnKey, label: "Giltig till", visible: true, pinned: false },
+  { key: "egenAnmarkning" as PriceListColumnKey, label: "Egen anmärkning", visible: true, pinned: false },
+  { key: "status" as PriceListColumnKey, label: "Status", visible: true, pinned: false },
+  { key: "upprattatAv" as PriceListColumnKey, label: "Upprättat av", visible: true, pinned: false },
+  { key: "tillhor" as PriceListColumnKey, label: "Tillhör", visible: true, pinned: false },
 ];
 
-const priceListRows: PriceListRow[] = Array.from({ length: 26 }).map((_, idx) => ({
+const tableRows: PriceListRow[] = Array.from({ length: 26 }).map((_, idx) => ({
   prislistenr: `${17611 - idx}`,
   externPrislistenr: idx % 3 === 0 ? `2025/10 Region ${idx % 7}` : "-",
   kund: ["Martinsons", "Skogmo Bruk", "Hernes", "JäTre", "Moelv Tre"][idx % 5],
   land: ["SE", "NO", "NO", "NO", "NO"][idx % 5],
   prisdatum: `2025-${String((idx % 12) + 1).padStart(2, "0")}-${String((idx % 25) + 1).padStart(2, "0")}`,
-  giltigFrom: idx % 4 === 0 ? "2025-10-01" : "",
-  giltigTom: idx % 4 === 0 ? "2025-12-31" : "",
-  egenAnmarkning: idx % 6 === 0 ? "Interprislista fr depå" : "",
+  giltigFrom: idx % 4 === 0 ? "2025-10-01" : "-",
+  giltigTom: idx % 4 === 0 ? "2025-12-31" : "-",
+  egenAnmarkning: idx % 6 === 0 ? "Interprislista fr depå" : "-",
   status: "Godkänd",
   upprattatAv: ["Per-Ola Engerup", "Erik Högbom", "Hans Hemström"][idx % 3],
-  tillhor: ["Norr TräHus", "Hus/Ind Ovriga", "Bygg Region 3", "Byggmaker HK"][idx % 4]
+  tillhor: ["Norr TräHus", "Hus/Ind Ovriga", "Bygg Region 3", "Byggmaker HK"][idx % 4],
 }));
 
-const priceListActionItems = ["Ny", "Ta bort", "Skriv ut", "Kopiera", "Inaktivera", "Ändra pris"];
-const priceListActionIcons: Record<string, ReactNode> = {
-  Ny: <AddIcon fontSize="small" />,
-  "Ta bort": <DeleteOutlineOutlinedIcon fontSize="small" />,
-  "Skriv ut": <PrintOutlinedIcon fontSize="small" />,
-  Kopiera: <ContentCopyOutlinedIcon fontSize="small" />,
-  Inaktivera: <BlockOutlinedIcon fontSize="small" />,
-  "Ändra pris": <EditOutlinedIcon fontSize="small" />
-};
-
 export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: PriceListViewProps) {
-  const searchManager = useSearchFields(priceListSearchFieldsDefault, {
-    status: "Godkänd",
-    prislistenr: "",
-    externPrislistenr: "",
-    prisdatum: "",
-    artNr: "",
-    kund: "",
-    land: "",
-    upprattatAv: "",
-    tillhor: ""
-  });
-  const columnsManager = useColumnManager(priceListColumnsDefault);
-  const rowSelection = useRowSelection();
-  const searchMenuRef = useRef<HTMLDivElement | null>(null);
-  const searchButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [searchValues, setSearchValues] = useState<Record<PriceListSearchFieldKey, string | boolean>>(initialSearchValues);
+  const [draftFields, setDraftFields] = useState<PriceListSearchField[]>(defaultSearchFields);
+  const [isTableSearchOpen, setIsTableSearchOpen] = useState(false);
+  const [tableSearchValue, setTableSearchValue] = useState("");
+  const tableSearchWrapperRef = useRef<HTMLDivElement>(null);
+  const tableSearchInputRef = useRef<HTMLInputElement>(null);
   const columnsMenuRef = useRef<HTMLDivElement | null>(null);
   const columnsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const searchPanelRef = useRef<HTMLDivElement | null>(null);
+  const searchButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  useEffect(() => {
-    if (!columnsManager.isOpen && !searchManager.isMenuOpen) {
-      return;
-    }
+  const columnsManager = useColumnManager(defaultColumns);
+  const rowSelection = useRowSelection();
 
-    const handleClickOutside = (event: globalThis.MouseEvent) => {
-      const target = event.target as Node;
-      const clickedInsideSearchMenu = searchMenuRef.current?.contains(target);
-      const clickedSearchButton = searchButtonRef.current?.contains(target);
-      const clickedInsideColumnsMenu = columnsMenuRef.current?.contains(target);
-      const clickedColumnsButton = columnsButtonRef.current?.contains(target);
+  const allTextFields = useMemo(
+    () => defaultSearchFields.filter((f) => f.control === "text" || f.control === "date"),
+    []
+  );
+  const allSelectFields = useMemo(
+    () => defaultSearchFields.filter((f) => f.control === "select"),
+    []
+  );
+  const allCheckboxFields = useMemo(
+    () => defaultSearchFields.filter((f) => f.control === "checkbox"),
+    []
+  );
 
-      if (searchManager.isMenuOpen && !clickedInsideSearchMenu && !clickedSearchButton) {
-        searchManager.cancelMenu();
-      }
+  const handleToggleFavorite = (key: string) => {
+    setDraftFields((prev) =>
+      prev.map((f) => (f.key === key ? { ...f, favorite: !f.favorite } : f))
+    );
+  };
 
-      if (columnsManager.isOpen && !clickedInsideColumnsMenu && !clickedColumnsButton) {
-        columnsManager.cancel();
-      }
-    };
+  const handleSaveFavoriteKeys = (orderedKeys: string[]) => {
+    setDraftFields((prev) => {
+      const orderedSet = new Set(orderedKeys);
+      const nonFavorites = prev.filter((f) => !orderedSet.has(f.key));
+      const favorites = orderedKeys
+        .map((key) => prev.find((f) => f.key === key))
+        .filter((f): f is PriceListSearchField => f !== undefined)
+        .map((f) => ({ ...f, favorite: true }));
+      return [...favorites, ...nonFavorites.map((f) => ({ ...f, favorite: false }))];
+    });
+  };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [columnsManager, searchManager]);
+  const handleClearValues = () => {
+    setSearchValues(initialSearchValues);
+    setTableSearchValue("");
+  };
 
-  const selectOptionsForField = (key: string) => priceListSearchSelectOptions[key] ?? ["Ja", "Nej"];
-  const actionItems = priceListActionItems.map((label) => ({
-    label,
-    icon: priceListActionIcons[label],
-    enabled: label === "Ny" || rowSelection.hasSelectedRow,
-    onClick: label === "Ny" ? onCreatePriceList : undefined
-  }));
+  const handleToggleTableSearch = () => {
+    setIsTableSearchOpen((prev) => {
+      if (!prev) setTimeout(() => tableSearchInputRef.current?.focus(), 0);
+      return !prev;
+    });
+  };
 
   return (
     <>
       <SearchFiltersPanel
-        textFields={searchManager.textFields}
-        selectFields={searchManager.selectFields}
-        checkboxFields={searchManager.checkboxFields}
-        values={searchManager.values}
-        isMenuOpen={searchManager.isMenuOpen}
-        draftFields={searchManager.draftFields}
+        textFields={allTextFields}
+        selectFields={allSelectFields}
+        checkboxFields={allCheckboxFields}
+        allTextFields={allTextFields}
+        allSelectFields={allSelectFields}
+        allCheckboxFields={allCheckboxFields}
+        values={searchValues}
+        isMenuOpen={false}
+        draftFields={draftFields}
         searchButtonRef={searchButtonRef}
-        searchMenuRef={searchMenuRef}
-        getSelectOptions={selectOptionsForField}
-        onOpenMenu={() => {
-          columnsManager.setIsOpen(false);
-          searchManager.openMenu();
-        }}
-        onCancelMenu={searchManager.cancelMenu}
-        onToggleFieldVisibility={searchManager.toggleFieldVisibility}
-        onSaveMenu={searchManager.saveMenu}
-        onClearMenu={searchManager.clearMenu}
-        onTextChange={searchManager.updateText}
-        onSelectChange={searchManager.updateSelect}
-        onCheckboxChange={searchManager.updateCheckbox}
+        searchMenuRef={searchPanelRef}
+        getSelectOptions={(key) => searchSelectOptions[key as PriceListSearchFieldKey] ?? []}
+        useAdvancedFilterLayout
+        hideGlobalSearch
+        onOpenMenu={() => { }}
+        onCancelMenu={() => { }}
+        onToggleFieldVisibility={() => { }}
+        onToggleFieldFavorite={handleToggleFavorite}
+        onSaveFavoriteKeys={handleSaveFavoriteKeys}
+        onSaveMenu={() => { }}
+        onClearMenu={handleClearValues}
+        onClearValues={handleClearValues}
+        onTextChange={(key, value) => setSearchValues((prev) => ({ ...prev, [key]: value }))}
+        onSelectChange={(key, value) => setSearchValues((prev) => ({ ...prev, [key]: value }))}
+        onCheckboxChange={(key, checked) => setSearchValues((prev) => ({ ...prev, [key]: checked }))}
       />
 
-      <div className={styles.ruleDivider} />
-
       <ActionRow
-        items={actionItems}
+        items={[
+          {
+            label: "Prislista",
+            icon: <AddIcon fontSize="small" />,
+            tone: "primary",
+            onClick: onCreatePriceList,
+          },
+          {
+            label: "Kopiera",
+            icon: <ContentCopyIcon fontSize="small" />,
+            enabled: rowSelection.hasSelectedRow,
+          },
+          {
+            label: "Avregistrera",
+            icon: <RemoveCircleOutlineIcon fontSize="small" />,
+            enabled: rowSelection.hasSelectedRow,
+          },
+        ]}
         rightSlot={
-          <ColumnManagerDropdown
-            isOpen={columnsManager.isOpen}
-            columns={columnsManager.draftColumns}
-            menuRef={columnsMenuRef}
-            buttonRef={columnsButtonRef}
-            onOpen={() => {
-              searchManager.setIsMenuOpen(false);
-              columnsManager.open();
-            }}
-            onCancel={columnsManager.cancel}
-            onToggleVisibility={columnsManager.toggleVisibility}
-            onMove={columnsManager.move}
-            onSave={columnsManager.save}
-            onReset={columnsManager.reset}
-            onTogglePin={columnsManager.togglePin}
-          />
+          <>
+            <div className={styles.tableSearchWrapper} ref={tableSearchWrapperRef}>
+              <Button
+                className={`${styles.lineItemsToggleButton} ${isTableSearchOpen || tableSearchValue ? styles.tableSearchButtonActive : ""}`}
+                variant="outlined"
+                size="small"
+                startIcon={<SearchIcon fontSize="small" />}
+                onClick={handleToggleTableSearch}
+              >
+                Filtrera
+              </Button>
+              {isTableSearchOpen ? (
+                <div className={styles.tableSearchDropdown}>
+                  <input
+                    ref={tableSearchInputRef}
+                    type="text"
+                    className={styles.tableSearchDropdownInput}
+                    placeholder="Filtrera i tabell..."
+                    value={tableSearchValue}
+                    onChange={(e) => setTableSearchValue(e.target.value)}
+                  />
+                  {tableSearchValue ? (
+                    <button
+                      type="button"
+                      className={styles.tableSearchDropdownClear}
+                      onClick={() => setTableSearchValue("")}
+                      aria-label="Rensa filtrering"
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+            <ColumnManagerDropdown
+              isOpen={columnsManager.isOpen}
+              columns={columnsManager.draftColumns}
+              menuRef={columnsMenuRef}
+              buttonRef={columnsButtonRef}
+              onOpen={() => columnsManager.open()}
+              onCancel={columnsManager.cancel}
+              onToggleVisibility={(key) => columnsManager.toggleVisibility(key as PriceListColumnKey)}
+              onMove={(key, dir) => columnsManager.move(key as PriceListColumnKey, dir)}
+              onSave={columnsManager.save}
+              onReset={columnsManager.reset}
+              onTogglePin={(key) => columnsManager.togglePin(key as PriceListColumnKey)}
+              iconOnly
+            />
+          </>
         }
       />
 
@@ -201,7 +284,7 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
               <DataTable
                 variant="main"
                 columns={columnsManager.orderedVisibleColumns}
-                rows={priceListRows}
+                rows={tableRows}
                 rowKey={(row, index) => `${row.prislistenr}-${index}`}
                 selectedRowIndex={rowSelection.selectedRowIndex}
                 onRowClick={rowSelection.toggleRowSelection}
@@ -212,13 +295,13 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
                       className={styles.contractLinkButton}
                       onClick={(event) => {
                         event.stopPropagation();
-                        onOpenPriceListDetail(row[column.key] ?? "");
+                        onOpenPriceListDetail(row[column.key as PriceListColumnKey] ?? "");
                       }}
                     >
-                      {row[column.key]}
+                      {row[column.key as PriceListColumnKey]}
                     </button>
                   ) : (
-                    row[column.key] ?? "-"
+                    row[column.key as PriceListColumnKey] ?? "-"
                   )
                 }
               />

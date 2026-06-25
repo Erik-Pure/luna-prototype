@@ -6,6 +6,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DvrOutlinedIcon from "@mui/icons-material/DvrOutlined";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import FactoryOutlinedIcon from "@mui/icons-material/FactoryOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
@@ -32,6 +33,7 @@ import {
 } from "./components/views";
 import { CustomerDetailView, type CustomerDetailData } from "./components/CustomerDetailView";
 import { CustomerCreateView } from "./components/CustomerCreateView";
+import { PriceListCreateView } from "./components/PriceListCreateView";
 import { AvropsradDetailView } from "./components/contract-tabs/AvropsradDetailView";
 import { ContainerView } from "./components/contract-tabs/ContainerView";
 import { useColorMode, useUiState } from "./providers";
@@ -138,6 +140,7 @@ const topMenusBySection: Record<SectionKey, TopMenuItemDef[]> = {
 
 const actionItems = [
   { label: "Kontrakt", icon: <AddIcon fontSize="small" />, requiresSelection: false },
+  { label: "Kopiera", icon: <ContentCopyIcon fontSize="small" />, requiresSelection: true },
   { label: "Inaktivera", icon: <BlockOutlinedIcon fontSize="small" />, requiresSelection: true }
 ];
 
@@ -1097,10 +1100,11 @@ export default function Home() {
   const isContractDetailOpen = isContractDetailRoute && Boolean(contractId);
   const isCreatingCustomer = isCustomerDetailRoute && contractId === "new";
   const isCustomerDetailOpen = isCustomerDetailRoute && Boolean(contractId) && !isCreatingCustomer;
-  const isPriceListDetailOpen = isPriceListRoute && Boolean(contractId);
+  const isCreatingPriceList = isPriceListRoute && contractId === "new";
+  const isPriceListDetailOpen = isPriceListRoute && Boolean(contractId) && !isCreatingPriceList;
   const selectedContractId = isContractDetailRoute ? contractId : null;
   const selectedCustomerName = isCustomerDetailRoute && contractId ? decodePathSegment(contractId) : null;
-  const selectedPriceListId = isPriceListRoute ? contractId : null;
+  const selectedPriceListId = isPriceListRoute && !isCreatingPriceList ? contractId : null;
   const selectedPriceRowId = isPriceListRoute ? lineItemId : null;
   const selectedLineItemId = isContractDetailRoute ? lineItemId : null;
   const isCreatingLineItem = selectedLineItemId === "new";
@@ -1998,8 +2002,12 @@ export default function Home() {
       return isCreatingPriceRow ? "Ny prislistrad" : `Prislistrad ${selectedPriceRowId}`;
     }
 
+    if (isCreatingPriceList) {
+      return "Ny prislista";
+    }
+
     if (isPriceListDetailOpen && selectedPriceListId) {
-      return selectedPriceListId === "new" ? "Ny prislista" : `Prislista ${selectedPriceListId}`;
+      return `Prislista ${selectedPriceListId}`;
     }
 
     if (isContainerRoute && selectedContractId) {
@@ -2035,6 +2043,7 @@ export default function Home() {
     isLineItemDetailOpen,
     selectedLineItemId,
     isCreatingLineItem,
+    isCreatingPriceList,
     isPriceListDetailOpen,
     selectedPriceListId,
     isPriceListRowDetailOpen,
@@ -2281,6 +2290,13 @@ export default function Home() {
           <CustomerDetailView customerName={selectedCustomerName} detail={selectedCustomerDetail} />
         ) : !isContractDetailOpen && isDeliveryListPage ? (
           <DeliveryListView />
+        ) : isCreatingPriceList ? (
+          <div className={styles.contractDetailPanel}>
+            <PriceListCreateView
+              onSave={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}`)}
+              onCancel={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}`)}
+            />
+          </div>
         ) : !isPriceListDetailOpen && !isContractDetailOpen && isPriceListPage ? (
           <PriceListView onOpenPriceListDetail={openPriceListDetail} onCreatePriceList={openNewPriceList} />
         ) : isPriceListDetailOpen && selectedPriceListId ? (

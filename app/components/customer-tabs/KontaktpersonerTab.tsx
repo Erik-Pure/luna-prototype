@@ -158,7 +158,7 @@ export function KontaktpersonerTab() {
       <ActionRow
         items={[
           {
-            label: "Ny kontaktperson",
+            label: "Kontaktperson",
             icon: <AddIcon fontSize="small" />,
             tone: "primary",
             onClick: () => setCreateDialogOpen(true),

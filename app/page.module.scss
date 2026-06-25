@@ -2045,6 +2045,7 @@
   background-color: #fafafa;
   border-bottom: 1px solid #eaedf2;
   flex-shrink: 0;
+  min-height: 42px;
 }
 
 .contractModernTitleWrap {
@@ -2198,7 +2199,6 @@
   font-size: 12px !important;
   font-weight: 700 !important;
   letter-spacing: 0.2px;
-  text-transform: uppercase;
   margin-bottom: 8px !important;
 }
 
@@ -2302,6 +2302,7 @@
 .contractBodySectionsColWide {
   order: 2;
   width: 290px;
+  min-width: 240px;
   flex-shrink: 0;
   overflow-y: auto;
   overflow-x: hidden;
@@ -2381,6 +2382,8 @@
 .contractSectionSummary {
   min-height: 42px !important;
   padding: 0 12px !important;
+  background-color: #f9f9f9 !important;
+  border-radius: 8px !important;
 }
 
 .contractSectionTitleRow {
@@ -8824,4 +8827,23 @@
   min-width: 72px !important;
   color: #4f5968 !important;
   border-color: #c8d0da !important;
+}
+
+.tableInlineInput {
+  width: 100%;
+  min-width: 60px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  font-family: inherit;
+  color: inherit;
+  padding: 0;
+
+  &:focus {
+    background: #f0f4ff;
+    border-radius: 3px;
+    outline: 1px solid #1976d2;
+    padding: 0 2px;
+  }
 }

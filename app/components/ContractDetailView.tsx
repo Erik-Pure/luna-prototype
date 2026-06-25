@@ -225,15 +225,6 @@ export function ContractDetailView({
               <Button className={styles.contractQuickActionButton} size="small" startIcon={<DescriptionOutlinedIcon fontSize="small" />}>
                 Granska
               </Button>
-              <Tooltip title="Kopiera kontrakt">
-                <IconButton
-                  size="small"
-                  className={styles.contractHeaderDotsButton}
-                  aria-label="Kopiera kontrakt"
-                >
-                  <ContentCopyOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
               <IconButton
                 size="small"
                 className={styles.contractHeaderDotsButton}

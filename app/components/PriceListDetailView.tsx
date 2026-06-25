@@ -1,24 +1,89 @@
 "use client";
 
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
-import AddIcon from "@mui/icons-material/Add";
-import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
-import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
-import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
-import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
-import { Accordion, AccordionDetails, AccordionSummary, Chip, MenuItem, Select, TextField, Typography } from "@mui/material";
-import { useState } from "react";
-import { FreightTab } from "./contract-tabs/FreightTab";
-import { PrintOptionsTab } from "./contract-tabs/PrintOptionsTab";
-import { TermsTab } from "./contract-tabs/TermsTab";
-import { ActionRow } from "./shared/ActionRow";
-import { DataTable } from "./shared/DataTable";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import OpenInFullOutlinedIcon from "@mui/icons-material/OpenInFullOutlined";
+import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  Divider,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
+  MenuItem,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { useState, useSyncExternalStore } from "react";
 import styles from "../page.module.scss";
+import { PriceListCreateView, type NewPriceListDraft } from "./PriceListCreateView";
+import { FraktTab } from "./price-list-tabs/FraktTab";
+import { PrislisteraderTab } from "./price-list-tabs/PrislisteraderTab";
+
+const priceListTabs = ["Prislisterader", "Frakt"] as const;
+type PriceListTab = (typeof priceListTabs)[number];
+
+type PriceListDraft = NewPriceListDraft;
+
+const MOCK_DRAFT: PriceListDraft = {
+  prislistenr: "",
+  kopieratFran: "",
+  status: "Godkänd",
+  upprattatAv: "Per-Ola Engerup",
+  kund: "Martinsons",
+  prislistedatum: "2025-10-15",
+  giltigFran: "2025-10-01",
+  giltigTill: "2025-12-31",
+  kontaktbolag: "Pure Wood AB",
+  kundensReferens: "",
+  externPrislistenr: "2025/10 Region 3",
+  kategori: "Bygghandel",
+  land: "SE",
+  sprak: "Svenska",
+  ovrigt: "",
+  egenAnmarkning: "Interprislista fr depå",
+  kommentarKund: "",
+  valuta: "SEK",
+  kurs: "",
+  kalkylkurs: "",
+  moms: "25",
+  betvillkor: "30",
+  betvillkorDag: "",
+  kassarabatt: "",
+  bonus: "",
+  bonusgrund: "",
+  kontraktsformular: "Standard",
+  leveransvillkor: "DAP",
+  leveransvillkor2: "",
+  levvillkorOrt: "",
+  leveranssatt: "Bil",
+  agent: "",
+  provisionAgent: "0",
+  konsignationslager: false,
+  plocktillaggMinst: "850",
+  plocktillagg: "0",
+  malningstilagg: "0",
+  malningstilaggTroskel: "0",
+  inforseavgift: "0",
+  utskriftstyp: "Standard",
+  visaM3Pris: false,
+  visaNamnAdress: true,
+};
 
 type PriceListDetailViewProps = {
   selectedPriceListId: string;
@@ -26,382 +91,429 @@ type PriceListDetailViewProps = {
   onCreatePriceRow: () => void;
 };
 
-type PriceListDraft = {
-  pricelistId: string;
-  copiedFrom: string;
-  customer: string;
-  customerReference: string;
-  externalNumber: string;
-  category: string;
-  country: string;
-  language: string;
-  validFrom: string;
-  validTo: string;
-  status: string;
-  createdBy: string;
-  createdDate: string;
-  noteInternal: string;
-  noteExternal: string;
-};
-
-const existingDraft: PriceListDraft = {
-  pricelistId: "17611",
-  copiedFrom: "17364",
-  customer: "Norr TräHus",
-  customerReference: "",
-  externalNumber: "2025/10, NTM TräHus",
-  category: "Hus/Industri",
-  country: "Sverige",
-  language: "Svenska",
-  validFrom: "2025-12-19",
-  validTo: "2025-12-30",
-  status: "Godkänd",
-  createdBy: "Hans Hemström",
-  createdDate: "2025-12-19",
-  noteInternal: "På ordererkännande och fakturor ska anges 100% PEFC",
-  noteExternal: "På ordererkännande och fakturor ska anges 100% PEFC"
-};
-
-const emptyNewDraft: PriceListDraft = {
-  pricelistId: "",
-  copiedFrom: "",
-  customer: "",
-  customerReference: "",
-  externalNumber: "",
-  category: "Hus/Industri",
-  country: "Sverige",
-  language: "Svenska",
-  validFrom: "",
-  validTo: "",
-  status: "Utkast",
-  createdBy: "",
-  createdDate: "",
-  noteInternal: "",
-  noteExternal: ""
-};
-
-const priceRowColumns = [
-  { key: "artNr", label: "ArtNr" },
-  { key: "produkt", label: "Produkt" },
-  { key: "pakettyp", label: "Pakettyp" },
-  { key: "langd", label: "Längd" },
-  { key: "valutyp", label: "Valutyp" },
-  { key: "pris", label: "Pris" },
-  { key: "valuta", label: "Valuta" },
-  { key: "enhet", label: "Enhet" },
-  { key: "internKommentar", label: "Intern kommentar" },
-  { key: "externKommentar", label: "Extern kommentar" },
-  { key: "saljtyp", label: "Säljtyp" },
-  { key: "fritext", label: "Frn/o" },
-  { key: "nobb", label: "NOBB" },
-  { key: "nettoprisM3", label: "Nettopris/m3" }
-] as const;
-
-const priceRows: Array<Record<(typeof priceRowColumns)[number]["key"], string>> = Array.from({ length: 18 }).map(
-  (_, index) => ({
-    artNr: `22022${950 + index}3108`,
-    produkt: ["22x95 Furu Trall G4-2 NTR AB", "28x120 Furu Trall G4-2 NTR AB", "34x145 Furu Trall G4-2 NTR AB"][
-      index % 3
-    ],
-    pakettyp: "Lp",
-    langd: ["L", "L", "L"][index % 3],
-    valutyp: "L",
-    pris: `${(9.73 + index * 0.35).toFixed(2)} SEK`,
-    valuta: "SEK",
-    enhet: "lpm",
-    internKommentar: "Eget virke",
-    externKommentar: "",
-    saljtyp: index % 2 === 0 ? "Ja" : "Nej",
-    fritext: index % 2 === 0 ? "x" : "",
-    nobb: index % 3 === 0 ? "x" : "",
-    nettoprisM3: `${(3713 - index * 23).toString()}`
-  })
-);
-
-const priceRowActionIcons = {
-  Ny: <AddIcon fontSize="small" />,
-  "Ta bort": <DeleteOutlineOutlinedIcon fontSize="small" />,
-  Kopiera: <ContentCopyOutlinedIcon fontSize="small" />,
-  Prislistkalkyl: <TableChartOutlinedIcon fontSize="small" />,
-  "Import NOBB": <UploadFileOutlinedIcon fontSize="small" />,
-  Inaktivera: <BlockOutlinedIcon fontSize="small" />,
-  "Uppdatera listan": <RefreshOutlinedIcon fontSize="small" />
-} as const;
-
-const priceRowActions = [
-  "Ny",
-  "Ta bort",
-  "Kopiera",
-  "Prislistkalkyl",
-  "Import NOBB",
-  "Inaktivera",
-  "Uppdatera listan"
-] as const;
-
-export function PriceListDetailView({
-  selectedPriceListId,
-  onOpenPriceRowDetail,
-  onCreatePriceRow
-}: PriceListDetailViewProps) {
-  const isNewPriceList = selectedPriceListId === "new";
-  const [draft, setDraft] = useState<PriceListDraft>(
-    isNewPriceList ? emptyNewDraft : { ...existingDraft, pricelistId: selectedPriceListId }
-  );
-  const [selectedPriceRowIndex, setSelectedPriceRowIndex] = useState<number | null>(null);
-  const [expandedPanels, setExpandedPanels] = useState<string[]>(
-    isNewPriceList ? ["obligatoriska"] : ["allmant"]
+export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail, onCreatePriceRow }: PriceListDetailViewProps) {
+  const [activeTab, setActiveTab] = useState<PriceListTab>("Prislisterader");
+  const [draft, setDraft] = useState<PriceListDraft>({ ...MOCK_DRAFT, prislistenr: selectedPriceListId });
+  const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
+  const [sectionsPanelWidth, setSectionsPanelWidth] = useState<number | null>(null);
+  const [expandedDialogOpen, setExpandedDialogOpen] = useState(false);
+  const isWide = useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia("(min-width: 1280px)");
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia("(min-width: 1280px)").matches,
+    () => false
   );
 
-  const togglePanel = (panel: string) => {
-    setExpandedPanels((previous) =>
-      previous.includes(panel) ? previous.filter((item) => item !== panel) : [...previous, panel]
-    );
+  const isExtraWide = useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia("(min-width: 1700px)");
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia("(min-width: 1700px)").matches,
+    () => false
+  );
+
+  const startResizeSections = (mouseDownEvent: React.MouseEvent) => {
+    mouseDownEvent.preventDefault();
+    const startX = mouseDownEvent.clientX;
+    const startWidth = sectionsPanelWidth ?? (isExtraWide ? 380 : 290);
+    const onMouseMove = (e: globalThis.MouseEvent) => {
+      const delta = startX - e.clientX;
+      setSectionsPanelWidth(Math.max(220, Math.min(900, startWidth + delta)));
+    };
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
   };
 
-  const updateField = (key: keyof PriceListDraft, value: string) => {
-    setDraft((previous) => ({ ...previous, [key]: value }));
-  };
+  const set = (key: keyof PriceListDraft, value: string | boolean) =>
+    setDraft((prev) => ({ ...prev, [key]: value }));
+
+  const kursAdornment = draft.valuta ? `${draft.valuta} = 1 SEK` : "valuta = 1 SEK";
 
   return (
     <div className={styles.contractDetailPanel}>
+      {/* ── Header ── */}
       <div className={styles.contractModernTopRow}>
         <div className={styles.contractModernTitleWrap}>
-          <Typography className={styles.contractModernTitle}>
-            {isNewPriceList ? "Ny prislista" : `Prislista ${selectedPriceListId}`}
-          </Typography>
-          {!isNewPriceList ? <Chip label="Aktiv prislista" size="small" className={styles.contractModernStatusChip} /> : null}
+          <Typography className={styles.contractModernTitle}>Prislista {selectedPriceListId}</Typography>
         </div>
-        <div className={styles.contractModernTopActions} />
-      </div>
-
-      <div className={styles.contractModernSummaryGrid}>
-        <div className={styles.contractModernSummaryCard}>
-          <Typography className={styles.contractInfoLabel}>Kund</Typography>
-          <Typography className={styles.contractInfoValue}>{draft.customer || "-"}</Typography>
-        </div>
-        <div className={styles.contractModernSummaryCard}>
-          <Typography className={styles.contractInfoLabel}>Status</Typography>
-          <Typography className={styles.contractInfoValue}>{draft.status || "-"}</Typography>
-        </div>
-        <div className={styles.contractModernSummaryCard}>
-          <Typography className={styles.contractInfoLabel}>Registrerad av</Typography>
-          <Typography className={styles.contractInfoValue}>{draft.createdBy || "-"}</Typography>
-        </div>
-        <div className={styles.contractModernSummaryCard}>
-          <Typography className={styles.contractInfoLabel}>Giltighet</Typography>
-          <Typography className={styles.contractInfoValue}>
-            {draft.validFrom || "-"} - {draft.validTo || "-"}
-          </Typography>
+        <div className={styles.contractModernTopActions}>
+          <Button className={styles.contractQuickActionButton} size="small" startIcon={<VisibilityOutlinedIcon fontSize="small" />}>
+            Granska prislista
+          </Button>
+          <Button className={styles.contractQuickActionButton} size="small" startIcon={<GavelOutlinedIcon fontSize="small" />}>
+            Skapa kontrakt
+          </Button>
+          <Button className={styles.contractQuickActionButton} size="small" startIcon={<DescriptionOutlinedIcon fontSize="small" />}>
+            Skapa Finfofil
+          </Button>
+          <Tooltip title="Kopiera">
+            <IconButton size="small" className={styles.contractHeaderDotsButton} aria-label="Kopiera">
+              <ContentCopyOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Ta bort">
+            <IconButton size="small" className={styles.contractHeaderDotsButton} aria-label="Ta bort">
+              <DeleteOutlineOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </div>
       </div>
 
-      <div className={styles.detailTwoColumnLayout}>
-        <div className={styles.detailFormColumn}>
-          <div className={styles.contractModernAccordionWrap}>
-            {isNewPriceList ? (
-              <Accordion
-                expanded={expandedPanels.includes("obligatoriska")}
-                onChange={() => togglePanel("obligatoriska")}
-                className={`${styles.contractModernAccordion} ${styles.lineItemRequiredSection}`}
-              >
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                  <div className={styles.contractModernAccordionTitleRow}>
-                    <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
-                    <Typography className={styles.contractModernAccordionTitle}>Obligatoriska fält</Typography>
-                  </div>
+      {/* ── Body layout ── */}
+      <div className={`${styles.contractBodyLayout} ${isWide ? styles.contractBodyLayoutWide : ""}`}>
+
+        {/* ── Sections panel ── */}
+        <div
+          className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : ""} ${isExtraWide && !sectionsPanelWidth && !isSectionsPanelCollapsed ? styles.contractBodySectionsColExtraWide : ""} ${isSectionsPanelCollapsed ? styles.contractBodySectionsColCollapsed : ""}`}
+          style={isWide && sectionsPanelWidth && !isSectionsPanelCollapsed ? { width: sectionsPanelWidth, maxWidth: sectionsPanelWidth } : undefined}
+        >
+          {isWide && !isSectionsPanelCollapsed ? (
+            <div className={styles.contractSectionsResizeHandle} onMouseDown={startResizeSections} />
+          ) : null}
+
+          <div className={styles.contractSectionsPanelHeader} style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <Tooltip title={isSectionsPanelCollapsed ? "Expandera prislistepanel" : "Minimera prislistepanel"}>
+                <IconButton
+                  size="small"
+                  className={styles.contractSectionsPanelMinimizeBtn}
+                  onClick={() => setIsSectionsPanelCollapsed((v) => !v)}
+                >
+                  {isSectionsPanelCollapsed ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+                </IconButton>
+              </Tooltip>
+              {!isSectionsPanelCollapsed ? (
+                <>
+                  <Typography style={{ fontSize: 13, fontWeight: 600, color: "#2f3743", flex: 1, marginLeft: 4 }}>Prislisteinformation</Typography>
+                  <Tooltip title="Öppna i dialog">
+                    <Button
+                      size="small"
+                      className={styles.contractHeaderDotsButton}
+                      onClick={() => setExpandedDialogOpen(true)}
+                      style={{ minWidth: 0 }}
+                    >
+                      <OpenInFullOutlinedIcon fontSize="small" />
+                    </Button>
+                  </Tooltip>
+                </>
+              ) : null}
+            </div>
+            {!isSectionsPanelCollapsed ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", marginTop: 12 }}>
+                <Button className={styles.contractSaveButton} size="small" startIcon={<EditOutlinedIcon fontSize="small" />} >
+                  Redigera
+                </Button>
+              </div>
+            ) : null}
+          </div>
+
+          {!isSectionsPanelCollapsed ? (
+            <>
+              {/* ── Allmänt ── */}
+              <Accordion defaultExpanded disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                  <span className={styles.contractSectionTitleRow}>
+                    <InfoOutlinedIcon className={styles.contractSectionIcon} />
+                    <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
+                  </span>
                 </AccordionSummary>
-                <AccordionDetails>
-                  <div className={styles.lineItemRequiredGrid}>
-                    <div className={styles.lineItemField}>
-                      <Typography className={styles.searchFieldLabel}>Prislistenr *</Typography>
-                      <TextField
-                        size="small"
-                        value={draft.pricelistId}
-                        className={styles.searchFieldControl}
-                        onChange={(event) => updateField("pricelistId", event.target.value)}
-                      />
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <Typography className={styles.searchFieldLabel}>Kund *</Typography>
-                      <TextField
-                        size="small"
-                        value={draft.customer}
-                        className={styles.searchFieldControl}
-                        onChange={(event) => updateField("customer", event.target.value)}
-                      />
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <Typography className={styles.searchFieldLabel}>Kategori *</Typography>
-                      <Select
-                        size="small"
-                        value={draft.category}
-                        className={styles.searchFieldControl}
-                        onChange={(event) => updateField("category", String(event.target.value))}
-                      >
-                        <MenuItem value="Hus/Industri">Hus/Industri</MenuItem>
-                        <MenuItem value="Bygg">Bygg</MenuItem>
-                      </Select>
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <Typography className={styles.searchFieldLabel}>Land *</Typography>
-                      <Select
-                        size="small"
-                        value={draft.country}
-                        className={styles.searchFieldControl}
-                        onChange={(event) => updateField("country", String(event.target.value))}
-                      >
-                        <MenuItem value="Sverige">Sverige</MenuItem>
-                        <MenuItem value="Norge">Norge</MenuItem>
-                      </Select>
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <Typography className={styles.searchFieldLabel}>Språk *</Typography>
-                      <Select
-                        size="small"
-                        value={draft.language}
-                        className={styles.searchFieldControl}
-                        onChange={(event) => updateField("language", String(event.target.value))}
-                      >
-                        <MenuItem value="Svenska">Svenska</MenuItem>
-                        <MenuItem value="Norska">Norska</MenuItem>
-                      </Select>
-                    </div>
-                    <div className={styles.lineItemField}>
-                      <Typography className={styles.searchFieldLabel}>Status *</Typography>
-                      <Select
-                        size="small"
-                        value={draft.status}
-                        className={styles.searchFieldControl}
-                        onChange={(event) => updateField("status", String(event.target.value))}
-                      >
-                        <MenuItem value="Utkast">Utkast</MenuItem>
-                        <MenuItem value="Godkänd">Godkänd</MenuItem>
-                      </Select>
-                    </div>
+                <AccordionDetails className={styles.contractSectionDetailsArea}>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField fullWidth size="small" label="Prislistenr" value={draft.prislistenr} onChange={(e) => set("prislistenr", e.target.value)} />
+                    <TextField fullWidth size="small" label="Kopierat från" value={draft.kopieratFran} onChange={(e) => set("kopieratFran", e.target.value)} />
+                    <TextField select fullWidth size="small" label="Status" value={draft.status} onChange={(e) => set("status", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Godkänd">Godkänd</MenuItem>
+                      <MenuItem value="Utkast">Utkast</MenuItem>
+                      <MenuItem value="Inaktiv">Inaktiv</MenuItem>
+                    </TextField>
+                    <TextField select fullWidth size="small" label="Upprättat av" value={draft.upprattatAv} onChange={(e) => set("upprattatAv", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Per-Ola Engerup">Per-Ola Engerup</MenuItem>
+                      <MenuItem value="Erik Högbom">Erik Högbom</MenuItem>
+                      <MenuItem value="Hans Hemström">Hans Hemström</MenuItem>
+                    </TextField>
+                    <TextField select fullWidth size="small" label="Kund" value={draft.kund} onChange={(e) => set("kund", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Martinsons">Martinsons</MenuItem>
+                      <MenuItem value="Skogmo Bruk">Skogmo Bruk</MenuItem>
+                      <MenuItem value="Hernes">Hernes</MenuItem>
+                      <MenuItem value="JäTre">JäTre</MenuItem>
+                      <MenuItem value="Moelv Tre">Moelv Tre</MenuItem>
+                    </TextField>
+                    <TextField fullWidth size="small" label="Prislistedatum" type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.prislistedatum} onChange={(e) => set("prislistedatum", e.target.value)} />
+                  </div>
+
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Giltighetstid</Typography>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField fullWidth size="small" label="Giltig från" type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.giltigFran} onChange={(e) => set("giltigFran", e.target.value)} />
+                    <TextField fullWidth size="small" label="Giltig till" type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.giltigTill} onChange={(e) => set("giltigTill", e.target.value)} />
+                  </div>
+
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Klassificering</Typography>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField select fullWidth size="small" label="Kontaktbolag" value={draft.kontaktbolag} onChange={(e) => set("kontaktbolag", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Pure Wood AB">Pure Wood AB</MenuItem>
+                      <MenuItem value="Nordic Timber AS">Nordic Timber AS</MenuItem>
+                    </TextField>
+                    <TextField fullWidth size="small" label="Kundens referens" value={draft.kundensReferens} onChange={(e) => set("kundensReferens", e.target.value)} />
+                    <TextField fullWidth size="small" label="Externt prislistenr" value={draft.externPrislistenr} onChange={(e) => set("externPrislistenr", e.target.value)} />
+                    <TextField select fullWidth size="small" label="Kategori" value={draft.kategori} onChange={(e) => set("kategori", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Bygghandel">Bygghandel</MenuItem>
+                      <MenuItem value="Industri">Industri</MenuItem>
+                      <MenuItem value="Sågverk">Sågverk</MenuItem>
+                    </TextField>
+                    <TextField select fullWidth size="small" label="Land" value={draft.land} onChange={(e) => set("land", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="SE">SE — Sverige</MenuItem>
+                      <MenuItem value="NO">NO — Norge</MenuItem>
+                      <MenuItem value="FI">FI — Finland</MenuItem>
+                      <MenuItem value="DK">DK — Danmark</MenuItem>
+                      <MenuItem value="DE">DE — Tyskland</MenuItem>
+                      <MenuItem value="EE">EE — Estland</MenuItem>
+                    </TextField>
+                    <TextField select fullWidth size="small" label="Språk" value={draft.sprak} onChange={(e) => set("sprak", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Svenska">Svenska</MenuItem>
+                      <MenuItem value="English">English</MenuItem>
+                      <MenuItem value="Norsk">Norsk</MenuItem>
+                      <MenuItem value="Suomi">Suomi</MenuItem>
+                      <MenuItem value="Dansk">Dansk</MenuItem>
+                    </TextField>
+                  </div>
+
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField fullWidth size="small" multiline rows={3} label="Övrigt" value={draft.ovrigt} onChange={(e) => set("ovrigt", e.target.value)} helperText="Visas på utskrift av prislista" style={{ gridColumn: "1 / -1" }} />
+                    <TextField fullWidth size="small" multiline rows={3} label="Egen anmärkning" value={draft.egenAnmarkning} onChange={(e) => set("egenAnmarkning", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                    <TextField fullWidth size="small" multiline rows={3} label="Kommentar kund" value={draft.kommentarKund} onChange={(e) => set("kommentarKund", e.target.value)} style={{ gridColumn: "1 / -1" }} />
                   </div>
                 </AccordionDetails>
               </Accordion>
-            ) : null}
 
-            <Accordion
-              expanded={expandedPanels.includes("allmant")}
-              onChange={() => togglePanel("allmant")}
-              className={styles.contractModernAccordion}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                <div className={styles.contractModernAccordionTitleRow}>
-                  <TableChartOutlinedIcon className={styles.contractModernAccordionIcon} />
-                  <Typography className={styles.contractModernAccordionTitle}>Allmänt</Typography>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <div className={styles.contractModernFormGrid}>
-                  <TextField label="Prislistenr" size="small" value={draft.pricelistId} onChange={(event) => updateField("pricelistId", event.target.value)} />
-                  <TextField label="Kopierat från" size="small" value={draft.copiedFrom} onChange={(event) => updateField("copiedFrom", event.target.value)} />
-                  <TextField label="Kund" size="small" value={draft.customer} onChange={(event) => updateField("customer", event.target.value)} />
-                  <TextField label="Kundens referens" size="small" value={draft.customerReference} onChange={(event) => updateField("customerReference", event.target.value)} />
-                  <TextField label="Externt prislistenr" size="small" value={draft.externalNumber} onChange={(event) => updateField("externalNumber", event.target.value)} />
-                  <TextField label="Registrerad av" size="small" value={draft.createdBy} onChange={(event) => updateField("createdBy", event.target.value)} />
-                </div>
-              </AccordionDetails>
-            </Accordion>
+              {/* ── Villkor ── */}
+              <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                  <span className={styles.contractSectionTitleRow}>
+                    <GavelOutlinedIcon className={styles.contractSectionIcon} />
+                    <Typography className={styles.contractSectionTitle}>Villkor</Typography>
+                  </span>
+                </AccordionSummary>
+                <AccordionDetails className={styles.contractSectionDetailsArea}>
+                  <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; kurs</Typography>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField select fullWidth size="small" label="Valuta" value={draft.valuta} onChange={(e) => set("valuta", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="SEK">SEK</MenuItem>
+                      <MenuItem value="EUR">EUR</MenuItem>
+                      <MenuItem value="USD">USD</MenuItem>
+                      <MenuItem value="NOK">NOK</MenuItem>
+                      <MenuItem value="DKK">DKK</MenuItem>
+                    </TextField>
+                    <TextField fullWidth size="small" label="Kurs" value={draft.kurs} onChange={(e) => set("kurs", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">{kursAdornment}</InputAdornment> } }} />
+                    <TextField fullWidth size="small" label="Kalkylkurs" value={draft.kalkylkurs} onChange={(e) => set("kalkylkurs", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">{kursAdornment}</InputAdornment> } }} />
+                  </div>
 
-            <Accordion
-              expanded={expandedPanels.includes("villkor")}
-              onChange={() => togglePanel("villkor")}
-              className={styles.contractModernAccordion}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                <div className={styles.contractModernAccordionTitleRow}>
-                  <GavelOutlinedIcon className={styles.contractModernAccordionIcon} />
-                  <Typography className={styles.contractModernAccordionTitle}>Villkor</Typography>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <TermsTab />
-              </AccordionDetails>
-            </Accordion>
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Betalning</Typography>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField select fullWidth size="small" label="Moms" value={draft.moms} onChange={(e) => set("moms", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="25">25 %</MenuItem>
+                      <MenuItem value="12">12 %</MenuItem>
+                      <MenuItem value="6">6 %</MenuItem>
+                      <MenuItem value="0">0 %</MenuItem>
+                    </TextField>
+                    <TextField select fullWidth size="small" label="Bet.villkor" value={draft.betvillkor} onChange={(e) => set("betvillkor", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="30">30 dagar netto</MenuItem>
+                      <MenuItem value="14">14 dagar netto</MenuItem>
+                      <MenuItem value="10">10 dagar netto</MenuItem>
+                      <MenuItem value="0">Förskott</MenuItem>
+                    </TextField>
+                    <TextField fullWidth size="small" label="Bet.villkor.dag" type="number" value={draft.betvillkorDag} onChange={(e) => set("betvillkorDag", e.target.value)} />
+                    <TextField fullWidth size="small" label="Kassarabatt" value={draft.kassarabatt} onChange={(e) => set("kassarabatt", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
+                  </div>
 
-            <Accordion
-              expanded={expandedPanels.includes("frakt")}
-              onChange={() => togglePanel("frakt")}
-              className={styles.contractModernAccordion}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                <div className={styles.contractModernAccordionTitleRow}>
-                  <LocalShippingOutlinedIcon className={styles.contractModernAccordionIcon} />
-                  <Typography className={styles.contractModernAccordionTitle}>Frakt</Typography>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <FreightTab />
-              </AccordionDetails>
-            </Accordion>
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Bonus</Typography>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField fullWidth size="small" label="Bonus" value={draft.bonus} onChange={(e) => set("bonus", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
+                    <TextField select fullWidth size="small" label="Bonusgrund" value={draft.bonusgrund} onChange={(e) => set("bonusgrund", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Omsättning">Omsättning</MenuItem>
+                      <MenuItem value="Volym">Volym</MenuItem>
+                      <MenuItem value="Antal order">Antal order</MenuItem>
+                    </TextField>
+                  </div>
 
-            <Accordion
-              expanded={expandedPanels.includes("utskrift")}
-              onChange={() => togglePanel("utskrift")}
-              className={styles.contractModernAccordion}
-            >
-              <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                <div className={styles.contractModernAccordionTitleRow}>
-                  <DescriptionOutlinedIcon className={styles.contractModernAccordionIcon} />
-                  <Typography className={styles.contractModernAccordionTitle}>Utskrift</Typography>
-                </div>
-              </AccordionSummary>
-              <AccordionDetails>
-                <PrintOptionsTab />
-              </AccordionDetails>
-            </Accordion>
-          </div>
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Leverans</Typography>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField select fullWidth size="small" label="Kontraktsformulär" value={draft.kontraktsformular} onChange={(e) => set("kontraktsformular", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Standard">Standard</MenuItem>
+                      <MenuItem value="Export">Export</MenuItem>
+                      <MenuItem value="Industri">Industri</MenuItem>
+                    </TextField>
+                    <TextField select fullWidth size="small" label="Leveransvillkor" value={draft.leveransvillkor} onChange={(e) => set("leveransvillkor", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="DAP">DAP</MenuItem>
+                      <MenuItem value="EXW">EXW</MenuItem>
+                      <MenuItem value="FCA">FCA</MenuItem>
+                      <MenuItem value="CIF">CIF</MenuItem>
+                      <MenuItem value="DDP">DDP</MenuItem>
+                    </TextField>
+                    <TextField select fullWidth size="small" label="Leveransvillkor" value={draft.leveransvillkor2} onChange={(e) => set("leveransvillkor2", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="DAP">DAP</MenuItem>
+                      <MenuItem value="EXW">EXW</MenuItem>
+                      <MenuItem value="FCA">FCA</MenuItem>
+                      <MenuItem value="CIF">CIF</MenuItem>
+                      <MenuItem value="DDP">DDP</MenuItem>
+                    </TextField>
+                    <TextField fullWidth size="small" label="Lev.villkor ort" value={draft.levvillkorOrt} onChange={(e) => set("levvillkorOrt", e.target.value)} />
+                    <TextField select fullWidth size="small" label="Leveranssätt" value={draft.leveranssatt} onChange={(e) => set("leveranssatt", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Bil">Bil</MenuItem>
+                      <MenuItem value="Tåg">Tåg</MenuItem>
+                      <MenuItem value="Båt">Båt</MenuItem>
+                      <MenuItem value="Flyg">Flyg</MenuItem>
+                    </TextField>
+                  </div>
+
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Agent</Typography>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField select fullWidth size="small" label="Agent" value={draft.agent} onChange={(e) => set("agent", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Nordic Agent AB">Nordic Agent AB</MenuItem>
+                      <MenuItem value="Baltic Trade AB">Baltic Trade AB</MenuItem>
+                    </TextField>
+                    <TextField fullWidth size="small" label="Provision agent" value={draft.provisionAgent} onChange={(e) => set("provisionAgent", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
+                  </div>
+
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Tillägg</Typography>
+                  <div style={{ marginTop: 4, marginBottom: 8 }}>
+                    <FormControlLabel
+                      control={<Checkbox size="small" checked={draft.konsignationslager} onChange={(e) => set("konsignationslager", e.target.checked)} />}
+                      label={<Typography style={{ fontSize: 13 }}>Konsignationslager</Typography>}
+                    />
+                  </div>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField fullWidth size="small" label="Plocktillägg, minst" value={draft.plocktillaggMinst} onChange={(e) => set("plocktillaggMinst", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK/avropsrad</InputAdornment> } }} />
+                    <TextField fullWidth size="small" label="Plocktillägg" value={draft.plocktillagg} onChange={(e) => set("plocktillagg", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">%/avropsrad</InputAdornment> } }} />
+                    <TextField fullWidth size="small" label="Målningstillägg" value={draft.malningstilagg} onChange={(e) => set("malningstilagg", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK/avropsrad</InputAdornment> } }} />
+                    <TextField fullWidth size="small" label="Målningstillägg tröskel" value={draft.malningstilaggTroskel} onChange={(e) => set("malningstilaggTroskel", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">lpm</InputAdornment> } }} />
+                    <TextField fullWidth size="small" label="Införselavgift" value={draft.inforseavgift} onChange={(e) => set("inforseavgift", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} />
+                  </div>
+                </AccordionDetails>
+              </Accordion>
+
+              {/* ── Utskrift ── */}
+              <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                  <span className={styles.contractSectionTitleRow}>
+                    <PrintOutlinedIcon className={styles.contractSectionIcon} />
+                    <Typography className={styles.contractSectionTitle}>Utskrift</Typography>
+                  </span>
+                </AccordionSummary>
+                <AccordionDetails className={styles.contractSectionDetailsArea}>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField select fullWidth size="small" label="Utskriftstyp" value={draft.utskriftstyp} onChange={(e) => set("utskriftstyp", e.target.value)}>
+                      <MenuItem value="">—</MenuItem>
+                      <MenuItem value="Standard">Standard</MenuItem>
+                      <MenuItem value="Detaljerad">Detaljerad</MenuItem>
+                      <MenuItem value="Kompakt">Kompakt</MenuItem>
+                    </TextField>
+                  </div>
+                  <div style={{ marginTop: 8, display: "flex", flexDirection: "column" }}>
+                    <FormControlLabel
+                      control={<Checkbox size="small" checked={draft.visaM3Pris} onChange={(e) => set("visaM3Pris", e.target.checked)} />}
+                      label={<Typography style={{ fontSize: 13 }}>Visa även m3-pris</Typography>}
+                    />
+                    <FormControlLabel
+                      control={<Checkbox size="small" checked={draft.visaNamnAdress} onChange={(e) => set("visaNamnAdress", e.target.checked)} />}
+                      label={<Typography style={{ fontSize: 13 }}>Visa namn/adress</Typography>}
+                    />
+                  </div>
+                </AccordionDetails>
+              </Accordion>
+            </>
+          ) : null}
         </div>
 
-        <div className={styles.detailTabsColumn}>
+        {/* ── Tabs panel ── */}
+        <div className={`${styles.contractBodyTabsCol} ${isWide ? styles.contractBodyTabsColWide : ""}`}>
           <div className={styles.contractModernAdditionsWrap}>
-            <Typography className={styles.contractModernAdditionsTitle}>Prisrader</Typography>
-            <ActionRow
-              items={priceRowActions.map((label) => ({
-                label,
-                icon: priceRowActionIcons[label],
-                enabled: label.includes("Ny") || label.includes("Uppdatera") || selectedPriceRowIndex !== null,
-                onClick: label === "Ny" ? onCreatePriceRow : undefined
-              }))}
-            />
+            <div className={styles.contractMudTabBar}>
+              {priceListTabs.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={`${styles.contractMudTabItem} ${activeTab === tab ? styles.contractMudTabItemActive : ""}`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
             <div className={styles.contractDetailMainContent}>
-              <div className={styles.tableScrollWrap}>
-                <div className={styles.tableInner}>
-                  <DataTable
-                    variant="main"
-                    columns={priceRowColumns.map((column) => ({ key: column.key, label: column.label }))}
-                    rows={priceRows}
-                    rowKey={(row, index) => `${row.artNr}-${index}`}
-                    selectedRowIndex={selectedPriceRowIndex}
-                    onRowClick={(index) => {
-                      setSelectedPriceRowIndex((previous) => (previous === index ? null : index));
-                    }}
-                    renderCell={(row, column) =>
-                      column.key === "artNr" ? (
-                        <button
-                          type="button"
-                          className={styles.contractLinkButton}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onOpenPriceRowDetail(row.artNr);
-                          }}
-                        >
-                          {row.artNr}
-                        </button>
-                      ) : (
-                        row[column.key as keyof typeof row]
-                      )
-                    }
-                  />
-                </div>
-              </div>
+              {activeTab === "Prislisterader" ? (
+                <PrislisteraderTab
+                  onOpenPriceRowDetail={onOpenPriceRowDetail}
+                  onCreatePriceRow={onCreatePriceRow}
+                />
+              ) : null}
+              {activeTab === "Frakt" ? <FraktTab /> : null}
             </div>
           </div>
         </div>
       </div>
+
+      {/* ── Expanded dialog ── */}
+      <Dialog
+        open={expandedDialogOpen}
+        onClose={() => setExpandedDialogOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        slotProps={{ paper: { sx: { height: "90vh" } } }}
+      >
+        <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <PriceListCreateView
+            mode="edit"
+            title={`Prislista ${selectedPriceListId}`}
+            initialDraft={draft}
+            onSave={(saved) => { setDraft(saved); setExpandedDialogOpen(false); }}
+            onCancel={() => setExpandedDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

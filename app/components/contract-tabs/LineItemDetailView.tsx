@@ -1682,14 +1682,6 @@ export function LineItemDetailView({
                 Nästa
               </Button>
               <span className={styles.lineItemTopActionDivider} aria-hidden="true" />
-              <Button
-                className={styles.contractQuickActionButton}
-                size="small"
-                onClick={() => onSaveAndCreateNew?.({ ...emptyNewLineItemDraft })}
-                startIcon={<ContentCopyOutlinedIcon fontSize="small" />}
-              >
-                Kopiera
-              </Button>
               <IconButton
                 size="small"
                 className={styles.contractHeaderDotsButton}

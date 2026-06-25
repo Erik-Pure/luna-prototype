@@ -2,6 +2,7 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import SearchIcon from "@mui/icons-material/Search";
@@ -177,6 +178,12 @@ export function ContractRowsTab({
       enabled: !isPriceEditMode,
       tone: isPriceEditMode ? "default" as const : "primary" as const,
       onClick: onCreateRow
+    },
+    {
+      key: "copy-row",
+      label: "Kopiera",
+      icon: <ContentCopyIcon fontSize="small" />,
+      enabled: selectedRow !== null && !isPriceEditMode,
     },
     {
       key: "primary-secondary-divider",

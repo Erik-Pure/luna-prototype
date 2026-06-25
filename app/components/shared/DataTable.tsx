@@ -14,19 +14,19 @@ type DataTableColumn = {
 
 type DataTableVariant = "main" | "line";
 
-type DataTableProps<TRow extends Record<string, string | undefined>> = {
+type DataTableProps<TRow extends Record<string, string | boolean | undefined>> = {
   variant: DataTableVariant;
   columns: DataTableColumn[];
   rows: TRow[];
   rowKey: (row: TRow, index: number) => string;
-  selectedRowIndex: number | null;
-  onRowClick: (index: number, event?: React.MouseEvent) => void;
+  selectedRowIndex?: number | null;
+  onRowClick?: (index: number, event?: React.MouseEvent) => void;
   renderCell?: (row: TRow, column: DataTableColumn, rowIndex: number, columnIndex: number) => ReactNode;
   renderHeaderCell?: (column: DataTableColumn, columnIndex: number) => ReactNode;
   fillRemainingSpace?: boolean;
 };
 
-export function DataTable<TRow extends Record<string, string | undefined>>({
+export function DataTable<TRow extends Record<string, string | boolean | undefined>>({
   variant,
   columns,
   rows,
@@ -139,7 +139,7 @@ export function DataTable<TRow extends Record<string, string | undefined>>({
         <div
           key={rowKey(row, rowIndex)}
           className={`${rowClass} ${selectedRowIndex === rowIndex ? selectedClass : ""}`}
-          onClick={(e) => onRowClick(rowIndex, e)}
+          onClick={(e) => onRowClick?.(rowIndex, e)}
         >
           {columns.map((column, columnIndex) => (
             <Fragment key={`${rowKey(row, rowIndex)}-${column.key}`}>

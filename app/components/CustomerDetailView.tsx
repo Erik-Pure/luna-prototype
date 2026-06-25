@@ -33,8 +33,12 @@ import {
 import { useState, useSyncExternalStore } from "react";
 import styles from "../page.module.scss";
 import { CustomerCreateView, type NewCustomerDraft } from "./CustomerCreateView";
+import { DokumentTab } from "./customer-tabs/DokumentTab";
+import { EdiTab } from "./customer-tabs/EdiTab";
 import { FordranTab } from "./customer-tabs/FordranTab";
+import { KontaktloggTab } from "./customer-tabs/KontaktloggTab";
 import { KontaktpersonerTab } from "./customer-tabs/KontaktpersonerTab";
+import { LeveransTab } from "./customer-tabs/LeveransTab";
 
 export type CustomerDetailData = {
   customerNumber: string;
@@ -296,8 +300,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
           ) : null}
 
           <div className={styles.contractSectionsPanelHeader} style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-
+            <div style={{ display: "flex", alignItems: "center" }}>
               <Tooltip title={isSectionsPanelCollapsed ? "Expandera kundpanel" : "Minimera kundpanel"}>
                 <IconButton
                   size="small"
@@ -308,25 +311,24 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                 </IconButton>
               </Tooltip>
               {!isSectionsPanelCollapsed ? (
-                <Typography style={{ fontSize: 13, fontWeight: 600, color: "#2f3743" }}>Kundinformation</Typography>
+                <Typography style={{ fontSize: 13, fontWeight: 600, color: "#2f3743", flex: 1, marginLeft: 4 }}>Kundinformation</Typography>
               ) : null}
             </div>
             {!isSectionsPanelCollapsed ? (
-              <div style={{ display: "flex", justifyContent: "end", alignItems: "center", gap: 4 }}>
-
-                <Tooltip title="Förstora i dialog">
-                  <IconButton
-                    size="small"
-                    className={styles.contractSectionsPanelMinimizeBtn}
-                    onClick={() => setExpandedDialogOpen(true)}
-                  >
-                    <OpenInFullOutlinedIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
                 <Button className={styles.contractSaveButton} size="small" startIcon={<EditOutlinedIcon fontSize="small" />}>
                   Redigera
                 </Button>
-
+                <Tooltip title="Öppna i dialog">
+                  <Button
+                    size="small"
+                    className={styles.contractHeaderDotsButton}
+                    onClick={() => setExpandedDialogOpen(true)}
+                    style={{ minWidth: 0 }}
+                  >
+                    <OpenInFullOutlinedIcon fontSize="small" />
+                  </Button>
+                </Tooltip>
               </div>
             ) : null}
           </div>
@@ -615,7 +617,11 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
             </div>
             <div className={styles.contractDetailMainContent}>
               {activeTab === "Kontaktpersoner" ? <KontaktpersonerTab /> : null}
+              {activeTab === "Kontaktlogg" ? <KontaktloggTab /> : null}
               {activeTab === "Fordran" ? <FordranTab /> : null}
+              {activeTab === "Leverans" ? <LeveransTab /> : null}
+              {activeTab === "EDI" ? <EdiTab /> : null}
+              {activeTab === "Dokument" ? <DokumentTab /> : null}
             </div>
           </div>
         </div>
@@ -630,6 +636,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
       >
         <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <CustomerCreateView
+            mode="edit"
             title={customerName}
             initialDraft={draft as NewCustomerDraft}
             onSave={(saved) => { setDraft(saved as CustomerDraft); setExpandedDialogOpen(false); }}
