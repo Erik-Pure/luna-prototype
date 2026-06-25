@@ -2140,6 +2140,7 @@ export default function Home() {
         contractListHref={`/${sectionSlug}/${menuSlug}`}
         contractDetailHref={selectedContractId ? `/${sectionSlug}/${menuSlug}/${selectedContractId}` : null}
         isPriceListDetailOpen={isPriceListDetailOpen}
+        isCreatingPriceList={isCreatingPriceList}
         selectedPriceListId={selectedPriceListId}
         priceListHref={`/${sectionSlug}/${menuSlug}`}
         isPriceListRowDetailOpen={isPriceListRowDetailOpen}

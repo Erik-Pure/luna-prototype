@@ -89,6 +89,7 @@ type AppShellLayoutProps = {
   contractListHref: string;
   contractDetailHref: string | null;
   isPriceListDetailOpen: boolean;
+  isCreatingPriceList: boolean;
   selectedPriceListId: string | null;
   priceListHref: string;
   isPriceListRowDetailOpen: boolean;
@@ -141,6 +142,7 @@ export function AppShellLayout({
   contractListHref,
   contractDetailHref,
   isPriceListDetailOpen,
+  isCreatingPriceList,
   selectedPriceListId,
   priceListHref,
   isPriceListRowDetailOpen,
@@ -327,7 +329,7 @@ export function AppShellLayout({
           <div className={styles.breadcrumbs}>
             <Typography className={styles.breadcrumbMuted}>{currentSectionLabel}</Typography>
             <ChevronRightIcon className={styles.breadcrumbArrow} />
-            {!isContractDetailOpen && !isPriceListDetailOpen && !isCustomerDetailOpen && !isCreatingCustomer ? (
+            {!isContractDetailOpen && !isPriceListDetailOpen && !isCustomerDetailOpen && !isCreatingCustomer && !isCreatingPriceList ? (
               <Typography className={styles.breadcrumbActive}>{currentMenuLabel}</Typography>
             ) : isCreatingCustomer ? (
               <>
@@ -336,6 +338,14 @@ export function AppShellLayout({
                 </Typography>
                 <ChevronRightIcon className={styles.breadcrumbArrow} />
                 <Typography className={styles.breadcrumbActive}>Ny kund</Typography>
+              </>
+            ) : isCreatingPriceList ? (
+              <>
+                <Typography component={Link} href={priceListHref} className={styles.breadcrumbLinkButton}>
+                  {currentMenuLabel}
+                </Typography>
+                <ChevronRightIcon className={styles.breadcrumbArrow} />
+                <Typography className={styles.breadcrumbActive}>Ny prislista</Typography>
               </>
             ) : isPriceListDetailOpen ? (
               <>

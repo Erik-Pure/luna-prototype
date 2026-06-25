@@ -295,7 +295,7 @@ export function PriceListCreateView({
                     />
                     <TextField
                       select fullWidth size="small"
-                      label="Status *"
+                      label="Status"
                       value={draft.status}
                       onChange={(e) => update("status", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -307,7 +307,7 @@ export function PriceListCreateView({
                     </TextField>
                     <TextField
                       select fullWidth size="small"
-                      label="Upprättat av *"
+                      label="Upprättat av"
                       value={draft.upprattatAv}
                       onChange={(e) => update("upprattatAv", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -319,7 +319,7 @@ export function PriceListCreateView({
                     </TextField>
                     <TextField
                       select fullWidth size="small"
-                      label="Kund *"
+                      label="Kund"
                       value={draft.kund}
                       onChange={(e) => update("kund", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -333,7 +333,7 @@ export function PriceListCreateView({
                     </TextField>
                     <TextField
                       fullWidth size="small"
-                      label="Prislistedatum *"
+                      label="Prislistedatum"
                       type="date"
                       InputLabelProps={{ shrink: true }}
                       value={draft.prislistedatum}
@@ -415,7 +415,7 @@ export function PriceListCreateView({
                     </TextField>
                     <TextField
                       select fullWidth size="small"
-                      label="Språk *"
+                      label="Språk"
                       value={draft.sprak}
                       onChange={(e) => update("sprak", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -479,7 +479,7 @@ export function PriceListCreateView({
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
-                      label="Valuta *"
+                      label="Valuta"
                       value={draft.valuta}
                       onChange={(e) => update("valuta", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -528,7 +528,7 @@ export function PriceListCreateView({
                     </TextField>
                     <TextField
                       select fullWidth size="small"
-                      label="Bet.villkor *"
+                      label="Bet.villkor"
                       value={draft.betvillkor}
                       onChange={(e) => update("betvillkor", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -587,7 +587,7 @@ export function PriceListCreateView({
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
-                      label="Kontraktsformulär *"
+                      label="Kontraktsformulär"
                       value={draft.kontraktsformular}
                       onChange={(e) => update("kontraktsformular", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -599,7 +599,7 @@ export function PriceListCreateView({
                     </TextField>
                     <TextField
                       select fullWidth size="small"
-                      label="Leveransvillkor *"
+                      label="Leveransvillkor"
                       value={draft.leveransvillkor}
                       onChange={(e) => update("leveransvillkor", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -613,7 +613,7 @@ export function PriceListCreateView({
                     </TextField>
                     <TextField
                       select fullWidth size="small"
-                      label="Leveransvillkor *"
+                      label="Leveransvillkor"
                       value={draft.leveransvillkor2}
                       onChange={(e) => update("leveransvillkor2", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -660,7 +660,7 @@ export function PriceListCreateView({
                     </TextField>
                     <TextField
                       fullWidth size="small"
-                      label="Provision agent *"
+                      label="Provision agent"
                       value={draft.provisionAgent}
                       onChange={(e) => update("provisionAgent", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -687,7 +687,7 @@ export function PriceListCreateView({
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       fullWidth size="small"
-                      label="Plocktillägg, minst *"
+                      label="Plocktillägg, minst"
                       value={draft.plocktillaggMinst}
                       onChange={(e) => update("plocktillaggMinst", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -697,7 +697,7 @@ export function PriceListCreateView({
                     />
                     <TextField
                       fullWidth size="small"
-                      label="Plocktillägg *"
+                      label="Plocktillägg"
                       value={draft.plocktillagg}
                       onChange={(e) => update("plocktillagg", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -707,7 +707,7 @@ export function PriceListCreateView({
                     />
                     <TextField
                       fullWidth size="small"
-                      label="Målningstillägg *"
+                      label="Målningstillägg"
                       value={draft.malningstilagg}
                       onChange={(e) => update("malningstilagg", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -717,7 +717,7 @@ export function PriceListCreateView({
                     />
                     <TextField
                       fullWidth size="small"
-                      label="Målningstillägg tröskel *"
+                      label="Målningstillägg tröskel"
                       value={draft.malningstilaggTroskel}
                       onChange={(e) => update("malningstilaggTroskel", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -727,7 +727,7 @@ export function PriceListCreateView({
                     />
                     <TextField
                       fullWidth size="small"
-                      label="Införselavgift *"
+                      label="Införselavgift"
                       value={draft.inforseavgift}
                       onChange={(e) => update("inforseavgift", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -759,7 +759,7 @@ export function PriceListCreateView({
 
                     <TextField
                       select fullWidth size="small"
-                      label="Utskriftstyp *"
+                      label="Utskriftstyp"
                       value={draft.utskriftstyp}
                       onChange={(e) => update("utskriftstyp", e.target.value)}
                       className={styles.lineItemRequiredControl}

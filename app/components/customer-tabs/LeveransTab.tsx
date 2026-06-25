@@ -178,7 +178,7 @@ function NyAlternativAdressDialog({ open, onClose, onSave, initialDraft, title =
           <div>
             <SectionLabel>Allmänt</SectionLabel>
             <div style={THREE_COL}>
-              <TextField fullWidth size="small" label="Namn *" value={draft.namn}
+              <TextField fullWidth size="small" label="Namn" value={draft.namn}
                 onChange={(e) => set("namn", e.target.value)}
                 className={styles.lineItemRequiredControl} />
               <TextField fullWidth size="small" label="Adress" value={draft.adress1}

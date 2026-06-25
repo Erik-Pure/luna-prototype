@@ -146,20 +146,18 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
           <Typography className={styles.contractModernTitle}>Prislista {selectedPriceListId}</Typography>
         </div>
         <div className={styles.contractModernTopActions}>
-          <Button className={styles.contractQuickActionButton} size="small" startIcon={<VisibilityOutlinedIcon fontSize="small" />}>
-            Granska prislista
-          </Button>
-          <Button className={styles.contractQuickActionButton} size="small" startIcon={<GavelOutlinedIcon fontSize="small" />}>
-            Skapa kontrakt
+          {/* <Button className={styles.contractQuickActionButton} size="small" startIcon={<VisibilityOutlinedIcon fontSize="small" />}>
+            Granska
+          </Button> */}
+          <Button className={styles.contractQuickActionButton} size="small" startIcon={<DescriptionOutlinedIcon fontSize="small" />}>
+            Granska
           </Button>
           <Button className={styles.contractQuickActionButton} size="small" startIcon={<DescriptionOutlinedIcon fontSize="small" />}>
             Skapa Finfofil
           </Button>
-          <Tooltip title="Kopiera">
-            <IconButton size="small" className={styles.contractHeaderDotsButton} aria-label="Kopiera">
-              <ContentCopyOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          <Button className={styles.contractQuickActionButton} size="small" startIcon={<GavelOutlinedIcon fontSize="small" />}>
+            Skapa kontrakt
+          </Button>
           <Tooltip title="Ta bort">
             <IconButton size="small" className={styles.contractHeaderDotsButton} aria-label="Ta bort">
               <DeleteOutlineOutlinedIcon fontSize="small" />
