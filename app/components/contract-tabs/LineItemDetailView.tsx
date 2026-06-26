@@ -1658,6 +1658,28 @@ export function LineItemDetailView({
   const productionPlanningDraft = productionPlanningForm.mode !== "closed" ? productionPlanningForm.draft : null;
   const isProductionPlanningDialogOpen = productionPlanningDraft !== null;
 
+  if (paketbokningNav.open) {
+    return (
+      <div className={`${styles.lineItemDetailPanel} ${styles.lineItemCreatePanel}`}>
+        <PaketbokningView
+          initialReservationstyp={paketbokningNav.reservationstyp}
+          produkt={newLineItemDraft.product || undefined}
+          volym={newLineItemDraft.volume || undefined}
+          enhet={newLineItemDraft.orderedUnit || undefined}
+          onBack={closePaketbokning}
+          onReservera={(rows) => {
+            setBokadePaketRows((prev) => [...prev, ...rows]);
+            closePaketbokning();
+          }}
+          onSkaLastasUt={(rows) => {
+            setBokadePaketRows((prev) => [...prev, ...rows]);
+            closePaketbokning();
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`${styles.lineItemDetailPanel} ${styles.lineItemCreatePanel}`}>
       <div className={styles.contractModernTopRow}>
@@ -1675,13 +1697,48 @@ export function LineItemDetailView({
         <div className={styles.contractModernTopActions}>
           {!isNewLineItem ? (
             <>
-              <Button className={styles.lineItemBackButton} size="small" disabled>
+              {/* <Button className={styles.lineItemBackButton} size="small" disabled>
                 Föregående
               </Button>
               <Button className={styles.lineItemBackButton} size="small" disabled>
                 Nästa
-              </Button>
-              <span className={styles.lineItemTopActionDivider} aria-hidden="true" />
+              </Button> */}
+              {
+                isEditing && createStep === 0 ? (
+                  <>
+                    <Button
+                      className={styles.lineItemSaveButton}
+                      size="small"
+                      variant="contained"
+                      onClick={() => setIsEditing(false)}
+                    >
+                      Spara
+                    </Button>
+                    <Button
+                      className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
+                      size="small"
+                      variant="outlined"
+                      onClick={() => setIsEditing(false)}
+                    >
+                      Avbryt
+                    </Button>
+                  </>
+                ) :
+                  (
+                    createStep === 0 &&
+                    <Button
+                      className={styles.lineItemSaveButton}
+                      size="small"
+                      variant="contained"
+                      startIcon={<EditOutlinedIcon fontSize="small" />}
+                      onClick={() => setIsEditing(true)}
+                    >
+                      Redigera
+                    </Button>
+                  )
+              }
+
+              {createStep === 0 && <span className={styles.lineItemTopActionDivider} aria-hidden="true" />}
               <IconButton
                 size="small"
                 className={styles.contractHeaderDotsButton}
@@ -1694,25 +1751,28 @@ export function LineItemDetailView({
           ) : null}
           {isNewLineItem ? (
             createStep === 0 ? (
-              <>
-                <Button
-                  ref={saveAndContinueButtonRef}
-                  className={styles.lineItemSaveButton}
-                  size="small"
-                  variant="contained"
-                  onClick={handleNextStep}
-                >
-                  Spara och fortsätt
-                </Button>
-                <Button
-                  className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
-                  size="small"
-                  variant="outlined"
-                  onClick={onSaveAndClose}
-                >
-                  Stäng
-                </Button>
-              </>
+              (
+                <>
+
+                  <Button
+                    ref={saveAndContinueButtonRef}
+                    className={styles.lineItemSaveButton}
+                    size="small"
+                    variant="contained"
+                    onClick={handleNextStep}
+                  >
+                    Spara och fortsätt
+                  </Button>
+                  <Button
+                    className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
+                    size="small"
+                    variant="outlined"
+                    onClick={onSaveAndClose}
+                  >
+                    Stäng
+                  </Button>
+
+                </>)
             ) : (
               <>
                 {/* <Button
@@ -1767,40 +1827,11 @@ export function LineItemDetailView({
           <span className={styles.lineItemWizardStepDot}>2</span>
           <span className={styles.lineItemWizardStepLabel}>Distribution & planering</span>
         </button>
-        {!isNewLineItem && createStep === 0 && (
+        {/* {!isNewLineItem && createStep === 0 && (
           <div className={styles.lineItemWizardEditActions}>
-            {isEditing ? (
-              <>
-                <Button
-                  className={styles.lineItemSaveButton}
-                  size="small"
-                  variant="contained"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Spara
-                </Button>
-                <Button
-                  className={`${styles.lineItemBackButton} ${styles.lineItemCancelButton}`}
-                  size="small"
-                  variant="outlined"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Avbryt
-                </Button>
-              </>
-            ) : (
-              <Button
-                className={styles.lineItemSaveButton}
-                size="small"
-                variant="contained"
-                startIcon={<EditOutlinedIcon fontSize="small" />}
-                onClick={() => setIsEditing(true)}
-              >
-                Redigera
-              </Button>
-            )}
+            
           </div>
-        )}
+        )} */}
       </div>
 
       <div
@@ -2698,29 +2729,14 @@ export function LineItemDetailView({
                   key={tab}
                   type="button"
                   className={`${styles.contractMudTabItem} ${activeTab === tab ? styles.contractMudTabItemActive : ""}`}
-                  onClick={() => !paketbokningNav.open && onChangeTab(tab)}
-                  disabled={paketbokningNav.open}
-                  style={paketbokningNav.open ? { opacity: 0.4, cursor: "default", pointerEvents: "none" } : undefined}
+                  onClick={() => onChangeTab(tab)}
                 >
                   {tab}
                 </button>
               ))}
             </div>
             <div className={styles.contractDetailMainContent}>
-              {paketbokningNav.open ? (
-                <PaketbokningView
-                  initialReservationstyp={paketbokningNav.reservationstyp}
-                  onBack={closePaketbokning}
-                  onReservera={(rows) => {
-                    setBokadePaketRows((prev) => [...prev, ...rows]);
-                    closePaketbokning();
-                  }}
-                  onSkaLastasUt={(rows) => {
-                    setBokadePaketRows((prev) => [...prev, ...rows]);
-                    closePaketbokning();
-                  }}
-                />
-              ) : activeTab === "Avropsrader" ? (
+              {activeTab === "Avropsrader" ? (
                 leveransbokaForRow !== null ? (
                   <>
                     <div className={styles.contractModernTopRow}>
@@ -2728,7 +2744,23 @@ export function LineItemDetailView({
                         <IconButton size="small" onClick={() => setLeveransbokaForRow(null)} title="Tillbaka">
                           <ArrowBackIcon fontSize="small" />
                         </IconButton>
-                        <Typography className={styles.contractModernTitle}>Leveransbokade paket - Avropsrad {leveransbokaForRow + 1}</Typography>
+                        {(() => {
+                          const rad = callOffRows[leveransbokaForRow];
+                          const subline = [
+                            rad?.fakturatext,
+                            rad?.volym && `${rad.volym}${rad.enhet ? ` ${rad.enhet}` : ""}`,
+                          ].filter(Boolean).join("  -  ");
+                          return (
+                            <div className={styles.paketbokningTitleGroup}>
+                              <Typography className={styles.contractModernTitle}>
+                                Leveransbokade paket - Avropsrad {leveransbokaForRow + 1}
+                              </Typography>
+                              {subline && (
+                                <Typography className={styles.paketbokningTitleSubline}>{subline}</Typography>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div style={{ padding: 12 }}>

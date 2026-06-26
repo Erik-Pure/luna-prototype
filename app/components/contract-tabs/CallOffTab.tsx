@@ -21,6 +21,12 @@ import styles from "../../page.module.scss";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
+type LangdFordelningRow = {
+  langd: string;
+  mangd: string;
+  enhet: string;
+};
+
 type AvropFields = {
   extAvropsnr: string;
   avropsdatum: string;
@@ -113,6 +119,27 @@ const INITIAL_AVROPSRADER: AvropsradRow[] = [
     kundmarke: "KM-002",
     certifiering: "PEFC",
   },
+];
+
+// ── Längdfördelning data ───────────────────────────────────────────────────────
+
+const LANGDFORDELNING_BY_RAD: Record<string, LangdFordelningRow[]> = {
+  "1": [
+    { langd: "300", mangd: "150", enhet: "m3 nominell" },
+    { langd: "360", mangd: "200", enhet: "m3 nominell" },
+    { langd: "420", mangd: "150", enhet: "m3 nominell" },
+  ],
+  "2": [
+    { langd: "300", mangd: "250", enhet: "m3 nominell" },
+    { langd: "360", mangd: "300", enhet: "m3 nominell" },
+    { langd: "420", mangd: "150", enhet: "m3 nominell" },
+  ],
+};
+
+const LANGDFORDELNING_COLUMNS = [
+  { key: "langd", label: "Längd" },
+  { key: "mangd", label: "Mängd" },
+  { key: "enhet", label: "Enhet" },
 ];
 
 // ── Column definitions ─────────────────────────────────────────────────────────
@@ -368,6 +395,34 @@ export function CallOffTab() {
           </div>
         </div>
       </div>
+
+      {/* ── Längdfördelning table ── */}
+      {(() => {
+        const rad = selectedRow !== null ? avropsrader[selectedRow] : null;
+        const langdRader = rad ? (LANGDFORDELNING_BY_RAD[rad.avropsradNr] ?? []) : [];
+        return (
+          <div className={styles.avropTableSection}>
+            <div className={styles.avropTableHeader}>
+              <Typography className={styles.avropTableTitle}>
+                Längdfördelning{rad ? ` — Avropsrad ${rad.avropsradNr}` : ""}
+              </Typography>
+            </div>
+            <div className={styles.lineItemsTableWrap}>
+              <div className={styles.lineItemsTable}>
+                <DataTable
+                  variant="line"
+                  columns={LANGDFORDELNING_COLUMNS}
+                  rows={langdRader}
+                  rowKey={(_row, index) => `langd-${index}`}
+                  selectedRowIndex={null}
+                  onRowClick={() => undefined}
+                  renderCell={(row, column) => (row as Record<string, string>)[column.key] ?? "-"}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {editOpen && (
         <EditAvropDialog

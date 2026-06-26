@@ -36,6 +36,7 @@ import { CustomerCreateView } from "./components/CustomerCreateView";
 import { PriceListCreateView } from "./components/PriceListCreateView";
 import { AvropsradDetailView } from "./components/contract-tabs/AvropsradDetailView";
 import { ContainerView } from "./components/contract-tabs/ContainerView";
+import { KlarSokView } from "./components/KlarSokView";
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
@@ -1114,6 +1115,7 @@ export default function Home() {
   const isContractListPage = sectionSlug === "marknad" && menuSlug === "kontraktlista";
   const isDeliveryListPage = sectionSlug === "marknad" && menuSlug === "leveranslista";
   const isPriceListPage = sectionSlug === "marknad" && menuSlug === "prislistor";
+  const isKlarSokPage = sectionSlug === "marknad" && menuSlug === "klar-sok";
   const isSystemPage = sectionSlug === "system";
   const isHomePage = sectionSlug === "hem";
   const topMenuItems = topMenusBySection[sectionSlug] ?? topMenusBySection.marknad;
@@ -2302,7 +2304,9 @@ export default function Home() {
           <PriceListView onOpenPriceListDetail={openPriceListDetail} onCreatePriceList={openNewPriceList} />
         ) : isPriceListDetailOpen && selectedPriceListId ? (
           isPriceListRowDetailOpen && selectedPriceRowId ? (
-            <PriceListRowDetailView priceListId={selectedPriceListId} priceRowId={selectedPriceRowId} />
+            <div className={styles.contractDetailPanel}>
+              <PriceListRowDetailView priceListId={selectedPriceListId} priceRowId={selectedPriceRowId} />
+            </div>
           ) : (
             <PriceListDetailView
               selectedPriceListId={selectedPriceListId}
@@ -2364,6 +2368,10 @@ export default function Home() {
               onOpenAvropsrad={openAvropsradDetail}
             />
           )
+        ) : isKlarSokPage ? (
+          <div className={styles.contractDetailPanel}>
+            <KlarSokView />
+          </div>
         ) : isSystemPage ? (
           <div className={styles.contractDetailPanel}>
             <div className={styles.systemSettingsPanel}>

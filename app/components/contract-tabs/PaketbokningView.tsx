@@ -1,6 +1,7 @@
 "use client";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ClearIcon from "@mui/icons-material/Clear";
 import EventAvailable from "@mui/icons-material/EventAvailableOutlined";
 import LabelImportantOutlinedIcon from "@mui/icons-material/LabelImportantOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
@@ -8,6 +9,7 @@ import {
   Button,
   Checkbox,
   IconButton,
+  InputAdornment,
   MenuItem,
   Select,
   TextField,
@@ -89,6 +91,9 @@ export const VFL_GRUPP_OPTIONS = ["Grupp A", "Grupp B", "Grupp C"] as const;
 
 type PaketbokningViewProps = {
   initialReservationstyp?: string;
+  produkt?: string;
+  volym?: string;
+  enhet?: string;
   onBack: () => void;
   onReservera: (rows: BokadPaketRow[]) => void;
   onSkaLastasUt: (rows: BokadPaketRow[]) => void;
@@ -96,6 +101,9 @@ type PaketbokningViewProps = {
 
 export function PaketbokningView({
   initialReservationstyp = "Avroprad",
+  produkt,
+  volym,
+  enhet,
   onBack,
   onReservera,
   onSkaLastasUt,
@@ -168,11 +176,17 @@ export function PaketbokningView({
           <IconButton size="small" onClick={onBack} title="Tillbaka">
             <ArrowBackIcon fontSize="small" />
           </IconButton>
-          <Typography className={styles.contractModernTitle}>Paketbokning {"- " + filters.reservationstyp}</Typography>
+          <div className={styles.paketbokningTitleGroup}>
+            <Typography className={styles.contractModernTitle}>Paketbokning {"- " + filters.reservationstyp}</Typography>
+            {(produkt || volym) && (
+              <Typography className={styles.paketbokningTitleSubline}>
+                {[produkt, volym && `${volym}${enhet ? ` ${enhet}` : ""}`].filter(Boolean).join("  -  ")}
+              </Typography>
+            )}
+          </div>
         </div>
         <div className={styles.contractModernTopActions} />
       </div>
-
       <div className={styles.paketbokningLayout}>
         <div className={styles.paketbokningFilterStrip}>
           {/* <div className={`${styles.freightFormField} ${styles.paketbokningFieldWide}`}>
@@ -187,7 +201,7 @@ export function PaketbokningView({
             </Select>
           </div> */}
 
-          <div className={`${styles.freightFormField} ${styles.paketbokningFieldXWide}`}>
+          {/* <div className={`${styles.freightFormField} ${styles.paketbokningFieldXWide}`}>
             <Typography className={styles.freightFormLabel}>Avroprad</Typography>
             <Select
               size="small"
@@ -198,7 +212,7 @@ export function PaketbokningView({
             >
               {KONTRAKT_PRODUKT_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
             </Select>
-          </div>
+          </div> */}
 
           <div className={`${styles.freightFormField} ${styles.paketbokningFieldWide}`}>
             <Typography className={styles.freightFormLabel}>Enhet</Typography>
@@ -208,8 +222,16 @@ export function PaketbokningView({
               displayEmpty
               className={styles.pbFilterInput}
               onChange={(e) => setFilters((p) => ({ ...p, enhet: e.target.value }))}
+              endAdornment={
+                filters.enhet ? (
+                  <InputAdornment position="end" sx={{ mr: 1.5 }}>
+                    <IconButton size="small" onClick={() => setFilters((p) => ({ ...p, enhet: "" }))}>
+                      <ClearIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined
+              }
             >
-              <MenuItem value=""><em>Alla</em></MenuItem>
               {ENHET_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
             </Select>
           </div>
@@ -242,8 +264,16 @@ export function PaketbokningView({
               displayEmpty
               className={styles.pbFilterInput}
               onChange={(e) => setFilters((p) => ({ ...p, vflGrupp: e.target.value }))}
+              endAdornment={
+                filters.vflGrupp ? (
+                  <InputAdornment position="end" sx={{ mr: 1.5 }}>
+                    <IconButton size="small" onClick={() => setFilters((p) => ({ ...p, vflGrupp: "" }))}>
+                      <ClearIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined
+              }
             >
-              <MenuItem value=""><em>Alla</em></MenuItem>
               {VFL_GRUPP_OPTIONS.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
             </Select>
           </div>

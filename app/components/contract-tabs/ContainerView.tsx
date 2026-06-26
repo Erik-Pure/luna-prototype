@@ -85,6 +85,9 @@ export function ContainerView({ onBack }: ContainerViewProps) {
   const [helExpanded, setHelExpanded] = useState(true);
   const [flyttaToast, setFlyttaToast] = useState<{ open: boolean; message: string; key: number }>({ open: false, message: "", key: 0 });
   const [containrarUnlocked, setContainrarUnlocked] = useState(false);
+  const [kundmarkeDialogOpen, setKundmarkeDialogOpen] = useState(false);
+  const [kundmarkeDraft, setKundmarkeDraft] = useState("");
+  const [raderaDialogOpen, setRaderaDialogOpen] = useState(false);
 
   // ── Volym tab ────────────────────────────────────────────────────────────────
 
@@ -210,14 +213,14 @@ export function ContainerView({ onBack }: ContainerViewProps) {
       label: "Radera containrar",
       icon: <DeleteOutlineOutlinedIcon fontSize="small" />,
       enabled: true,
-      onClick: () => { },
+      onClick: () => setRaderaDialogOpen(true),
     },
     {
       key: "kundmarke",
       label: "Sätt kundens märke",
       icon: <LabelOutlinedIcon fontSize="small" />,
       enabled: true,
-      onClick: () => { },
+      onClick: () => { setKundmarkeDraft(""); setKundmarkeDialogOpen(true); },
     },
     // {
     //   key: "samfrakta",
@@ -540,6 +543,68 @@ export function ContainerView({ onBack }: ContainerViewProps) {
             Spara
           </Button>
           <Button variant="outlined" size="small" onClick={() => setKapacitetOpen(false)} className={styles.bytPrislistaAvbrytButton}>
+            Avbryt
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={raderaDialogOpen}
+        onClose={() => setRaderaDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        classes={{ paper: styles.freightDialogPaper }}
+      >
+        <DialogTitle className={styles.freightDialogTitle}>
+          <div className={styles.freightDialogTitleRow}>
+            <span>Radera containrar</span>
+          </div>
+        </DialogTitle>
+        <DialogContent className={styles.freightDialogContent}>
+          <Typography style={{ fontSize: 13 }}>
+            Är du säker på att du vill radera de valda containrarna?
+          </Typography>
+        </DialogContent>
+        <DialogActions className={styles.freightDialogActions}>
+          <Button size="small" className={styles.freightDeleteButton} onClick={() => setRaderaDialogOpen(false)}>
+            Radera
+          </Button>
+          <Button size="small" className={styles.freightCancelButton} onClick={() => setRaderaDialogOpen(false)}>
+            Avbryt
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={kundmarkeDialogOpen}
+        onClose={() => setKundmarkeDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        classes={{ paper: styles.freightDialogPaper }}
+      >
+        <DialogTitle className={styles.freightDialogTitle}>
+          <div className={styles.freightDialogTitleRow}>
+            <span>Sätt kundens märke</span>
+          </div>
+        </DialogTitle>
+        <DialogContent className={styles.freightDialogContent}>
+          <div className={styles.freightFormField} style={{ marginTop: 4 }}>
+            <Typography className={styles.freightFormLabel}>Kundens märke</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              autoFocus
+              value={kundmarkeDraft}
+              onChange={(e) => setKundmarkeDraft(e.target.value)}
+              className={styles.freightFormInput}
+            />
+          </div>
+        </DialogContent>
+        <DialogActions className={styles.freightDialogActions}>
+          <Button size="small" className={styles.freightSaveButton} onClick={() => setKundmarkeDialogOpen(false)}>
+            Spara
+          </Button>
+          <Button size="small" className={styles.freightCancelButton} onClick={() => setKundmarkeDialogOpen(false)}>
             Avbryt
           </Button>
         </DialogActions>
