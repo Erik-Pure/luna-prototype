@@ -13,8 +13,12 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import {
+  Button,
+  Checkbox,
   CircularProgress,
+  MenuItem,
   Switch,
+  TextField,
   Typography
 } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
@@ -36,7 +40,10 @@ import { CustomerCreateView } from "./components/CustomerCreateView";
 import { PriceListCreateView } from "./components/PriceListCreateView";
 import { AvropsradDetailView } from "./components/contract-tabs/AvropsradDetailView";
 import { ContainerView } from "./components/contract-tabs/ContainerView";
-import { KlarSokView } from "./components/KlarSokView";
+import { PrislistekalkylView } from "./components/price-list-tabs/PrislistekalkylView";
+import { SearchFiltersPanel } from "./components/shared/SearchFiltersPanel";
+import { DataTable } from "./components/shared/DataTable";
+import { ActionRow } from "./components/shared/ActionRow";
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
@@ -1073,6 +1080,311 @@ const customerActionItems = [
   { label: "Ändra kundgrupp", icon: <EditOutlinedIcon fontSize="small" />, requiresSelection: true },
 ];
 
+type LagerRow = {
+  enhet: string;
+  lagerstalle: string;
+  artNr: string;
+  produkt: string;
+  pakettyp: string;
+  customerPlanner: string;
+  loadPlanner: string;
+  reserveradLagerflytt: string;
+  leveransbokat: string;
+  lassbokat: string;
+  tillgLager: string;
+  kontraktsrest: string;
+  avropsrest: string;
+  nettolager: string;
+  paSagorder: string;
+  paJusterorder: string;
+};
+
+type LagerColumnKey = keyof LagerRow;
+
+const LAGER_COLUMNS: Array<{ key: LagerColumnKey; label: string }> = [
+  { key: "enhet", label: "Enhet" },
+  { key: "lagerstalle", label: "Lagerställe" },
+  { key: "artNr", label: "ArtNr" },
+  { key: "produkt", label: "Produkt" },
+  { key: "pakettyp", label: "Pakettyp" },
+  { key: "customerPlanner", label: "Customer planner" },
+  { key: "loadPlanner", label: "Load Planner" },
+  { key: "reserveradLagerflytt", label: "Reserverad Lagerflytt" },
+  { key: "leveransbokat", label: "Leveransbokat" },
+  { key: "lassbokat", label: "Lassbokat" },
+  { key: "tillgLager", label: "Tillg. lager" },
+  { key: "kontraktsrest", label: "Kontraktsrest" },
+  { key: "avropsrest", label: "Avropsrest" },
+  { key: "nettolager", label: "Nettolager" },
+  { key: "paSagorder", label: "På sågorder" },
+  { key: "paJusterorder", label: "På justerorder" },
+];
+
+const LAGER_ROWS: LagerRow[] = [
+  {
+    enhet: "BP Hissmofors",
+    lagerstalle: "Krokom",
+    artNr: "2202209500002000",
+    produkt: "22x95 Gran Ytterpanel",
+    pakettyp: "Lp",
+    customerPlanner: "45",
+    loadPlanner: "30",
+    reserveradLagerflytt: "10",
+    leveransbokat: "20",
+    lassbokat: "15",
+    tillgLager: "120",
+    kontraktsrest: "350",
+    avropsrest: "80",
+    nettolager: "95",
+    paSagorder: "200",
+    paJusterorder: "50",
+  },
+  {
+    enhet: "BP Hissmofors",
+    lagerstalle: "Östersund",
+    artNr: "2202212000001000",
+    produkt: "22x120 Gran Ytterpanel",
+    pakettyp: "Pk",
+    customerPlanner: "60",
+    loadPlanner: "40",
+    reserveradLagerflytt: "5",
+    leveransbokat: "35",
+    lassbokat: "25",
+    tillgLager: "85",
+    kontraktsrest: "210",
+    avropsrest: "55",
+    nettolager: "70",
+    paSagorder: "150",
+    paJusterorder: "30",
+  },
+  {
+    enhet: "BP Hissmofors",
+    lagerstalle: "Sundsvall",
+    artNr: "2202209500003000",
+    produkt: "22x95 Gran Ytterpanel C",
+    pakettyp: "Lp",
+    customerPlanner: "0",
+    loadPlanner: "0",
+    reserveradLagerflytt: "0",
+    leveransbokat: "0",
+    lassbokat: "0",
+    tillgLager: "0",
+    kontraktsrest: "0",
+    avropsrest: "0",
+    nettolager: "0",
+    paSagorder: "0",
+    paJusterorder: "0",
+  },
+];
+
+const LAGER_LENGTHS = ["1.8", "2.1", "2.4", "2.7", "3.0", "3.3", "3.6", "3.9", "4.2", "4.5", "4.8", "5.1", "5.4"] as const;
+type LagerLength = typeof LAGER_LENGTHS[number];
+
+type LagerDetailRow = {
+  typ: string;
+  enhet: string;
+  summa: string;
+  ovr: string;
+  fix: string;
+} & Record<LagerLength, string>;
+
+const makeLagerDetailPlaceholder = (typ: string, enhet: string): LagerDetailRow => ({
+  typ, enhet, summa: "–", ovr: "–", fix: "–",
+  "1.8": "–", "2.1": "–", "2.4": "–", "2.7": "–", "3.0": "–",
+  "3.3": "–", "3.6": "–", "3.9": "–", "4.2": "–", "4.5": "–",
+  "4.8": "–", "5.1": "–", "5.4": "–",
+});
+
+const LAGER_DETAIL_PLACEHOLDER: LagerDetailRow[] = [
+  makeLagerDetailPlaceholder("Tillg. lager", "st"),
+  makeLagerDetailPlaceholder("Avropsrest", "st"),
+  makeLagerDetailPlaceholder("Nettolager", "st"),
+  makeLagerDetailPlaceholder("Tillg. lager", "m3"),
+  makeLagerDetailPlaceholder("Tillg. lager fördelning (m3)", "%"),
+];
+
+const LAGER_DETAIL_DATA: Record<string, LagerDetailRow[]> = {
+  "2202209500002000": [
+    { typ: "Tillg. lager", enhet: "st", summa: "240", ovr: "20", fix: "10", "1.8": "18", "2.1": "22", "2.4": "28", "2.7": "35", "3.0": "42", "3.3": "30", "3.6": "28", "3.9": "18", "4.2": "10", "4.5": "5", "4.8": "2", "5.1": "1", "5.4": "1" },
+    { typ: "Avropsrest", enhet: "st", summa: "80", ovr: "5", fix: "3", "1.8": "6", "2.1": "8", "2.4": "10", "2.7": "12", "3.0": "14", "3.3": "10", "3.6": "8", "3.9": "6", "4.2": "3", "4.5": "2", "4.8": "1", "5.1": "0", "5.4": "0" },
+    { typ: "Nettolager", enhet: "st", summa: "95", ovr: "8", fix: "4", "1.8": "7", "2.1": "9", "2.4": "12", "2.7": "15", "3.0": "18", "3.3": "12", "3.6": "10", "3.9": "7", "4.2": "4", "4.5": "1", "4.8": "0", "5.1": "0", "5.4": "0" },
+    { typ: "Tillg. lager", enhet: "m3", summa: "4.80", ovr: "0.40", fix: "0.20", "1.8": "0.30", "2.1": "0.40", "2.4": "0.56", "2.7": "0.70", "3.0": "0.90", "3.3": "0.60", "3.6": "0.56", "3.9": "0.40", "4.2": "0.24", "4.5": "0.13", "4.8": "0.05", "5.1": "0.03", "5.4": "0.03" },
+    { typ: "Tillg. lager fördelning (m3)", enhet: "%", summa: "100%", ovr: "8.3%", fix: "4.2%", "1.8": "6.3%", "2.1": "8.3%", "2.4": "11.7%", "2.7": "14.6%", "3.0": "18.8%", "3.3": "12.5%", "3.6": "11.7%", "3.9": "8.3%", "4.2": "5.0%", "4.5": "2.7%", "4.8": "1.0%", "5.1": "0.6%", "5.4": "0.6%" },
+  ],
+  "2202212000001000": [
+    { typ: "Tillg. lager", enhet: "st", summa: "170", ovr: "15", fix: "8", "1.8": "12", "2.1": "15", "2.4": "20", "2.7": "25", "3.0": "30", "3.3": "22", "3.6": "18", "3.9": "14", "4.2": "8", "4.5": "4", "4.8": "1", "5.1": "1", "5.4": "0" },
+    { typ: "Avropsrest", enhet: "st", summa: "55", ovr: "3", fix: "2", "1.8": "4", "2.1": "5", "2.4": "7", "2.7": "9", "3.0": "10", "3.3": "7", "3.6": "6", "3.9": "4", "4.2": "2", "4.5": "1", "4.8": "0", "5.1": "0", "5.4": "0" },
+    { typ: "Nettolager", enhet: "st", summa: "70", ovr: "6", fix: "3", "1.8": "5", "2.1": "6", "2.4": "9", "2.7": "11", "3.0": "13", "3.3": "9", "3.6": "7", "3.9": "5", "4.2": "3", "4.5": "1", "4.8": "1", "5.1": "0", "5.4": "0" },
+    { typ: "Tillg. lager", enhet: "m3", summa: "3.40", ovr: "0.30", fix: "0.16", "1.8": "0.20", "2.1": "0.25", "2.4": "0.40", "2.7": "0.50", "3.0": "0.60", "3.3": "0.44", "3.6": "0.36", "3.9": "0.28", "4.2": "0.16", "4.5": "0.08", "4.8": "0.02", "5.1": "0.02", "5.4": "0.00" },
+    { typ: "Tillg. lager fördelning (m3)", enhet: "%", summa: "100%", ovr: "8.8%", fix: "4.7%", "1.8": "5.9%", "2.1": "7.4%", "2.4": "11.8%", "2.7": "14.7%", "3.0": "17.6%", "3.3": "12.9%", "3.6": "10.6%", "3.9": "8.2%", "4.2": "4.7%", "4.5": "2.4%", "4.8": "0.6%", "5.1": "0.6%", "5.4": "0.0%" },
+  ],
+  "2202209500003000": [
+    { typ: "Tillg. lager", enhet: "st", summa: "0", ovr: "0", fix: "0", "1.8": "0", "2.1": "0", "2.4": "0", "2.7": "0", "3.0": "0", "3.3": "0", "3.6": "0", "3.9": "0", "4.2": "0", "4.5": "0", "4.8": "0", "5.1": "0", "5.4": "0" },
+    { typ: "Avropsrest", enhet: "st", summa: "0", ovr: "0", fix: "0", "1.8": "0", "2.1": "0", "2.4": "0", "2.7": "0", "3.0": "0", "3.3": "0", "3.6": "0", "3.9": "0", "4.2": "0", "4.5": "0", "4.8": "0", "5.1": "0", "5.4": "0" },
+    { typ: "Nettolager", enhet: "st", summa: "0", ovr: "0", fix: "0", "1.8": "0", "2.1": "0", "2.4": "0", "2.7": "0", "3.0": "0", "3.3": "0", "3.6": "0", "3.9": "0", "4.2": "0", "4.5": "0", "4.8": "0", "5.1": "0", "5.4": "0" },
+    { typ: "Tillg. lager", enhet: "m3", summa: "0.00", ovr: "0.00", fix: "0.00", "1.8": "0.00", "2.1": "0.00", "2.4": "0.00", "2.7": "0.00", "3.0": "0.00", "3.3": "0.00", "3.6": "0.00", "3.9": "0.00", "4.2": "0.00", "4.5": "0.00", "4.8": "0.00", "5.1": "0.00", "5.4": "0.00" },
+    { typ: "Tillg. lager fördelning (m3)", enhet: "%", summa: "0%", ovr: "0%", fix: "0%", "1.8": "0.0%", "2.1": "0.0%", "2.4": "0.0%", "2.7": "0.0%", "3.0": "0.0%", "3.3": "0.0%", "3.6": "0.0%", "3.9": "0.0%", "4.2": "0.0%", "4.5": "0.0%", "4.8": "0.0%", "5.1": "0.0%", "5.4": "0.0%" },
+  ],
+};
+
+type AvropRow = {
+  utlastandeBolag: string;
+  kontraktsNr: string;
+  avropradNr: string;
+  typ: string;
+  kund: string;
+  extAvropNr: string;
+  produkt: string;
+  pakettyp: string;
+  emballage: string;
+  pris: string;
+  valuta: string;
+  nettoprisM3: string;
+  mangd: string;
+  enhet: string;
+  volym: string;
+  lassbokat: string;
+  leveradVolym: string;
+  avropsrest: string;
+  nettolager: string;
+  tillgLager: string;
+  dag: string;
+  langdkrav: string;
+  volymLO: string;
+  produceras: string;
+  kundensMarke: string;
+  vecka: string;
+  leveranssatt: string;
+  internKommentarKontraktsrad: string;
+  internKommentarAvropsrad: string;
+  artNr: string;
+  mlRatt: string;
+  avropNr: string;
+  ravarulager: string;
+  nominellTjocklek: string;
+  nominellBredd: string;
+  ansvarigBolag: string;
+  avropradDatum: string;
+  utlastningssparr: string;
+  skeppningsvecka: string;
+  etd: string;
+  eta: string;
+  mlTorr: string;
+  fartyg: string;
+  closingDate: string;
+  expeditor: string;
+  restvardeSEK: string;
+  restvarde: string;
+  totalvardeSEK: string;
+  totalvarde: string;
+  status: string;
+  custWeek: string;
+  vflGrupp: string;
+  leveransvillkor: string;
+  levVillkorOrt: string;
+  mottagandeHamn: string;
+  leveransperiodKunddokument: string;
+  lastorderNr: string;
+  reserveratLagerflytt: string;
+  leveransbokat: string;
+  utlastandeLagerstalle: string;
+  levTidigast: string;
+  levSenastibl: string;
+  extKontraktsNr: string;
+  tidigasteLevDatum: string;
+  kontraktsdatum: string;
+  kurs: string;
+  loadPlanned: string;
+  ejLeveransbokat: string;
+  limit: string;
+  loadPlannedRest: string;
+  lassSipal: string;
+  godsmottMarke: string;
+};
+
+const AVROP_COLUMNS: Array<{ key: keyof AvropRow; label: string; pinned?: boolean }> = [
+  { key: "kontraktsNr", label: "KontraktsNr" },
+  { key: "avropradNr", label: "Avroprad nr", pinned: true },
+  { key: "utlastandeBolag", label: "Utlastande enhet" },
+  { key: "typ", label: "Typ" },
+  { key: "kund", label: "Kund" },
+  { key: "extAvropNr", label: "Ext. AvropNr" },
+  { key: "produkt", label: "Produkt" },
+  { key: "pakettyp", label: "Pakettyp" },
+  { key: "emballage", label: "Emballage" },
+  { key: "pris", label: "Pris" },
+  { key: "valuta", label: "Valuta" },
+  { key: "nettoprisM3", label: "Nettopris/m3" },
+  { key: "mangd", label: "Mängd" },
+  { key: "enhet", label: "Enhet" },
+  { key: "volym", label: "Volym" },
+  { key: "lassbokat", label: "Lassbokat" },
+  { key: "leveradVolym", label: "Levererad volym" },
+  { key: "avropsrest", label: "Avropsrest" },
+  { key: "nettolager", label: "Nettolager" },
+  { key: "tillgLager", label: "Tillg. lager" },
+  { key: "dag", label: "Dag" },
+  { key: "langdkrav", label: "Längdkrav" },
+  { key: "volymLO", label: "Volym LO" },
+  { key: "produceras", label: "Produceras" },
+  { key: "kundensMarke", label: "Kundens märke" },
+  { key: "vecka", label: "Vecka" },
+  { key: "leveranssatt", label: "Leveranssätt" },
+  { key: "internKommentarKontraktsrad", label: "Intern kommentar (kontraktsrad)" },
+  { key: "internKommentarAvropsrad", label: "Intern kommentar (avropsrad)" },
+  { key: "artNr", label: "ArtNr" },
+  { key: "mlRatt", label: "ML Rått" },
+  { key: "avropNr", label: "AvropNr" },
+  { key: "ravarulager", label: "Råvarulager" },
+  { key: "nominellTjocklek", label: "NominellTjocklek" },
+  { key: "nominellBredd", label: "NominellBredd" },
+  { key: "ansvarigBolag", label: "Ansvarigt enhet" },
+  { key: "avropradDatum", label: "Avropraddatum" },
+  { key: "utlastningssparr", label: "Utlastningsspärr" },
+  { key: "skeppningsvecka", label: "Skeppningsvecka" },
+  { key: "etd", label: "ETD" },
+  { key: "eta", label: "ETA" },
+  { key: "mlTorr", label: "ML Torrt" },
+  { key: "fartyg", label: "Fartyg" },
+  { key: "closingDate", label: "ClosingDate" },
+  { key: "expeditor", label: "Speditör" },
+  { key: "restvardeSEK", label: "Restvärde SEK" },
+  { key: "restvarde", label: "Restvärde" },
+  { key: "totalvardeSEK", label: "Totalvärde SEK" },
+  { key: "totalvarde", label: "Totalvärde" },
+  { key: "status", label: "Status" },
+  { key: "custWeek", label: "Cust week" },
+  { key: "vflGrupp", label: "VFL grupp" },
+  { key: "leveransvillkor", label: "Leveransvillkor" },
+  { key: "levVillkorOrt", label: "Lev.villkor ort" },
+  { key: "mottagandeHamn", label: "Mottagande hamn" },
+  { key: "leveransperiodKunddokument", label: "Leveransperiod kunddokument" },
+  { key: "lastorderNr", label: "LastorderNr" },
+  { key: "reserveratLagerflytt", label: "Reserverat Lagerflytt" },
+  { key: "leveransbokat", label: "Leveransbokat" },
+  { key: "utlastandeLagerstalle", label: "Utlastande lagerställe" },
+  { key: "levTidigast", label: "Lev. tidigast" },
+  { key: "levSenastibl", label: "Lev. senastlbl" },
+  { key: "extKontraktsNr", label: "Ext. KontraktsNr" },
+  { key: "tidigasteLevDatum", label: "Tidigaste lev. datum" },
+  { key: "kontraktsdatum", label: "Kontraktsdatum" },
+  { key: "kurs", label: "Kurs" },
+  { key: "loadPlanned", label: "Load Planned" },
+  { key: "ejLeveransbokat", label: "Ej leveransbokat" },
+  { key: "limit", label: "Limit" },
+  { key: "loadPlannedRest", label: "Load Planned rest" },
+  { key: "lassSipal", label: "Lass Sipal" },
+  { key: "godsmottMarke", label: "Godsmott. märke" },
+];
+
+const AVROP_ROWS: AvropRow[] = [
+  { utlastandeBolag: "BP Hissmofors", kontraktsNr: "20241001", avropradNr: "163281", typ: "ML", kund: "Byggmax AB", extAvropNr: "EX-8821", produkt: "22x95 Gran Ytterpanel", pakettyp: "Lp", emballage: "Standard", pris: "3 409", valuta: "SEK", nettoprisM3: "3 159", mangd: "50", enhet: "m3", volym: "50", lassbokat: "2024-11-15", leveradVolym: "20", avropsrest: "30", nettolager: "95", tillgLager: "120", dag: "14", langdkrav: "3.0–5.4", volymLO: "15", produceras: "2024-W47", kundensMarke: "BM-A12", vecka: "47", leveranssatt: "Bil", internKommentarKontraktsrad: "", internKommentarAvropsrad: "Prio kund", artNr: "2202209500002000", mlRatt: "45", avropNr: "A-10231", ravarulager: "Krokom", nominellTjocklek: "22", nominellBredd: "95", ansvarigBolag: "BP Hissmofors", avropradDatum: "2024-10-28", utlastningssparr: "Nej", skeppningsvecka: "48", etd: "2024-11-25", eta: "2024-11-26", mlTorr: "42", fartyg: "–", closingDate: "2024-11-10", expeditor: "DSV", restvardeSEK: "102 270", restvarde: "30", totalvardeSEK: "170 450", totalvarde: "50", status: "Aktiv", custWeek: "48", vflGrupp: "VFL-A", leveransvillkor: "DAP", levVillkorOrt: "Stockholm", mottagandeHamn: "–", leveransperiodKunddokument: "2024-11", lastorderNr: "LO-4421", reserveratLagerflytt: "5", leveransbokat: "2024-11-14", utlastandeLagerstalle: "Krokom", levTidigast: "2024-11-13", levSenastibl: "2024-11-17", extKontraktsNr: "BM-2024-09", tidigasteLevDatum: "2024-11-13", kontraktsdatum: "2024-01-15", kurs: "1.00", loadPlanned: "45", ejLeveransbokat: "5", limit: "60", loadPlannedRest: "15", lassSipal: "3", godsmottMarke: "BM-YTERP" },
+  { utlastandeBolag: "BP Hissmofors", kontraktsNr: "20241001", avropradNr: "163214", typ: "FL", kund: "Byggmax AB", extAvropNr: "EX-8822", produkt: "22x120 Gran Ytterpanel", pakettyp: "Pk", emballage: "Staplat", pris: "3 926", valuta: "SEK", nettoprisM3: "3 805", mangd: "30", enhet: "m3", volym: "30", lassbokat: "2024-11-20", leveradVolym: "10", avropsrest: "20", nettolager: "70", tillgLager: "85", dag: "21", langdkrav: "2.4–4.8", volymLO: "8", produceras: "2024-W48", kundensMarke: "BM-A13", vecka: "48", leveranssatt: "Bil", internKommentarKontraktsrad: "Årskontrakt", internKommentarAvropsrad: "", artNr: "2202212000001000", mlRatt: "28", avropNr: "A-10232", ravarulager: "Östersund", nominellTjocklek: "22", nominellBredd: "120", ansvarigBolag: "BP Hissmofors", avropradDatum: "2024-10-30", utlastningssparr: "Nej", skeppningsvecka: "49", etd: "2024-12-02", eta: "2024-12-03", mlTorr: "26", fartyg: "–", closingDate: "2024-11-18", expeditor: "Schenker", restvardeSEK: "78 520", restvarde: "20", totalvardeSEK: "117 780", totalvarde: "30", status: "Aktiv", custWeek: "49", vflGrupp: "VFL-B", leveransvillkor: "DAP", levVillkorOrt: "Göteborg", mottagandeHamn: "–", leveransperiodKunddokument: "2024-11", lastorderNr: "LO-4422", reserveratLagerflytt: "2", leveransbokat: "2024-11-19", utlastandeLagerstalle: "Östersund", levTidigast: "2024-11-18", levSenastibl: "2024-11-22", extKontraktsNr: "BM-2024-09", tidigasteLevDatum: "2024-11-18", kontraktsdatum: "2024-01-15", kurs: "1.00", loadPlanned: "28", ejLeveransbokat: "2", limit: "35", loadPlannedRest: "7", lassSipal: "2", godsmottMarke: "BM-YTERP120" },
+  { utlastandeBolag: "BP Hissmofors", kontraktsNr: "20241055", avropradNr: "163249", typ: "ML", kund: "Hornbach SE", extAvropNr: "HB-5541", produkt: "45x45 Gran Vilmaregel G4-2 Lp", pakettyp: "Lp", emballage: "Standard", pris: "3 551", valuta: "SEK", nettoprisM3: "3 511", mangd: "80", enhet: "m3", volym: "80", lassbokat: "2024-12-01", leveradVolym: "40", avropsrest: "40", nettolager: "55", tillgLager: "85", dag: "7", langdkrav: "3.6–5.4", volymLO: "30", produceras: "2024-W49", kundensMarke: "HB-REG45", vecka: "49", leveranssatt: "Tåg", internKommentarKontraktsrad: "Kvartalskontrakt", internKommentarAvropsrad: "Del 2 av 4", artNr: "4504503210810", mlRatt: "72", avropNr: "A-10541", ravarulager: "Krokom", nominellTjocklek: "45", nominellBredd: "45", ansvarigBolag: "BP Hissmofors", avropradDatum: "2024-11-05", utlastningssparr: "Nej", skeppningsvecka: "50", etd: "2024-12-09", eta: "2024-12-11", mlTorr: "68", fartyg: "–", closingDate: "2024-11-25", expeditor: "DHL", restvardeSEK: "140 440", restvarde: "40", totalvardeSEK: "280 880", totalvarde: "80", status: "Aktiv", custWeek: "50", vflGrupp: "VFL-A", leveransvillkor: "FCA", levVillkorOrt: "Krokom", mottagandeHamn: "–", leveransperiodKunddokument: "2024-12", lastorderNr: "LO-5541", reserveratLagerflytt: "8", leveransbokat: "2024-11-30", utlastandeLagerstalle: "Krokom", levTidigast: "2024-11-28", levSenastibl: "2024-12-03", extKontraktsNr: "HB-SE-2024-Q4", tidigasteLevDatum: "2024-11-28", kontraktsdatum: "2024-03-01", kurs: "1.00", loadPlanned: "70", ejLeveransbokat: "10", limit: "90", loadPlannedRest: "20", lassSipal: "5", godsmottMarke: "HB-REGEL45" },
+  { utlastandeBolag: "BP Hissmofors", kontraktsNr: "20241055", avropradNr: "163291", typ: "VFL", kund: "Hornbach SE", extAvropNr: "HB-5542", produkt: "45x70 Gran Regel G4-2 Lp", pakettyp: "Lp", emballage: "Standard", pris: "3 580", valuta: "SEK", nettoprisM3: "3 505", mangd: "25", enhet: "m3", volym: "25", lassbokat: "2024-12-05", leveradVolym: "0", avropsrest: "25", nettolager: "0", tillgLager: "0", dag: "3", langdkrav: "Alla", volymLO: "0", produceras: "2024-W50", kundensMarke: "HB-REG70", vecka: "50", leveranssatt: "Bil", internKommentarKontraktsrad: "Kvartalskontrakt", internKommentarAvropsrad: "", artNr: "4507003210810", mlRatt: "0", avropNr: "A-10542", ravarulager: "–", nominellTjocklek: "45", nominellBredd: "70", ansvarigBolag: "BP Hissmofors", avropradDatum: "2024-11-10", utlastningssparr: "Ja", skeppningsvecka: "51", etd: "–", eta: "–", mlTorr: "0", fartyg: "–", closingDate: "–", expeditor: "–", restvardeSEK: "89 500", restvarde: "25", totalvardeSEK: "89 500", totalvarde: "25", status: "Spärrad", custWeek: "51", vflGrupp: "VFL-C", leveransvillkor: "DAP", levVillkorOrt: "Malmö", mottagandeHamn: "–", leveransperiodKunddokument: "2024-12", lastorderNr: "–", reserveratLagerflytt: "0", leveransbokat: "–", utlastandeLagerstalle: "–", levTidigast: "–", levSenastibl: "–", extKontraktsNr: "HB-SE-2024-Q4", tidigasteLevDatum: "–", kontraktsdatum: "2024-03-01", kurs: "1.00", loadPlanned: "0", ejLeveransbokat: "25", limit: "30", loadPlannedRest: "30", lassSipal: "0", godsmottMarke: "HB-REGEL70" },
+  { utlastandeBolag: "BP Hissmofors", kontraktsNr: "20241082", avropradNr: "163213", typ: "ML", kund: "K-Rauta OY", extAvropNr: "KR-0091", produkt: "45x95 Gran Regel G4-2 Kortlängd", pakettyp: "Pk", emballage: "Staplat", pris: "3 737", valuta: "SEK", nettoprisM3: "3 662", mangd: "60", enhet: "m3", volym: "60", lassbokat: "2024-11-28", leveradVolym: "30", avropsrest: "30", nettolager: "70", tillgLager: "85", dag: "10", langdkrav: "2.1–3.9", volymLO: "22", produceras: "2024-W47", kundensMarke: "KR-095", vecka: "47", leveranssatt: "Båt", internKommentarKontraktsrad: "", internKommentarAvropsrad: "Export FI", artNr: "4509503210000", mlRatt: "55", avropNr: "A-10821", ravarulager: "Östersund", nominellTjocklek: "45", nominellBredd: "95", ansvarigBolag: "BP Hissmofors", avropradDatum: "2024-10-25", utlastningssparr: "Nej", skeppningsvecka: "48", etd: "2024-11-22", eta: "2024-11-24", mlTorr: "52", fartyg: "M/S Botnia", closingDate: "2024-11-18", expeditor: "Scan Global", restvardeSEK: "109 860", restvarde: "30", totalvardeSEK: "220 260", totalvarde: "60", status: "Aktiv", custWeek: "48", vflGrupp: "VFL-A", leveransvillkor: "CIF", levVillkorOrt: "Helsinki", mottagandeHamn: "Helsinki", leveransperiodKunddokument: "2024-11", lastorderNr: "LO-8211", reserveratLagerflytt: "4", leveransbokat: "2024-11-27", utlastandeLagerstalle: "Östersund", levTidigast: "2024-11-20", levSenastibl: "2024-11-25", extKontraktsNr: "KR-FI-2024-44", tidigasteLevDatum: "2024-11-20", kontraktsdatum: "2024-02-10", kurs: "0.093", loadPlanned: "52", ejLeveransbokat: "8", limit: "70", loadPlannedRest: "18", lassSipal: "4", godsmottMarke: "KR-REGEL95" },
+];
+
 // ──────────────────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -1106,7 +1418,8 @@ export default function Home() {
   const selectedContractId = isContractDetailRoute ? contractId : null;
   const selectedCustomerName = isCustomerDetailRoute && contractId ? decodePathSegment(contractId) : null;
   const selectedPriceListId = isPriceListRoute && !isCreatingPriceList ? contractId : null;
-  const selectedPriceRowId = isPriceListRoute ? lineItemId : null;
+  const isPrislistekalkylRoute = isPriceListRoute && Boolean(contractId) && rawSegment3 === "kalkyl";
+  const selectedPriceRowId = isPriceListRoute && !isPrislistekalkylRoute ? lineItemId : null;
   const selectedLineItemId = isContractDetailRoute ? lineItemId : null;
   const isCreatingLineItem = selectedLineItemId === "new";
   const isLineItemDetailOpen = Boolean(selectedContractId && selectedLineItemId);
@@ -1115,7 +1428,7 @@ export default function Home() {
   const isContractListPage = sectionSlug === "marknad" && menuSlug === "kontraktlista";
   const isDeliveryListPage = sectionSlug === "marknad" && menuSlug === "leveranslista";
   const isPriceListPage = sectionSlug === "marknad" && menuSlug === "prislistor";
-  const isKlarSokPage = sectionSlug === "marknad" && menuSlug === "klar-sok";
+  const isSaljstodPage = sectionSlug === "marknad" && menuSlug === "saljstod";
   const isSystemPage = sectionSlug === "system";
   const isHomePage = sectionSlug === "hem";
   const topMenuItems = topMenusBySection[sectionSlug] ?? topMenusBySection.marknad;
@@ -1178,6 +1491,19 @@ export default function Home() {
   const { mode, toggleMode } = useColorMode();
 
   // Customer list state
+  const [saljstodTab, setSaljstodTab] = useState<"lager" | "avrop">("lager");
+  const [selectedLagerRow, setSelectedLagerRow] = useState<number | null>(null);
+  const [lagerVisaTommaRader, setLagerVisaTommaRader] = useState(false);
+  const [lagerKontraktsvolymFran, setLagerKontraktsvolymFran] = useState("");
+  const [lagerKontraktsvolymTill, setLagerKontraktsvolymTill] = useState("");
+  const [lagerAvropsvolymFran, setLagerAvropsvolymFran] = useState("");
+  const [lagerAvropsvolymTill, setLagerAvropsvolymTill] = useState("");
+  const [lagerFardiglagervolymFran, setLagerFardiglagervolymFran] = useState("");
+  const [lagerFardiglagervolymTill, setLagerFardiglagervolymTill] = useState("");
+  const [avropLand, setAvropLand] = useState("");
+  const [avropRegistreradAv, setAvropRegistreradAv] = useState("");
+  const [selectedAvropRow, setSelectedAvropRow] = useState<number | null>(null);
+  const [avropAvreg, setAvropAvreg] = useState<"off" | "indeterminate" | "on">("off");
   const [customerSearchValues, setCustomerSearchValues] = useState<CustomerSearchValueMap>(initialCustomerSearchValues);
   const [customerGlobalSearchValue, setCustomerGlobalSearchValue] = useState("");
   const [isCustomerSearchMenuOpen, setIsCustomerSearchMenuOpen] = useState(false);
@@ -1408,6 +1734,57 @@ export default function Home() {
       return true;
     });
   }, [customerGlobalSearchValue, customerSearchValues]);
+
+  const filteredLagerRows = useMemo(() => {
+    const parseLagerNum = (s: string) => {
+      const n = parseFloat(s.replace(/\s/g, "").replace(",", "."));
+      return isNaN(n) ? 0 : n;
+    };
+    const parseInput = (s: string) => {
+      const n = parseFloat(s.trim().replace(",", "."));
+      return isNaN(n) ? null : n;
+    };
+    const franKontraktsvolym = parseInput(lagerKontraktsvolymFran);
+    const tillKontraktsvolym = parseInput(lagerKontraktsvolymTill);
+    const franAvropsvolym = parseInput(lagerAvropsvolymFran);
+    const tillAvropsvolym = parseInput(lagerAvropsvolymTill);
+    const franFardiglagervolym = parseInput(lagerFardiglagervolymFran);
+    const tillFardiglagervolym = parseInput(lagerFardiglagervolymTill);
+
+    return LAGER_ROWS.filter((row) => {
+      if (!lagerVisaTommaRader) {
+        const allZero =
+          parseLagerNum(row.tillgLager) === 0 &&
+          parseLagerNum(row.kontraktsrest) === 0 &&
+          parseLagerNum(row.avropsrest) === 0 &&
+          parseLagerNum(row.nettolager) === 0;
+        if (allZero) return false;
+      }
+      const kontraktsrest = parseLagerNum(row.kontraktsrest);
+      if (franKontraktsvolym !== null && kontraktsrest < franKontraktsvolym) return false;
+      if (tillKontraktsvolym !== null && kontraktsrest > tillKontraktsvolym) return false;
+
+      const avropsrest = parseLagerNum(row.avropsrest);
+      if (franAvropsvolym !== null && avropsrest < franAvropsvolym) return false;
+      if (tillAvropsvolym !== null && avropsrest > tillAvropsvolym) return false;
+
+      const tillgLager = parseLagerNum(row.tillgLager);
+      if (franFardiglagervolym !== null && tillgLager < franFardiglagervolym) return false;
+      if (tillFardiglagervolym !== null && tillgLager > tillFardiglagervolym) return false;
+
+      return true;
+    });
+  }, [
+    lagerVisaTommaRader,
+    lagerKontraktsvolymFran, lagerKontraktsvolymTill,
+    lagerAvropsvolymFran, lagerAvropsvolymTill,
+    lagerFardiglagervolymFran, lagerFardiglagervolymTill,
+  ]);
+
+  const lagerDetailRows: LagerDetailRow[] = (() => {
+    const selRow = selectedLagerRow !== null ? filteredLagerRows[selectedLagerRow] : null;
+    return selRow ? (LAGER_DETAIL_DATA[selRow.artNr] ?? LAGER_DETAIL_PLACEHOLDER) : LAGER_DETAIL_PLACEHOLDER;
+  })();
 
   useEffect(() => {
     if (!isColumnsMenuOpen && !isLineColumnsMenuOpen && !isSearchMenuOpen && !isCompanyMenuOpen && !isCustomerSearchMenuOpen && !isCustomerColumnsMenuOpen) {
@@ -1850,6 +2227,11 @@ export default function Home() {
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}/${priceRowId}`);
   };
 
+  const openPrislistekalkyl = () => {
+    if (!selectedPriceListId) return;
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}/kalkyl`);
+  };
+
   const openNewPriceRow = () => {
     if (!selectedPriceListId) {
       return;
@@ -2000,6 +2382,10 @@ export default function Home() {
   const activeContractTabForView: ContractTab = isLineItemDetailOpen ? "Kontraktsrader" : activeContractTab;
 
   const deepestBreadcrumb = useMemo(() => {
+    if (isPrislistekalkylRoute) {
+      return "Prislistekalkyl";
+    }
+
     if (isPriceListRowDetailOpen && selectedPriceRowId) {
       return isCreatingPriceRow ? "Ny prislistrad" : `Prislistrad ${selectedPriceRowId}`;
     }
@@ -2045,6 +2431,7 @@ export default function Home() {
     isLineItemDetailOpen,
     selectedLineItemId,
     isCreatingLineItem,
+    isPrislistekalkylRoute,
     isCreatingPriceList,
     isPriceListDetailOpen,
     selectedPriceListId,
@@ -2156,6 +2543,7 @@ export default function Home() {
         returnLineItemId={_savedReturnLineItemId}
         lineItemDetailHref={_savedReturnLineItemId && selectedContractId ? `/${sectionSlug}/${menuSlug}/${selectedContractId}/${_savedReturnLineItemId}` : null}
         isContainerRoute={isContainerRoute}
+        isPrislistekalkylRoute={isPrislistekalkylRoute}
       >
 
         {isHomePage ? (
@@ -2303,15 +2691,24 @@ export default function Home() {
         ) : !isPriceListDetailOpen && !isContractDetailOpen && isPriceListPage ? (
           <PriceListView onOpenPriceListDetail={openPriceListDetail} onCreatePriceList={openNewPriceList} />
         ) : isPriceListDetailOpen && selectedPriceListId ? (
-          isPriceListRowDetailOpen && selectedPriceRowId ? (
+          isPrislistekalkylRoute ? (
             <div className={styles.contractDetailPanel}>
-              <PriceListRowDetailView priceListId={selectedPriceListId} priceRowId={selectedPriceRowId} />
+              <PrislistekalkylView
+                priceListId={selectedPriceListId}
+                onBack={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}`)}
+                onOpenPriceRowDetail={openPriceRowDetail}
+              />
+            </div>
+          ) : isPriceListRowDetailOpen && selectedPriceRowId ? (
+            <div className={styles.contractDetailPanel}>
+              <PriceListRowDetailView priceListId={selectedPriceListId} priceRowId={selectedPriceRowId} onClose={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}`)} />
             </div>
           ) : (
             <PriceListDetailView
               selectedPriceListId={selectedPriceListId}
               onOpenPriceRowDetail={openPriceRowDetail}
               onCreatePriceRow={openNewPriceRow}
+              onOpenPrislistekalkyl={openPrislistekalkyl}
             />
           )
         ) : isContractDetailOpen ? (
@@ -2368,9 +2765,339 @@ export default function Home() {
               onOpenAvropsrad={openAvropsradDetail}
             />
           )
-        ) : isKlarSokPage ? (
-          <div className={styles.contractDetailPanel}>
-            <KlarSokView />
+        ) : isSaljstodPage ? (
+          <div style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: "column", overflow: "hidden" }}>
+            <SearchFiltersPanel
+              textFields={customerTextSearchFields}
+              selectFields={customerSelectSearchFields}
+              checkboxFields={customerCheckboxSearchFields}
+              allTextFields={allCustomerTextSearchFields}
+              allSelectFields={allCustomerSelectSearchFields}
+              allCheckboxFields={allCustomerCheckboxSearchFields}
+              values={customerSearchValues as Record<string, string | boolean>}
+              globalSearchValue={customerGlobalSearchValue}
+              isMenuOpen={isCustomerSearchMenuOpen}
+              draftFields={draftCustomerSearchFields}
+              searchButtonRef={customerSearchButtonRef}
+              searchMenuRef={customerSearchMenuRef}
+              defaultActivePresetIndex={0}
+              getSelectOptions={(key) => getCustomerSelectOptions(key as CustomerSearchFieldKey)}
+              useAdvancedFilterLayout
+              hideGlobalSearch
+              fieldSets={[
+                {
+                  label: "Allmänt",
+                  fields: [
+                    { key: "enhet", label: "Enhet", control: "select", options: ["Bolag A", "Bolag B", "Bolag C"] },
+                    { key: "lagerstalle", label: "Lagerställe", control: "select", options: ["Lager 1", "Lager 2", "Lager 3"] },
+                    { key: "tradslag", label: "Trädslag", control: "select", options: ["Gran", "Furu"] },
+                    { key: "aktTjocklek", label: "Akt tjocklek", control: "text", nomToggle: true, nomGroup: "tjocklekBredd" },
+                    { key: "aktBredd", label: "Akt bredd", control: "text", nomToggle: true, nomGroup: "tjocklekBredd" },
+                    { key: "kvalitet", label: "Kvalitet", control: "select", options: ["O/S", "C16", "C24", "NOBB", "Finsåg"] },
+                    { key: "kvalitetsgrupp", label: "Kvalitetsgrupp", control: "select", options: ["KG1", "KG2", "KG3"] },
+                    { key: "artNr", label: "ArtNr", control: "select", options: ["22120", "22121", "22122", "22123", "22124", "22125", "22126"] },
+                    { key: "veckaFran", label: "Vecka från", control: "text" },
+                    { key: "veckaTill", label: "Vecka till", control: "text" },
+                    { key: "kund", label: "Kund", control: "select", options: ["Acme AB", "Globex Corp", "Initech HB", "Nordic Sten & Mark AB", "Luna Infrastruktur AB", "Skandinavisk Industriservice"] },
+                    { key: "kontraktNr", label: "KontraktNr", control: "text" },
+                    { key: "avropNr", label: "AvropNr", control: "text" },
+                    { key: "extAvropNr", label: "Ext. AvropNr", control: "text" },
+                    { key: "avropsradNr", label: "Avroprad nr", control: "text" },
+                    { key: "typ", label: "Typ", control: "select", options: ["Kontrakt och avrop", "Kontrakt", "Avrop"] },
+                    { key: "_div1", control: "divider" },
+                    { key: "produkttypML", label: "ML", control: "checkbox-tri", sectionLabel: "Produkttyp" },
+                    { key: "produkttypFL", label: "FL", control: "checkbox-tri" },
+                    { key: "produkttypVFL", label: "VFL", control: "checkbox-tri" },
+                    { key: "_div2", control: "divider" },
+                    { key: "salesPlanned", label: "Sales planned", control: "checkbox", sectionLabel: "Avropsradstatus" },
+                    { key: "customerPlanned", label: "Customer planned", control: "checkbox" },
+                    { key: "loadPlanned", label: "Load planned", control: "checkbox" },
+                  ],
+                },
+                {
+                  label: "Övrigt",
+                  fields: [
+                    { key: "tradslag2", label: "Trädslag", control: "select", options: ["Gran", "Furu"] },
+                    { key: "aktTjocklek2", label: "Akt tjocklek", control: "text" },
+                    { key: "aktBredd2", label: "Akt bredd", control: "text" },
+                    { key: "hyvelprofil", label: "Hyvelprofil", control: "select", options: ["Aktiv", "Inaktiv", "Alla"] },
+                    { key: "impregnering", label: "Impregnering", control: "select", options: ["NTR A", "NTR AB", "NTR B", "Ingen"] },
+                    { key: "malning", label: "Målning", control: "select", options: ["Röd", "Grön", "Ofärgad"] },
+                    { key: "pakettyp2", label: "Pakettyp", control: "select", options: ["Lp", "Pk"] },
+                    { key: "fuktkvot", label: "Fuktkvot", control: "select", options: ["Torr", "Grön"] },
+                    { key: "sagsatt", label: "Sågsätt", control: "select", options: ["Sågat", "Hyvlat", "Kluvet"] },
+                    { key: "extra", label: "Extra", control: "select", options: ["Alt 1", "Alt 2", "Alt 3"] },
+                  ],
+                },
+              ]}
+              onOpenMenu={openCustomerSearchMenu}
+              onCancelMenu={cancelCustomerSearchFieldChanges}
+              onToggleFieldVisibility={(key) => toggleCustomerSearchFieldVisibility(key as CustomerSearchFieldKey)}
+              onToggleFieldFavorite={(key) => toggleCustomerSearchFieldFavorite(key as CustomerSearchFieldKey)}
+              onSaveFavoriteKeys={saveCustomerFavoriteKeys}
+              onSaveMenu={saveCustomerSearchFieldChanges}
+              onClearMenu={clearCustomerSearchFieldChanges}
+              onClearValues={clearCustomerSearchValues}
+              onGlobalSearchChange={setCustomerGlobalSearchValue}
+              onTextChange={(key, value) => setCustomerSearchValues((prev) => ({ ...prev, [key]: value }))}
+              onSelectChange={(key, value) => setCustomerSearchValues((prev) => ({ ...prev, [key]: value }))}
+              onCheckboxChange={(key, checked) => setCustomerSearchValues((prev) => ({ ...prev, [key]: checked }))}
+            />
+            <div style={{ padding: "0 10px" }}>
+              <div className={styles.contractMudTabBar}>
+                <button
+                  type="button"
+                  className={`${styles.contractMudTabItem} ${saljstodTab === "lager" ? styles.contractMudTabItemActive : ""}`}
+                  onClick={() => setSaljstodTab("lager")}
+                >
+                  Lager
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.contractMudTabItem} ${saljstodTab === "avrop" ? styles.contractMudTabItemActive : ""}`}
+                  onClick={() => setSaljstodTab("avrop")}
+                >
+                  Avrop
+                </button>
+              </div>
+            </div>
+            {saljstodTab === "lager" && (
+              <div className={styles.freightTabContent}>
+                <div className={styles.lagerFilterBar} style={{ paddingBottom: 0 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    color="inherit"
+                    className={styles.lineItemsToggleButton}
+                    onClick={() => navigateWithLoading("/marknad/leveranslista")}
+                  >
+                    Till lagerlista
+                  </Button>
+                  <div style={{ flex: 1 }} />
+                  <label className={styles.lagerFilterCheckboxLabel}>
+                    <Checkbox
+                      size="small"
+                      checked={lagerVisaTommaRader}
+                      onChange={(e) => setLagerVisaTommaRader(e.target.checked)}
+                    />
+                    <span className={styles.lagerFilterCheckboxText}>Visa tomma rader</span>
+                  </label>
+                  <div className={styles.lagerFilterDivider} />
+                  <div className={styles.lagerFilterGroup}>
+                    <span className={styles.lagerFilterLabel}>Kontraktsvolym</span>
+                    <TextField
+                      size="small"
+                      placeholder="Från"
+                      value={lagerKontraktsvolymFran}
+                      onChange={(e) => setLagerKontraktsvolymFran(e.target.value)}
+                      className={styles.lagerFilterRangeInput}
+                    />
+                    <span className={styles.lagerFilterSeparator}>–</span>
+                    <TextField
+                      size="small"
+                      placeholder="Till"
+                      value={lagerKontraktsvolymTill}
+                      onChange={(e) => setLagerKontraktsvolymTill(e.target.value)}
+                      className={styles.lagerFilterRangeInput}
+                    />
+                  </div>
+                  <div className={styles.lagerFilterDivider} />
+                  <div className={styles.lagerFilterGroup}>
+                    <span className={styles.lagerFilterLabel}>Avropsvolym</span>
+                    <TextField
+                      size="small"
+                      placeholder="Från"
+                      value={lagerAvropsvolymFran}
+                      onChange={(e) => setLagerAvropsvolymFran(e.target.value)}
+                      className={styles.lagerFilterRangeInput}
+                    />
+                    <span className={styles.lagerFilterSeparator}>–</span>
+                    <TextField
+                      size="small"
+                      placeholder="Till"
+                      value={lagerAvropsvolymTill}
+                      onChange={(e) => setLagerAvropsvolymTill(e.target.value)}
+                      className={styles.lagerFilterRangeInput}
+                    />
+                  </div>
+                  <div className={styles.lagerFilterDivider} />
+                  <div className={styles.lagerFilterGroup}>
+                    <span className={styles.lagerFilterLabel}>Färdiglagervolym</span>
+                    <TextField
+                      size="small"
+                      placeholder="Från"
+                      value={lagerFardiglagervolymFran}
+                      onChange={(e) => setLagerFardiglagervolymFran(e.target.value)}
+                      className={styles.lagerFilterRangeInput}
+                    />
+                    <span className={styles.lagerFilterSeparator}>–</span>
+                    <TextField
+                      size="small"
+                      placeholder="Till"
+                      value={lagerFardiglagervolymTill}
+                      onChange={(e) => setLagerFardiglagervolymTill(e.target.value)}
+                      className={styles.lagerFilterRangeInput}
+                    />
+                  </div>
+                </div>
+                <div className={styles.freightSection}>
+                  <div className={styles.lineItemsTableFrame}>
+                    <div className={styles.freightTableWrap}>
+                      <div className={styles.freightTable}>
+                        <DataTable
+                          variant="main"
+                          fillRemainingSpace
+                          columns={LAGER_COLUMNS}
+                          rows={filteredLagerRows}
+                          rowKey={(_row, index) => `lager-${index}`}
+                          selectedRowIndex={selectedLagerRow}
+                          onRowClick={(index) => setSelectedLagerRow((prev) => (prev === index ? null : index))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ overflowX: "auto", border: "1px solid #dfe3ea", borderRadius: 8, background: "#ffffff", flexShrink: 0 }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
+                    <thead>
+                      <tr>
+                        {(["Typ", "Enhet", "Summa", "Övr", "Fix", ...LAGER_LENGTHS] as string[]).map((col, i) => (
+                          <th key={`lager-detail-th-${i}`} style={{
+                            padding: "7px 10px",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: "#6a7483",
+                            background: "#f4f6fb",
+                            borderBottom: "1px solid #e2e6ee",
+                            whiteSpace: "nowrap",
+                            textAlign: i === 0 ? "left" : "right",
+                          }}>
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lagerDetailRows.map((row, i) => (
+                        <tr key={`lager-detail-row-${i}`} style={{ background: i % 2 === 0 ? "#ffffff" : "#fafbfd" }}>
+                          <td style={{ padding: "6px 10px", fontSize: 12, color: "#404753", borderBottom: "1px solid #eef1f6", whiteSpace: "nowrap", fontWeight: 600 }}>{row.typ}</td>
+                          <td style={{ padding: "6px 10px", fontSize: 12, color: "#6a7483", borderBottom: "1px solid #eef1f6", whiteSpace: "nowrap", textAlign: "right" }}>{row.enhet}</td>
+                          <td style={{ padding: "6px 10px", fontSize: 12, color: "#404753", borderBottom: "1px solid #eef1f6", whiteSpace: "nowrap", textAlign: "right", fontWeight: 600 }}>{row.summa}</td>
+                          <td style={{ padding: "6px 10px", fontSize: 12, color: "#404753", borderBottom: "1px solid #eef1f6", whiteSpace: "nowrap", textAlign: "right" }}>{row.ovr}</td>
+                          <td style={{ padding: "6px 10px", fontSize: 12, color: "#404753", borderBottom: "1px solid #eef1f6", whiteSpace: "nowrap", textAlign: "right" }}>{row.fix}</td>
+                          {LAGER_LENGTHS.map((len) => (
+                            <td key={`lager-detail-${i}-${len}`} style={{ padding: "6px 10px", fontSize: 12, color: "#404753", borderBottom: "1px solid #eef1f6", whiteSpace: "nowrap", textAlign: "right" }}>{row[len]}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            {saljstodTab === "avrop" && (
+              <div className={styles.freightTabContent}>
+                <ActionRow
+                  items={[
+                    { label: "Avropsrad", icon: <AddIcon fontSize="small" />, tone: "primary", enabled: selectedAvropRow !== null },
+                    { kind: "divider" },
+                    { label: "Lastorder", icon: <AddIcon fontSize="small" /> },
+                    { label: "Redigera lastorder", icon: <EditOutlinedIcon fontSize="small" />, enabled: selectedAvropRow !== null },
+                    { kind: "divider" },
+                    { label: "Avregistrera", enabled: selectedAvropRow !== null },
+                    { label: "Ändra status", enabled: selectedAvropRow !== null },
+                    { kind: "divider" },
+                    { label: "Till lagerlista" },
+                  ]}
+                  rightSlot={
+                    <>
+                      <label className={styles.lagerFilterCheckboxLabel}>
+                        <Checkbox
+                          size="small"
+                          checked={avropAvreg === "on"}
+                          indeterminate={avropAvreg === "indeterminate"}
+                          onChange={() => setAvropAvreg((prev) => prev === "off" ? "indeterminate" : prev === "indeterminate" ? "on" : "off")}
+                        />
+                        <span className={styles.lagerFilterCheckboxText}>Avreg</span>
+                      </label>
+                      <div className={styles.lagerFilterDivider} />
+                      <TextField
+                        size="small"
+                        label="Land"
+                        select
+                        value={avropLand}
+                        onChange={(e) => setAvropLand(e.target.value)}
+                        sx={{ minWidth: 160 }}
+                      >
+                        <MenuItem value="">Alla</MenuItem>
+                        <MenuItem value="SE">Sverige</MenuItem>
+                        <MenuItem value="NO">Norge</MenuItem>
+                        <MenuItem value="DK">Danmark</MenuItem>
+                        <MenuItem value="FI">Finland</MenuItem>
+                        <MenuItem value="DE">Tyskland</MenuItem>
+                        <MenuItem value="GB">Storbritannien</MenuItem>
+                      </TextField>
+                      <TextField
+                        size="small"
+                        label="Registrerad av"
+                        select
+                        value={avropRegistreradAv}
+                        onChange={(e) => setAvropRegistreradAv(e.target.value)}
+                        sx={{ minWidth: 180 }}
+                      >
+                        <MenuItem value="">Alla</MenuItem>
+                        <MenuItem value="anna">Anna Lindgren</MenuItem>
+                        <MenuItem value="bjorn">Björn Karlsson</MenuItem>
+                        <MenuItem value="cecilia">Cecilia Ström</MenuItem>
+                        <MenuItem value="david">David Eriksson</MenuItem>
+                      </TextField>
+                    </>
+                  }
+                />
+                <div className={styles.freightSection}>
+                  <div className={styles.lineItemsTableFrame}>
+                    <div className={styles.freightTableWrap}>
+                      <div className={styles.freightTable}>
+                        <DataTable
+                          variant="main"
+                          fillRemainingSpace
+                          columns={AVROP_COLUMNS}
+                          rows={AVROP_ROWS}
+                          rowKey={(_row, index) => `avrop-${index}`}
+                          selectedRowIndex={selectedAvropRow}
+                          onRowClick={(index) => setSelectedAvropRow((prev) => (prev === index ? null : index))}
+                          renderCell={(row, column) => {
+                            if (column.key === "kontraktsNr") {
+                              return (
+                                <button
+                                  type="button"
+                                  className={styles.contractLinkButton}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {row.kontraktsNr}
+                                </button>
+                              );
+                            }
+                            if (column.key === "avropradNr" && row.avropradNr) {
+                              return (
+                                <button
+                                  type="button"
+                                  className={styles.contractLinkButton}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {row.avropradNr}
+                                </button>
+                              );
+                            }
+                            return row[column.key as keyof AvropRow];
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : isSystemPage ? (
           <div className={styles.contractDetailPanel}>

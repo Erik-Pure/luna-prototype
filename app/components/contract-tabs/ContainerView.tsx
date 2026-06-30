@@ -10,7 +10,7 @@ import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import LabelOutlinedIcon from "@mui/icons-material/LabelOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
-import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, MenuItem, Select, Snackbar, TextField, Tooltip, Typography } from "@mui/material";
+import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, MenuItem, Select, Snackbar, Table, TableBody, TableCell, TableHead, TableRow, TextField, Tooltip, Typography } from "@mui/material";
 import { Fragment, useMemo, useState } from "react";
 import { ActionRow } from "../shared/ActionRow";
 import { DataTable } from "../shared/DataTable";
@@ -54,7 +54,7 @@ const INITIAL_VOLYM_ROWS: ContainerVolymRow[] = [
   { enhet: "BP Hammerdal Byggprodukter", artNr: "22123", fakturatext: "45x145 Konstruktionsvirke", pakettyp: "Paket", volym: "96", volymIContainer: "48", delAvContainer: "false" },
   { enhet: "BP Hissmofors Byggprodukter", artNr: "22122", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "12", volymIContainer: "48", delAvContainer: "false" },
   { enhet: "BP Hissmofors Byggprodukter", artNr: "22124", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "18", volymIContainer: "48", delAvContainer: "false" },
-  { enhet: "NT Kåge Såg", artNr: "22125", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "24", volymIContainer: "48", delAvContainer: "false" },
+  { enhet: "NT Kåge Såg", artNr: "22125", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "24", volymIContainer: "48", delAvContainer: "true" },
   { enhet: "NT Kåge Såg", artNr: "22126", fakturatext: "22x95 Gran Ytterpanel", pakettyp: "Lp", volym: "12", volymIContainer: "48", delAvContainer: "false" },
 ];
 
@@ -88,6 +88,7 @@ export function ContainerView({ onBack }: ContainerViewProps) {
   const [kundmarkeDialogOpen, setKundmarkeDialogOpen] = useState(false);
   const [kundmarkeDraft, setKundmarkeDraft] = useState("");
   const [raderaDialogOpen, setRaderaDialogOpen] = useState(false);
+  const [delAvSammanfattningOpen, setDelAvSammanfattningOpen] = useState(false);
 
   // ── Volym tab ────────────────────────────────────────────────────────────────
 
@@ -197,6 +198,21 @@ export function ContainerView({ onBack }: ContainerViewProps) {
   };
 
   const canSamfrakta = selectedOriginalIndices.size > 1;
+
+  const delAvSammanfattning = useMemo(() => {
+    const map = new Map<string, { volym125: number; volymTP: number; volymOvriga: number }>();
+    rows.filter((r) => r.delAvContainer === "true").forEach((r) => {
+      const bolag = r.enhet;
+      if (!map.has(bolag)) map.set(bolag, { volym125: 0, volymTP: 0, volymOvriga: 0 });
+      const entry = map.get(bolag)!;
+      const vol = parseFloat(r.volymIContainer) || 0;
+      const nr = parseInt(r.artNr);
+      if (nr % 3 === 0) entry.volym125 += vol;
+      else if (nr % 3 === 1) entry.volymTP += vol;
+      else entry.volymOvriga += vol;
+    });
+    return Array.from(map.entries()).map(([bolag, vols]) => ({ bolag, ...vols }));
+  }, [rows]);
 
   const containerActionItems = [
     {
@@ -329,9 +345,6 @@ export function ContainerView({ onBack }: ContainerViewProps) {
               renderCell={(row, column, rowIndex) => {
                 const r = row as ContainerVolymRow;
                 if (column.key === "volymIContainer") {
-                  const volym = parseFloat(r.volym);
-                  const vic = parseFloat(r.volymIContainer);
-                  const showWarning = !isNaN(volym) && !isNaN(vic) && Math.abs(vic - volym) > 1;
                   return (
                     <TextField
                       size="small"
@@ -340,17 +353,6 @@ export function ContainerView({ onBack }: ContainerViewProps) {
                       onClick={(e) => e.stopPropagation()}
                       variant="outlined"
                       className={styles.containerViewCellInput}
-                      slotProps={showWarning ? {
-                        input: {
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <Tooltip title={`Avviker från volym (${r.volym})`}>
-                                <WarningIcon sx={{ fontSize: 16, color: "#e6a817" }} />
-                              </Tooltip>
-                            </InputAdornment>
-                          ),
-                        },
-                      } : undefined}
                     />
                   );
                 }
@@ -378,6 +380,16 @@ export function ContainerView({ onBack }: ContainerViewProps) {
             <div className={styles.paketbokningFooterItem}>
               <span className={styles.paketbokningFooterLabel}>Volym i container</span>
               <span className={styles.paketbokningFooterValue}>{totalVolymIContainer.toFixed(2)} m³</span>
+            </div>
+            <div className={styles.paketbokningFooterItem}>
+              <span className={styles.paketbokningFooterLabel}>Del av container</span>
+              <button
+                type="button"
+                onClick={() => setDelAvSammanfattningOpen(true)}
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, color: "#c47900", textDecoration: "underline" }}
+              >
+                Visa sammanfattning
+              </button>
             </div>
           </div>
         </div>
@@ -606,6 +618,50 @@ export function ContainerView({ onBack }: ContainerViewProps) {
           </Button>
           <Button size="small" className={styles.freightCancelButton} onClick={() => setKundmarkeDialogOpen(false)}>
             Avbryt
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={delAvSammanfattningOpen}
+        onClose={() => setDelAvSammanfattningOpen(false)}
+        maxWidth="md"
+        fullWidth
+        classes={{ paper: styles.freightDialogPaper }}
+      >
+        <DialogTitle className={styles.freightDialogTitle}>
+          <div className={styles.freightDialogTitleRow}>
+            <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Sammanfattning – Del av container</Typography>
+            <IconButton size="small" onClick={() => setDelAvSammanfattningOpen(false)} style={{ color: "#6a7483" }}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </div>
+        </DialogTitle>
+        <DialogContent className={styles.freightDialogContent}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Bolag</TableCell>
+                <TableCell align="right">Volym 125</TableCell>
+                <TableCell align="right">Volym TP</TableCell>
+                <TableCell align="right">Volym övriga</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {delAvSammanfattning.map((row) => (
+                <TableRow key={row.bolag}>
+                  <TableCell>{row.bolag}</TableCell>
+                  <TableCell align="right">{row.volym125 > 0 ? `${row.volym125} m³` : "–"}</TableCell>
+                  <TableCell align="right">{row.volymTP > 0 ? `${row.volymTP} m³` : "–"}</TableCell>
+                  <TableCell align="right">{row.volymOvriga > 0 ? `${row.volymOvriga} m³` : "–"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions className={styles.freightDialogActions}>
+          <Button size="small" variant="outlined" onClick={() => setDelAvSammanfattningOpen(false)} className={styles.bytPrislistaAvbrytButton}>
+            Stäng
           </Button>
         </DialogActions>
       </Dialog>

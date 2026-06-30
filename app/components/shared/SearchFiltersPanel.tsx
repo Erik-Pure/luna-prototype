@@ -5,8 +5,9 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import SearchIcon from "@mui/icons-material/Search";
-import { Button, Checkbox, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
-import { useState, type RefObject } from "react";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import { Button, Checkbox, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, Tooltip, Typography } from "@mui/material";
+import { useState, type ReactNode, type RefObject } from "react";
 import styles from "../../page.module.scss";
 
 type SearchFieldConfig = {
@@ -14,6 +15,22 @@ type SearchFieldConfig = {
   label: string;
   control: "text" | "date" | "select" | "checkbox";
 };
+
+type FieldSetField = {
+  key: string;
+  label?: string;
+  nomLabel?: string;
+  control: "text" | "select" | "checkbox" | "checkbox-tri" | "divider";
+  options?: string[];
+  tableOptions?: Array<{ code: string; label: string }>;
+  syncTo?: string;
+  nomToggle?: boolean;
+  nomGroup?: string;
+  sectionLabel?: string;
+  dividerLabel?: string;
+};
+
+type FieldSet = { label: string; fields: FieldSetField[] };
 
 type SearchFiltersPanelProps = {
   textFields: SearchFieldConfig[];
@@ -32,6 +49,8 @@ type SearchFiltersPanelProps = {
   searchMenuRef: RefObject<HTMLDivElement | null>;
   getSelectOptions: (key: string) => string[];
   useAdvancedFilterLayout?: boolean;
+  fieldSets?: FieldSet[];
+  defaultActivePresetIndex?: number;
   onOpenMenu: () => void;
   onCancelMenu: () => void;
   onToggleFieldVisibility: (key: string) => void;
@@ -43,6 +62,7 @@ type SearchFiltersPanelProps = {
   onTextChange: (key: string, value: string) => void;
   onSelectChange: (key: string, value: string) => void;
   onCheckboxChange: (key: string, checked: boolean) => void;
+  sidePanel?: ReactNode;
 };
 
 export function SearchFiltersPanel({
@@ -62,6 +82,8 @@ export function SearchFiltersPanel({
   searchMenuRef,
   getSelectOptions,
   useAdvancedFilterLayout = false,
+  fieldSets,
+  defaultActivePresetIndex,
   onOpenMenu,
   onCancelMenu,
   onToggleFieldVisibility,
@@ -72,10 +94,13 @@ export function SearchFiltersPanel({
   onClearValues,
   onTextChange,
   onSelectChange,
-  onCheckboxChange
+  onCheckboxChange,
+  sidePanel
 }: SearchFiltersPanelProps) {
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [isEditingFavorites, setIsEditingFavorites] = useState(false);
+  const [activePresetIndex, setActivePresetIndex] = useState<number | null>(defaultActivePresetIndex ?? null);
+  const [presetValues, setPresetValues] = useState<Record<number, Record<string, string | boolean>>>({});
   const [editFavoriteKeys, setEditFavoriteKeys] = useState<string[]>([]);
   const [draggedFavoriteKey, setDraggedFavoriteKey] = useState<string | null>(null);
   const [dropTargetFavoriteKey, setDropTargetFavoriteKey] = useState<string | null>(null);
@@ -88,6 +113,8 @@ export function SearchFiltersPanel({
     const advancedCheckboxFields = allCheckboxFields ?? checkboxFields;
     const favoriteFieldKeys = new Set(draftFields.filter((field) => field.favorite).map((field) => field.key));
 
+    const activePreset = activePresetIndex !== null && fieldSets ? fieldSets[activePresetIndex] : null;
+
     const favoriteTextFields = advancedTextFields.filter((field) => favoriteFieldKeys.has(field.key));
     const favoriteSelectFields = advancedSelectFields.filter((field) => favoriteFieldKeys.has(field.key));
     const favoriteCheckboxFields = advancedCheckboxFields.filter((field) => favoriteFieldKeys.has(field.key));
@@ -96,10 +123,11 @@ export function SearchFiltersPanel({
     const moreCheckboxFields = advancedCheckboxFields.filter((field) => !favoriteFieldKeys.has(field.key));
     const sortedMoreNonCheckboxFields = [...moreTextFields, ...moreSelectFields].sort(compareByLabel);
     const sortedMoreCheckboxFields = [...moreCheckboxFields].sort(compareByLabel);
-    const hasMoreFilters =
-      moreTextFields.length > 0 || moreSelectFields.length > 0 || moreCheckboxFields.length > 0;
-    const hasFavorites =
-      favoriteTextFields.length > 0 || favoriteSelectFields.length > 0 || favoriteCheckboxFields.length > 0;
+
+    const hasMoreFilters = activePreset
+      ? activePreset.fields.length > 4
+      : (moreTextFields.length > 0 || moreSelectFields.length > 0 || moreCheckboxFields.length > 0);
+    const hasFavorites = !activePreset && (favoriteTextFields.length > 0 || favoriteSelectFields.length > 0 || favoriteCheckboxFields.length > 0);
     const allFields = [...advancedTextFields, ...advancedSelectFields, ...advancedCheckboxFields];
     const sortedAllFields = [...allFields].sort(compareByLabel);
 
@@ -156,13 +184,201 @@ export function SearchFiltersPanel({
       });
     };
 
+    const renderPresetFields = (fields: FieldSetField[], presetIndex: number) => {
+      type Segment =
+        | { type: "grid"; fields: FieldSetField[] }
+        | { type: "divider"; label?: string }
+        | { type: "checkboxes"; sectionLabel?: string; fields: FieldSetField[] };
+
+      const segments: Segment[] = [];
+      let currentGrid: FieldSetField[] | null = null;
+      let currentCheckboxes: { sectionLabel?: string; fields: FieldSetField[] } | null = null;
+
+      const flushGrid = () => {
+        if (currentGrid && currentGrid.length > 0) segments.push({ type: "grid", fields: currentGrid });
+        currentGrid = null;
+      };
+      const flushCheckboxes = () => {
+        if (currentCheckboxes && currentCheckboxes.fields.length > 0) segments.push({ type: "checkboxes", ...currentCheckboxes });
+        currentCheckboxes = null;
+      };
+
+      for (const field of fields) {
+        if (field.control === "divider") {
+          flushGrid(); flushCheckboxes();
+          segments.push({ type: "divider", label: field.dividerLabel });
+        } else if (field.control === "text" || field.control === "select") {
+          flushCheckboxes();
+          if (!currentGrid) currentGrid = [];
+          currentGrid.push(field);
+        } else {
+          flushGrid();
+          if (!currentCheckboxes || field.sectionLabel) {
+            flushCheckboxes();
+            currentCheckboxes = { sectionLabel: field.sectionLabel, fields: [] };
+          }
+          currentCheckboxes.fields.push(field);
+        }
+      }
+      flushGrid(); flushCheckboxes();
+
+      return (
+        <>
+          {segments.map((seg, si) => {
+            if (seg.type === "divider") {
+              return seg.label ? (
+                <div key={`div-${si}`} style={{ display: "flex", alignItems: "center", gap: 8, margin: "4px 0" }}>
+                  <hr className={styles.advancedFiltersDivider} style={{ flex: 1, margin: 0 }} />
+                  <Typography style={{ fontSize: 11, fontWeight: 600, color: "#6a7585", whiteSpace: "nowrap" }}>{seg.label}</Typography>
+                  <hr className={styles.advancedFiltersDivider} style={{ flex: 1, margin: 0 }} />
+                </div>
+              ) : (
+                <hr key={`div-${si}`} className={styles.advancedFiltersDivider} />
+              );
+            }
+            if (seg.type === "grid") {
+              return (
+                <div key={`grid-${si}`} className={styles.advancedFiltersGrid}>
+                  {seg.fields.map((field) => {
+                    const nomKey = `${field.nomGroup ?? field.key}_nom`;
+                    const isNom = field.nomToggle && Boolean(presetValues[presetIndex]?.[nomKey]);
+                    const activeLabel = isNom ? (field.nomLabel ?? field.label?.replace(/^Akt /, "Nom ")) : field.label;
+                    const input = field.control === "text" ? (
+                      <TextField
+                        key={field.key}
+                        size="small"
+                        label={activeLabel}
+                        className={styles.searchFieldControl}
+                        style={field.nomToggle ? { flex: 1, minWidth: 0 } : undefined}
+                        value={String(presetValues[presetIndex]?.[field.key] ?? "")}
+                        onChange={(e) => setPresetValues((prev) => ({
+                          ...prev,
+                          [presetIndex]: { ...prev[presetIndex], [field.key]: e.target.value },
+                        }))}
+                      />
+                    ) : (
+                      <FormControl key={field.key} size="small" className={styles.searchFieldControl} style={field.nomToggle ? { flex: 1, minWidth: 0 } : undefined}>
+                        <InputLabel>{activeLabel}</InputLabel>
+                        <Select
+                          value={String(presetValues[presetIndex]?.[field.key] ?? "")}
+                          label={activeLabel}
+                          onChange={(e) => setPresetValues((prev) => ({
+                            ...prev,
+                            [presetIndex]: {
+                              ...prev[presetIndex],
+                              [field.key]: e.target.value,
+                              ...(field.syncTo ? { [field.syncTo]: e.target.value } : {}),
+                            },
+                          }))}
+                          IconComponent={KeyboardArrowDownIcon}
+                        >
+                          <MenuItem value="">-</MenuItem>
+                          {field.tableOptions
+                            ? field.tableOptions.map((opt) => (
+                              <MenuItem key={opt.code} value={opt.code}>
+                                <span style={{ display: "inline-block", minWidth: 24, color: "#6a7585", fontVariantNumeric: "tabular-nums", marginRight: 8 }}>{opt.code}</span>
+                                {opt.label}
+                              </MenuItem>
+                            ))
+                            : (field.options ?? []).map((opt) => (
+                              <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                            ))}
+                        </Select>
+                      </FormControl>
+                    );
+                    if (!field.nomToggle) return input;
+                    return (
+                      <div key={field.key} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <Tooltip title={isNom ? "Växla till Akt" : "Växla till Nom"} placement="top">
+                          <IconButton
+                            size="small"
+                            onClick={() => setPresetValues((prev) => ({
+                              ...prev,
+                              [presetIndex]: { ...prev[presetIndex], [nomKey]: !isNom },
+                            }))}
+                            className={styles.lineItemFieldActionButton}
+                            aria-label={isNom ? "Växla till Akt" : "Växla till Nom"}
+                          >
+                            <SwapHorizIcon sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Tooltip>
+                        {input}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            }
+            // checkboxes
+            const triCycle = (cur: unknown) => cur === true ? false : cur === false ? null : true;
+            return (
+              <div key={`cb-${si}`}>
+                {seg.sectionLabel ? (
+                  <Typography style={{ fontSize: 11, fontWeight: 600, color: "#6a7585", marginBottom: 4 }}>{seg.sectionLabel}</Typography>
+                ) : null}
+                <div className={styles.advancedCheckboxWrap}>
+                  {seg.fields.map((field) => {
+                    if (field.control === "checkbox-tri") {
+                      const val = presetValues[presetIndex]?.[field.key];
+                      const isChecked = val === true;
+                      const isIndet = val === false;
+                      return (
+                        <label key={field.key} className={styles.searchCheckboxItem} style={{ cursor: "pointer" }} onClick={() => setPresetValues((prev) => ({
+                          ...prev,
+                          [presetIndex]: { ...prev[presetIndex], [field.key]: triCycle(prev[presetIndex]?.[field.key]) },
+                        }))}>
+                          <Checkbox
+                            size="small"
+                            checked={isChecked}
+                            indeterminate={isIndet}
+                            readOnly
+                          />
+                          <Typography className={styles.searchCheckboxLabel}>{field.label}</Typography>
+                        </label>
+                      );
+                    }
+                    return (
+                      <label key={field.key} className={styles.searchCheckboxItem}>
+                        <Checkbox
+                          size="small"
+                          checked={Boolean(presetValues[presetIndex]?.[field.key])}
+                          onChange={(e) => setPresetValues((prev) => ({
+                            ...prev,
+                            [presetIndex]: { ...prev[presetIndex], [field.key]: e.target.checked },
+                          }))}
+                        />
+                        <Typography className={styles.searchCheckboxLabel}>{field.label}</Typography>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </>
+      );
+    };
+
     return (
       <div className={styles.filterRow}>
         <div className={styles.advancedSearchPanel}>
           <div className={styles.advancedFiltersContainer} ref={searchMenuRef}>
-            <div className={`${styles.advancedFiltersHeader} ${hideGlobalSearch && !isEditingFavorites ? styles.advancedFiltersHeaderCompact : ""}`}>
+            <div className={`${styles.advancedFiltersHeader} ${hideGlobalSearch && !isEditingFavorites && !(fieldSets && fieldSets.length > 0) ? styles.advancedFiltersHeaderCompact : ""}`}>
 
-              {isEditingFavorites ? null : hideGlobalSearch ? null : (
+              {isEditingFavorites ? null : fieldSets && fieldSets.length > 0 ? (
+                <div className={styles.advancedFiltersPresets}>
+                  {fieldSets.map((fs, i) => (
+                    <button
+                      key={fs.label}
+                      type="button"
+                      className={`${styles.advancedFiltersPresetBtn} ${activePresetIndex === i ? styles.advancedFiltersPresetBtnActive : ""}`}
+                      onClick={() => setActivePresetIndex((prev) => (defaultActivePresetIndex !== undefined || prev !== i) ? i : null)}
+                    >
+                      {fs.label}
+                    </button>
+                  ))}
+                </div>
+              ) : hideGlobalSearch ? null : (
                 <TextField
                   size="small"
                   placeholder="Sök..."
@@ -298,6 +514,16 @@ export function SearchFiltersPanel({
                   </div>
                 </div>
               </>
+            ) : activePreset && activePresetIndex !== null ? (
+              <div className={styles.advancedFiltersBody}>
+                {renderPresetFields(activePreset.fields.slice(0, 4), activePresetIndex)}
+                {showMoreFilters && activePreset.fields.length > 4 ? (
+                  <>
+                    <hr className={styles.advancedFiltersDivider} />
+                    {renderPresetFields(activePreset.fields.slice(4), activePresetIndex)}
+                  </>
+                ) : null}
+              </div>
             ) : (
               <>
                 <div className={styles.advancedFiltersBody}>
@@ -320,7 +546,6 @@ export function SearchFiltersPanel({
                         onChange={(event) => onTextChange(field.key, event.target.value)}
                       />
                     ))}
-
                     {favoriteSelectFields.map((field) => (
                       <FormControl key={field.key} size="small" className={styles.searchFieldControl}>
                         <InputLabel>{field.label}</InputLabel>
@@ -332,9 +557,7 @@ export function SearchFiltersPanel({
                         >
                           <MenuItem value="">-</MenuItem>
                           {getSelectOptions(field.key).map((option) => (
-                            <MenuItem key={`${field.key}-${option}`} value={option}>
-                              {option}
-                            </MenuItem>
+                            <MenuItem key={`${field.key}-${option}`} value={option}>{option}</MenuItem>
                           ))}
                         </Select>
                       </FormControl>
@@ -383,16 +606,13 @@ export function SearchFiltersPanel({
                               >
                                 <MenuItem value="">-</MenuItem>
                                 {getSelectOptions(field.key).map((option) => (
-                                  <MenuItem key={`${field.key}-${option}`} value={option}>
-                                    {option}
-                                  </MenuItem>
+                                  <MenuItem key={`${field.key}-${option}`} value={option}>{option}</MenuItem>
                                 ))}
                               </Select>
                             </FormControl>
                           )
                         )}
                       </div>
-
                       {sortedMoreCheckboxFields.length > 0 ? (
                         <div className={styles.advancedCheckboxWrap}>
                           {sortedMoreCheckboxFields.map((field) => (
@@ -410,11 +630,11 @@ export function SearchFiltersPanel({
                     </>
                   ) : null}
                 </div>
-
               </>
             )}
           </div>
         </div>
+        {sidePanel}
       </div>
     );
   }

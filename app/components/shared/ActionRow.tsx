@@ -53,7 +53,7 @@ export function ActionRow({ items, rightSlot }: ActionRowProps) {
         );
       })}
 
-      {rightSlot ? <div className={`${styles.rightControlRail} ${styles.rightControlGroup}`}>{rightSlot}</div> : null}
+      {rightSlot ? <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto", flexWrap: "wrap" }}>{rightSlot}</div> : null}
     </div>
   );
 }

@@ -208,7 +208,7 @@ export function ContractDetailView({
         <>
           <div className={styles.contractModernTopRow}>
             <div className={styles.contractModernTitleWrap}>
-              <Typography className={styles.contractModernTitle}>Kontrakt {selectedContractId}</Typography>
+              <Typography className={styles.contractModernTitle}>Kontrakt {selectedContractId} - {contractDetails.summary.customer}</Typography>
               {contractDetails.summary.warning ? (
                 <Chip
                   label={contractDetails.summary.warning}

@@ -3,6 +3,7 @@
 import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import FolderZipOutlinedIcon from "@mui/icons-material/FolderZipOutlined";
@@ -68,6 +69,7 @@ type UploadedFile = {
 type PriceListRowDetailViewProps = {
   priceListId: string;
   priceRowId: string;
+  onClose?: () => void;
 };
 
 const emptyDraft: PriceRowDraft = {
@@ -128,9 +130,11 @@ function getFileIcon(fileName: string) {
   }
 }
 
-export function PriceListRowDetailView({ priceRowId }: PriceListRowDetailViewProps) {
+export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDetailViewProps) {
   const isNewPriceRow = priceRowId === "new";
   const [draft, setDraft] = useState<PriceRowDraft>(isNewPriceRow ? emptyDraft : existingDraft);
+  const [savedDraft, setSavedDraft] = useState<PriceRowDraft>(isNewPriceRow ? emptyDraft : existingDraft);
+  const [isEditing, setIsEditing] = useState(isNewPriceRow);
   const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant", "dokument"]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -191,12 +195,40 @@ export function PriceListRowDetailView({ priceRowId }: PriceListRowDetailViewPro
           </Typography>
         </div>
         <div className={styles.contractModernTopActions}>
-          <Button className={styles.contractSaveButton} size="small">
-            {isNewPriceRow ? "Skapa prislistrad" : "Spara"}
-          </Button>
-          <Button className={styles.contractQuickActionButton} size="small">
-            Avbryt
-          </Button>
+          {isEditing ? (
+            <>
+              <Button
+                className={styles.contractSaveButton}
+                size="small"
+                onClick={() => { setSavedDraft(draft); setIsEditing(false); }}
+              >
+                {isNewPriceRow ? "Skapa prislistrad" : "Spara"}
+              </Button>
+              <Button
+                className={styles.contractQuickActionButton}
+                size="small"
+                onClick={() => { setDraft(savedDraft); setIsEditing(false); }}
+              >
+                Avbryt
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<EditOutlinedIcon fontSize="small" />}
+                onClick={() => setIsEditing(true)}
+              >
+                Redigera
+              </Button>
+              {onClose && (
+                <Button className={styles.contractQuickActionButton} size="small" onClick={onClose}>
+                  Stäng
+                </Button>
+              )}
+            </>
+          )}
         </div>
       </div>
 

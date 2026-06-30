@@ -57,9 +57,10 @@ const INITIAL_ROWS: PrislisteradRow[] = [
 type PrislisteraderTabProps = {
   onOpenPriceRowDetail: (priceRowId: string) => void;
   onCreatePriceRow: () => void;
+  onOpenPrislistekalkyl: () => void;
 };
 
-export function PrislisteraderTab({ onOpenPriceRowDetail, onCreatePriceRow }: PrislisteraderTabProps) {
+export function PrislisteraderTab({ onOpenPriceRowDetail, onCreatePriceRow, onOpenPrislistekalkyl }: PrislisteraderTabProps) {
   const [rows] = useState<PrislisteradRow[]>(INITIAL_ROWS);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -97,11 +98,11 @@ export function PrislisteraderTab({ onOpenPriceRowDetail, onCreatePriceRow }: Pr
             icon: <ContentCopyIcon fontSize="small" />,
             enabled: hasSelectedRow,
           },
+          { kind: "divider" },
           {
             label: "Prislistekalkyl",
-            enabled: hasSelectedRow,
+            onClick: onOpenPrislistekalkyl,
           },
-          { kind: "divider" },
           {
             label: "Import NOBB",
           },

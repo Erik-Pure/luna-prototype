@@ -3,6 +3,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import { IconButton } from "@mui/material";
 import { useState } from "react";
 import { ActionRow } from "../shared/ActionRow";
@@ -49,6 +50,23 @@ const COLUMNS = [
 let nextId = 3;
 
 const INITIAL_ROWS: KontaktpersonRow[] = [
+  {
+    _id: "0",
+    namn: "Leveransadress",
+    funktion: "",
+    telefon: "",
+    mobil: "",
+    epost: "",
+    kommentar: "",
+    adresstyp: "Leverans",
+    foretagsnamn: "Kund AB",
+    adress: "Industrivägen 5",
+    adress2: "",
+    postadress: "456 78 Göteborg",
+    land: "SE",
+    information: "",
+    utskick: "",
+  },
   {
     _id: "1",
     namn: "Anna Svensson",
@@ -134,6 +152,11 @@ const MOCK_KUND_ADRESSER: KundAdresser = {
 export function KontaktpersonerTab() {
   const [rows, setRows] = useState<KontaktpersonRow[]>(INITIAL_ROWS);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
+
+  const displayRows = [
+    ...rows.filter((r) => r.namn === "Leveransadress"),
+    ...rows.filter((r) => r.namn !== "Leveransadress"),
+  ];
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<KontaktpersonRow | null>(null);
 
@@ -168,12 +191,20 @@ export function KontaktpersonerTab() {
       <DataTable
         variant="main"
         columns={COLUMNS}
-        rows={rows}
+        rows={displayRows}
         rowKey={(row) => row._id}
         selectedRowIndex={selectedRowIndex}
         onRowClick={(i) => setSelectedRowIndex(i === selectedRowIndex ? null : i)}
         fillRemainingSpace
         renderCell={(row, column) => {
+          if (column.key === "namn" && row.namn === "Leveransadress") {
+            return (
+              <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <LocalShippingIcon sx={{ fontSize: 14, color: "#6a7483" }} />
+                {row.namn}
+              </span>
+            );
+          }
           if (column.key === "_actions") {
             return (
               <span className={styles.freightActionCell}>

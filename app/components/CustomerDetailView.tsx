@@ -467,24 +467,6 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Leveransadress</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField fullWidth size="small" label="Namn" value={draft.levNamn} onChange={(e) => set("levNamn", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" label="Adress" value={draft.levAdress1} onChange={(e) => set("levAdress1", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" label="Adress 2" value={draft.levAdress2} onChange={(e) => set("levAdress2", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" label="Postadress" value={draft.levPostadress} onChange={(e) => set("levPostadress", e.target.value)} />
-                    <TextField select fullWidth size="small" label="Land" value={draft.levLand} onChange={(e) => set("levLand", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="SE">SE — Sverige</MenuItem>
-                      <MenuItem value="NO">NO — Norge</MenuItem>
-                      <MenuItem value="FI">FI — Finland</MenuItem>
-                      <MenuItem value="DK">DK — Danmark</MenuItem>
-                      <MenuItem value="DE">DE — Tyskland</MenuItem>
-                      <MenuItem value="EE">EE — Estland</MenuItem>
-                    </TextField>
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
                   <Typography className={styles.contractSectionGroupLabel}>Kontakt</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Telefon" value={draft.telefon} onChange={(e) => set("telefon", e.target.value)} />

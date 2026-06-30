@@ -89,9 +89,10 @@ type PriceListDetailViewProps = {
   selectedPriceListId: string;
   onOpenPriceRowDetail: (priceRowId: string) => void;
   onCreatePriceRow: () => void;
+  onOpenPrislistekalkyl: () => void;
 };
 
-export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail, onCreatePriceRow }: PriceListDetailViewProps) {
+export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail, onCreatePriceRow, onOpenPrislistekalkyl }: PriceListDetailViewProps) {
   const [activeTab, setActiveTab] = useState<PriceListTab>("Prislisterader");
   const [draft, setDraft] = useState<PriceListDraft>({ ...MOCK_DRAFT, prislistenr: selectedPriceListId });
   const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
@@ -486,6 +487,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                 <PrislisteraderTab
                   onOpenPriceRowDetail={onOpenPriceRowDetail}
                   onCreatePriceRow={onCreatePriceRow}
+                  onOpenPrislistekalkyl={onOpenPrislistekalkyl}
                 />
               ) : null}
               {activeTab === "Frakt" ? <FraktTab /> : null}

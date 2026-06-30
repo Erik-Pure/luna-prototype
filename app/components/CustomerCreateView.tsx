@@ -211,9 +211,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
     draft.faktNamn !== "" &&
     draft.faktPostadress !== "" &&
     draft.faktLand !== "" &&
-    draft.levNamn !== "" &&
-    draft.levPostadress !== "" &&
-    draft.levLand !== "" &&
     draft.valuta !== "" &&
     draft.moms !== "" &&
     draft.betvillkor !== "" &&
@@ -579,30 +576,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                       label="Land *"
                       value={draft.faktLand}
                       onChange={(e) => update("faktLand", e.target.value)}
-                      className={styles.lineItemRequiredControl}
-                    >
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="SE">SE — Sverige</MenuItem>
-                      <MenuItem value="NO">NO — Norge</MenuItem>
-                      <MenuItem value="FI">FI — Finland</MenuItem>
-                      <MenuItem value="DK">DK — Danmark</MenuItem>
-                      <MenuItem value="DE">DE — Tyskland</MenuItem>
-                      <MenuItem value="EE">EE — Estland</MenuItem>
-                    </TextField>
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Leveransadress</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField fullWidth size="small" label="Namn *" value={draft.levNamn} onChange={(e) => update("levNamn", e.target.value)} style={{ gridColumn: "1 / -1" }} className={styles.lineItemRequiredControl} />
-                    <TextField fullWidth size="small" label="Adress" value={draft.levAdress1} onChange={(e) => update("levAdress1", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" label="Adress 2" value={draft.levAdress2} onChange={(e) => update("levAdress2", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" label="Postadress *" value={draft.levPostadress} onChange={(e) => update("levPostadress", e.target.value)} className={styles.lineItemRequiredControl} />
-                    <TextField
-                      select fullWidth size="small"
-                      label="Land *"
-                      value={draft.levLand}
-                      onChange={(e) => update("levLand", e.target.value)}
                       className={styles.lineItemRequiredControl}
                     >
                       <MenuItem value="">—</MenuItem>

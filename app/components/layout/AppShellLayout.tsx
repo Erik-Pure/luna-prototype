@@ -103,6 +103,7 @@ type AppShellLayoutProps = {
   returnLineItemId: string | null;
   lineItemDetailHref: string | null;
   isContainerRoute: boolean;
+  isPrislistekalkylRoute: boolean;
   children: ReactNode;
 };
 
@@ -156,6 +157,7 @@ export function AppShellLayout({
   returnLineItemId,
   lineItemDetailHref,
   isContainerRoute,
+  isPrislistekalkylRoute,
   children
 }: AppShellLayoutProps) {
   return (
@@ -353,7 +355,15 @@ export function AppShellLayout({
                   {currentMenuLabel}
                 </Typography>
                 <ChevronRightIcon className={styles.breadcrumbArrow} />
-                {isPriceListRowDetailOpen ? (
+                {isPrislistekalkylRoute ? (
+                  <>
+                    <Typography component={Link} href={priceListDetailHref ?? priceListHref} className={styles.breadcrumbLinkButton}>
+                      {`Prislista ${selectedPriceListId}`}
+                    </Typography>
+                    <ChevronRightIcon className={styles.breadcrumbArrow} />
+                    <Typography className={styles.breadcrumbActive}>Prislistekalkyl</Typography>
+                  </>
+                ) : isPriceListRowDetailOpen ? (
                   <>
                     <Typography component={Link} href={priceListDetailHref ?? priceListHref} className={styles.breadcrumbLinkButton}>
                       {selectedPriceListId === "new" ? "Ny prislista" : `Prislista ${selectedPriceListId}`}
