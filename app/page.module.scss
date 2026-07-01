@@ -1160,6 +1160,247 @@
   font-size: 11px;
 }
 
+.klarSokGridCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 34px;
+  border: 1px solid #e0e5ec;
+  border-radius: 6px;
+  padding: 0 6px 0 2px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.klarSokExactBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d0d5de;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: #6a7585;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+
+  &:hover {
+    background-color: #f4f6f9;
+    border-color: #b8bfcc;
+    color: #3d4554;
+  }
+}
+
+.klarSokExactBtnActive {
+  border-color: #c47900;
+  background-color: #fff3df;
+  color: #c47900;
+
+  &:hover {
+    background-color: #fdecc8;
+    border-color: #a36300;
+    color: #a36300;
+  }
+}
+
+/* ── Klar sök ─────────────────────────────────────────────────────────────────
+   Mapped to MudBlazor components:
+     Left panel  → MudTable (Dense, Hover, SelectedItem)
+     Right panel → MudTreeView (Dense) with MudTreeViewItem (EndContent for Aktiv)
+     Containers  → MudPaper (Elevation=1)
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.klarSokViewLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+
+.klarSokTablesLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+/* MudPaper elevation=1 */
+.klarSokTablePanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+  max-height: 80vh;
+  border-radius: 8px;
+  background-color: #ffffff;
+  border: 1px solid rgb(217,222,231);
+  // box-shadow: 0 2px 1px -1px rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12);
+  overflow: hidden;
+}
+
+/* MudTable header row */
+.klarSokTableHead {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 16px;
+  font-size: 12.5px;
+  background-color: #F9FAFB;
+  margin-bottom: 4px;
+  // border-bottom: 1px solid rgba(0,0,0,.12);
+}
+
+.klarSokTableHeadLabel {
+  flex: 1;
+  color: #2f343b;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.klarSokTableHeadAktiv {
+  width: 64px;
+  flex-shrink: 0;
+  color: #2f343b;
+  font-weight: 700;
+  text-align: right;
+  letter-spacing: 0.01em;
+}
+
+.klarSokTableBody {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.klarSokTableEmpty {
+  padding: 24px 16px;
+  color: rgba(0,0,0,.38);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* MudTable dense row (T=SearchResult, Hover=true, SelectedItem binding) */
+.klarSokFlatRow {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(0,0,0,.12);
+  cursor: pointer;
+  gap: 8px;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    background-color: rgba(0,0,0,.04);
+  }
+}
+
+/* MudTable SelectedItem highlight (uses theme primary at 12%) */
+.klarSokFlatRowSelected {
+  background-color: rgba(189, 109, 0, .12) !important;
+}
+
+.klarSokFlatRowLabel {
+  flex: 1;
+  color: rgba(0,0,0,.87);
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.klarSokFlatRowAktiv {
+  width: 64px;
+  flex-shrink: 0;
+  color: rgba(0,0,0,.6);
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+/* MudTreeViewItem (Dense) — each row maps to one MudTreeViewItem.
+   EndContent fragment used for the Aktiv value on the right. */
+.klarSokTreeRow {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding-right: 16px;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  cursor: pointer;
+  gap: 6px;
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  // &:hover {
+  //   background-color: rgba(0,0,0,.04);
+  // }
+}
+
+/* MudTreeView selected item (primary at 12%) */
+.klarSokTreeRowSelected {
+  background-color: rgba(189, 109, 0, .12) !important;
+}
+
+/* MudTreeViewItem built-in toggle button (IconButton, ripple) */
+.klarSokExpandBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  padding: 0;
+  color: rgba(0,0,0,.54);
+  cursor: pointer;
+
+  &:hover {
+    background-color: rgba(0,0,0,.04);
+    color: rgba(0,0,0,.87);
+  }
+}
+
+/* MudTreeViewItem Text content */
+.klarSokTreeLabel {
+  flex: 1;
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Clickable identifier text (MudLink Color=Primary) */
+.klarSokTreeLink {
+  color: var(--color-champagne-dark);
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* Parenthetical metadata (secondary text) */
+.klarSokTreeMeta {
+  color: rgba(0,0,0,.6);
+  font-weight: 400;
+}
+
+/* MudTreeViewItem EndContent — Aktiv value */
+.klarSokTreeAktiv {
+  width: 64px;
+  flex-shrink: 0;
+  color: rgba(0,0,0,.6);
+  font-size: 0.875rem;
+  text-align: right;
+}
 
 .searchFieldsEmpty {
   padding: 8px 0;
@@ -1798,6 +2039,24 @@
   line-height: 34px;
   vertical-align: middle;
   white-space: nowrap;
+  border-bottom: 1px solid #eef1f6;
+}
+
+.tableHeaderFillerCell {
+  display: table-cell;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e8ecf2;
+}
+
+.tableFillerCell {
+  display: table-cell;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  background-color: transparent;
   border-bottom: 1px solid #eef1f6;
 }
 
@@ -3076,6 +3335,63 @@
   padding: 0 10px 10px;
 }
 
+.gaTillPopover {
+  min-width: 180px;
+  padding: 8px 0;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 22px rgba(20, 31, 53, 0.14) !important;
+}
+
+.gaTillPopoverTitle {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #6a7483;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 16px 8px;
+  display: block;
+}
+
+.gaTillPopoverItem {
+  padding: 6px 16px !important;
+  color: #2f3743 !important;
+}
+
+.actionMenuChevron {
+  font-size: 18px !important;
+  transition: transform 0.15s ease;
+}
+
+.actionMenuChevronOpen {
+  transform: rotate(180deg);
+}
+
+.actionMenuPaper {
+  min-width: 190px;
+  padding: 4px 0;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 22px rgba(20, 31, 53, 0.14) !important;
+}
+
+.actionMenuItem {
+  padding: 6px 16px !important;
+  font-size: 14.5px !important;
+  color: #2f3743 !important;
+
+  &:global(.Mui-disabled) {
+    color: #bdc3cd !important;
+  }
+}
+
+.actionMenuItemIcon {
+  min-width: 26px !important;
+  color: inherit;
+
+  :global(svg) {
+    font-size: 17px;
+  }
+}
+
 .deliveryTableLink {
   color: var(--color-champagne);
   text-decoration: none;
@@ -3091,6 +3407,10 @@
   width: 100%;
   font-size: 12px;
   white-space: nowrap;
+
+  tbody tr:nth-child(even) .langdspecTd {
+    background-color: #f5f7fa;
+  }
 }
 
 .langdspecTh {

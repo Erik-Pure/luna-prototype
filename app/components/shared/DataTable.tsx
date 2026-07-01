@@ -20,6 +20,7 @@ type DataTableProps<TRow extends Record<string, string | boolean | undefined>> =
   rows: TRow[];
   rowKey: (row: TRow, index: number) => string;
   selectedRowIndex?: number | null;
+  selectedRowIndices?: Set<number>;
   onRowClick?: (index: number, event?: React.MouseEvent) => void;
   renderCell?: (row: TRow, column: DataTableColumn, rowIndex: number, columnIndex: number) => ReactNode;
   renderHeaderCell?: (column: DataTableColumn, columnIndex: number) => ReactNode;
@@ -32,6 +33,7 @@ export function DataTable<TRow extends Record<string, string | boolean | undefin
   rows,
   rowKey,
   selectedRowIndex,
+  selectedRowIndices,
   onRowClick,
   renderCell,
   renderHeaderCell,
@@ -138,7 +140,7 @@ export function DataTable<TRow extends Record<string, string | boolean | undefin
       {rows.map((row, rowIndex) => (
         <div
           key={rowKey(row, rowIndex)}
-          className={`${rowClass} ${selectedRowIndex === rowIndex ? selectedClass : ""}`}
+          className={`${rowClass} ${(selectedRowIndex === rowIndex || selectedRowIndices?.has(rowIndex)) ? selectedClass : ""}`}
           onClick={(e) => onRowClick?.(rowIndex, e)}
         >
           {columns.map((column, columnIndex) => (

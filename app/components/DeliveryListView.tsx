@@ -1,12 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import CloseIcon from "@mui/icons-material/Close";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Typography } from "@mui/material";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, List, ListItemButton, ListItemText, Popover, Typography } from "@mui/material";
 import { ActionRow } from "./shared/ActionRow";
+import { ActionMenuButton } from "./shared/ActionMenuButton";
 import { AndraDetaljerDialog } from "./AndraDetaljerDialog";
 import { SearchFiltersPanel } from "./shared/SearchFiltersPanel";
 import { DataTable } from "./shared/DataTable";
@@ -60,10 +62,78 @@ const sagsatt_TABLE = [
   { code: "7", label: "Fritt sågat" },
 ];
 
+const FIELD_SETS = [
+  {
+    label: "Allmänt",
+    fields: [
+      { key: "kund", label: "Kund", control: "select" as const, options: deliverySelectOptions.kund },
+      { key: "kontraktsnr", label: "Kontraktsnr", control: "text" as const },
+      { key: "extKontraktsnr", label: "Ext. kontraktsnr", control: "text" as const },
+      { key: "avropNr", label: "AvropNr", control: "text" as const },
+      { key: "avropradNr", label: "Avroprad nr", control: "text" as const },
+      { key: "mottagarland", label: "Mottagarland", control: "select" as const, options: deliverySelectOptions.mottagarland },
+      { key: "veckaFran", label: "Vecka från", control: "text" as const },
+      { key: "veckaTill", label: "Vecka till", control: "text" as const },
+      { key: "leveranssatt", label: "Leveranssätt", control: "select" as const, options: deliverySelectOptions.leveranssatt },
+      { key: "levTidigast", label: "Lev. tidigast", control: "text" as const },
+      { key: "levSenast", label: "Lev. senast", control: "text" as const },
+      { key: "skeppningsveckaFran", label: "Skeppningsvecka från", control: "text" as const },
+      { key: "skeppningsveckaTill", label: "Skeppningsvecka till", control: "text" as const },
+      { key: "mottagandeHamn", label: "Mottagande hamn", control: "select" as const, options: deliverySelectOptions.mottagandeHamn },
+      { key: "internKommentar", label: "Intern kommentar", control: "text" as const },
+      { key: "externKommentar", label: "Extern kommentar", control: "text" as const },
+      { key: "utlastandeEnhet", label: "Utlastande enhet", control: "select" as const, options: deliverySelectOptions.utlastandeEnhet },
+      { key: "ansvarigEnhet", label: "Ansvarig enhet", control: "select" as const, options: deliverySelectOptions.ansvarigEnhet },
+      { key: "utlastandeLagerstalle", label: "Utlastande lagerställe", control: "select" as const, options: deliverySelectOptions.utlastandeLagerstalle },
+      { key: "kundmarke", label: "Kundmärke", control: "text" as const },
+      { key: "certifiering", label: "Certifiering", control: "select" as const, options: deliverySelectOptions.certifiering },
+      { key: "registreradAv", label: "Registrerad av", control: "select" as const, options: deliverySelectOptions.registreradAv },
+      { key: "lastorderNr", label: "LastorderNr", control: "text" as const },
+      { key: "_div1", control: "divider" as const },
+      { key: "avreg", label: "Avreg", control: "checkbox-tri" as const, sectionLabel: "Övrigt" },
+      { key: "lev", label: "Lev", control: "checkbox-tri" as const },
+      { key: "merAttAvropa", label: "Mer att avropa", control: "checkbox-tri" as const },
+      { key: "_div2", control: "divider" as const },
+      { key: "salesPlanned", label: "Sales planned", control: "checkbox" as const, sectionLabel: "Avropradstatus" },
+      { key: "customerPlanned", label: "Customer planned", control: "checkbox" as const },
+      { key: "loadPlanned", label: "Load planned", control: "checkbox" as const },
+      { key: "_div3", control: "divider" as const },
+      { key: "typKontrakt", label: "Kontrakt", control: "checkbox" as const, sectionLabel: "Typ" },
+      { key: "typAvrop", label: "Avrop", control: "checkbox" as const },
+    ],
+  },
+  {
+    label: "Produkt",
+    fields: [
+      { key: "p_artnr", label: "ArtNr", control: "select" as const, options: deliverySelectOptions.artnr },
+      { key: "p_tradslag", label: "Trädslag", control: "select" as const, options: deliverySelectOptions.tradslag },
+      { key: "p_aktTjocklekMin", label: "Akt tjocklek min", control: "text" as const, nomToggle: true, nomGroup: "p_tjocklek" },
+      { key: "p_aktTjocklekMax", label: "Akt tjocklek max", control: "text" as const, nomToggle: true, nomGroup: "p_tjocklek" },
+      { key: "p_aktBreddMin", label: "Akt bredd min", control: "text" as const, nomToggle: true, nomGroup: "p_bredd" },
+      { key: "p_aktBreddMax", label: "Akt bredd max", control: "text" as const, nomToggle: true, nomGroup: "p_bredd" },
+      { key: "p_kvalitet", label: "Kvalitet", control: "select" as const, options: deliverySelectOptions.kvalitet },
+      { key: "p_pakettypFran", label: "Pakettyp från", control: "select" as const, tableOptions: pakettyp_TABLE, syncTo: "p_pakettypTill" },
+      { key: "p_pakettypTill", label: "Pakettyp till", control: "select" as const, tableOptions: pakettyp_TABLE },
+      { key: "p_vflGrupp", label: "VFL grupp", control: "select" as const, options: deliverySelectOptions.vflGrupp },
+      { key: "p_fuktkvotMin", label: "Fuktkvot min", control: "select" as const, options: deliverySelectOptions.fuktkvot },
+      { key: "p_fuktkvotMax", label: "Fuktkvot max", control: "select" as const, options: deliverySelectOptions.fuktkvot },
+      { key: "p_sagsattFran", label: "Sågsätt från", control: "select" as const, tableOptions: sagsatt_TABLE },
+      { key: "p_sagsattTill", label: "Sågsätt till", control: "select" as const, tableOptions: sagsatt_TABLE },
+      { key: "p_hyvelprofil", label: "Hyvelprofil", control: "select" as const, options: deliverySelectOptions.hyvelprofil },
+      { key: "p_malning", label: "Målning", control: "select" as const, options: deliverySelectOptions.malning },
+      { key: "p_impregnering", label: "Impregnering", control: "select" as const, options: deliverySelectOptions.impregnering },
+      { key: "p_extra", label: "Extra", control: "select" as const, options: deliverySelectOptions.extra },
+      { key: "_pdiv1", control: "divider" as const },
+      { key: "p_typKontrakt", label: "Kontrakt", control: "checkbox" as const, sectionLabel: "Typ" },
+      { key: "p_typAvrop", label: "Avrop", control: "checkbox" as const },
+    ],
+  },
+];
+
 const LENGTHS = ["1.8", "2.1", "2.4", "2.7", "3.0", "3.3", "3.6", "3.9", "4.2", "4.5", "4.8", "5.1", "5.4"];
 
 const BOTTOM_TABLE_COLUMNS = [
-  { key: "KontraktsNr", label: "KontraktsNr" },
+  { key: "KontraktsNr", label: "KontraktsNr", pinned: true as const },
   { key: "Avroprad nr", label: "Avroprad nr", pinned: true as const },
   ...([
     "Utlastande bolag", "Typ", "Kund",
@@ -179,82 +249,19 @@ const RIGHT_ROWS: RightRow[] = [
   { typ: "Tillg. lager fördelning (m3)", enhet: "%", summa: "100", ovr: "0", fix: "0", vals: { "3.0": "33", "3.6": "32", "4.2": "28", "4.8": "21", "5.1": "17" } },
 ];
 
-const FIELD_SETS = [
-  {
-    label: "Allmänt",
-    fields: [
-      { key: "kund", label: "Kund", control: "select" as const, options: deliverySelectOptions.kund },
-      { key: "kontraktsnr", label: "Kontraktsnr", control: "text" as const },
-      { key: "extKontraktsnr", label: "Ext. kontraktsnr", control: "text" as const },
-      { key: "avropNr", label: "AvropNr", control: "text" as const },
-      { key: "avropradNr", label: "Avroprad nr", control: "text" as const },
-      { key: "mottagarland", label: "Mottagarland", control: "select" as const, options: deliverySelectOptions.mottagarland },
-      { key: "veckaFran", label: "Vecka från", control: "text" as const },
-      { key: "veckaTill", label: "Vecka till", control: "text" as const },
-      { key: "leveranssatt", label: "Leveranssätt", control: "select" as const, options: deliverySelectOptions.leveranssatt },
-      { key: "levTidigast", label: "Lev. tidigast", control: "text" as const },
-      { key: "levSenast", label: "Lev. senast", control: "text" as const },
-      { key: "skeppningsveckaFran", label: "Skeppningsvecka från", control: "text" as const },
-      { key: "skeppningsveckaTill", label: "Skeppningsvecka till", control: "text" as const },
-      { key: "mottagandeHamn", label: "Mottagande hamn", control: "select" as const, options: deliverySelectOptions.mottagandeHamn },
-      { key: "internKommentar", label: "Intern kommentar", control: "text" as const },
-      { key: "externKommentar", label: "Extern kommentar", control: "text" as const },
-      { key: "utlastandeEnhet", label: "Utlastande enhet", control: "select" as const, options: deliverySelectOptions.utlastandeEnhet },
-      { key: "ansvarigEnhet", label: "Ansvarig enhet", control: "select" as const, options: deliverySelectOptions.ansvarigEnhet },
-      { key: "utlastandeLagerstalle", label: "Utlastande lagerställe", control: "select" as const, options: deliverySelectOptions.utlastandeLagerstalle },
-      { key: "kundmarke", label: "Kundmärke", control: "text" as const },
-      { key: "certifiering", label: "Certifiering", control: "select" as const, options: deliverySelectOptions.certifiering },
-      { key: "registreradAv", label: "Registrerad av", control: "select" as const, options: deliverySelectOptions.registreradAv },
-      { key: "lastorderNr", label: "LastorderNr", control: "text" as const },
-      { key: "_div1", control: "divider" as const },
-      { key: "avreg", label: "Avreg", control: "checkbox-tri" as const, sectionLabel: "Övrigt" },
-      { key: "lev", label: "Lev", control: "checkbox-tri" as const },
-      { key: "merAttAvropa", label: "Mer att avropa", control: "checkbox-tri" as const },
-      { key: "_div2", control: "divider" as const },
-      { key: "salesPlanned", label: "Sales planned", control: "checkbox" as const, sectionLabel: "Avropradstatus" },
-      { key: "customerPlanned", label: "Customer planned", control: "checkbox" as const },
-      { key: "loadPlanned", label: "Load planned", control: "checkbox" as const },
-      { key: "_div3", control: "divider" as const },
-      { key: "typKontrakt", label: "Kontrakt", control: "checkbox" as const, sectionLabel: "Typ" },
-      { key: "typAvrop", label: "Avrop", control: "checkbox" as const },
-    ],
-  },
-  {
-    label: "Produkt",
-    fields: [
-      { key: "p_artnr", label: "ArtNr", control: "select" as const, options: deliverySelectOptions.artnr },
-      { key: "p_tradslag", label: "Trädslag", control: "select" as const, options: deliverySelectOptions.tradslag },
-      { key: "p_aktTjocklekMin", label: "Akt tjocklek min", control: "text" as const, nomToggle: true, nomGroup: "p_tjocklek" },
-      { key: "p_aktTjocklekMax", label: "Akt tjocklek max", control: "text" as const, nomToggle: true, nomGroup: "p_tjocklek" },
-      { key: "p_aktBreddMin", label: "Akt bredd min", control: "text" as const, nomToggle: true, nomGroup: "p_bredd" },
-      { key: "p_aktBreddMax", label: "Akt bredd max", control: "text" as const, nomToggle: true, nomGroup: "p_bredd" },
-      { key: "p_kvalitet", label: "Kvalitet", control: "select" as const, options: deliverySelectOptions.kvalitet },
-      { key: "p_pakettypFran", label: "Pakettyp från", control: "select" as const, tableOptions: pakettyp_TABLE, syncTo: "p_pakettypTill" },
-      { key: "p_pakettypTill", label: "Pakettyp till", control: "select" as const, tableOptions: pakettyp_TABLE },
-      { key: "p_vflGrupp", label: "VFL grupp", control: "select" as const, options: deliverySelectOptions.vflGrupp },
-      { key: "p_fuktkvotMin", label: "Fuktkvot min", control: "select" as const, options: deliverySelectOptions.fuktkvot },
-      { key: "p_fuktkvotMax", label: "Fuktkvot max", control: "select" as const, options: deliverySelectOptions.fuktkvot },
-      { key: "p_sagsattFran", label: "Sågsätt från", control: "select" as const, tableOptions: sagsatt_TABLE },
-      { key: "p_sagsattTill", label: "Sågsätt till", control: "select" as const, tableOptions: sagsatt_TABLE },
-      { key: "p_hyvelprofil", label: "Hyvelprofil", control: "select" as const, options: deliverySelectOptions.hyvelprofil },
-      { key: "p_malning", label: "Målning", control: "select" as const, options: deliverySelectOptions.malning },
-      { key: "p_impregnering", label: "Impregnering", control: "select" as const, options: deliverySelectOptions.impregnering },
-      { key: "p_extra", label: "Extra", control: "select" as const, options: deliverySelectOptions.extra },
-      { key: "_pdiv1", control: "divider" as const },
-      { key: "p_typKontrakt", label: "Kontrakt", control: "checkbox" as const, sectionLabel: "Typ" },
-      { key: "p_typAvrop", label: "Avrop", control: "checkbox" as const },
-    ],
-  },
-];
+type DeliveryListViewProps = {
+  onAndraStatus?: () => void;
+};
 
-export function DeliveryListView() {
-  const searchMenuRef = useRef<HTMLDivElement | null>(null);
-  const searchButtonRef = useRef<HTMLButtonElement | null>(null);
+export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) {
   const [langdspecOpen, setLangdspecOpen] = useState(false);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   const hasSelection = selectedRowIndex !== null;
+  const toggleRow = (i: number) => setSelectedRowIndex((prev) => (prev === i ? null : i));
   const [andraDetaljerOpen, setAndraDetaljerOpen] = useState(false);
+  const [avregistreraOpen, setAvregistreraOpen] = useState(false);
   const [avregistreraAllaOpen, setAvregistreraAllaOpen] = useState(false);
+  const [gaTillAnchor, setGaTillAnchor] = useState<HTMLElement | null>(null);
 
   const DAG_MAP: Record<string, string> = {
     "Mån": "Måndag", "Tis": "Tisdag", "Ons": "Onsdag",
@@ -264,15 +271,15 @@ export function DeliveryListView() {
   const selectedRow = selectedRowIndex !== null ? BOTTOM_TABLE_ROWS[selectedRowIndex] : null;
   const andraDetaljerInitial = selectedRow
     ? {
-        kundmarke: selectedRow["Kundens märke"] ?? "",
-        leveransvecka: selectedRow["Vecka"] ?? "",
-        leveransdag: DAG_MAP[selectedRow["Dag"] ?? ""] ?? selectedRow["Dag"] ?? "",
-        utlastandeEnhet: selectedRow["Utlastande bolag"] ?? "",
-        utlastandeLagerstalle: selectedRow["Utlastande lagerställe"] ?? "",
-        ansvarigEnhet: selectedRow["Ansvarig enhet"] ?? "",
-        levFonsterMin: "",
-        levFonsterMax: "",
-      }
+      kundmarke: selectedRow["Kundens märke"] ?? "",
+      leveransvecka: selectedRow["Vecka"] ?? "",
+      leveransdag: DAG_MAP[selectedRow["Dag"] ?? ""] ?? selectedRow["Dag"] ?? "",
+      utlastandeEnhet: selectedRow["Utlastande bolag"] ?? "",
+      utlastandeLagerstalle: selectedRow["Utlastande lagerställe"] ?? "",
+      ansvarigEnhet: selectedRow["Ansvarig enhet"] ?? "",
+      levFonsterMin: "",
+      levFonsterMax: "",
+    }
     : undefined;
 
   return (
@@ -284,8 +291,8 @@ export function DeliveryListView() {
         values={{}}
         isMenuOpen={false}
         draftFields={[]}
-        searchButtonRef={searchButtonRef}
-        searchMenuRef={searchMenuRef}
+        searchButtonRef={{ current: null }}
+        searchMenuRef={{ current: null }}
         getSelectOptions={(key) => deliverySelectOptions[key] ?? []}
         useAdvancedFilterLayout
         hideGlobalSearch
@@ -311,7 +318,7 @@ export function DeliveryListView() {
             <KeyboardArrowDownIcon
               className={`${styles.moreFiltersChevron} ${langdspecOpen ? styles.moreFiltersChevronOpen : ""}`}
             />
-            Visa längdspecifikation
+            {langdspecOpen ? "Dölj" : "Visa"} längdspecifikation
           </button>
           <div className={styles.langdspecDivider} />
         </div>
@@ -382,18 +389,89 @@ export function DeliveryListView() {
       <div className={styles.deliveryRowsTableSection}>
         <ActionRow
           items={[
-            { label: "Avregistrera", enabled: hasSelection },
-            { label: "Lastorder", icon: <AddIcon fontSize="small" />, enabled: hasSelection },
-            { label: "Ändra lastorder", icon: <EditIcon fontSize="small" />, enabled: hasSelection },
+            {
+              kind: "node",
+              node: (
+                <ActionMenuButton
+                  label="Skapa"
+                  icon={<AddIcon fontSize="small" />}
+                  tone="primary"
+                  enabled={hasSelection}
+                  items={[
+                    { label: "Kontrakt", enabled: hasSelection },
+                    { label: "Lastorder", enabled: hasSelection },
+                  ]}
+                />
+              ),
+            },
+            {
+              kind: "node",
+              node: (
+                <ActionMenuButton
+                  label="Redigera"
+                  icon={<EditOutlinedIcon fontSize="small" />}
+                  enabled={hasSelection}
+                  items={[
+                    { label: "Lastorder", enabled: hasSelection },
+                    { label: "Detaljer", enabled: hasSelection, onClick: () => setAndraDetaljerOpen(true) },
+                  ]}
+                />
+              ),
+            },
+            {
+              kind: "node",
+              node: (
+                <ActionMenuButton
+                  label="Avregistrera"
+                  enabled={hasSelection}
+                  items={[
+                    { label: "Vald rad", enabled: hasSelection, onClick: () => setAvregistreraOpen(true) },
+                    { label: "Alla rader", enabled: hasSelection, onClick: () => setAvregistreraAllaOpen(true) },
+                  ]}
+                />
+              ),
+            },
+            {
+              kind: "node",
+              node: (
+                <ActionMenuButton
+                  label="Visa"
+                  enabled={hasSelection}
+                  items={[
+                    { label: "Prislista", enabled: hasSelection },
+                    { label: "Prodorder", enabled: hasSelection },
+                  ]}
+                />
+              ),
+            },
             { kind: "divider" },
-            { label: "Kontrakt", icon: <AddIcon fontSize="small" />, enabled: hasSelection },
+            {
+              label: "Ändra status",
+              enabled: true,
+              onClick: onAndraStatus,
+            },
             { kind: "divider" },
-            { label: "Visa prislista", enabled: hasSelection },
-            { label: "Visa prodorder", enabled: hasSelection },
-            { kind: "divider" },
-            { label: "Ändra detaljer", enabled: hasSelection, onClick: () => setAndraDetaljerOpen(true) },
-            { label: "Ändra status", enabled: hasSelection },
-            { label: "Avregistrera alla avropsrader", enabled: hasSelection, onClick: () => setAvregistreraAllaOpen(true) },
+            {
+              kind: "node",
+              node: (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="inherit"
+                  disabled={!hasSelection}
+                  startIcon={<OpenInNewIcon fontSize="small" />}
+                  endIcon={
+                    <KeyboardArrowDownIcon
+                      className={`${styles.actionMenuChevron} ${Boolean(gaTillAnchor) ? styles.actionMenuChevronOpen : ""}`}
+                    />
+                  }
+                  className={styles.lineItemsToggleButton}
+                  onClick={(e) => setGaTillAnchor(e.currentTarget)}
+                >
+                  Gå till
+                </Button>
+              ),
+            },
           ]}
         />
         <div className={styles.tableContainer}>
@@ -405,7 +483,7 @@ export function DeliveryListView() {
                 rows={BOTTOM_TABLE_ROWS}
                 rowKey={(_, i) => String(i)}
                 selectedRowIndex={selectedRowIndex}
-                onRowClick={(i) => setSelectedRowIndex((prev) => (prev === i ? null : i))}
+                onRowClick={(i) => toggleRow(i)}
                 renderCell={(row, column) => {
                   const value = (row as Record<string, string>)[column.key];
                   if (column.key === "KontraktsNr" || column.key === "Avroprad nr") {
@@ -422,6 +500,47 @@ export function DeliveryListView() {
           </div>
         </div>
       </div>
+      <Dialog open={avregistreraOpen} onClose={() => setAvregistreraOpen(false)} maxWidth="xs" fullWidth slotProps={{ paper: { className: styles.freightDialogPaper } }}>
+        <DialogTitle className={styles.freightDialogTitle}>
+          <div className={styles.freightDialogTitleRow}>
+            <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Avregistrera avropsrad</Typography>
+            <IconButton size="small" onClick={() => setAvregistreraOpen(false)} style={{ color: "#6a7483" }}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </div>
+        </DialogTitle>
+        <DialogContent className={styles.freightDialogContent}>
+          <Typography style={{ fontSize: 14, color: "#404753", paddingTop: 4 }}>
+            Är du säker att du vill avregistrera den valda avropsraden?
+          </Typography>
+        </DialogContent>
+        <DialogActions className={styles.freightDialogActions}>
+          <Button variant="contained" size="small" className={styles.bytPrislistaOkButton} onClick={() => setAvregistreraOpen(false)}>
+            Ja
+          </Button>
+          <Button variant="outlined" size="small" className={styles.bytPrislistaAvbrytButton} onClick={() => setAvregistreraOpen(false)}>
+            Avbryt
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Popover
+        open={Boolean(gaTillAnchor)}
+        anchorEl={gaTillAnchor}
+        onClose={() => setGaTillAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{ paper: { className: styles.gaTillPopover } }}
+      >
+        <List dense disablePadding>
+          {["Kund", "Produkt", "Färdiglagerlista", "Lastorder"].map((item) => (
+            <ListItemButton key={item} className={styles.gaTillPopoverItem} onClick={() => setGaTillAnchor(null)}>
+              <ListItemText primary={item} primaryTypographyProps={{ fontSize: 13 }} />
+            </ListItemButton>
+          ))}
+        </List>
+      </Popover>
+
       <Dialog open={avregistreraAllaOpen} onClose={() => setAvregistreraAllaOpen(false)} maxWidth="xs" fullWidth PaperProps={{ className: styles.freightDialogPaper }}>
         <DialogTitle className={styles.freightDialogTitle}>
           <div className={styles.freightDialogTitleRow}>

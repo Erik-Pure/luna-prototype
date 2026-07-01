@@ -1,221 +1,265 @@
 "use client";
 
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Button,
-  FormControl,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Select,
-  Switch,
-  TextField,
-  Typography,
-} from "@mui/material";
 import { useState } from "react";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import styles from "../page.module.scss";
+import { KlarSokPanel } from "./KlarSokPanel";
 
-const ART_NR_OPTIONS = [
-  "2202209500002000",
-  "2202209500003000",
-  "2202212000001000",
-] as const;
-
-type Draft = {
-  artNr: string;
-  pakettyp: string;
-  fakturaEnhet: string;
-  pris: string;
-  saljtyp: string;
-  // optional
-  produkt: string;
-  fakturatext: string;
-  internKommentar: string;
+type TreeNode = {
+  id: string;
+  label: string;
+  aktiv: boolean;
+  children?: TreeNode[];
 };
 
-const emptyDraft: Draft = {
-  artNr: "",
-  pakettyp: "Lp",
-  fakturaEnhet: "m3 nominell",
-  pris: "",
-  saljtyp: "Eget virke",
-  produkt: "",
-  fakturatext: "",
-  internKommentar: "",
+type SearchResult = {
+  id: string;
+  label: string;
+  aktiv: boolean;
+  tree: TreeNode[];
 };
 
-export function KlarSokView() {
-  const [draft, setDraft] = useState<Draft>(emptyDraft);
-  const [fastTrackEnabled, setFastTrackEnabled] = useState(true);
+function collectExpandableIds(nodes: TreeNode[]): Set<string> {
+  const ids = new Set<string>();
+  function traverse(node: TreeNode) {
+    if (node.children?.length) {
+      ids.add(node.id);
+      node.children.forEach(traverse);
+    }
+  }
+  nodes.forEach(traverse);
+  return ids;
+}
 
-  const update = (key: keyof Draft, value: string) =>
-    setDraft((prev) => ({ ...prev, [key]: value }));
+function splitLabel(label: string): { link: string; rest: string } {
+  const idx = label.indexOf("(");
+  if (idx === -1) return { link: label, rest: "" };
+  return { link: label.slice(0, idx).trim(), rest: " " + label.slice(idx) };
+}
 
-  const optionalTabIndex = fastTrackEnabled ? -1 : undefined;
+const ALMASSA_TREE: TreeNode[] = [
+  {
+    id: "kund-1000011",
+    label: "Kund nr 1000011 (Almassa International)",
+    aktiv: true,
+    children: [
+      {
+        id: "kontrakt-145692",
+        label: "Kontrakt nr 145692 (Almassa International)",
+        aktiv: true,
+        children: [
+          {
+            id: "lastorder-14164",
+            label: "Lastorder nr 14164 (Almassa International, 2024-03-20)",
+            aktiv: true,
+            children: [
+              { id: "faktura-14726582", label: "Faktura nr 14726582 (Almassa International)", aktiv: true },
+            ],
+          },
+          {
+            id: "transport-167562",
+            label: "Transport nr 167562 (SÄVAR - GÄVLE, 2024-03-19)",
+            aktiv: true,
+            children: [
+              { id: "p-4243399", label: "Paket nr 4243399 (NT Sävar Såg, 2024-03-12, 50x225 Furu VI 5.1 Lp)", aktiv: true },
+              { id: "p-4236372", label: "Paket nr 4236372 (NT Sävar Såg, 2024-03-12, 50x225 Furu VI 5.4 Lp)", aktiv: true },
+              { id: "p-4236354a", label: "Paket nr 4236354 (NT Sävar Såg, 2024-02-01, 50x225 Furu VI 5.1 Lp)", aktiv: true },
+              { id: "p-4236354b", label: "Paket nr 4236354 (NT Sävar Såg, 2024-02-01, 50x225 Furu VI 4.8 Lp)", aktiv: true },
+              { id: "p-4231613", label: "Paket nr 4231613 (NT Sävar Såg, 2023-12-21, 50x225 Furu V 4ex 3.9 Lp)", aktiv: true },
+              { id: "p-4231610", label: "Paket nr 4231610 (NT Sävar Såg, 2023-12-21, 50x225 Furu V 4ex 4.5 Lp)", aktiv: true },
+              { id: "p-4231608", label: "Paket nr 4231608 (NT Sävar Såg, 2023-12-21, 50x225 Furu V 4ex 3.6 Lp)", aktiv: true },
+              { id: "p-4231587", label: "Paket nr 4231587 (NT Sävar Såg, 2023-12-21, 50x225 Furu V 4ex 4.5 Lp)", aktiv: true },
+              { id: "p-4231586", label: "Paket nr 4231586 (NT Sävar Såg, 2023-12-21, 50x225 Furu V 4ex 4.8 Lp)", aktiv: true },
+              { id: "p-4231584", label: "Paket nr 4231584 (NT Sävar Såg, 2023-12-21, 50x225 Furu V 4ex 3.9 Lp)", aktiv: true },
+              { id: "p-4231583", label: "Paket nr 4231583 (NT Sävar Såg, 2023-12-21, 50x225 Furu V 4ex 4.2 Lp)", aktiv: true },
+              { id: "p-4231581", label: "Paket nr 4231581 (NT Sävar Såg, 2023-12-21, 50x225 Furu V 4ex 5.1 Lp)", aktiv: true },
+              { id: "p-4231580", label: "Paket nr 4231580 (NT Sävar Såg, 2023-12-21, 50x225 Furu V 4ex 4.5 Lp)", aktiv: true },
+            ],
+          },
+          {
+            id: "transport-167561",
+            label: "Transport nr 167561 (SÄVAR - GÄVLE, 2024-03-19)",
+            aktiv: true,
+            children: [
+              { id: "p-4243402a", label: "Paket nr 4243402 (NT Sävar Såg, 2024-03-13, 50x225 Furu V 4ex 4.2 Lp)", aktiv: true },
+              { id: "p-4243402b", label: "Paket nr 4243402 (NT Sävar Såg, 2024-03-13, 50x225 Furu V 4ex 4.5 Lp)", aktiv: true },
+              { id: "p-4243396", label: "Paket nr 4243396 (NT Sävar Såg, 2024-03-12, 50x225 Furu V 4ex 3.9 Lp)", aktiv: true },
+              { id: "p-4243394", label: "Paket nr 4243394 (NT Sävar Såg, 2024-03-12, 50x225 Furu V 4ex 4.2 Lp)", aktiv: true },
+              { id: "p-4243391", label: "Paket nr 4243391 (NT Sävar Såg, 2024-03-12, 50x225 Furu V 4ex 5.4 Lp)", aktiv: true },
+              { id: "p-4243389", label: "Paket nr 4243389 (NT Sävar Såg, 2024-03-12, 50x200 Furu V 5.1 Lp)", aktiv: true },
+              { id: "p-4236339", label: "Paket nr 4236339 (NT Sävar Såg, 2024-02-01, 50x225 Furu V 5.4 Lp)", aktiv: true },
+              { id: "p-4236332", label: "Paket nr 4236332 (NT Sävar Såg, 2024-02-01, 50x225 Furu V 4.5 Lp)", aktiv: true },
+              { id: "p-4236325", label: "Paket nr 4236325 (NT Sävar Såg, 2024-02-01, 50x225 Furu V 5.1 Lp)", aktiv: true },
+              { id: "p-4236324", label: "Paket nr 4236324 (NT Sävar Såg, 2024-02-01, 50x225 Furu V 4.8 Lp)", aktiv: true },
+              { id: "p-4224985", label: "Paket nr 4224985 (NT Sävar Såg, 2023-11-02, 50x225 Furu V 4ex 3.3 Lp)", aktiv: true },
+              { id: "p-4224952", label: "Paket nr 4224952 (NT Sävar Såg, 2023-11-02, 50x225 Furu V 4ex 4.8 Lp)", aktiv: true },
+              { id: "p-4224948", label: "Paket nr 4224948 (NT Sävar Såg, 2023-11-02, 50x225 Furu V 4ex 4.8 Lp)", aktiv: true },
+            ],
+          },
+          {
+            id: "transport-167526",
+            label: "Transport nr 167526 (SÄVAR - GÄVLE, 2024-03-18)",
+            aktiv: true,
+            children: [
+              { id: "p-4243422", label: "Paket nr 4243422 (NT Sävar Såg, 2024-03-13, 50x225 Furu V 5.1 Lp)", aktiv: true },
+              { id: "p-4243421", label: "Paket nr 4243421 (NT Sävar Såg, 2024-03-13, 50x225 Furu V 4.8 Lp)", aktiv: true },
+              { id: "p-4243408", label: "Paket nr 4243408 (NT Sävar Såg, 2024-03-13, 50x225 Furu V 3.9 Lp)", aktiv: true },
+              { id: "p-4243406", label: "Paket nr 4243406 (NT Sävar Såg, 2024-03-12, 50x225 Furu VI 3 Lp)", aktiv: true },
+              { id: "p-4243404", label: "Paket nr 4243404 (NT Sävar Såg, 2024-03-12, 50x225 Furu VI 4.5 Lp)", aktiv: true },
+              { id: "p-4243401", label: "Paket nr 4243401 (NT Sävar Såg, 2024-03-12, 50x225 Furu V 3 Lp)", aktiv: true },
+              { id: "p-4243387", label: "Paket nr 4243387 (NT Sävar Såg, 2024-03-12, 50x200 Furu V 4ex 5.4 Lp)", aktiv: true },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];
+
+const SEARCH_RESULTS: SearchResult[] = [
+  { id: "kund-1000011", label: "Kund nr 1000011 (Almassa International)", aktiv: true, tree: ALMASSA_TREE },
+  { id: "kund-1000012", label: "Kund nr 1000012 (Nordic Sten AB)", aktiv: true, tree: [] },
+  { id: "kontrakt-145692", label: "Kontrakt nr 145692 (Almassa International)", aktiv: true, tree: [] },
+  { id: "kund-1000013", label: "Kund nr 1000013 (Svensson Bygg HB)", aktiv: false, tree: [] },
+  { id: "kontrakt-145700", label: "Kontrakt nr 145700 (Nordic Sten AB)", aktiv: true, tree: [] },
+  { id: "lastorder-14164", label: "Lastorder nr 14164 (Almassa International, 2024-03-20)", aktiv: true, tree: [] },
+];
+
+function TreeRow({
+  node,
+  depth,
+  expandedIds,
+  selectedId,
+  onToggle,
+  onSelect,
+}: {
+  node: TreeNode;
+  depth: number;
+  expandedIds: Set<string>;
+  selectedId: string | null;
+  onToggle: (id: string) => void;
+  onSelect: (id: string) => void;
+}) {
+  const isExpanded = expandedIds.has(node.id);
+  const hasChildren = !!node.children?.length;
+  const isSelected = selectedId === node.id;
+  const { link, rest } = splitLabel(node.label);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      {/* Titelrad */}
-      <div className={styles.contractModernTopRow}>
-        <div className={styles.contractModernTitleWrap}>
-          <Typography className={styles.contractModernTitle}>Ny kontraktsrad — tabIndex-test</Typography>
-        </div>
+    <>
+      <div
+        className={`${styles.klarSokTreeRow} ${isSelected ? styles.klarSokTreeRowSelected : ""}`}
+        style={{ paddingLeft: depth * 16 }}
+        onClick={() => onSelect(node.id)}
+      >
+        <button
+          type="button"
+          className={styles.klarSokExpandBtn}
+          style={{ visibility: hasChildren ? "visible" : "hidden" }}
+          tabIndex={hasChildren ? 0 : -1}
+          onClick={(e) => { e.stopPropagation(); onToggle(node.id); }}
+        >
+          {isExpanded
+            ? <KeyboardArrowDownIcon style={{ fontSize: 20 }} />
+            : <KeyboardArrowRightIcon style={{ fontSize: 20 }} />
+          }
+        </button>
+        <span className={styles.klarSokTreeLabel}>
+          <span className={styles.klarSokTreeLink}>{link}</span>
+          {rest && <span className={styles.klarSokTreeMeta}>{rest}</span>}
+        </span>
+        <span className={styles.klarSokTreeAktiv}>{node.aktiv ? "Ja" : "Nej"}</span>
       </div>
+      {isExpanded && hasChildren && node.children!.map((child) => (
+        <TreeRow
+          key={child.id}
+          node={child}
+          depth={depth + 1}
+          expandedIds={expandedIds}
+          selectedId={selectedId}
+          onToggle={onToggle}
+          onSelect={onSelect}
+        />
+      ))}
+    </>
+  );
+}
 
-      {/* Snabbspår-bar */}
-      <div className={styles.lineItemFastTrackBar}>
-        <div className={styles.lineItemFastTrackMain}>
-          <span className={styles.lineItemFastTrackTitle}>Snabbspår</span>
-          <span className={styles.lineItemFastTrackDivider} aria-hidden="true">-</span>
-          <span className={styles.lineItemFastTrackText}>
-            Tabba endast mellan obligatoriska fält&nbsp;— ingen custom Tab-hantering
-          </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-            <span style={{ fontSize: 11, fontWeight: 500, color: "#748195" }}>Snabbspår</span>
-            <Switch
-              checked={fastTrackEnabled}
-              onChange={() => setFastTrackEnabled((v) => !v)}
-              size="medium"
-              sx={{
-                "& .MuiSwitch-switchBase.Mui-checked": { color: "#c47900" },
-                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#c47900" },
-              }}
-            />
+export function KlarSokView() {
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
+
+  const selectedResult = SEARCH_RESULTS.find((r) => r.id === selectedResultId) ?? null;
+
+  const handleToggle = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectResult = (id: string) => {
+    setSelectedResultId(id);
+    setSelectedTreeId(null);
+    const result = SEARCH_RESULTS.find((r) => r.id === id);
+    setExpandedIds(result ? collectExpandableIds(result.tree) : new Set());
+  };
+
+  return (
+    <div className={styles.klarSokViewLayout}>
+      <div className={styles.advancedSearchPanel}>
+        <KlarSokPanel />
+      </div>
+      <div className={styles.klarSokTablesLayout}>
+        <div className={styles.klarSokTablePanel}>
+          <div className={styles.klarSokTableHead}>
+            <div className={styles.klarSokTableHeadLabel}>Beskrivning</div>
+            <div className={styles.klarSokTableHeadAktiv}>Aktiv</div>
+          </div>
+          <div className={styles.klarSokTableBody}>
+            {SEARCH_RESULTS.map((row) => (
+              <div
+                key={row.id}
+                className={`${styles.klarSokFlatRow} ${selectedResultId === row.id ? styles.klarSokFlatRowSelected : ""}`}
+                onClick={() => handleSelectResult(row.id)}
+              >
+                <span className={styles.klarSokFlatRowLabel}>
+                  {(() => { const { link, rest } = splitLabel(row.label); return <><span className={styles.klarSokTreeLink}>{link}</span>{rest && <span className={styles.klarSokTreeMeta}>{rest}</span>}</>; })()}
+                </span>
+                <span className={styles.klarSokFlatRowAktiv}>{row.aktiv ? "Ja" : "Nej"}</span>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
 
-      {/* Formulär */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "12px 0" }}>
-        <div className={styles.contractModernAccordionWrap}>
-          <Accordion
-            defaultExpanded
-            disableGutters
-            elevation={0}
-            className={styles.contractSectionAccordion}
-          >
-            {/* AccordionSummary: tabIndex={-1} i snabbspår så expand-knappen hoppas över */}
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              className={styles.contractSectionSummary}
-              tabIndex={fastTrackEnabled ? -1 : undefined}
-            >
-              <span className={styles.contractSectionTitleRow}>
-                <TableChartOutlinedIcon className={styles.contractSectionIcon} />
-                <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
-              </span>
-            </AccordionSummary>
-            <AccordionDetails className={styles.contractSectionDetailsArea}>
-              <div className={styles.contractModernFormGrid}>
-
-                {/* ── Obligatoriska fält ── */}
-
-                <FormControl size="small" fullWidth className={styles.lineItemRequiredControl}>
-                  <InputLabel>ArtNr *</InputLabel>
-                  <Select
-                    label="ArtNr *"
-                    value={draft.artNr}
-                    onChange={(e) => update("artNr", e.target.value)}
-                    inputProps={{ tabIndex: 0 }}
-                  >
-                    <MenuItem value="">-</MenuItem>
-                    {ART_NR_OPTIONS.map((opt) => (
-                      <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <TextField
-                  select fullWidth size="small"
-                  label="Pakettyp *"
-                  value={draft.pakettyp}
-                  onChange={(e) => update("pakettyp", e.target.value)}
-                  className={styles.lineItemRequiredControl}
-                  SelectProps={{ inputProps: { tabIndex: 0 } }}
-                >
-                  <MenuItem value="Lp">Lp</MenuItem>
-                  <MenuItem value="Pk">Pk</MenuItem>
-                </TextField>
-
-                <TextField
-                  select fullWidth size="small"
-                  label="Fakturaenhet *"
-                  value={draft.fakturaEnhet}
-                  onChange={(e) => update("fakturaEnhet", e.target.value)}
-                  className={styles.lineItemRequiredControl}
-                  SelectProps={{ inputProps: { tabIndex: 0 } }}
-                >
-                  {["m3 nominell", "m3 aktuell", "lpm", "m2", "paket", "st"].map((o) => (
-                    <MenuItem key={o} value={o}>{o}</MenuItem>
-                  ))}
-                </TextField>
-
-                <TextField
-                  fullWidth size="small"
-                  label="Pris *"
-                  value={draft.pris}
-                  onChange={(e) => update("pris", e.target.value)}
-                  className={styles.lineItemRequiredControl}
-                  InputProps={{ endAdornment: <InputAdornment position="end">SEK/m3</InputAdornment> }}
-                  inputProps={{ tabIndex: 0 }}
+        <div className={styles.klarSokTablePanel}>
+          <div className={styles.klarSokTableHead}>
+            <div className={styles.klarSokTableHeadLabel}>Beskrivning</div>
+            <div className={styles.klarSokTableHeadAktiv}>Aktiv</div>
+          </div>
+          <div className={styles.klarSokTableBody}>
+            {selectedResult && selectedResult.tree.length > 0 ? (
+              selectedResult.tree.map((node) => (
+                <TreeRow
+                  key={node.id}
+                  node={node}
+                  depth={0}
+                  expandedIds={expandedIds}
+                  selectedId={selectedTreeId}
+                  onToggle={handleToggle}
+                  onSelect={setSelectedTreeId}
                 />
-
-                <TextField
-                  select fullWidth size="small"
-                  label="Säljtyp *"
-                  value={draft.saljtyp}
-                  onChange={(e) => update("saljtyp", e.target.value)}
-                  className={styles.lineItemRequiredControl}
-                  SelectProps={{ inputProps: { tabIndex: 0 } }}
-                >
-                  {["Eget virke", "Inköp", "Agentur"].map((o) => (
-                    <MenuItem key={o} value={o}>{o}</MenuItem>
-                  ))}
-                </TextField>
-
-                {/* ── Valfria fält — tabIndex={-1} i snabbspår ── */}
-
-                <TextField
-                  fullWidth size="small"
-                  label="Produkt"
-                  value={draft.produkt}
-                  onChange={(e) => update("produkt", e.target.value)}
-                  inputProps={{ tabIndex: optionalTabIndex }}
-                />
-
-                <TextField
-                  fullWidth size="small"
-                  label="Fakturatext"
-                  value={draft.fakturatext}
-                  onChange={(e) => update("fakturatext", e.target.value)}
-                  inputProps={{ tabIndex: optionalTabIndex }}
-                />
-
-                <TextField
-                  fullWidth size="small"
-                  label="Intern kommentar"
-                  value={draft.internKommentar}
-                  onChange={(e) => update("internKommentar", e.target.value)}
-                  inputProps={{ tabIndex: optionalTabIndex }}
-                />
-
+              ))
+            ) : (
+              <div className={styles.klarSokTableEmpty}>
+                {selectedResultId ? "Ingen data tillgänglig" : "Välj en rad i tabellen till vänster"}
               </div>
-            </AccordionDetails>
-          </Accordion>
-        </div>
-
-        {/* "Spara och fortsätt" placerad i DOM-ordning EFTER fälten */}
-        <div style={{ padding: "12px 16px", display: "flex", gap: 8 }}>
-          <Button className={styles.contractSaveButton} size="small">
-            Spara och fortsätt
-          </Button>
-          <Button className={styles.contractQuickActionButton} size="small" tabIndex={fastTrackEnabled ? -1 : undefined}>
-            Avbryt
-          </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

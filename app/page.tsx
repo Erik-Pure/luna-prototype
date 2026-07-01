@@ -42,6 +42,9 @@ import { AvropsradDetailView } from "./components/contract-tabs/AvropsradDetailV
 import { ContainerView } from "./components/contract-tabs/ContainerView";
 import { PrislistekalkylView } from "./components/price-list-tabs/PrislistekalkylView";
 import { SearchFiltersPanel } from "./components/shared/SearchFiltersPanel";
+import { KlarSokView } from "./components/KlarSokView";
+import { EdiListaView } from "./components/EdiListaView";
+import { AndraStatusView } from "./components/AndraStatusView";
 import { DataTable } from "./components/shared/DataTable";
 import { ActionRow } from "./components/shared/ActionRow";
 import { useColorMode, useUiState } from "./providers";
@@ -1427,6 +1430,9 @@ export default function Home() {
   const isCreatingPriceRow = selectedPriceRowId === "new";
   const isContractListPage = sectionSlug === "marknad" && menuSlug === "kontraktlista";
   const isDeliveryListPage = sectionSlug === "marknad" && menuSlug === "leveranslista";
+  const isAndraStatusRoute = isDeliveryListPage && pathParts[2] === "andra-status";
+  const isKlarSokPage = sectionSlug === "marknad" && menuSlug === "klar-sok";
+  const isEdiListaPage = sectionSlug === "marknad" && menuSlug === "edi-lista";
   const isPriceListPage = sectionSlug === "marknad" && menuSlug === "prislistor";
   const isSaljstodPage = sectionSlug === "marknad" && menuSlug === "saljstod";
   const isSystemPage = sectionSlug === "system";
@@ -2679,8 +2685,16 @@ export default function Home() {
           />
         ) : isCustomerDetailOpen && selectedCustomerName ? (
           <CustomerDetailView customerName={selectedCustomerName} detail={selectedCustomerDetail} />
+        ) : isAndraStatusRoute ? (
+          <div className={styles.contractDetailPanel}>
+            <AndraStatusView onBack={() => navigateWithLoading("/marknad/leveranslista")} />
+          </div>
         ) : !isContractDetailOpen && isDeliveryListPage ? (
-          <DeliveryListView />
+          <DeliveryListView onAndraStatus={() => navigateWithLoading("/marknad/leveranslista/andra-status")} />
+        ) : isKlarSokPage ? (
+          <KlarSokView />
+        ) : isEdiListaPage ? (
+          <EdiListaView />
         ) : isCreatingPriceList ? (
           <div className={styles.contractDetailPanel}>
             <PriceListCreateView

@@ -332,7 +332,15 @@ export function AppShellLayout({
             <Typography className={styles.breadcrumbMuted}>{currentSectionLabel}</Typography>
             <ChevronRightIcon className={styles.breadcrumbArrow} />
             {!isContractDetailOpen && !isPriceListDetailOpen && !isCustomerDetailOpen && !isCreatingCustomer && !isCreatingPriceList ? (
-              <Typography className={styles.breadcrumbActive}>{currentMenuLabel}</Typography>
+              menuSlug === "edi-lista" ? (
+                <>
+                  <Typography className={styles.breadcrumbMuted}>{currentMenuLabel}</Typography>
+                  <ChevronRightIcon className={styles.breadcrumbArrow} />
+                  <Typography className={styles.breadcrumbActive}>Ehandel kund / produkt</Typography>
+                </>
+              ) : (
+                <Typography className={styles.breadcrumbActive}>{currentMenuLabel}</Typography>
+              )
             ) : isCreatingCustomer ? (
               <>
                 <Typography component={Link} href={customerListHref} className={styles.breadcrumbLinkButton}>
