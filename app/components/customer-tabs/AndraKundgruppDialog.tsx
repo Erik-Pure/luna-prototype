@@ -16,7 +16,7 @@ import {
   TextField,
   Typography
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "../../page.module.scss";
 
 const KUNDGRUPP_OPTIONS = ["A", "B", "C"];
@@ -31,10 +31,12 @@ type AndraKundgruppDialogProps = {
 
 export function AndraKundgruppDialog({ open, kortnamn, currentKundgrupp, onClose, onSave }: AndraKundgruppDialogProps) {
   const [kundgrupp, setKundgrupp] = useState(currentKundgrupp);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) setKundgrupp(currentKundgrupp);
-  }, [open, currentKundgrupp]);
+  }
 
   const handleSave = () => {
     onSave(kundgrupp);

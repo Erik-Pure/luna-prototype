@@ -1953,6 +1953,10 @@
   border-radius: 6px;
 }
 
+.tableContainerShrink {
+  min-height: 0;
+}
+
 .tableContainerSplit {
   min-height: 0;
   flex: 0 0 50%;
@@ -2058,6 +2062,21 @@
   padding: 0;
   background-color: transparent;
   border-bottom: 1px solid #eef1f6;
+}
+
+.cellVolymRed {
+  color: #d92d20;
+  font-weight: 600;
+}
+
+.cellVolymBlue {
+  background-color: #e8f0fe;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.cellTillgLagerHighlight {
+  background-color: #fef9c3;
 }
 
 .contractLinkButton {
@@ -3269,41 +3288,12 @@
   background-color: #ffffff;
 }
 
-.langdspecSection {
+.langdspecSectionBelow {
   display: flex;
   flex-direction: column;
-  padding: 0 10px 10px;
-}
-
-.langdspecToggleRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.langdspecDivider {
-  flex: 1;
-  height: 1px;
-  background-color: #e2e6ed;
-}
-
-.langdspecToggleButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  color: #4f5a68;
-  padding: 2px 4px;
-  border-radius: 4px;
-
-  &:hover {
-    background-color: #edf0f5;
-  }
+  flex: 0 0 auto;
+  padding-top: 10px;
+  overflow: auto;
 }
 
 .langdspecTablesWrapper {
@@ -9365,8 +9355,13 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   padding: 4px 0 8px;
+  flex-shrink: 0;
+}
+
+.lagerFilterMenuWrapper {
+  position: relative;
   flex-shrink: 0;
 }
 
@@ -9379,7 +9374,34 @@
   align-self: center;
 }
 
-.lagerFilterGroup {
+.lagerFilterDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 5;
+  display: flex;
+  width: 260px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #d7dbe3;
+  border-radius: 6px;
+  background-color: #ffffff;
+  box-shadow: 0 8px 22px rgba(20, 31, 53, 0.14);
+}
+
+.lagerFilterDropdownDivider {
+  height: 1px;
+  background: #ebeff4;
+}
+
+.lagerFilterDropdownRow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.lagerFilterRangeGroup {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -9414,7 +9436,8 @@
 }
 
 .lagerFilterRangeInput {
-  width: 80px;
+  width: 100%;
+  flex: 1;
 
   :global(.MuiOutlinedInput-root) {
     border-radius: 6px;

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import StraightenIcon from "@mui/icons-material/Straighten";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import CloseIcon from "@mui/icons-material/Close";
@@ -231,6 +232,15 @@ const BOTTOM_TABLE_ROWS = [
   },
 ];
 
+const VOLYM_TONE_BY_KONTRAKT: Record<string, "red" | "blue"> = {
+  "K-2024-001": "red",
+  "K-2024-002": "blue",
+};
+
+const TILLG_LAGER_HIGHLIGHT_BY_KONTRAKT: Record<string, boolean> = {
+  "K-2024-003": true,
+};
+
 const LEFT_ROWS = [
   { langd: "3.0", mangd: "50", enhet: "m3", volym: "150", lev: "30", rest: "20" },
   { langd: "3.6", mangd: "40", enhet: "m3", volym: "144", lev: "20", rest: "20" },
@@ -254,7 +264,7 @@ type DeliveryListViewProps = {
 };
 
 export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) {
-  const [langdspecOpen, setLangdspecOpen] = useState(false);
+  const [langdspecOpen, setLangdspecOpen] = useState(true);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   const hasSelection = selectedRowIndex !== null;
   const toggleRow = (i: number) => setSelectedRowIndex((prev) => (prev === i ? null : i));
@@ -308,86 +318,18 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
         onCheckboxChange={() => { }}
       />
 
-      <div className={styles.langdspecSection}>
-        <div className={styles.langdspecToggleRow}>
-          <button
-            type="button"
-            className={styles.langdspecToggleButton}
-            onClick={() => setLangdspecOpen((v) => !v)}
-          >
-            <KeyboardArrowDownIcon
-              className={`${styles.moreFiltersChevron} ${langdspecOpen ? styles.moreFiltersChevronOpen : ""}`}
-            />
-            {langdspecOpen ? "Dölj" : "Visa"} längdspecifikation
-          </button>
-          <div className={styles.langdspecDivider} />
-        </div>
-
-        {langdspecOpen && (
-          <div className={styles.langdspecTablesWrapper}>
-            {/* Left table */}
-            <div className={`${styles.langdspecTableBox} ${styles.langdspecLeftBox}`}>
-              <table className={styles.langdspecTable}>
-                <thead>
-                  <tr>
-                    {["Längd", "Mängd", "Enhet", "Volym", "Lev", "Rest"].map((h) => (
-                      <th key={h} className={styles.langdspecTh}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {LEFT_ROWS.map((row) => (
-                    <tr key={row.langd}>
-                      <td className={styles.langdspecTd}>{row.langd}</td>
-                      <td className={styles.langdspecTd}>{row.mangd}</td>
-                      <td className={styles.langdspecTd}>{row.enhet}</td>
-                      <td className={styles.langdspecTd}>{row.volym}</td>
-                      <td className={styles.langdspecTd}>{row.lev}</td>
-                      <td className={styles.langdspecTd}>{row.rest}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Right table */}
-            <div className={`${styles.langdspecTableBox} ${styles.langdspecRightBox}`}>
-              <table className={styles.langdspecTable}>
-                <thead>
-                  <tr>
-                    <th className={styles.langdspecTh}>Typ</th>
-                    <th className={styles.langdspecTh}>Enhet</th>
-                    <th className={styles.langdspecTh}>Summa</th>
-                    <th className={styles.langdspecTh}>Övr.</th>
-                    <th className={styles.langdspecTh}>Fix</th>
-                    {LENGTHS.map((l) => (
-                      <th key={l} className={styles.langdspecTh}>{l}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {RIGHT_ROWS.map((row, i) => (
-                    <tr key={i}>
-                      <td className={styles.langdspecTd}>{row.typ}</td>
-                      <td className={styles.langdspecTd}>{row.enhet}</td>
-                      <td className={styles.langdspecTd}>{row.summa}</td>
-                      <td className={styles.langdspecTd}>{row.ovr}</td>
-                      <td className={styles.langdspecTd}>{row.fix}</td>
-                      {LENGTHS.map((l) => (
-                        <td key={l} className={styles.langdspecTd}>{row.vals[l] ?? ""}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Standalone delivery rows table */}
-      <div className={styles.deliveryRowsTableSection}>
+      <div className={styles.deliveryRowsTableSection} style={{ padding: 0 }}>
         <ActionRow
+          rightSlot={
+            <IconButton
+              onClick={() => setLangdspecOpen((v) => !v)}
+              className={`${styles.columnsIconButton} ${langdspecOpen ? styles.columnsIconButtonActive : ""}`}
+              title="Visa/dölj längdspecifikation"
+            >
+              <StraightenIcon fontSize="small" />
+            </IconButton>
+          }
           items={[
             {
               kind: "node",
@@ -474,7 +416,7 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
             },
           ]}
         />
-        <div className={styles.tableContainer}>
+        <div className={`${styles.tableContainer} ${langdspecOpen ? styles.tableContainerShrink : ""}`}>
           <div className={styles.tableScrollWrap}>
             <div className={styles.tableInner}>
               <DataTable
@@ -495,10 +437,85 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
                   }
                   return value;
                 }}
+                getCellClassName={(row, column) => {
+                  const kontraktsNr = (row as Record<string, string>)["KontraktsNr"];
+                  if (column.key === "Volym") {
+                    const tone = VOLYM_TONE_BY_KONTRAKT[kontraktsNr];
+                    if (tone === "red") return styles.cellVolymRed;
+                    if (tone === "blue") return styles.cellVolymBlue;
+                  }
+                  if (column.key === "Tillg. lager" && TILLG_LAGER_HIGHLIGHT_BY_KONTRAKT[kontraktsNr]) {
+                    return styles.cellTillgLagerHighlight;
+                  }
+                  return undefined;
+                }}
               />
             </div>
           </div>
         </div>
+
+        {langdspecOpen && (
+          <div className={styles.langdspecSectionBelow}>
+            <div className={styles.langdspecTablesWrapper}>
+              {/* Left table */}
+              <div className={`${styles.langdspecTableBox} ${styles.langdspecLeftBox}`}>
+                <table className={styles.langdspecTable}>
+                  <thead>
+                    <tr>
+                      {["Längd", "Mängd", "Enhet", "Volym", "Lev", "Rest"].map((h) => (
+                        <th key={h} className={styles.langdspecTh}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {LEFT_ROWS.map((row) => (
+                      <tr key={row.langd}>
+                        <td className={styles.langdspecTd}>{row.langd}</td>
+                        <td className={styles.langdspecTd}>{row.mangd}</td>
+                        <td className={styles.langdspecTd}>{row.enhet}</td>
+                        <td className={styles.langdspecTd}>{row.volym}</td>
+                        <td className={styles.langdspecTd}>{row.lev}</td>
+                        <td className={styles.langdspecTd}>{row.rest}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Right table */}
+              <div className={`${styles.langdspecTableBox} ${styles.langdspecRightBox}`}>
+                <table className={styles.langdspecTable}>
+                  <thead>
+                    <tr>
+                      <th className={styles.langdspecTh}>Typ</th>
+                      <th className={styles.langdspecTh}>Enhet</th>
+                      <th className={styles.langdspecTh}>Summa</th>
+                      <th className={styles.langdspecTh}>Övr.</th>
+                      <th className={styles.langdspecTh}>Fix</th>
+                      {LENGTHS.map((l) => (
+                        <th key={l} className={styles.langdspecTh}>{l}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {RIGHT_ROWS.map((row, i) => (
+                      <tr key={i}>
+                        <td className={styles.langdspecTd}>{row.typ}</td>
+                        <td className={styles.langdspecTd}>{row.enhet}</td>
+                        <td className={styles.langdspecTd}>{row.summa}</td>
+                        <td className={styles.langdspecTd}>{row.ovr}</td>
+                        <td className={styles.langdspecTd}>{row.fix}</td>
+                        {LENGTHS.map((l) => (
+                          <td key={l} className={styles.langdspecTd}>{row.vals[l] ?? ""}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <Dialog open={avregistreraOpen} onClose={() => setAvregistreraOpen(false)} maxWidth="xs" fullWidth slotProps={{ paper: { className: styles.freightDialogPaper } }}>
         <DialogTitle className={styles.freightDialogTitle}>

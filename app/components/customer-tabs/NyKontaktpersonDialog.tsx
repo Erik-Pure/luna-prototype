@@ -16,7 +16,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "../../page.module.scss";
 
 const FUNKTION_OPTIONS = [
@@ -110,10 +110,12 @@ type NyKontaktpersonDialogProps = {
 
 export function NyKontaktpersonDialog({ open, initialDraft, title = "Ny kontaktperson", kundAdresser, onClose, onSave }: NyKontaktpersonDialogProps) {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) setDraft(initialDraft ?? EMPTY_DRAFT);
-  }, [open, initialDraft]);
+  }
 
   const set = (key: keyof Draft, value: string) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -121,7 +123,11 @@ export function NyKontaktpersonDialog({ open, initialDraft, title = "Ny kontaktp
   const toggleSet = (key: "information" | "utskick", value: string) =>
     setDraft((prev) => {
       const next = new Set(prev[key]);
-      next.has(value) ? next.delete(value) : next.add(value);
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
       return { ...prev, [key]: next };
     });
 

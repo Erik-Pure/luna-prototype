@@ -12,7 +12,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "../page.module.scss";
 
 const LEVERANSDAG_OPTIONS = [
@@ -57,10 +57,12 @@ type AndraDetaljerDialogProps = {
 
 export function AndraDetaljerDialog({ open, initialDraft, onClose, onSave }: AndraDetaljerDialogProps) {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) setDraft({ ...EMPTY_DRAFT, ...initialDraft });
-  }, [open, initialDraft]);
+  }
 
   const set = (key: keyof Draft, value: string) =>
     setDraft((prev) => ({ ...prev, [key]: value }));

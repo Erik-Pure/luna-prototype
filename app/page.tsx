@@ -8,6 +8,7 @@ import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import FactoryOutlinedIcon from "@mui/icons-material/FactoryOutlined";
+import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
@@ -1506,6 +1507,9 @@ export default function Home() {
   const [lagerAvropsvolymTill, setLagerAvropsvolymTill] = useState("");
   const [lagerFardiglagervolymFran, setLagerFardiglagervolymFran] = useState("");
   const [lagerFardiglagervolymTill, setLagerFardiglagervolymTill] = useState("");
+  const [isLagerFilterMenuOpen, setIsLagerFilterMenuOpen] = useState(false);
+  const lagerFilterMenuRef = useRef<HTMLDivElement | null>(null);
+  const lagerFilterButtonRef = useRef<HTMLButtonElement | null>(null);
   const [avropLand, setAvropLand] = useState("");
   const [avropRegistreradAv, setAvropRegistreradAv] = useState("");
   const [selectedAvropRow, setSelectedAvropRow] = useState<number | null>(null);
@@ -1787,13 +1791,19 @@ export default function Home() {
     lagerFardiglagervolymFran, lagerFardiglagervolymTill,
   ]);
 
+  const lagerActiveFilterCount = [
+    lagerKontraktsvolymFran, lagerKontraktsvolymTill,
+    lagerAvropsvolymFran, lagerAvropsvolymTill,
+    lagerFardiglagervolymFran, lagerFardiglagervolymTill,
+  ].filter(Boolean).length;
+
   const lagerDetailRows: LagerDetailRow[] = (() => {
     const selRow = selectedLagerRow !== null ? filteredLagerRows[selectedLagerRow] : null;
     return selRow ? (LAGER_DETAIL_DATA[selRow.artNr] ?? LAGER_DETAIL_PLACEHOLDER) : LAGER_DETAIL_PLACEHOLDER;
   })();
 
   useEffect(() => {
-    if (!isColumnsMenuOpen && !isLineColumnsMenuOpen && !isSearchMenuOpen && !isCompanyMenuOpen && !isCustomerSearchMenuOpen && !isCustomerColumnsMenuOpen) {
+    if (!isColumnsMenuOpen && !isLineColumnsMenuOpen && !isSearchMenuOpen && !isCompanyMenuOpen && !isCustomerSearchMenuOpen && !isCustomerColumnsMenuOpen && !isLagerFilterMenuOpen) {
       return;
     }
 
@@ -1811,6 +1821,8 @@ export default function Home() {
       const clickedCustomerSearchButton = customerSearchButtonRef.current?.contains(target);
       const clickedInsideCustomerColumnsMenu = customerColumnsMenuRef.current?.contains(target);
       const clickedCustomerColumnsButton = customerColumnsButtonRef.current?.contains(target);
+      const clickedInsideLagerFilterMenu = lagerFilterMenuRef.current?.contains(target);
+      const clickedLagerFilterButton = lagerFilterButtonRef.current?.contains(target);
 
       if (isSearchMenuOpen && !clickedInsideSearchMenu && !clickedSearchButton) {
         setDraftSearchFields(appliedSearchFields);
@@ -1840,6 +1852,10 @@ export default function Home() {
         setDraftCustomerColumns(appliedCustomerColumns);
         setIsCustomerColumnsMenuOpen(false);
       }
+
+      if (isLagerFilterMenuOpen && !clickedInsideLagerFilterMenu && !clickedLagerFilterButton) {
+        setIsLagerFilterMenuOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -1851,6 +1867,7 @@ export default function Home() {
     isCompanyMenuOpen,
     isCustomerSearchMenuOpen,
     isCustomerColumnsMenuOpen,
+    isLagerFilterMenuOpen,
     appliedColumns,
     appliedLineColumns,
     appliedSearchFields,
@@ -2387,7 +2404,7 @@ export default function Home() {
 
   const activeContractTabForView: ContractTab = isLineItemDetailOpen ? "Kontraktsrader" : activeContractTab;
 
-  const deepestBreadcrumb = useMemo(() => {
+  const deepestBreadcrumb = (() => {
     if (isPrislistekalkylRoute) {
       return "Prislistekalkyl";
     }
@@ -2425,26 +2442,7 @@ export default function Home() {
     }
 
     return currentMenuLabel;
-  }, [
-    currentMenuLabel,
-    isCustomerDetailOpen,
-    selectedCustomerName,
-    selectedContractId,
-    isContainerRoute,
-    isAvropDetailOpen,
-    selectedAvropsradId,
-    isCreatingAvrop,
-    isLineItemDetailOpen,
-    selectedLineItemId,
-    isCreatingLineItem,
-    isPrislistekalkylRoute,
-    isCreatingPriceList,
-    isPriceListDetailOpen,
-    selectedPriceListId,
-    isPriceListRowDetailOpen,
-    selectedPriceRowId,
-    isCreatingPriceRow
-  ]);
+  })();
 
   useEffect(() => {
     document.title = `${deepestBreadcrumb} (${selectedCompany})`;
@@ -2897,61 +2895,82 @@ export default function Home() {
                     <span className={styles.lagerFilterCheckboxText}>Visa tomma rader</span>
                   </label>
                   <div className={styles.lagerFilterDivider} />
-                  <div className={styles.lagerFilterGroup}>
-                    <span className={styles.lagerFilterLabel}>Kontraktsvolym</span>
-                    <TextField
+                  <div className={styles.lagerFilterMenuWrapper}>
+                    <Button
+                      ref={lagerFilterButtonRef}
+                      variant="outlined"
                       size="small"
-                      placeholder="Från"
-                      value={lagerKontraktsvolymFran}
-                      onChange={(e) => setLagerKontraktsvolymFran(e.target.value)}
-                      className={styles.lagerFilterRangeInput}
-                    />
-                    <span className={styles.lagerFilterSeparator}>–</span>
-                    <TextField
-                      size="small"
-                      placeholder="Till"
-                      value={lagerKontraktsvolymTill}
-                      onChange={(e) => setLagerKontraktsvolymTill(e.target.value)}
-                      className={styles.lagerFilterRangeInput}
-                    />
-                  </div>
-                  <div className={styles.lagerFilterDivider} />
-                  <div className={styles.lagerFilterGroup}>
-                    <span className={styles.lagerFilterLabel}>Avropsvolym</span>
-                    <TextField
-                      size="small"
-                      placeholder="Från"
-                      value={lagerAvropsvolymFran}
-                      onChange={(e) => setLagerAvropsvolymFran(e.target.value)}
-                      className={styles.lagerFilterRangeInput}
-                    />
-                    <span className={styles.lagerFilterSeparator}>–</span>
-                    <TextField
-                      size="small"
-                      placeholder="Till"
-                      value={lagerAvropsvolymTill}
-                      onChange={(e) => setLagerAvropsvolymTill(e.target.value)}
-                      className={styles.lagerFilterRangeInput}
-                    />
-                  </div>
-                  <div className={styles.lagerFilterDivider} />
-                  <div className={styles.lagerFilterGroup}>
-                    <span className={styles.lagerFilterLabel}>Färdiglagervolym</span>
-                    <TextField
-                      size="small"
-                      placeholder="Från"
-                      value={lagerFardiglagervolymFran}
-                      onChange={(e) => setLagerFardiglagervolymFran(e.target.value)}
-                      className={styles.lagerFilterRangeInput}
-                    />
-                    <span className={styles.lagerFilterSeparator}>–</span>
-                    <TextField
-                      size="small"
-                      placeholder="Till"
-                      value={lagerFardiglagervolymTill}
-                      onChange={(e) => setLagerFardiglagervolymTill(e.target.value)}
-                      className={styles.lagerFilterRangeInput}
-                    />
+                      color="inherit"
+                      startIcon={<FilterAltOutlinedIcon fontSize="small" />}
+                      className={`${styles.lineItemsToggleButton} ${lagerActiveFilterCount > 0 ? styles.columnsIconButtonActive : ""}`}
+                      onClick={() => setIsLagerFilterMenuOpen((prev) => !prev)}
+                    >
+                      Filter{lagerActiveFilterCount > 0 ? ` (${lagerActiveFilterCount})` : ""}
+                    </Button>
+                    {isLagerFilterMenuOpen ? (
+                      <div className={styles.lagerFilterDropdown} ref={lagerFilterMenuRef}>
+                        <div className={styles.lagerFilterDropdownRow}>
+                          <span className={styles.lagerFilterLabel}>Kontraktsvolym</span>
+                          <div className={styles.lagerFilterRangeGroup}>
+                            <TextField
+                              size="small"
+                              placeholder="Från"
+                              value={lagerKontraktsvolymFran}
+                              onChange={(e) => setLagerKontraktsvolymFran(e.target.value)}
+                              className={styles.lagerFilterRangeInput}
+                            />
+                            <span className={styles.lagerFilterSeparator}>–</span>
+                            <TextField
+                              size="small"
+                              placeholder="Till"
+                              value={lagerKontraktsvolymTill}
+                              onChange={(e) => setLagerKontraktsvolymTill(e.target.value)}
+                              className={styles.lagerFilterRangeInput}
+                            />
+                          </div>
+                        </div>
+                        <div className={styles.lagerFilterDropdownRow}>
+                          <span className={styles.lagerFilterLabel}>Avropsvolym</span>
+                          <div className={styles.lagerFilterRangeGroup}>
+                            <TextField
+                              size="small"
+                              placeholder="Från"
+                              value={lagerAvropsvolymFran}
+                              onChange={(e) => setLagerAvropsvolymFran(e.target.value)}
+                              className={styles.lagerFilterRangeInput}
+                            />
+                            <span className={styles.lagerFilterSeparator}>–</span>
+                            <TextField
+                              size="small"
+                              placeholder="Till"
+                              value={lagerAvropsvolymTill}
+                              onChange={(e) => setLagerAvropsvolymTill(e.target.value)}
+                              className={styles.lagerFilterRangeInput}
+                            />
+                          </div>
+                        </div>
+                        <div className={styles.lagerFilterDropdownRow}>
+                          <span className={styles.lagerFilterLabel}>Färdiglagervolym</span>
+                          <div className={styles.lagerFilterRangeGroup}>
+                            <TextField
+                              size="small"
+                              placeholder="Från"
+                              value={lagerFardiglagervolymFran}
+                              onChange={(e) => setLagerFardiglagervolymFran(e.target.value)}
+                              className={styles.lagerFilterRangeInput}
+                            />
+                            <span className={styles.lagerFilterSeparator}>–</span>
+                            <TextField
+                              size="small"
+                              placeholder="Till"
+                              value={lagerFardiglagervolymTill}
+                              onChange={(e) => setLagerFardiglagervolymTill(e.target.value)}
+                              className={styles.lagerFilterRangeInput}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <div className={styles.freightSection}>

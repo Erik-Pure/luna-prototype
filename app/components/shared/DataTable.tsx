@@ -24,6 +24,7 @@ type DataTableProps<TRow extends Record<string, string | boolean | undefined>> =
   onRowClick?: (index: number, event?: React.MouseEvent) => void;
   renderCell?: (row: TRow, column: DataTableColumn, rowIndex: number, columnIndex: number) => ReactNode;
   renderHeaderCell?: (column: DataTableColumn, columnIndex: number) => ReactNode;
+  getCellClassName?: (row: TRow, column: DataTableColumn, rowIndex: number, columnIndex: number) => string | undefined;
   fillRemainingSpace?: boolean;
 };
 
@@ -37,6 +38,7 @@ export function DataTable<TRow extends Record<string, string | boolean | undefin
   onRowClick,
   renderCell,
   renderHeaderCell,
+  getCellClassName,
   fillRemainingSpace = false
 }: DataTableProps<TRow>) {
   const headerClass = variant === "main" ? styles.tableHeader : styles.lineItemsHeaderRow;
@@ -54,43 +56,49 @@ export function DataTable<TRow extends Record<string, string | boolean | undefin
   const firstPinnedRightIndex = columns.findIndex((column) => Boolean(column.pinnedRight));
   const shouldRenderFiller = fillRemainingSpace;
 
-  let leftStickyOffset = 0;
-  let leftStickyOrder = 0;
-  const stickyMeta = columns.map((column, columnIndex) => {
-    const shouldStick = columnIndex === 0 || Boolean(column.pinned);
-    if (!shouldStick) {
-      return { isSticky: false, left: 0, order: -1 };
-    }
+  const stickyMeta = columns.reduce<{
+    items: Array<{ isSticky: boolean; left: number; order: number }>;
+    offset: number;
+    order: number;
+  }>(
+    (acc, column, columnIndex) => {
+      const shouldStick = columnIndex === 0 || Boolean(column.pinned);
+      if (!shouldStick) {
+        acc.items.push({ isSticky: false, left: 0, order: -1 });
+        return acc;
+      }
 
-    const meta = {
-      isSticky: true,
-      left: leftStickyOffset,
-      order: leftStickyOrder,
-    };
-    leftStickyOffset += column.width ?? DEFAULT_COLUMN_WIDTH;
-    leftStickyOrder += 1;
-    return meta;
-  });
+      acc.items.push({ isSticky: true, left: acc.offset, order: acc.order });
+      return {
+        items: acc.items,
+        offset: acc.offset + (column.width ?? DEFAULT_COLUMN_WIDTH),
+        order: acc.order + 1,
+      };
+    },
+    { items: [], offset: 0, order: 0 }
+  ).items;
 
-  let rightStickyOffset = 0;
-  let rightStickyOrder = 0;
-  const stickyRightMeta = new Array<{ isSticky: boolean; right: number; order: number }>(columns.length);
-  for (let columnIndex = columns.length - 1; columnIndex >= 0; columnIndex -= 1) {
-    const column = columns[columnIndex];
-    const shouldStick = Boolean(column?.pinnedRight);
-    if (!shouldStick) {
-      stickyRightMeta[columnIndex] = { isSticky: false, right: 0, order: -1 };
-      continue;
-    }
+  const stickyRightMeta = columns.reduceRight<{
+    items: Array<{ isSticky: boolean; right: number; order: number }>;
+    offset: number;
+    order: number;
+  }>(
+    (acc, column) => {
+      const shouldStick = Boolean(column?.pinnedRight);
+      if (!shouldStick) {
+        acc.items.unshift({ isSticky: false, right: 0, order: -1 });
+        return acc;
+      }
 
-    stickyRightMeta[columnIndex] = {
-      isSticky: true,
-      right: rightStickyOffset,
-      order: rightStickyOrder,
-    };
-    rightStickyOffset += column.width ?? DEFAULT_COLUMN_WIDTH;
-    rightStickyOrder += 1;
-  }
+      acc.items.unshift({ isSticky: true, right: acc.offset, order: acc.order });
+      return {
+        items: acc.items,
+        offset: acc.offset + (column.width ?? DEFAULT_COLUMN_WIDTH),
+        order: acc.order + 1,
+      };
+    },
+    { items: [], offset: 0, order: 0 }
+  ).items;
 
   return (
     <>
@@ -149,7 +157,7 @@ export function DataTable<TRow extends Record<string, string | boolean | undefin
                 <div className={fillerCellClass} aria-hidden="true" />
               ) : null}
               <div
-                className={`${cellClass} ${stickyMeta[columnIndex]?.isSticky ? stickyCellClass : ""} ${stickyRightMeta[columnIndex]?.isSticky ? stickyRightCellClass : ""}`}
+                className={`${cellClass} ${stickyMeta[columnIndex]?.isSticky ? stickyCellClass : ""} ${stickyRightMeta[columnIndex]?.isSticky ? stickyRightCellClass : ""} ${getCellClassName?.(row, column, rowIndex, columnIndex) ?? ""}`}
                 style={
                   stickyMeta[columnIndex]?.isSticky || stickyRightMeta[columnIndex]?.isSticky || Boolean(column.width)
                     ? {

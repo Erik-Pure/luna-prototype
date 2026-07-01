@@ -117,8 +117,6 @@ const ALT_ADRESS_COLUMNS = [
   { key: "_actions", label: "", pinnedRight: true, width: 112 },
 ] satisfies Array<{ key: string; label: string; pinnedRight?: boolean; width?: number }>;
 
-let nextAltId = 1;
-
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
 const ROField = ({ label, value, helperText, style }: {

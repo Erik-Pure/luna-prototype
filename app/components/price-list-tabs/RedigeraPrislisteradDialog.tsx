@@ -14,7 +14,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styles from "../../page.module.scss";
 
 type KostnadRad = {
@@ -70,10 +70,12 @@ function buildDraft(initial: RedigeraPrislisteradInitial | null): RedigeraDraft 
 
 export function RedigeraPrislisteradDialog({ open, initial, onClose, onSave }: Props) {
   const [draft, setDraft] = useState<RedigeraDraft>(() => buildDraft(initial));
+  const [prevOpen, setPrevOpen] = useState(open);
 
-  useEffect(() => {
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) setDraft(buildDraft(initial));
-  }, [open, initial]);
+  }
 
   const setField = <K extends keyof RedigeraDraft>(key: K, value: RedigeraDraft[K]) =>
     setDraft((prev) => ({ ...prev, [key]: value }));

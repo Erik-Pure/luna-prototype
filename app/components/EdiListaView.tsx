@@ -102,8 +102,6 @@ const PRODUKT_SETTINGS_KEYS = new Set<string>(["paketHojd", "paketBredd", "paket
 
 // ── Mock data ──────────────────────────────────────────────────────────────────
 
-let nextId = 6;
-
 const INITIAL_ROWS: EdiRow[] = [
   {
     _id: "1", kund: "Acme AB", artNrKund: "AC-9920", benamningKund: "Ytterpanel 22x95",

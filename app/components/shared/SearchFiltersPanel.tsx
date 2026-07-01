@@ -100,7 +100,7 @@ export function SearchFiltersPanel({
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [isEditingFavorites, setIsEditingFavorites] = useState(false);
   const [activePresetIndex, setActivePresetIndex] = useState<number | null>(defaultActivePresetIndex ?? null);
-  const [presetValues, setPresetValues] = useState<Record<number, Record<string, string | boolean>>>({});
+  const [presetValues, setPresetValues] = useState<Record<number, Record<string, string | boolean | null>>>({});
   const [editFavoriteKeys, setEditFavoriteKeys] = useState<string[]>([]);
   const [draggedFavoriteKey, setDraggedFavoriteKey] = useState<string | null>(null);
   const [dropTargetFavoriteKey, setDropTargetFavoriteKey] = useState<string | null>(null);
