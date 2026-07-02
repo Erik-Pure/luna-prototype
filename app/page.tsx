@@ -6,18 +6,36 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DvrOutlinedIcon from "@mui/icons-material/DvrOutlined";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
+import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import FactoryOutlinedIcon from "@mui/icons-material/FactoryOutlined";
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
+import ClearIcon from "@mui/icons-material/Clear";
 import {
   Button,
   Checkbox,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormHelperText,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  List,
+  ListItemButton,
+  ListItemText,
   MenuItem,
+  Popover,
+  Select,
   Switch,
   TextField,
   Typography
@@ -48,6 +66,9 @@ import { EdiListaView } from "./components/EdiListaView";
 import { AndraStatusView } from "./components/AndraStatusView";
 import { DataTable } from "./components/shared/DataTable";
 import { ActionRow } from "./components/shared/ActionRow";
+import { ActionMenuButton } from "./components/shared/ActionMenuButton";
+import { ColumnManagerDropdown } from "./components/shared/ColumnManagerDropdown";
+import { useColumnManager } from "./hooks/useColumnManager";
 import { useColorMode, useUiState } from "./providers";
 import styles from "./page.module.scss";
 
@@ -1124,6 +1145,12 @@ const LAGER_COLUMNS: Array<{ key: LagerColumnKey; label: string }> = [
   { key: "paJusterorder", label: "På justerorder" },
 ];
 
+const LAGER_COLUMNS_MANAGED = LAGER_COLUMNS.map((column) => ({ ...column, visible: true }));
+
+const TILLG_LAGER_HIGHLIGHT_BY_ARTNR: Record<string, boolean> = {
+  "2202212000001000": true,
+};
+
 const LAGER_ROWS: LagerRow[] = [
   {
     enhet: "BP Hissmofors",
@@ -1381,6 +1408,18 @@ const AVROP_COLUMNS: Array<{ key: keyof AvropRow; label: string; pinned?: boolea
   { key: "godsmottMarke", label: "Godsmott. märke" },
 ];
 
+const AVROP_COLUMNS_MANAGED = AVROP_COLUMNS.map((column) => ({ ...column, visible: true }));
+
+const AVROPRADSTATUS_OPTIONS = [
+  "Sales planned",
+  "Customer planned",
+  "Load planned",
+  "Planerad",
+  "Bekräftad",
+  "Levererad",
+  "Avregistrerad",
+];
+
 const AVROP_ROWS: AvropRow[] = [
   { utlastandeBolag: "BP Hissmofors", kontraktsNr: "20241001", avropradNr: "163281", typ: "ML", kund: "Byggmax AB", extAvropNr: "EX-8821", produkt: "22x95 Gran Ytterpanel", pakettyp: "Lp", emballage: "Standard", pris: "3 409", valuta: "SEK", nettoprisM3: "3 159", mangd: "50", enhet: "m3", volym: "50", lassbokat: "2024-11-15", leveradVolym: "20", avropsrest: "30", nettolager: "95", tillgLager: "120", dag: "14", langdkrav: "3.0–5.4", volymLO: "15", produceras: "2024-W47", kundensMarke: "BM-A12", vecka: "47", leveranssatt: "Bil", internKommentarKontraktsrad: "", internKommentarAvropsrad: "Prio kund", artNr: "2202209500002000", mlRatt: "45", avropNr: "A-10231", ravarulager: "Krokom", nominellTjocklek: "22", nominellBredd: "95", ansvarigBolag: "BP Hissmofors", avropradDatum: "2024-10-28", utlastningssparr: "Nej", skeppningsvecka: "48", etd: "2024-11-25", eta: "2024-11-26", mlTorr: "42", fartyg: "–", closingDate: "2024-11-10", expeditor: "DSV", restvardeSEK: "102 270", restvarde: "30", totalvardeSEK: "170 450", totalvarde: "50", status: "Aktiv", custWeek: "48", vflGrupp: "VFL-A", leveransvillkor: "DAP", levVillkorOrt: "Stockholm", mottagandeHamn: "–", leveransperiodKunddokument: "2024-11", lastorderNr: "LO-4421", reserveratLagerflytt: "5", leveransbokat: "2024-11-14", utlastandeLagerstalle: "Krokom", levTidigast: "2024-11-13", levSenastibl: "2024-11-17", extKontraktsNr: "BM-2024-09", tidigasteLevDatum: "2024-11-13", kontraktsdatum: "2024-01-15", kurs: "1.00", loadPlanned: "45", ejLeveransbokat: "5", limit: "60", loadPlannedRest: "15", lassSipal: "3", godsmottMarke: "BM-YTERP" },
   { utlastandeBolag: "BP Hissmofors", kontraktsNr: "20241001", avropradNr: "163214", typ: "FL", kund: "Byggmax AB", extAvropNr: "EX-8822", produkt: "22x120 Gran Ytterpanel", pakettyp: "Pk", emballage: "Staplat", pris: "3 926", valuta: "SEK", nettoprisM3: "3 805", mangd: "30", enhet: "m3", volym: "30", lassbokat: "2024-11-20", leveradVolym: "10", avropsrest: "20", nettolager: "70", tillgLager: "85", dag: "21", langdkrav: "2.4–4.8", volymLO: "8", produceras: "2024-W48", kundensMarke: "BM-A13", vecka: "48", leveranssatt: "Bil", internKommentarKontraktsrad: "Årskontrakt", internKommentarAvropsrad: "", artNr: "2202212000001000", mlRatt: "28", avropNr: "A-10232", ravarulager: "Östersund", nominellTjocklek: "22", nominellBredd: "120", ansvarigBolag: "BP Hissmofors", avropradDatum: "2024-10-30", utlastningssparr: "Nej", skeppningsvecka: "49", etd: "2024-12-02", eta: "2024-12-03", mlTorr: "26", fartyg: "–", closingDate: "2024-11-18", expeditor: "Schenker", restvardeSEK: "78 520", restvarde: "20", totalvardeSEK: "117 780", totalvarde: "30", status: "Aktiv", custWeek: "49", vflGrupp: "VFL-B", leveransvillkor: "DAP", levVillkorOrt: "Göteborg", mottagandeHamn: "–", leveransperiodKunddokument: "2024-11", lastorderNr: "LO-4422", reserveratLagerflytt: "2", leveransbokat: "2024-11-19", utlastandeLagerstalle: "Östersund", levTidigast: "2024-11-18", levSenastibl: "2024-11-22", extKontraktsNr: "BM-2024-09", tidigasteLevDatum: "2024-11-18", kontraktsdatum: "2024-01-15", kurs: "1.00", loadPlanned: "28", ejLeveransbokat: "2", limit: "35", loadPlannedRest: "7", lassSipal: "2", godsmottMarke: "BM-YTERP120" },
@@ -1507,13 +1546,30 @@ export default function Home() {
   const [lagerAvropsvolymTill, setLagerAvropsvolymTill] = useState("");
   const [lagerFardiglagervolymFran, setLagerFardiglagervolymFran] = useState("");
   const [lagerFardiglagervolymTill, setLagerFardiglagervolymTill] = useState("");
+  const [lagerFritext, setLagerFritext] = useState("");
   const [isLagerFilterMenuOpen, setIsLagerFilterMenuOpen] = useState(false);
   const lagerFilterMenuRef = useRef<HTMLDivElement | null>(null);
   const lagerFilterButtonRef = useRef<HTMLButtonElement | null>(null);
+  const lagerColumnsManager = useColumnManager(LAGER_COLUMNS_MANAGED);
+  const lagerColumnsMenuRef = useRef<HTMLDivElement | null>(null);
+  const lagerColumnsButtonRef = useRef<HTMLButtonElement | null>(null);
   const [avropLand, setAvropLand] = useState("");
   const [avropRegistreradAv, setAvropRegistreradAv] = useState("");
+  const [avropFritext, setAvropFritext] = useState("");
+  const [isAvropFilterMenuOpen, setIsAvropFilterMenuOpen] = useState(false);
+  const avropFilterMenuRef = useRef<HTMLDivElement | null>(null);
+  const avropFilterButtonRef = useRef<HTMLButtonElement | null>(null);
+  const avropColumnsManager = useColumnManager(AVROP_COLUMNS_MANAGED);
+  const avropColumnsMenuRef = useRef<HTMLDivElement | null>(null);
+  const avropColumnsButtonRef = useRef<HTMLButtonElement | null>(null);
   const [selectedAvropRow, setSelectedAvropRow] = useState<number | null>(null);
   const [avropAvreg, setAvropAvreg] = useState<"off" | "indeterminate" | "on">("off");
+  const [isAvropStatusDialogOpen, setIsAvropStatusDialogOpen] = useState(false);
+  const [avropStatusValue, setAvropStatusValue] = useState("");
+  const [avropStatusLeveransvecka, setAvropStatusLeveransvecka] = useState("");
+  const [avropStatusError, setAvropStatusError] = useState(false);
+  const [avropGaTillAnchor, setAvropGaTillAnchor] = useState<HTMLElement | null>(null);
+  const [isAvropAvregistreraDialogOpen, setIsAvropAvregistreraDialogOpen] = useState(false);
   const [customerSearchValues, setCustomerSearchValues] = useState<CustomerSearchValueMap>(initialCustomerSearchValues);
   const [customerGlobalSearchValue, setCustomerGlobalSearchValue] = useState("");
   const [isCustomerSearchMenuOpen, setIsCustomerSearchMenuOpen] = useState(false);
@@ -1760,6 +1816,7 @@ export default function Home() {
     const tillAvropsvolym = parseInput(lagerAvropsvolymTill);
     const franFardiglagervolym = parseInput(lagerFardiglagervolymFran);
     const tillFardiglagervolym = parseInput(lagerFardiglagervolymTill);
+    const normalizedFritext = lagerFritext.trim().toLowerCase();
 
     return LAGER_ROWS.filter((row) => {
       if (!lagerVisaTommaRader) {
@@ -1782,6 +1839,11 @@ export default function Home() {
       if (franFardiglagervolym !== null && tillgLager < franFardiglagervolym) return false;
       if (tillFardiglagervolym !== null && tillgLager > tillFardiglagervolym) return false;
 
+      if (normalizedFritext) {
+        const matches = Object.values(row).some((value) => value.toLowerCase().includes(normalizedFritext));
+        if (!matches) return false;
+      }
+
       return true;
     });
   }, [
@@ -1789,13 +1851,25 @@ export default function Home() {
     lagerKontraktsvolymFran, lagerKontraktsvolymTill,
     lagerAvropsvolymFran, lagerAvropsvolymTill,
     lagerFardiglagervolymFran, lagerFardiglagervolymTill,
+    lagerFritext,
   ]);
 
+  const filteredAvropRows = useMemo(() => {
+    const normalizedFritext = avropFritext.trim().toLowerCase();
+    if (!normalizedFritext) return AVROP_ROWS;
+    return AVROP_ROWS.filter((row) =>
+      Object.values(row).some((value) => value.toLowerCase().includes(normalizedFritext))
+    );
+  }, [avropFritext]);
+
   const lagerActiveFilterCount = [
+    lagerFritext,
     lagerKontraktsvolymFran, lagerKontraktsvolymTill,
     lagerAvropsvolymFran, lagerAvropsvolymTill,
     lagerFardiglagervolymFran, lagerFardiglagervolymTill,
   ].filter(Boolean).length;
+
+  const avropActiveFilterCount = [avropFritext, avropLand, avropRegistreradAv].filter(Boolean).length;
 
   const lagerDetailRows: LagerDetailRow[] = (() => {
     const selRow = selectedLagerRow !== null ? filteredLagerRows[selectedLagerRow] : null;
@@ -1803,7 +1877,7 @@ export default function Home() {
   })();
 
   useEffect(() => {
-    if (!isColumnsMenuOpen && !isLineColumnsMenuOpen && !isSearchMenuOpen && !isCompanyMenuOpen && !isCustomerSearchMenuOpen && !isCustomerColumnsMenuOpen && !isLagerFilterMenuOpen) {
+    if (!isColumnsMenuOpen && !isLineColumnsMenuOpen && !isSearchMenuOpen && !isCompanyMenuOpen && !isCustomerSearchMenuOpen && !isCustomerColumnsMenuOpen && !isLagerFilterMenuOpen && !isAvropFilterMenuOpen) {
       return;
     }
 
@@ -1823,6 +1897,8 @@ export default function Home() {
       const clickedCustomerColumnsButton = customerColumnsButtonRef.current?.contains(target);
       const clickedInsideLagerFilterMenu = lagerFilterMenuRef.current?.contains(target);
       const clickedLagerFilterButton = lagerFilterButtonRef.current?.contains(target);
+      const clickedInsideAvropFilterMenu = avropFilterMenuRef.current?.contains(target);
+      const clickedAvropFilterButton = avropFilterButtonRef.current?.contains(target);
 
       if (isSearchMenuOpen && !clickedInsideSearchMenu && !clickedSearchButton) {
         setDraftSearchFields(appliedSearchFields);
@@ -1856,6 +1932,10 @@ export default function Home() {
       if (isLagerFilterMenuOpen && !clickedInsideLagerFilterMenu && !clickedLagerFilterButton) {
         setIsLagerFilterMenuOpen(false);
       }
+
+      if (isAvropFilterMenuOpen && !clickedInsideAvropFilterMenu && !clickedAvropFilterButton) {
+        setIsAvropFilterMenuOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -1868,6 +1948,7 @@ export default function Home() {
     isCustomerSearchMenuOpen,
     isCustomerColumnsMenuOpen,
     isLagerFilterMenuOpen,
+    isAvropFilterMenuOpen,
     appliedColumns,
     appliedLineColumns,
     appliedSearchFields,
@@ -2874,7 +2955,7 @@ export default function Home() {
               </div>
             </div>
             {saljstodTab === "lager" && (
-              <div className={styles.freightTabContent}>
+              <div className={styles.freightTabContent} style={{ gap: 8 }}>
                 <div className={styles.lagerFilterBar} style={{ paddingBottom: 0 }}>
                   <Button
                     variant="outlined"
@@ -2909,6 +2990,16 @@ export default function Home() {
                     </Button>
                     {isLagerFilterMenuOpen ? (
                       <div className={styles.lagerFilterDropdown} ref={lagerFilterMenuRef}>
+                        <div className={styles.lagerFilterDropdownRow}>
+                          <span className={styles.lagerFilterLabel}>Sök</span>
+                          <TextField
+                            size="small"
+                            placeholder="Sök i tabellen..."
+                            value={lagerFritext}
+                            onChange={(e) => setLagerFritext(e.target.value)}
+                            className={styles.lagerFilterRangeInput}
+                          />
+                        </div>
                         <div className={styles.lagerFilterDropdownRow}>
                           <span className={styles.lagerFilterLabel}>Kontraktsvolym</span>
                           <div className={styles.lagerFilterRangeGroup}>
@@ -2972,19 +3063,39 @@ export default function Home() {
                       </div>
                     ) : null}
                   </div>
+                  <ColumnManagerDropdown
+                    isOpen={lagerColumnsManager.isOpen}
+                    columns={lagerColumnsManager.draftColumns}
+                    menuRef={lagerColumnsMenuRef}
+                    buttonRef={lagerColumnsButtonRef}
+                    onOpen={lagerColumnsManager.open}
+                    onCancel={lagerColumnsManager.cancel}
+                    onToggleVisibility={(key) => lagerColumnsManager.toggleVisibility(key as LagerColumnKey)}
+                    onMove={(key, dir) => lagerColumnsManager.move(key as LagerColumnKey, dir)}
+                    onSave={lagerColumnsManager.save}
+                    onReset={lagerColumnsManager.reset}
+                    onTogglePin={(key) => lagerColumnsManager.togglePin(key as LagerColumnKey)}
+                    iconOnly
+                  />
                 </div>
                 <div className={styles.freightSection}>
-                  <div className={styles.lineItemsTableFrame}>
+                  <div className={`${styles.lineItemsTableFrame} ${styles.lineItemsTableFrameBordered}`}>
                     <div className={styles.freightTableWrap}>
                       <div className={styles.freightTable}>
                         <DataTable
                           variant="main"
                           fillRemainingSpace
-                          columns={LAGER_COLUMNS}
+                          columns={lagerColumnsManager.orderedVisibleColumns}
                           rows={filteredLagerRows}
                           rowKey={(_row, index) => `lager-${index}`}
                           selectedRowIndex={selectedLagerRow}
                           onRowClick={(index) => setSelectedLagerRow((prev) => (prev === index ? null : index))}
+                          getCellClassName={(row, column) => {
+                            if (column.key === "tillgLager" && TILLG_LAGER_HIGHLIGHT_BY_ARTNR[row.artNr]) {
+                              return styles.cellTillgLagerHighlight;
+                            }
+                            return undefined;
+                          }}
                         />
                       </div>
                     </div>
@@ -3029,18 +3140,72 @@ export default function Home() {
               </div>
             )}
             {saljstodTab === "avrop" && (
-              <div className={styles.freightTabContent}>
+              <div className={styles.freightTabContent} style={{ gap: 0 }}>
                 <ActionRow
                   items={[
-                    { label: "Avropsrad", icon: <AddIcon fontSize="small" />, tone: "primary", enabled: selectedAvropRow !== null },
-                    { kind: "divider" },
-                    { label: "Lastorder", icon: <AddIcon fontSize="small" /> },
-                    { label: "Redigera lastorder", icon: <EditOutlinedIcon fontSize="small" />, enabled: selectedAvropRow !== null },
-                    { kind: "divider" },
-                    { label: "Avregistrera", enabled: selectedAvropRow !== null },
-                    { label: "Ändra status", enabled: selectedAvropRow !== null },
+                    {
+                      kind: "node",
+                      node: (
+                        <ActionMenuButton
+                          label="Skapa"
+                          icon={<AddIcon fontSize="small" />}
+                          tone="primary"
+                          items={[
+                            { label: "Avropsrad" },
+                            { label: "Lastorder", enabled: selectedAvropRow !== null },
+                          ]}
+                        />
+                      ),
+                    },
+                    {
+                      kind: "node",
+                      node: (
+                        <ActionMenuButton
+                          label="Redigera"
+                          icon={<EditOutlinedIcon fontSize="small" />}
+                          items={[
+                            { label: "Lastorder", enabled: selectedAvropRow !== null },
+                            {
+                              label: "Status",
+                              onClick: () => {
+                                setAvropStatusValue("");
+                                setAvropStatusLeveransvecka("");
+                                setAvropStatusError(false);
+                                setIsAvropStatusDialogOpen(true);
+                              },
+                            },
+                          ]}
+                        />
+                      ),
+                    },
+                    {
+                      label: "Avregistrera",
+                      enabled: selectedAvropRow !== null,
+                      onClick: () => setIsAvropAvregistreraDialogOpen(true),
+                    },
                     { kind: "divider" },
                     { label: "Till lagerlista" },
+                    {
+                      kind: "node",
+                      node: (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="inherit"
+                          disabled={selectedAvropRow === null}
+                          startIcon={<OpenInNewIcon fontSize="small" />}
+                          endIcon={
+                            <KeyboardArrowDownIcon
+                              className={`${styles.actionMenuChevron} ${Boolean(avropGaTillAnchor) ? styles.actionMenuChevronOpen : ""}`}
+                            />
+                          }
+                          className={styles.lineItemsToggleButton}
+                          onClick={(e) => setAvropGaTillAnchor(e.currentTarget)}
+                        >
+                          Gå till
+                        </Button>
+                      ),
+                    },
                   ]}
                   rightSlot={
                     <>
@@ -3054,48 +3219,109 @@ export default function Home() {
                         <span className={styles.lagerFilterCheckboxText}>Avreg</span>
                       </label>
                       <div className={styles.lagerFilterDivider} />
-                      <TextField
-                        size="small"
-                        label="Land"
-                        select
-                        value={avropLand}
-                        onChange={(e) => setAvropLand(e.target.value)}
-                        sx={{ minWidth: 160 }}
-                      >
-                        <MenuItem value="">Alla</MenuItem>
-                        <MenuItem value="SE">Sverige</MenuItem>
-                        <MenuItem value="NO">Norge</MenuItem>
-                        <MenuItem value="DK">Danmark</MenuItem>
-                        <MenuItem value="FI">Finland</MenuItem>
-                        <MenuItem value="DE">Tyskland</MenuItem>
-                        <MenuItem value="GB">Storbritannien</MenuItem>
-                      </TextField>
-                      <TextField
-                        size="small"
-                        label="Registrerad av"
-                        select
-                        value={avropRegistreradAv}
-                        onChange={(e) => setAvropRegistreradAv(e.target.value)}
-                        sx={{ minWidth: 180 }}
-                      >
-                        <MenuItem value="">Alla</MenuItem>
-                        <MenuItem value="anna">Anna Lindgren</MenuItem>
-                        <MenuItem value="bjorn">Björn Karlsson</MenuItem>
-                        <MenuItem value="cecilia">Cecilia Ström</MenuItem>
-                        <MenuItem value="david">David Eriksson</MenuItem>
-                      </TextField>
+                      <div className={styles.lagerFilterMenuWrapper}>
+                        <Button
+                          ref={avropFilterButtonRef}
+                          variant="outlined"
+                          size="small"
+                          color="inherit"
+                          startIcon={<FilterAltOutlinedIcon fontSize="small" />}
+                          className={`${styles.lineItemsToggleButton} ${avropActiveFilterCount > 0 ? styles.columnsIconButtonActive : ""}`}
+                          onClick={() => setIsAvropFilterMenuOpen((prev) => !prev)}
+                        >
+                          Filter{avropActiveFilterCount > 0 ? ` (${avropActiveFilterCount})` : ""}
+                        </Button>
+                        {isAvropFilterMenuOpen ? (
+                          <div className={styles.lagerFilterDropdown} ref={avropFilterMenuRef}>
+                            <div className={styles.lagerFilterDropdownRow}>
+                              <span className={styles.lagerFilterLabel}>Sök</span>
+                              <TextField
+                                size="small"
+                                placeholder="Sök i tabellen..."
+                                value={avropFritext}
+                                onChange={(e) => setAvropFritext(e.target.value)}
+                                className={styles.lagerFilterRangeInput}
+                              />
+                            </div>
+                            <div className={styles.lagerFilterDropdownRow}>
+                              <span className={styles.lagerFilterLabel}>Land</span>
+                              <Select
+                                size="small"
+                                displayEmpty
+                                value={avropLand}
+                                onChange={(e) => setAvropLand(e.target.value)}
+                                MenuProps={{ disablePortal: true }}
+                                endAdornment={
+                                  avropLand ? (
+                                    <InputAdornment position="end" sx={{ mr: 1.5 }}>
+                                      <IconButton size="small" onClick={() => setAvropLand("")}>
+                                        <ClearIcon sx={{ fontSize: 14 }} />
+                                      </IconButton>
+                                    </InputAdornment>
+                                  ) : undefined
+                                }
+                              >
+                                <MenuItem value="SE">Sverige</MenuItem>
+                                <MenuItem value="NO">Norge</MenuItem>
+                                <MenuItem value="DK">Danmark</MenuItem>
+                                <MenuItem value="FI">Finland</MenuItem>
+                                <MenuItem value="DE">Tyskland</MenuItem>
+                                <MenuItem value="GB">Storbritannien</MenuItem>
+                              </Select>
+                            </div>
+                            <div className={styles.lagerFilterDropdownRow}>
+                              <span className={styles.lagerFilterLabel}>Registrerad av</span>
+                              <Select
+                                size="small"
+                                displayEmpty
+                                value={avropRegistreradAv}
+                                onChange={(e) => setAvropRegistreradAv(e.target.value)}
+                                MenuProps={{ disablePortal: true }}
+                                endAdornment={
+                                  avropRegistreradAv ? (
+                                    <InputAdornment position="end" sx={{ mr: 1.5 }}>
+                                      <IconButton size="small" onClick={() => setAvropRegistreradAv("")}>
+                                        <ClearIcon sx={{ fontSize: 14 }} />
+                                      </IconButton>
+                                    </InputAdornment>
+                                  ) : undefined
+                                }
+                              >
+                                <MenuItem value="anna">Anna Lindgren</MenuItem>
+                                <MenuItem value="bjorn">Björn Karlsson</MenuItem>
+                                <MenuItem value="cecilia">Cecilia Ström</MenuItem>
+                                <MenuItem value="david">David Eriksson</MenuItem>
+                              </Select>
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                      <ColumnManagerDropdown
+                        isOpen={avropColumnsManager.isOpen}
+                        columns={avropColumnsManager.draftColumns}
+                        menuRef={avropColumnsMenuRef}
+                        buttonRef={avropColumnsButtonRef}
+                        onOpen={avropColumnsManager.open}
+                        onCancel={avropColumnsManager.cancel}
+                        onToggleVisibility={(key) => avropColumnsManager.toggleVisibility(key as keyof AvropRow)}
+                        onMove={(key, dir) => avropColumnsManager.move(key as keyof AvropRow, dir)}
+                        onSave={avropColumnsManager.save}
+                        onReset={avropColumnsManager.reset}
+                        onTogglePin={(key) => avropColumnsManager.togglePin(key as keyof AvropRow)}
+                        iconOnly
+                      />
                     </>
                   }
                 />
                 <div className={styles.freightSection}>
-                  <div className={styles.lineItemsTableFrame}>
+                  <div className={`${styles.lineItemsTableFrame} ${styles.lineItemsTableFrameBordered}`}>
                     <div className={styles.freightTableWrap}>
                       <div className={styles.freightTable}>
                         <DataTable
                           variant="main"
                           fillRemainingSpace
-                          columns={AVROP_COLUMNS}
-                          rows={AVROP_ROWS}
+                          columns={avropColumnsManager.orderedVisibleColumns}
+                          rows={filteredAvropRows}
                           rowKey={(_row, index) => `avrop-${index}`}
                           selectedRowIndex={selectedAvropRow}
                           onRowClick={(index) => setSelectedAvropRow((prev) => (prev === index ? null : index))}
@@ -3129,6 +3355,127 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+                <Dialog
+                  open={isAvropStatusDialogOpen}
+                  onClose={() => setIsAvropStatusDialogOpen(false)}
+                  maxWidth="xs"
+                  fullWidth
+                  slotProps={{ paper: { className: styles.freightDialogPaper } }}
+                >
+                  <DialogTitle className={styles.freightDialogTitle}>
+                    <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Ändra status</Typography>
+                  </DialogTitle>
+                  <DialogContent className={styles.freightDialogContent} style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 8 }}>
+                    <TextField
+                      label="Antal valda avropsrader"
+                      value={filteredAvropRows.length}
+                      size="small"
+                      InputProps={{ readOnly: true }}
+                      fullWidth
+                    />
+                    <FormControl size="small" fullWidth error={avropStatusError} className={styles.requiredFieldControl}>
+                      <InputLabel>Avropradstatus</InputLabel>
+                      <Select
+                        label="Avropradstatus"
+                        value={avropStatusValue}
+                        onChange={(e) => { setAvropStatusValue(e.target.value); setAvropStatusError(false); }}
+                      >
+                        {AVROPRADSTATUS_OPTIONS.map((opt) => (
+                          <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                        ))}
+                      </Select>
+                      {avropStatusError && <FormHelperText>Obligatoriskt fält</FormHelperText>}
+                    </FormControl>
+                    <TextField
+                      label="Leveransvecka"
+                      value={avropStatusLeveransvecka}
+                      size="small"
+                      fullWidth
+                      helperText="Ändras inte om värde saknas"
+                      onChange={(e) => setAvropStatusLeveransvecka(e.target.value)}
+                    />
+                  </DialogContent>
+                  <DialogActions className={styles.freightDialogActions}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      className={styles.bytPrislistaOkButton}
+                      onClick={() => {
+                        if (!avropStatusValue) {
+                          setAvropStatusError(true);
+                          return;
+                        }
+                        setIsAvropStatusDialogOpen(false);
+                        setSelectedAvropRow(null);
+                      }}
+                    >
+                      Spara
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      className={styles.bytPrislistaAvbrytButton}
+                      onClick={() => setIsAvropStatusDialogOpen(false)}
+                    >
+                      Avbryt
+                    </Button>
+                  </DialogActions>
+                </Dialog>
+                <Popover
+                  open={Boolean(avropGaTillAnchor)}
+                  anchorEl={avropGaTillAnchor}
+                  onClose={() => setAvropGaTillAnchor(null)}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                  transformOrigin={{ vertical: "top", horizontal: "left" }}
+                  slotProps={{ paper: { className: styles.gaTillPopover } }}
+                >
+                  <List dense disablePadding>
+                    {["Kund", "Produkt", "Färdiglagerlista", "Lastorder"].map((item) => (
+                      <ListItemButton key={item} className={styles.gaTillPopoverItem} onClick={() => setAvropGaTillAnchor(null)}>
+                        <ListItemText primary={item} primaryTypographyProps={{ fontSize: 14.5 }} />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </Popover>
+                <Dialog
+                  open={isAvropAvregistreraDialogOpen}
+                  onClose={() => setIsAvropAvregistreraDialogOpen(false)}
+                  maxWidth="xs"
+                  fullWidth
+                  slotProps={{ paper: { className: styles.freightDialogPaper } }}
+                >
+                  <DialogTitle className={styles.freightDialogTitle}>
+                    <div className={styles.freightDialogTitleRow}>
+                      <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Avregistrera avropsrad</Typography>
+                      <IconButton size="small" onClick={() => setIsAvropAvregistreraDialogOpen(false)} style={{ color: "#6a7483" }}>
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </div>
+                  </DialogTitle>
+                  <DialogContent className={styles.freightDialogContent}>
+                    <Typography style={{ fontSize: 14, color: "#404753", paddingTop: 4 }}>
+                      Är du säker att du vill avregistrera den valda avropsraden?
+                    </Typography>
+                  </DialogContent>
+                  <DialogActions className={styles.freightDialogActions}>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      className={styles.bytPrislistaOkButton}
+                      onClick={() => setIsAvropAvregistreraDialogOpen(false)}
+                    >
+                      Ja
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      className={styles.bytPrislistaAvbrytButton}
+                      onClick={() => setIsAvropAvregistreraDialogOpen(false)}
+                    >
+                      Avbryt
+                    </Button>
+                  </DialogActions>
+                </Dialog>
               </div>
             )}
           </div>

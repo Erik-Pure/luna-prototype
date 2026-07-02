@@ -7283,6 +7283,12 @@
   overflow: auto;
 }
 
+.lineItemsTableFrameBordered {
+  border: 1px solid #d9dee7;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
 .lineItemsTableFrame {
   position: relative;
 

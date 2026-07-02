@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import StraightenIcon from "@mui/icons-material/Straighten";
 import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import SearchIcon from "@mui/icons-material/Search";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, List, ListItemButton, ListItemText, Popover, Typography } from "@mui/material";
 import { ActionRow } from "./shared/ActionRow";
 import { ActionMenuButton } from "./shared/ActionMenuButton";
+import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
 import { AndraDetaljerDialog } from "./AndraDetaljerDialog";
 import { SearchFiltersPanel } from "./shared/SearchFiltersPanel";
 import { DataTable } from "./shared/DataTable";
+import { useColumnManager } from "../hooks/useColumnManager";
 import styles from "../page.module.scss";
 
 const deliverySelectOptions: Record<string, string[]> = {
@@ -134,8 +137,8 @@ const FIELD_SETS = [
 const LENGTHS = ["1.8", "2.1", "2.4", "2.7", "3.0", "3.3", "3.6", "3.9", "4.2", "4.5", "4.8", "5.1", "5.4"];
 
 const BOTTOM_TABLE_COLUMNS = [
-  { key: "KontraktsNr", label: "KontraktsNr", pinned: true as const },
-  { key: "Avroprad nr", label: "Avroprad nr", pinned: true as const },
+  { key: "KontraktsNr", label: "KontraktsNr", pinned: true as const, visible: true },
+  { key: "Avroprad nr", label: "Avroprad nr", pinned: true as const, visible: true },
   ...([
     "Utlastande bolag", "Typ", "Kund",
     "Ext. AvropNr", "Produkt", "Pakettyp", "Emballage", "Pris", "Valuta",
@@ -154,7 +157,7 @@ const BOTTOM_TABLE_COLUMNS = [
     "Ext. KontraktsNr", "Tidigaste lev. datum", "Kontraktsdatum",
     "Kurs", "Load Planned", "Ej leveransbokat",
     "Limit", "Load Planned rest", "Lass Sipal", "Godsmott. märke",
-  ] as string[]).map((label) => ({ key: label, label })),
+  ] as string[]).map((label) => ({ key: label, label, visible: true })),
 ];
 
 const BOTTOM_TABLE_ROWS = [
@@ -272,6 +275,19 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
   const [avregistreraOpen, setAvregistreraOpen] = useState(false);
   const [avregistreraAllaOpen, setAvregistreraAllaOpen] = useState(false);
   const [gaTillAnchor, setGaTillAnchor] = useState<HTMLElement | null>(null);
+  const [isTableSearchOpen, setIsTableSearchOpen] = useState(false);
+  const [tableSearchValue, setTableSearchValue] = useState("");
+  const tableSearchInputRef = useRef<HTMLInputElement>(null);
+  const columnsMenuRef = useRef<HTMLDivElement | null>(null);
+  const columnsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const columnsManager = useColumnManager(BOTTOM_TABLE_COLUMNS);
+
+  const handleToggleTableSearch = () => {
+    setIsTableSearchOpen((prev) => {
+      if (!prev) setTimeout(() => tableSearchInputRef.current?.focus(), 0);
+      return !prev;
+    });
+  };
 
   const DAG_MAP: Record<string, string> = {
     "Mån": "Måndag", "Tis": "Tisdag", "Ons": "Onsdag",
@@ -322,13 +338,62 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
       <div className={styles.deliveryRowsTableSection} style={{ padding: 0 }}>
         <ActionRow
           rightSlot={
-            <IconButton
-              onClick={() => setLangdspecOpen((v) => !v)}
-              className={`${styles.columnsIconButton} ${langdspecOpen ? styles.columnsIconButtonActive : ""}`}
-              title="Visa/dölj längdspecifikation"
-            >
-              <StraightenIcon fontSize="small" />
-            </IconButton>
+            <>
+              <div className={styles.tableSearchWrapper}>
+                <Button
+                  className={`${styles.lineItemsToggleButton} ${isTableSearchOpen || tableSearchValue ? styles.tableSearchButtonActive : ""}`}
+                  variant="outlined"
+                  size="small"
+                  startIcon={<SearchIcon fontSize="small" />}
+                  onClick={handleToggleTableSearch}
+                >
+                  Filtrera
+                </Button>
+                {isTableSearchOpen ? (
+                  <div className={styles.tableSearchDropdown}>
+                    <input
+                      ref={tableSearchInputRef}
+                      type="text"
+                      className={styles.tableSearchDropdownInput}
+                      placeholder="Filtrera i tabell..."
+                      value={tableSearchValue}
+                      onChange={(e) => setTableSearchValue(e.target.value)}
+                    />
+                    {tableSearchValue ? (
+                      <button
+                        type="button"
+                        className={styles.tableSearchDropdownClear}
+                        onClick={() => setTableSearchValue("")}
+                        aria-label="Rensa filtrering"
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              <IconButton
+                onClick={() => setLangdspecOpen((v) => !v)}
+                className={`${styles.columnsIconButton} ${langdspecOpen ? styles.columnsIconButtonActive : ""}`}
+                title="Visa/dölj längdspecifikation"
+              >
+                <StraightenIcon fontSize="small" />
+              </IconButton>
+              <ColumnManagerDropdown
+                isOpen={columnsManager.isOpen}
+                columns={columnsManager.draftColumns}
+                menuRef={columnsMenuRef}
+                buttonRef={columnsButtonRef}
+                onOpen={columnsManager.open}
+                onCancel={columnsManager.cancel}
+                onToggleVisibility={(key) => columnsManager.toggleVisibility(key)}
+                onMove={(key, dir) => columnsManager.move(key, dir)}
+                onSave={columnsManager.save}
+                onReset={columnsManager.reset}
+                onTogglePin={(key) => columnsManager.togglePin(key)}
+                iconOnly
+              />
+            </>
           }
           items={[
             {
@@ -421,7 +486,7 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
             <div className={styles.tableInner}>
               <DataTable
                 variant="main"
-                columns={BOTTOM_TABLE_COLUMNS}
+                columns={columnsManager.orderedVisibleColumns}
                 rows={BOTTOM_TABLE_ROWS}
                 rowKey={(_, i) => String(i)}
                 selectedRowIndex={selectedRowIndex}
@@ -552,7 +617,7 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
         <List dense disablePadding>
           {["Kund", "Produkt", "Färdiglagerlista", "Lastorder"].map((item) => (
             <ListItemButton key={item} className={styles.gaTillPopoverItem} onClick={() => setGaTillAnchor(null)}>
-              <ListItemText primary={item} primaryTypographyProps={{ fontSize: 13 }} />
+              <ListItemText primary={item} primaryTypographyProps={{ fontSize: 14.5 }} />
             </ListItemButton>
           ))}
         </List>
