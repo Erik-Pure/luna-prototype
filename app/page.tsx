@@ -1420,6 +1420,16 @@ const AVROPRADSTATUS_OPTIONS = [
   "Avregistrerad",
 ];
 
+const AVROP_VOLYM_TONE_BY_AVROPRADNR: Record<string, "black" | "red"> = {
+  "163281": "black",
+  "163214": "red",
+};
+
+const AVROP_VOLYM_LO_TONE_BY_AVROPRADNR: Record<string, "blue" | "red"> = {
+  "163249": "blue",
+  "163291": "red",
+};
+
 const AVROP_ROWS: AvropRow[] = [
   { utlastandeBolag: "BP Hissmofors", kontraktsNr: "20241001", avropradNr: "163281", typ: "ML", kund: "Byggmax AB", extAvropNr: "EX-8821", produkt: "22x95 Gran Ytterpanel", pakettyp: "Lp", emballage: "Standard", pris: "3 409", valuta: "SEK", nettoprisM3: "3 159", mangd: "50", enhet: "m3", volym: "50", lassbokat: "2024-11-15", leveradVolym: "20", avropsrest: "30", nettolager: "95", tillgLager: "120", dag: "14", langdkrav: "3.0–5.4", volymLO: "15", produceras: "2024-W47", kundensMarke: "BM-A12", vecka: "47", leveranssatt: "Bil", internKommentarKontraktsrad: "", internKommentarAvropsrad: "Prio kund", artNr: "2202209500002000", mlRatt: "45", avropNr: "A-10231", ravarulager: "Krokom", nominellTjocklek: "22", nominellBredd: "95", ansvarigBolag: "BP Hissmofors", avropradDatum: "2024-10-28", utlastningssparr: "Nej", skeppningsvecka: "48", etd: "2024-11-25", eta: "2024-11-26", mlTorr: "42", fartyg: "–", closingDate: "2024-11-10", expeditor: "DSV", restvardeSEK: "102 270", restvarde: "30", totalvardeSEK: "170 450", totalvarde: "50", status: "Aktiv", custWeek: "48", vflGrupp: "VFL-A", leveransvillkor: "DAP", levVillkorOrt: "Stockholm", mottagandeHamn: "–", leveransperiodKunddokument: "2024-11", lastorderNr: "LO-4421", reserveratLagerflytt: "5", leveransbokat: "2024-11-14", utlastandeLagerstalle: "Krokom", levTidigast: "2024-11-13", levSenastibl: "2024-11-17", extKontraktsNr: "BM-2024-09", tidigasteLevDatum: "2024-11-13", kontraktsdatum: "2024-01-15", kurs: "1.00", loadPlanned: "45", ejLeveransbokat: "5", limit: "60", loadPlannedRest: "15", lassSipal: "3", godsmottMarke: "BM-YTERP" },
   { utlastandeBolag: "BP Hissmofors", kontraktsNr: "20241001", avropradNr: "163214", typ: "FL", kund: "Byggmax AB", extAvropNr: "EX-8822", produkt: "22x120 Gran Ytterpanel", pakettyp: "Pk", emballage: "Staplat", pris: "3 926", valuta: "SEK", nettoprisM3: "3 805", mangd: "30", enhet: "m3", volym: "30", lassbokat: "2024-11-20", leveradVolym: "10", avropsrest: "20", nettolager: "70", tillgLager: "85", dag: "21", langdkrav: "2.4–4.8", volymLO: "8", produceras: "2024-W48", kundensMarke: "BM-A13", vecka: "48", leveranssatt: "Bil", internKommentarKontraktsrad: "Årskontrakt", internKommentarAvropsrad: "", artNr: "2202212000001000", mlRatt: "28", avropNr: "A-10232", ravarulager: "Östersund", nominellTjocklek: "22", nominellBredd: "120", ansvarigBolag: "BP Hissmofors", avropradDatum: "2024-10-30", utlastningssparr: "Nej", skeppningsvecka: "49", etd: "2024-12-02", eta: "2024-12-03", mlTorr: "26", fartyg: "–", closingDate: "2024-11-18", expeditor: "Schenker", restvardeSEK: "78 520", restvarde: "20", totalvardeSEK: "117 780", totalvarde: "30", status: "Aktiv", custWeek: "49", vflGrupp: "VFL-B", leveransvillkor: "DAP", levVillkorOrt: "Göteborg", mottagandeHamn: "–", leveransperiodKunddokument: "2024-11", lastorderNr: "LO-4422", reserveratLagerflytt: "2", leveransbokat: "2024-11-19", utlastandeLagerstalle: "Östersund", levTidigast: "2024-11-18", levSenastibl: "2024-11-22", extKontraktsNr: "BM-2024-09", tidigasteLevDatum: "2024-11-18", kontraktsdatum: "2024-01-15", kurs: "1.00", loadPlanned: "28", ejLeveransbokat: "2", limit: "35", loadPlannedRest: "7", lassSipal: "2", godsmottMarke: "BM-YTERP120" },
@@ -3349,6 +3359,22 @@ export default function Home() {
                               );
                             }
                             return row[column.key as keyof AvropRow];
+                          }}
+                          getCellClassName={(row, column) => {
+                            if (column.key === "volym") {
+                              const tone = AVROP_VOLYM_TONE_BY_AVROPRADNR[row.avropradNr];
+                              if (tone === "red") return styles.cellVolymRed;
+                              if (tone === "black") return styles.cellVolymBlack;
+                            }
+                            if (column.key === "volymLO") {
+                              const tone = AVROP_VOLYM_LO_TONE_BY_AVROPRADNR[row.avropradNr];
+                              if (tone === "blue") return styles.cellVolymBlue;
+                              if (tone === "red") return styles.cellVolymRed;
+                            }
+                            if (column.key === "tillgLager" && TILLG_LAGER_HIGHLIGHT_BY_ARTNR[row.artNr]) {
+                              return styles.cellTillgLagerHighlight;
+                            }
+                            return undefined;
                           }}
                         />
                       </div>

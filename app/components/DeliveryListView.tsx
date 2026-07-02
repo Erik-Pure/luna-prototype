@@ -240,6 +240,11 @@ const VOLYM_TONE_BY_KONTRAKT: Record<string, "red" | "blue"> = {
   "K-2024-002": "blue",
 };
 
+const VOLYM_LO_TONE_BY_KONTRAKT: Record<string, "red" | "blue"> = {
+  "K-2024-002": "blue",
+  "K-2024-003": "red",
+};
+
 const TILLG_LAGER_HIGHLIGHT_BY_KONTRAKT: Record<string, boolean> = {
   "K-2024-003": true,
 };
@@ -506,6 +511,11 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
                   const kontraktsNr = (row as Record<string, string>)["KontraktsNr"];
                   if (column.key === "Volym") {
                     const tone = VOLYM_TONE_BY_KONTRAKT[kontraktsNr];
+                    if (tone === "red") return styles.cellVolymRed;
+                    if (tone === "blue") return styles.cellVolymBlue;
+                  }
+                  if (column.key === "Volym LO") {
+                    const tone = VOLYM_LO_TONE_BY_KONTRAKT[kontraktsNr];
                     if (tone === "red") return styles.cellVolymRed;
                     if (tone === "blue") return styles.cellVolymBlue;
                   }
