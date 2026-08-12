@@ -617,6 +617,7 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                 </AccordionSummary>
                 <AccordionDetails className={styles.contractSectionDetailsArea}>
 
+                  <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; betalning</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -668,7 +669,11 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                       value={draft.betvillkorDag}
                       onChange={(e) => update("betvillkorDag", e.target.value)}
                     />
+                  </div>
 
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Rabatt &amp; bonus</Typography>
+                  <div className={styles.contractModernFormGrid}>
                     <TextField
                       fullWidth size="small"
                       label="Kassarabatt"
@@ -702,7 +707,11 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                       <MenuItem value="Volym">Volym</MenuItem>
                       <MenuItem value="Antal order">Antal order</MenuItem>
                     </TextField>
+                  </div>
 
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Ränta &amp; påminnelse</Typography>
+                  <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
                       label="Ränterutin *"
@@ -736,7 +745,11 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                         endAdornment: <InputAdornment position="end">%</InputAdornment>
                       }}
                     />
+                  </div>
 
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; leverans</Typography>
+                  <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
                       label="Certifiering"
@@ -791,12 +804,40 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
 
                     <TextField
                       fullWidth size="small"
+                      label="Införselavgift *"
+                      value={draft.inforsElavgift}
+                      onChange={(e) => update("inforsElavgift", e.target.value)}
+                      className={styles.lineItemRequiredControl}
+                      InputProps={{
+                        endAdornment: <InputAdornment position="end">SEK</InputAdornment>
+                      }}
+                    />
+
+                    <TextField
+                      fullWidth size="small"
                       label="Text på kontrakt/faktura"
                       value={draft.textPaKontrakt}
                       onChange={(e) => update("textPaKontrakt", e.target.value)}
                       style={{ gridColumn: "1 / -1" }}
                     />
+                  </div>
 
+                  <div style={{ marginTop: 8 }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={draft.leveransdatumPaFaktura}
+                          onChange={(e) => update("leveransdatumPaFaktura", e.target.checked)}
+                        />
+                      }
+                      label={<Typography style={{ fontSize: 13 }}>Leveransdatum på faktura</Typography>}
+                    />
+                  </div>
+
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Agent</Typography>
+                  <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
                       label="Agent"
@@ -816,30 +857,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                       InputProps={{
                         endAdornment: <InputAdornment position="end">%</InputAdornment>
                       }}
-                    />
-
-                    <TextField
-                      fullWidth size="small"
-                      label="Införselavgift *"
-                      value={draft.inforsElavgift}
-                      onChange={(e) => update("inforsElavgift", e.target.value)}
-                      className={styles.lineItemRequiredControl}
-                      InputProps={{
-                        endAdornment: <InputAdornment position="end">SEK</InputAdornment>
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ marginTop: 8 }}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          size="small"
-                          checked={draft.leveransdatumPaFaktura}
-                          onChange={(e) => update("leveransdatumPaFaktura", e.target.checked)}
-                        />
-                      }
-                      label={<Typography style={{ fontSize: 13 }}>Leveransdatum på faktura</Typography>}
                     />
                   </div>
 

@@ -7,8 +7,8 @@ import styles from "../../page.module.scss";
 const EDI_OPTIONS = [
   "PRI handel: Beställning",
   "PRI handel: Orderbekräftelse",
-  "PRI handel: Leveransavisering",
   "PRI handel: Faktura",
+  "PRI handel: Leveransavisering",
 ];
 
 export function EdiTab() {
@@ -23,25 +23,29 @@ export function EdiTab() {
     );
 
   return (
-    <div style={{ padding: 16, display: 'flex', justifyContent: 'center' }}>
-      <div className={styles.contractDataSection} style={{ width: "600px" }}>
+    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center' }}>
+      <div className={styles.contractDataSection} style={{ width: "600px", padding: 16 }}>
         <Typography className={styles.contractDataSectionTitle}>Dokument</Typography>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 14 }}>
-          {EDI_OPTIONS.map((o) => (
-            <FormControlLabel
-              key={o}
-              label={<Typography style={{ fontSize: 13, color: "#2f3743" }}>{o}</Typography>}
-              control={
-                <Checkbox
-                  size="small"
-                  checked={selected.includes(o)}
-                  onChange={() => toggle(o)}
-                  sx={{ py: 0.5 }}
-                />
-              }
-            />
-          ))}
+          {EDI_OPTIONS.map((o) => {
+            const isDisabled = o === "PRI handel: Leveransavisering";
+            return (
+              <FormControlLabel
+                key={o}
+                label={<Typography style={{ fontSize: 13, color: isDisabled ? "#9aa1ab" : "#2f3743" }}>{o}</Typography>}
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={selected.includes(o)}
+                    onChange={() => toggle(o)}
+                    disabled={isDisabled}
+                    sx={{ py: 0.5 }}
+                  />
+                }
+              />
+            );
+          })}
         </div>
 
         <div style={{ display: "flex", justifySelf: 'end', gap: 6 }}>

@@ -6,7 +6,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import SearchIcon from "@mui/icons-material/Search";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
-import { Button, Checkbox, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, Tooltip, Typography } from "@mui/material";
+import { Autocomplete, Button, Checkbox, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, Tooltip, Typography } from "@mui/material";
 import { useState, type ReactNode, type RefObject } from "react";
 import styles from "../../page.module.scss";
 
@@ -14,6 +14,7 @@ type SearchFieldConfig = {
   key: string;
   label: string;
   control: "text" | "date" | "select" | "checkbox";
+  multi?: boolean;
 };
 
 type FieldSetField = {
@@ -28,6 +29,7 @@ type FieldSetField = {
   nomGroup?: string;
   sectionLabel?: string;
   dividerLabel?: string;
+  multi?: boolean;
 };
 
 type FieldSet = { label: string; fields: FieldSetField[] };
@@ -39,7 +41,7 @@ type SearchFiltersPanelProps = {
   allTextFields?: SearchFieldConfig[];
   allSelectFields?: SearchFieldConfig[];
   allCheckboxFields?: SearchFieldConfig[];
-  values: Record<string, string | boolean>;
+  values: Record<string, string | string[] | boolean>;
   globalSearchValue?: string;
   onGlobalSearchChange?: (value: string) => void;
   hideGlobalSearch?: boolean;
@@ -60,7 +62,7 @@ type SearchFiltersPanelProps = {
   onClearMenu: () => void;
   onClearValues?: () => void;
   onTextChange: (key: string, value: string) => void;
-  onSelectChange: (key: string, value: string) => void;
+  onSelectChange: (key: string, value: string | string[]) => void;
   onCheckboxChange: (key: string, checked: boolean) => void;
   sidePanel?: ReactNode;
 };
@@ -100,10 +102,60 @@ export function SearchFiltersPanel({
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [isEditingFavorites, setIsEditingFavorites] = useState(false);
   const [activePresetIndex, setActivePresetIndex] = useState<number | null>(defaultActivePresetIndex ?? null);
-  const [presetValues, setPresetValues] = useState<Record<number, Record<string, string | boolean | null>>>({});
+  const [presetValues, setPresetValues] = useState<Record<number, Record<string, string | string[] | boolean | null>>>({});
   const [editFavoriteKeys, setEditFavoriteKeys] = useState<string[]>([]);
   const [draggedFavoriteKey, setDraggedFavoriteKey] = useState<string | null>(null);
   const [dropTargetFavoriteKey, setDropTargetFavoriteKey] = useState<string | null>(null);
+
+  const renderSelectField = (field: SearchFieldConfig) => {
+    if (field.multi) {
+      const selected = Array.isArray(values[field.key]) ? (values[field.key] as string[]) : [];
+      return (
+        <Autocomplete
+          key={field.key}
+          multiple
+          size="small"
+          className={styles.searchFieldControl}
+          options={getSelectOptions(field.key)}
+          value={selected}
+          onChange={(_event, newValue) => onSelectChange(field.key, newValue)}
+          disableCloseOnSelect
+          sx={{ "& .MuiAutocomplete-inputRoot": { flexWrap: "nowrap" } }}
+          renderValue={(selectedOptions) => (
+            <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {(selectedOptions as string[]).join(", ")}
+            </span>
+          )}
+          renderOption={(props, option, { selected: isSelected }) => {
+            const { key, ...optionProps } = props;
+            return (
+              <li key={key} {...optionProps}>
+                <Checkbox size="small" checked={isSelected} style={{ marginRight: 8 }} />
+                {option}
+              </li>
+            );
+          }}
+          renderInput={(params) => <TextField {...params} label={field.label} />}
+        />
+      );
+    }
+    return (
+      <FormControl key={field.key} size="small" className={styles.searchFieldControl}>
+        <InputLabel>{field.label}</InputLabel>
+        <Select
+          value={String(values[field.key] ?? "")}
+          label={field.label}
+          onChange={(event) => onSelectChange(field.key, event.target.value)}
+          IconComponent={KeyboardArrowDownIcon}
+        >
+          <MenuItem value="">-</MenuItem>
+          {getSelectOptions(field.key).map((option) => (
+            <MenuItem key={`${field.key}-${option}`} value={option}>{option}</MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    );
+  };
 
   if (useAdvancedFilterLayout) {
     const compareByLabel = (a: SearchFieldConfig, b: SearchFieldConfig) =>
@@ -255,6 +307,37 @@ export function SearchFiltersPanel({
                           ...prev,
                           [presetIndex]: { ...prev[presetIndex], [field.key]: e.target.value },
                         }))}
+                      />
+                    ) : field.multi ? (
+                      <Autocomplete
+                        key={field.key}
+                        multiple
+                        size="small"
+                        className={styles.searchFieldControl}
+                        style={field.nomToggle ? { flex: 1, minWidth: 0 } : undefined}
+                        options={field.options ?? []}
+                        value={Array.isArray(presetValues[presetIndex]?.[field.key]) ? (presetValues[presetIndex]?.[field.key] as string[]) : []}
+                        onChange={(_event, newValue) => setPresetValues((prev) => ({
+                          ...prev,
+                          [presetIndex]: { ...prev[presetIndex], [field.key]: newValue },
+                        }))}
+                        disableCloseOnSelect
+                        sx={{ "& .MuiAutocomplete-inputRoot": { flexWrap: "nowrap" } }}
+                        renderValue={(selectedOptions) => (
+                          <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {(selectedOptions as string[]).join(", ")}
+                          </span>
+                        )}
+                        renderOption={(props, option, { selected: isSelected }) => {
+                          const { key, ...optionProps } = props;
+                          return (
+                            <li key={key} {...optionProps}>
+                              <Checkbox size="small" checked={isSelected} style={{ marginRight: 8 }} />
+                              {option}
+                            </li>
+                          );
+                        }}
+                        renderInput={(params) => <TextField {...params} label={activeLabel} />}
                       />
                     ) : (
                       <FormControl key={field.key} size="small" className={styles.searchFieldControl} style={field.nomToggle ? { flex: 1, minWidth: 0 } : undefined}>
@@ -546,22 +629,7 @@ export function SearchFiltersPanel({
                         onChange={(event) => onTextChange(field.key, event.target.value)}
                       />
                     ))}
-                    {favoriteSelectFields.map((field) => (
-                      <FormControl key={field.key} size="small" className={styles.searchFieldControl}>
-                        <InputLabel>{field.label}</InputLabel>
-                        <Select
-                          value={String(values[field.key] ?? "")}
-                          label={field.label}
-                          onChange={(event) => onSelectChange(field.key, event.target.value)}
-                          IconComponent={KeyboardArrowDownIcon}
-                        >
-                          <MenuItem value="">-</MenuItem>
-                          {getSelectOptions(field.key).map((option) => (
-                            <MenuItem key={`${field.key}-${option}`} value={option}>{option}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    ))}
+                    {favoriteSelectFields.map((field) => renderSelectField(field))}
                   </div>
 
                   {favoriteCheckboxFields.length > 0 ? (
@@ -595,22 +663,7 @@ export function SearchFiltersPanel({
                               value={String(values[field.key] ?? "")}
                               onChange={(event) => onTextChange(field.key, event.target.value)}
                             />
-                          ) : (
-                            <FormControl key={field.key} size="small" className={styles.searchFieldControl}>
-                              <InputLabel>{field.label}</InputLabel>
-                              <Select
-                                value={String(values[field.key] ?? "")}
-                                label={field.label}
-                                onChange={(event) => onSelectChange(field.key, event.target.value)}
-                                IconComponent={KeyboardArrowDownIcon}
-                              >
-                                <MenuItem value="">-</MenuItem>
-                                {getSelectOptions(field.key).map((option) => (
-                                  <MenuItem key={`${field.key}-${option}`} value={option}>{option}</MenuItem>
-                                ))}
-                              </Select>
-                            </FormControl>
-                          )
+                          ) : renderSelectField(field)
                         )}
                       </div>
                       {sortedMoreCheckboxFields.length > 0 ? (

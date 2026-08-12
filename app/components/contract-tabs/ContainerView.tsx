@@ -218,7 +218,7 @@ export function ContainerView({ onBack }: ContainerViewProps) {
     {
       key: "spara",
       label: "Spara",
-      icon: <SaveOutlinedIcon fontSize="small" />,
+      // icon: <SaveOutlinedIcon fontSize="small" />,
       tone: "primary" as const,
       enabled: true,
       onClick: () => { },
@@ -536,10 +536,13 @@ export function ContainerView({ onBack }: ContainerViewProps) {
           </div>
         </DialogTitle>
         <DialogContent className={styles.freightDialogContent} style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 8 }}>
+          <Typography style={{ fontSize: 14, color: "#4e5155", marginBottom: 6 }}>
+            Uppdatera rader med {"\""}Volym i container{"\""} = {containerVolym} m³ till:
+          </Typography>
           <TextField
             autoFocus
             size="small"
-            label="Volym (m³)"
+            label="Volym i container (m³)"
             value={kapacitetDraft}
             onChange={(e) => setKapacitetDraft(e.target.value)}
             placeholder="m³"
@@ -548,8 +551,8 @@ export function ContainerView({ onBack }: ContainerViewProps) {
         </DialogContent>
         <DialogActions className={styles.freightDialogActions}>
           <Button variant="contained" size="small" onClick={() => {
+            setRows((prev) => prev.map((r) => (r.volymIContainer === containerVolym ? { ...r, volymIContainer: kapacitetDraft } : r)));
             setContainerVolym(kapacitetDraft);
-            setRows((prev) => prev.map((r) => ({ ...r, volymIContainer: kapacitetDraft })));
             setKapacitetOpen(false);
           }} className={styles.bytPrislistaOkButton}>
             Spara

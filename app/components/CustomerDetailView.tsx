@@ -1,14 +1,13 @@
 "use client";
 
 import AccountBoxOutlinedIcon from "@mui/icons-material/AccountBoxOutlined";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ContactsOutlinedIcon from "@mui/icons-material/ContactsOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FormatListBulletedOutlinedIcon from "@mui/icons-material/FormatListBulletedOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import OpenInFullOutlinedIcon from "@mui/icons-material/OpenInFullOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SyncAltOutlinedIcon from "@mui/icons-material/SyncAlt";
@@ -30,7 +29,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import styles from "../page.module.scss";
 import { CustomerCreateView, type NewCustomerDraft } from "./CustomerCreateView";
 import { DokumentTab } from "./customer-tabs/DokumentTab";
@@ -211,12 +210,33 @@ type CustomerDetailViewProps = {
   detail: CustomerDetailData | null;
 };
 
+function buildCustomerDraftFromDetail(detail: CustomerDetailData | null, customerName: string): CustomerDraft {
+  if (!detail) {
+    return { ...INITIAL_DRAFT, faktNamn: customerName, levNamn: customerName };
+  }
+  return {
+    ...INITIAL_DRAFT,
+    orgnr: detail.organizationNumber,
+    kundansvarig: detail.accountManager,
+    epost: detail.email,
+    telefon: detail.phone,
+    leveransort: detail.city,
+    faktLand: detail.country,
+    levLand: detail.country,
+    faktNamn: customerName,
+    levNamn: customerName,
+    kommentarKund: detail.comment,
+  };
+}
+
 export function CustomerDetailView({ customerName, detail }: CustomerDetailViewProps) {
   const [activeTab, setActiveTab] = useState<CustomerTab>("Kontaktpersoner");
-  const [draft, setDraft] = useState<CustomerDraft>(INITIAL_DRAFT);
+  const [draft, setDraft] = useState<CustomerDraft>(() => buildCustomerDraftFromDetail(detail, customerName));
   const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
   const [sectionsPanelWidth, setSectionsPanelWidth] = useState<number | null>(null);
   const [expandedDialogOpen, setExpandedDialogOpen] = useState(false);
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const draftSnapshotRef = useRef<CustomerDraft | null>(null);
 
   const isWide = useSyncExternalStore(
     (cb) => {
@@ -299,26 +319,56 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
             <div className={styles.contractSectionsResizeHandle} onMouseDown={startResizeSections} />
           ) : null}
 
-          <div className={styles.contractSectionsPanelHeader} style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
+          <div className={styles.contractSectionsPanelHeader}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
+              {!isSectionsPanelCollapsed ? (
+                <Typography className={styles.contractSectionsPanelTitle}>Kundinformation</Typography>
+              ) : null}
               <Tooltip title={isSectionsPanelCollapsed ? "Expandera kundpanel" : "Minimera kundpanel"}>
                 <IconButton
                   size="small"
                   className={styles.contractSectionsPanelMinimizeBtn}
                   onClick={() => setIsSectionsPanelCollapsed((v) => !v)}
                 >
-                  {isSectionsPanelCollapsed ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+                  <MenuOpenIcon fontSize="small" style={isSectionsPanelCollapsed ? { transform: "scaleX(1)" } : { transform: "scaleX(-1)" }} />
                 </IconButton>
               </Tooltip>
-              {!isSectionsPanelCollapsed ? (
-                <Typography style={{ fontSize: 13, fontWeight: 600, color: "#2f3743", flex: 1, marginLeft: 4 }}>Kundinformation</Typography>
-              ) : null}
             </div>
             {!isSectionsPanelCollapsed ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
-                <Button className={styles.contractSaveButton} size="small" startIcon={<EditOutlinedIcon fontSize="small" />}>
-                  Redigera
-                </Button>
+              <div className={styles.contractSectionsPanelHeaderActionsRow}>
+                {isEditingInfo ? (
+                  <>
+                    <Button
+                      size="small"
+                      className={styles.freightSaveButton}
+                      onClick={() => setIsEditingInfo(false)}
+                    >
+                      Spara
+                    </Button>
+                    <Button
+                      size="small"
+                      className={styles.freightCancelButton}
+                      onClick={() => {
+                        if (draftSnapshotRef.current) setDraft(draftSnapshotRef.current);
+                        setIsEditingInfo(false);
+                      }}
+                    >
+                      Avbryt
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    size="small"
+                    className={styles.contractSaveButton}
+                    startIcon={<EditOutlinedIcon fontSize="small" />}
+                    onClick={() => {
+                      draftSnapshotRef.current = draft;
+                      setIsEditingInfo(true);
+                    }}
+                  >
+                    Redigera
+                  </Button>
+                )}
                 <Tooltip title="Öppna i dialog">
                   <Button
                     size="small"
@@ -343,7 +393,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                     <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
                   </span>
                 </AccordionSummary>
-                <AccordionDetails className={styles.contractSectionDetailsArea}>
+                <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Kategori" value={draft.kategori} onChange={(e) => set("kategori", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -448,7 +498,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                     <Typography className={styles.contractSectionTitle}>Kontaktuppgifter</Typography>
                   </span>
                 </AccordionSummary>
-                <AccordionDetails className={styles.contractSectionDetailsArea}>
+                <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
                   <Typography className={styles.contractSectionGroupLabel}>Fakturaadress</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Namn" value={draft.faktNamn} onChange={(e) => set("faktNamn", e.target.value)} style={{ gridColumn: "1 / -1" }} />
@@ -486,7 +536,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                     <Typography className={styles.contractSectionTitle}>Villkor</Typography>
                   </span>
                 </AccordionSummary>
-                <AccordionDetails className={styles.contractSectionDetailsArea}>
+                <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Valuta" value={draft.valuta} onChange={(e) => set("valuta", e.target.value)}>
                       <MenuItem value="">—</MenuItem>

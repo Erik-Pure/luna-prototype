@@ -95,7 +95,7 @@ const COLUMNS = [
   { key: "aktiv", label: "Aktiv", width: 70 },
   { key: "langdMin", label: "Längd min", width: 90 },
   { key: "langdMax", label: "Längd max", width: 90 },
-  { key: "_actions", label: "", width: 48 },
+  { key: "_actions", label: "", pinnedRight: true, width: 48 },
 ] satisfies Array<{ key: string; label: string; pinnedRight?: boolean; width?: number }>;
 
 const PRODUKT_SETTINGS_KEYS = new Set<string>(["paketHojd", "paketBredd", "paketAntal", "medellangd"]);
@@ -169,11 +169,10 @@ function ROField({ label, value }: { label: string; value: string }) {
 
 function SectionDivider({ label }: { label: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, gridColumn: "1 / -1", margin: "4px 0 0" }}>
-      <Typography style={{ fontSize: 11, fontWeight: 700, color: "#8a93a0", letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+    <div style={{ display: "flex", alignItems: "center", gridColumn: "1 / -1", margin: "4px 0 0" }}>
+      <Typography style={{ fontSize: 12, fontWeight: 600, color: "#2a2c2e", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
         {label}
       </Typography>
-      <div style={{ flex: 1, height: 1, background: "#e8ecf2" }} />
     </div>
   );
 }

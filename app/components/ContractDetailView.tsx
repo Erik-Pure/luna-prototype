@@ -1,10 +1,10 @@
 "use client";
 
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import OpenInFullOutlinedIcon from "@mui/icons-material/OpenInFullOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
@@ -14,7 +14,7 @@ import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { Accordion, AccordionDetails, AccordionSummary, Button, Chip, Divider, IconButton, Menu, MenuItem, Tooltip, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Button, Chip, Dialog, DialogContent, Divider, IconButton, Menu, MenuItem, Tooltip, Typography } from "@mui/material";
 import { useState, useSyncExternalStore, type MouseEvent, type RefObject } from "react";
 import { CallOffTab } from "./contract-tabs/CallOffTab";
 import { ContractRowsTab } from "./contract-tabs/ContractRowsTab";
@@ -29,10 +29,75 @@ import {
 import { PrintOptionsTab } from "./contract-tabs/PrintOptionsTab";
 import { TermsTab } from "./contract-tabs/TermsTab";
 import { TilläggsTab } from "./contract-tabs/TilläggsTab";
-import { getContractDetails } from "./contract-tabs/contractDetails";
+import { getContractDetails, type ContractDetails, type FieldValue } from "./contract-tabs/contractDetails";
 import { BytPrislistaDialog } from "./contract-tabs/BytPrislistaDialog";
-import { ContractCreateView } from "./ContractCreateView";
+import { ContractCreateView, type NewContractDraft } from "./ContractCreateView";
 import styles from "../page.module.scss";
+
+const stripDiacritics = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+const findFieldValue = (fields: FieldValue[], label: string) =>
+  fields.find((f) => stripDiacritics(f.label) === stripDiacritics(label))?.value ?? "";
+
+const matchSelectOption = (value: string, options: string[]) =>
+  options.find((option) => stripDiacritics(option) === stripDiacritics(value)) ?? "";
+
+const extractNumber = (value: string) => value.match(/\d+(?:[.,]\d+)?/)?.[0]?.replace(",", ".") ?? "";
+
+function buildContractDraftFromDetails(details: ContractDetails): NewContractDraft {
+  const { allmant, villkor, leverans } = details;
+  const agentRaw = findFieldValue(villkor, "Agent 1");
+  const bonusRaw = findFieldValue(villkor, "Bonus");
+
+  return {
+    customer: details.summary.customer,
+    status: details.summary.status,
+    createdBy: details.summary.createdBy,
+    contractDate: details.summary.contractDate,
+    language: matchSelectOption(findFieldValue(allmant, "Sprak"), ["Svenska", "English", "Deutsch"]),
+    currency: matchSelectOption(findFieldValue(villkor, "Valuta"), ["SEK", "EUR", "USD"]),
+    paymentTerms: matchSelectOption(findFieldValue(villkor, "Betalningsvillkor"), ["30 dagar netto", "14 dagar netto", "Förskott"]),
+    certification: matchSelectOption(findFieldValue(villkor, "Certifiering"), ["ISO 9001", "ISO 14001", "CE-märkning", "Ingen"]),
+    contractForm: matchSelectOption(findFieldValue(villkor, "Kontraktsformular"), ["Example contract", "Standard avtal", "Ramavtal"]),
+    deliveryMethod: matchSelectOption(findFieldValue(villkor, "Leveranssatt"), ["Hämta", "DHL Express", "PostNord", "Egen transport"]),
+    deliveryTerms: matchSelectOption(findFieldValue(villkor, "Leveransvillkor"), ["FCA", "EXW", "DAP", "DDP", "CIF", "FOB"]),
+    deliveryTermsCity: findFieldValue(villkor, "Leveransvillkor ort"),
+    agent1: matchSelectOption(agentRaw.split(" (")[0], ["Janne B", "Anna K", "Erik S"]),
+    agent1Pct: agentRaw.match(/\((\d+(?:[.,]\d+)?)%\)/)?.[1]?.replace(",", ".") ?? "0",
+    deliveryLocation: leverans.location,
+    deliveryLocationPostalCode: leverans.postalCode,
+    customerRef: matchSelectOption(findFieldValue(allmant, "Kundens referens"), ["Faktura", "Offert", "Order", "Avtal"]),
+    priceList: findFieldValue(allmant, "Prislista"),
+    externalContractNumber: findFieldValue(allmant, "Externt kontraktsnr"),
+    priceAdjustPct: "",
+    category: matchSelectOption(findFieldValue(allmant, "Kategori"), ["Bygghandel", "Industri", "Offentlig sektor", "Grossist", "Övrigt"]),
+    country: matchSelectOption(findFieldValue(allmant, "Land"), ["Sverige", "Norge", "Danmark", "Finland", "Tyskland", "Frankrike", "Övriga EU"]),
+    contractType: matchSelectOption(findFieldValue(allmant, "Kontraktstyp"), ["Försäljningskontrakt", "Ramavtal", "Inköpskontrakt", "Servicekontrakt", "Samarbetsavtal"]),
+    validUntil: findFieldValue(allmant, "Giltig t.o.m."),
+    miscNote: "",
+    internalNote: "",
+    exchangeRateDate: "",
+    vat: extractNumber(findFieldValue(villkor, "Moms")) || "25",
+    exchangeRate: "",
+    paymentTermsDays: findFieldValue(villkor, "Betalningsvillkor dagar"),
+    cashDiscount: extractNumber(findFieldValue(villkor, "Kassarabatt")),
+    bonus: extractNumber(bonusRaw),
+    bonusBase: /fakturerat/i.test(bonusRaw) ? "Fakturerat värde" : /netto/i.test(bonusRaw) ? "Nettovärde" : "Bruttovärde",
+    pickingSurchargeMin: extractNumber(findFieldValue(villkor, "Plocktillagg")),
+    pickingSurchargePct: "",
+    paintingSurcharge: extractNumber(findFieldValue(villkor, "Malningstillagg")),
+    paintingSurchargeThreshold: "",
+    importFee: extractNumber(findFieldValue(villkor, "Inforselavgift")),
+    consignmentStock: stripDiacritics(findFieldValue(villkor, "Konsignationslager")) === "ja",
+    receiverCountry: matchSelectOption(leverans.receiverCountry, ["Sverige", "Norge", "Danmark", "Finland", "Tyskland", "Frankrike", "Övriga EU"]),
+    deliveryPeriod: leverans.deliveryPeriod,
+    deliveryAddress: leverans.deliveryAddress,
+    unloadingPhone: leverans.unloadingPhone,
+    unloadingHours: leverans.unloadingHours,
+    notificationPhone: leverans.notificationPhone,
+    notificationInfo: leverans.notificationInfo,
+  };
+}
 
 type ContractDetailViewProps = {
   isLineItemDetailOpen: boolean;
@@ -130,6 +195,8 @@ export function ContractDetailView({
   const [sectionsPanelWidth, setSectionsPanelWidth] = useState<number | null>(null);
   const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
   const [isBytPrislistaOpen, setIsBytPrislistaOpen] = useState(false);
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const [expandedDialogOpen, setExpandedDialogOpen] = useState(false);
 
   const isWide = useSyncExternalStore(
     (cb) => {
@@ -279,21 +346,60 @@ export function ContractDetailView({
 
               {/* Panel header: minimize button left + Redigera button right */}
               <div className={styles.contractSectionsPanelHeader}>
-                <Tooltip title={isSectionsPanelCollapsed ? "Expandera kontrakshuvud" : "Minimera kontrakshuvud"}>
-                  <IconButton
-                    size="small"
-                    // className={styles.columnsIconButton}
-                    className={styles.contractSectionsPanelMinimizeBtn}
-                    onClick={() => setIsSectionsPanelCollapsed((v) => !v)}
-                  // title={isSectionsPanelCollapsed ? "Expandera sidopanel" : "Minimera sidopanel"}
-                  >
-                    {isSectionsPanelCollapsed ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
-                  </IconButton>
-                </Tooltip>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
+                  {!isSectionsPanelCollapsed ? (
+                    <Typography className={styles.contractSectionsPanelTitle}>Kontraktsinformation</Typography>
+                  ) : null}
+                  <Tooltip title={isSectionsPanelCollapsed ? "Expandera kontrakshuvud" : "Minimera kontrakshuvud"}>
+                    <IconButton
+                      size="small"
+                      className={styles.contractSectionsPanelMinimizeBtn}
+                      onClick={() => setIsSectionsPanelCollapsed((v) => !v)}
+                    >
+                      <MenuOpenIcon fontSize="small" style={isSectionsPanelCollapsed ? { transform: "scaleX(1)" } : { transform: "scaleX(-1)" }} />
+                    </IconButton>
+                  </Tooltip>
+                </div>
                 {!isSectionsPanelCollapsed ? (
-                  <Button className={styles.contractSaveButton} size="small" startIcon={<EditOutlinedIcon fontSize="small" />}>
-                    Redigera
-                  </Button>
+                  <div className={styles.contractSectionsPanelHeaderActionsRow}>
+                    {isEditingInfo ? (
+                      <>
+                        <Button
+                          size="small"
+                          className={styles.freightSaveButton}
+                          onClick={() => setIsEditingInfo(false)}
+                        >
+                          Spara
+                        </Button>
+                        <Button
+                          size="small"
+                          className={styles.freightCancelButton}
+                          onClick={() => setIsEditingInfo(false)}
+                        >
+                          Avbryt
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="small"
+                        className={styles.contractSaveButton}
+                        startIcon={<EditOutlinedIcon fontSize="small" />}
+                        onClick={() => setIsEditingInfo(true)}
+                      >
+                        Redigera
+                      </Button>
+                    )}
+                    <Tooltip title="Öppna i dialog">
+                      <Button
+                        size="small"
+                        className={styles.contractHeaderDotsButton}
+                        onClick={() => setExpandedDialogOpen(true)}
+                        style={{ minWidth: 0 }}
+                      >
+                        <OpenInFullOutlinedIcon fontSize="small" />
+                      </Button>
+                    </Tooltip>
+                  </div>
                 ) : null}
               </div>
 
@@ -556,6 +662,23 @@ export function ContractDetailView({
         onClose={() => setIsBytPrislistaOpen(false)}
         onConfirm={() => setIsBytPrislistaOpen(false)}
       />
+      <Dialog
+        open={expandedDialogOpen}
+        onClose={() => setExpandedDialogOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        slotProps={{ paper: { sx: { height: "90vh" } } }}
+      >
+        <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <ContractCreateView
+            mode="edit"
+            title={`Kontrakt ${selectedContractId} - ${contractDetails.summary.customer}`}
+            initialDraft={buildContractDraftFromDetails(contractDetails)}
+            onSave={() => setExpandedDialogOpen(false)}
+            onCancel={() => setExpandedDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

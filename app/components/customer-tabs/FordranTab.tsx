@@ -276,9 +276,9 @@ export function FordranTab() {
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
 
       {/* ── Top overview ── */}
-      <div className={styles.contractFlatSection} style={{ maxWidth: 1000, margin: "0 auto", width: "100%" }}>
+      <div className={styles.contractFlatSection} style={{ maxWidth: 1000, margin: "0 auto", width: "100%", gap: 16 }}>
 
-        <div className={styles.contractDataSection}>
+        <div className={styles.contractDataSection} style={{ background: "#fafafa", padding: 16 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <Typography className={styles.contractSectionTitle}>Kredituppgifter</Typography>
             <Button variant="contained" size="small" startIcon={<EditOutlinedIcon fontSize="small" />}
@@ -317,31 +317,33 @@ export function FordranTab() {
           </div>
         </div>
 
-        <hr className={styles.contractFlatDivider} />
+        {/* <hr className={styles.contractFlatDivider} /> */}
 
-        <Typography className={styles.contractSectionTitle} style={{ marginBottom: 10 }}>Fordran</Typography>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 4 }}>
-          <ROField label="Belopp" value="126 400" />
-          <ROField label="Antal" value="14" />
-          <ROField label="Varav ränta – belopp" value="1 820" />
-          <ROField label="Varav ränta – antal" value="3" />
-        </div>
+        <div className={styles.contractDataSection} style={{ padding: 16 }}>
+          <Typography className={styles.contractSectionTitle} style={{ marginBottom: 10 }}>Fordran</Typography>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 4 }}>
+            <ROField label="Belopp" value="126 400" />
+            <ROField label="Antal" value="14" />
+            <ROField label="Varav ränta – belopp" value="1 820" />
+            <ROField label="Varav ränta – antal" value="3" />
+          </div>
 
-        <hr className={styles.contractFlatDivider} />
+          <hr className={styles.contractFlatDivider} />
 
-        <Typography className={styles.contractSectionTitle} style={{ marginBottom: 10 }}>Förfallet</Typography>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 4 }}>
-          <ROField label="Belopp" value="18 200" />
-          <ROField label="Antal" value="2" />
-          <ROField label="Varav ränta – belopp" value="310" />
-          <ROField label="Varav ränta – antal" value="1" />
-        </div>
+          <Typography className={styles.contractSectionTitle} style={{ marginBottom: 10 }}>Förfallet</Typography>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 4 }}>
+            <ROField label="Belopp" value="18 200" />
+            <ROField label="Antal" value="2" />
+            <ROField label="Varav ränta – belopp" value="310" />
+            <ROField label="Varav ränta – antal" value="1" />
+          </div>
 
-        <hr className={styles.contractFlatDivider} />
+          <hr className={styles.contractFlatDivider} />
 
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Typography style={{ fontSize: 12, color: "#6a7483" }}>Reskontra senast hämtad:</Typography>
-          <Typography style={{ fontSize: 12, color: "#2f3743", fontWeight: 600 }}>2026-06-15 kl. 09:59</Typography>
+          <div style={{ display: "flex", flexDirection: 'column' }}>
+            <div style={{ fontSize: 13, color: "#6a7483" }}>Reskontra senast hämtad</div>
+            <Typography style={{ fontSize: 12, color: "#2f3743", fontWeight: 600 }}>2026-06-15 kl. 09:59</Typography>
+          </div>
         </div>
       </div>
 

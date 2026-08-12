@@ -1,7 +1,5 @@
 "use client";
 
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
@@ -9,6 +7,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import OpenInFullOutlinedIcon from "@mui/icons-material/OpenInFullOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -29,7 +28,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import styles from "../page.module.scss";
 import { PriceListCreateView, type NewPriceListDraft } from "./PriceListCreateView";
 import { FraktTab } from "./price-list-tabs/FraktTab";
@@ -98,6 +97,8 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
   const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
   const [sectionsPanelWidth, setSectionsPanelWidth] = useState<number | null>(null);
   const [expandedDialogOpen, setExpandedDialogOpen] = useState(false);
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
+  const draftSnapshotRef = useRef<PriceListDraft | null>(null);
   const isWide = useSyncExternalStore(
     (cb) => {
       const mq = window.matchMedia("(min-width: 1280px)");
@@ -179,38 +180,66 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
             <div className={styles.contractSectionsResizeHandle} onMouseDown={startResizeSections} />
           ) : null}
 
-          <div className={styles.contractSectionsPanelHeader} style={{ flexDirection: "column", alignItems: "stretch", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
+          <div className={styles.contractSectionsPanelHeader}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
+              {!isSectionsPanelCollapsed ? (
+                <Typography className={styles.contractSectionsPanelTitle}>Prislisteinformation</Typography>
+              ) : null}
               <Tooltip title={isSectionsPanelCollapsed ? "Expandera prislistepanel" : "Minimera prislistepanel"}>
                 <IconButton
                   size="small"
                   className={styles.contractSectionsPanelMinimizeBtn}
                   onClick={() => setIsSectionsPanelCollapsed((v) => !v)}
                 >
-                  {isSectionsPanelCollapsed ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+                  <MenuOpenIcon fontSize="small" style={isSectionsPanelCollapsed ? { transform: "scaleX(1)" } : { transform: "scaleX(-1)" }} />
                 </IconButton>
               </Tooltip>
-              {!isSectionsPanelCollapsed ? (
-                <>
-                  <Typography style={{ fontSize: 13, fontWeight: 600, color: "#2f3743", flex: 1, marginLeft: 4 }}>Prislisteinformation</Typography>
-                  <Tooltip title="Öppna i dialog">
-                    <Button
-                      size="small"
-                      className={styles.contractHeaderDotsButton}
-                      onClick={() => setExpandedDialogOpen(true)}
-                      style={{ minWidth: 0 }}
-                    >
-                      <OpenInFullOutlinedIcon fontSize="small" />
-                    </Button>
-                  </Tooltip>
-                </>
-              ) : null}
             </div>
             {!isSectionsPanelCollapsed ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", marginTop: 12 }}>
-                <Button className={styles.contractSaveButton} size="small" startIcon={<EditOutlinedIcon fontSize="small" />} >
-                  Redigera
-                </Button>
+              <div className={styles.contractSectionsPanelHeaderActionsRow}>
+                {isEditingInfo ? (
+                  <>
+                    <Button
+                      size="small"
+                      className={styles.freightSaveButton}
+                      onClick={() => setIsEditingInfo(false)}
+                    >
+                      Spara
+                    </Button>
+                    <Button
+                      size="small"
+                      className={styles.freightCancelButton}
+                      onClick={() => {
+                        if (draftSnapshotRef.current) setDraft(draftSnapshotRef.current);
+                        setIsEditingInfo(false);
+                      }}
+                    >
+                      Avbryt
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    size="small"
+                    className={styles.contractSaveButton}
+                    startIcon={<EditOutlinedIcon fontSize="small" />}
+                    onClick={() => {
+                      draftSnapshotRef.current = draft;
+                      setIsEditingInfo(true);
+                    }}
+                  >
+                    Redigera
+                  </Button>
+                )}
+                <Tooltip title="Öppna i dialog">
+                  <Button
+                    size="small"
+                    className={styles.contractHeaderDotsButton}
+                    onClick={() => setExpandedDialogOpen(true)}
+                    style={{ minWidth: 0 }}
+                  >
+                    <OpenInFullOutlinedIcon fontSize="small" />
+                  </Button>
+                </Tooltip>
               </div>
             ) : null}
           </div>
@@ -225,7 +254,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
                   </span>
                 </AccordionSummary>
-                <AccordionDetails className={styles.contractSectionDetailsArea}>
+                <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Prislistenr" value={draft.prislistenr} onChange={(e) => set("prislistenr", e.target.value)} />
                     <TextField fullWidth size="small" label="Kopierat från" value={draft.kopieratFran} onChange={(e) => set("kopieratFran", e.target.value)} />
@@ -312,7 +341,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     <Typography className={styles.contractSectionTitle}>Villkor</Typography>
                   </span>
                 </AccordionSummary>
-                <AccordionDetails className={styles.contractSectionDetailsArea}>
+                <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
                   <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; kurs</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Valuta" value={draft.valuta} onChange={(e) => set("valuta", e.target.value)}>
@@ -442,7 +471,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     <Typography className={styles.contractSectionTitle}>Utskrift</Typography>
                   </span>
                 </AccordionSummary>
-                <AccordionDetails className={styles.contractSectionDetailsArea}>
+                <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Utskriftstyp" value={draft.utskriftstyp} onChange={(e) => set("utskriftstyp", e.target.value)}>
                       <MenuItem value="">—</MenuItem>

@@ -1,6 +1,7 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
+import ClearIcon from "@mui/icons-material/Clear";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -94,6 +95,28 @@ const EMPTY_ALT_DRAFT: AltAdressDraft = {
   giltigFran: "", giltigTom: "",
 };
 
+const INITIAL_ALT_ROWS: AltAdressRow[] = [
+  {
+    _id: "0",
+    namn: "Leveransadress",
+    adress1: "Industrivägen 5",
+    adress2: "",
+    postadress: "456 78 Göteborg",
+    land: "SE",
+    telefon: "",
+    leveransort: "",
+    postnr: "",
+    oppettider: "",
+    aviseringstelefon: "",
+    aviseringsinformation: "",
+    tillfalligAviseringsinformation: "",
+    tillfalligFran: "",
+    tillfalligTom: "",
+    giltigFran: "",
+    giltigTom: "",
+  },
+];
+
 const LAND_OPTIONS = [
   { value: "SE", label: "SE — Sverige" },
   { value: "NO", label: "NO — Norge" },
@@ -141,6 +164,47 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     <Typography style={{ fontSize: 13, fontWeight: 600, color: "#2f3743", marginBottom: 10 }}>
       {children}
     </Typography>
+  );
+}
+
+function LeveransortSelect({ value, onChange }: { value: string; onChange: (ort: string) => void }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <TextField
+        select fullWidth size="small" label="Leveransort" value={value}
+        onChange={(e) => onChange(e.target.value)}
+        slotProps={{ select: { renderValue: (v) => v as string } }}
+        sx={value ? { "& .MuiSelect-select": { paddingRight: "56px !important" } } : undefined}
+      >
+        <MenuItem disabled sx={{ opacity: 1, pointerEvents: "none", py: "2px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 50px", width: "100%", gap: 8 }}>
+            <Typography style={{ fontSize: 11, fontWeight: 700, color: "#000000" }}>Ort</Typography>
+            <Typography style={{ fontSize: 11, fontWeight: 700, color: "#000000" }}>Postnr</Typography>
+            <Typography style={{ fontSize: 11, fontWeight: 700, color: "#000000" }}>Land</Typography>
+          </div>
+        </MenuItem>
+        <Divider />
+        {LEVERANSORTER.map((o) => (
+          <MenuItem key={o.ort} value={o.ort}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 50px", width: "100%", gap: 8 }}>
+              <Typography style={{ fontSize: 13 }}>{o.ort}</Typography>
+              <Typography style={{ fontSize: 13, color: "#6a7483" }}>{o.postnr}</Typography>
+              <Typography style={{ fontSize: 13, color: "#6a7483" }}>{o.land}</Typography>
+            </div>
+          </MenuItem>
+        ))}
+      </TextField>
+      {value && (
+        <IconButton
+          size="small"
+          aria-label="Rensa"
+          onClick={(e) => { e.stopPropagation(); onChange(""); }}
+          style={{ position: "absolute", right: 28, top: 4, padding: 4, color: "#6a7483" }}
+        >
+          <ClearIcon fontSize="small" />
+        </IconButton>
+      )}
+    </div>
   );
 }
 
@@ -200,27 +264,7 @@ function NyAlternativAdressDialog({ open, onClose, onSave, initialDraft, title =
           <div>
             <SectionLabel>Transport</SectionLabel>
             <div style={THREE_COL}>
-              <TextField select fullWidth size="small" label="Leveransort" value={draft.leveransort}
-                onChange={(e) => handleOrtChange(e.target.value)}>
-                <MenuItem value=""><em style={{ color: "#6a7483" }}>—</em></MenuItem>
-                <MenuItem disabled sx={{ opacity: 1, pointerEvents: "none", py: "2px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 50px", width: "100%", gap: 8 }}>
-                    <Typography style={{ fontSize: 11, fontWeight: 700, color: "#6a7483" }}>Ort</Typography>
-                    <Typography style={{ fontSize: 11, fontWeight: 700, color: "#6a7483" }}>Postnr</Typography>
-                    <Typography style={{ fontSize: 11, fontWeight: 700, color: "#6a7483" }}>Land</Typography>
-                  </div>
-                </MenuItem>
-                <Divider />
-                {LEVERANSORTER.map((o) => (
-                  <MenuItem key={o.ort} value={o.ort}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 50px", width: "100%", gap: 8 }}>
-                      <Typography style={{ fontSize: 13 }}>{o.ort}</Typography>
-                      <Typography style={{ fontSize: 13, color: "#6a7483" }}>{o.postnr}</Typography>
-                      <Typography style={{ fontSize: 13, color: "#6a7483" }}>{o.land}</Typography>
-                    </div>
-                  </MenuItem>
-                ))}
-              </TextField>
+              <LeveransortSelect value={draft.leveransort} onChange={handleOrtChange} />
               <TextField fullWidth size="small" label="Postnr" value={draft.postnr}
                 slotProps={{ input: { readOnly: true }, inputLabel: { shrink: true } }}
                 sx={{
@@ -276,6 +320,76 @@ function NyAlternativAdressDialog({ open, onClose, onSave, initialDraft, title =
       </DialogContent>
       <DialogActions className={styles.freightDialogActions}>
         <Button size="small" className={styles.freightSaveButton} disabled={!canSave}
+          onClick={() => { onSave(draft); onClose(); }}>Spara</Button>
+        <Button size="small" className={styles.freightCancelButton} onClick={onClose}>Avbryt</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function TransportLossningDialog({ open, onClose, onSave, initialDraft }: {
+  open: boolean; onClose: () => void; onSave: (d: LeveransDraft) => void; initialDraft: LeveransDraft;
+}) {
+  const [draft, setDraft] = useState<LeveransDraft>(initialDraft);
+
+  const set = (key: keyof LeveransDraft, value: string) =>
+    setDraft((prev) => ({ ...prev, [key]: value }));
+
+  const handleOrtChange = (ort: string) => {
+    const option = LEVERANSORTER.find((o) => o.ort === ort);
+    setDraft((prev) => ({ ...prev, leveransort: ort, postnr: option?.postnr ?? "" }));
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth slotProps={{ paper: { className: styles.freightDialogPaper } }}>
+      <DialogTitle className={styles.freightDialogTitle}>
+        <div className={styles.freightDialogTitleRow}>
+          <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Redigera transport &amp; lossning</Typography>
+          <IconButton size="small" onClick={onClose} style={{ color: "#6a7483" }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </div>
+      </DialogTitle>
+      <DialogContent className={styles.freightDialogContent}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingTop: 4 }}>
+
+          <div>
+            <SectionLabel>Transport</SectionLabel>
+            <div style={THREE_COL}>
+              <LeveransortSelect value={draft.leveransort} onChange={handleOrtChange} />
+              <ROField label="Postnr" value={draft.postnr} />
+            </div>
+          </div>
+
+          <Divider />
+
+          <div>
+            <SectionLabel>Lossning</SectionLabel>
+            <div style={THREE_COL}>
+              <TextField fullWidth size="small" label="Öppettider" helperText="Visas på fraktsedeln"
+                value={draft.oppettider} onChange={(e) => set("oppettider", e.target.value)} />
+              <TextField fullWidth size="small" label="Aviseringstelefon"
+                value={draft.aviseringstelefon} onChange={(e) => set("aviseringstelefon", e.target.value)} />
+              <TextField fullWidth size="small" label="Aviseringsinformation" multiline rows={3}
+                helperText="Visas på fraktsedel, skickas till C-Load"
+                value={draft.aviseringsinformation} onChange={(e) => set("aviseringsinformation", e.target.value)}
+                style={{ gridColumn: "1 / -1" }} />
+              <TextField fullWidth size="small" label="Tillfällig aviseringsinformation" multiline rows={3}
+                value={draft.tillfalligAviseringsinformation} onChange={(e) => set("tillfalligAviseringsinformation", e.target.value)}
+                style={{ gridColumn: "1 / -1" }} />
+              <TextField fullWidth size="small" label="Tillfällig aviseringsinformation giltig från"
+                type="date" slotProps={{ inputLabel: { shrink: true } }}
+                value={draft.tillfalligFran} onChange={(e) => set("tillfalligFran", e.target.value)} />
+              <TextField fullWidth size="small" label="Tillfällig aviseringsinformation giltig till"
+                type="date" slotProps={{ inputLabel: { shrink: true } }}
+                value={draft.tillfalligTom} onChange={(e) => set("tillfalligTom", e.target.value)} />
+            </div>
+          </div>
+
+        </div>
+      </DialogContent>
+      <DialogActions className={styles.freightDialogActions}>
+        <Button size="small" className={styles.freightSaveButton}
           onClick={() => { onSave(draft); onClose(); }}>Spara</Button>
         <Button size="small" className={styles.freightCancelButton} onClick={onClose}>Avbryt</Button>
       </DialogActions>
@@ -351,155 +465,62 @@ function ViewAltAdressDialog({ open, onClose, row }: {
 
 export function LeveransTab() {
   const [saved, setSaved] = useState<LeveransDraft>(EMPTY_DRAFT);
-  const [draft, setDraft] = useState<LeveransDraft>(EMPTY_DRAFT);
-  const [editing, setEditing] = useState(false);
-  const [altRows, setAltRows] = useState<AltAdressRow[]>([]);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [altRows, setAltRows] = useState<AltAdressRow[]>(INITIAL_ALT_ROWS);
   const [selectedAltRow, setSelectedAltRow] = useState<number | null>(null);
   const [nyDialogOpen, setNyDialogOpen] = useState(false);
   const [nyDialogKey, setNyDialogKey] = useState(0);
   const [viewRow, setViewRow] = useState<AltAdressRow | null>(null);
   const [editRow, setEditRow] = useState<AltAdressRow | null>(null);
 
-  const set = (key: keyof LeveransDraft, value: string) =>
-    setDraft((prev) => ({ ...prev, [key]: value }));
-
-  const handleOrtChange = (ort: string) => {
-    const option = LEVERANSORTER.find((o) => o.ort === ort);
-    setDraft((prev) => ({ ...prev, leveransort: ort, postnr: option?.postnr ?? "" }));
-  };
-
-  const handleEdit = () => { setDraft(saved); setEditing(true); };
-  const handleSave = () => { setSaved(draft); setEditing(false); };
-  const handleCancel = () => { setDraft(saved); setEditing(false); };
-
   const fmt = (val: string) => val || "";
-  const ortOption = LEVERANSORTER.find((o) => o.ort === saved.leveransort);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      <div className={styles.contractFlatSection} style={{ maxWidth: 1000, margin: "0 auto", width: "100%" }}>
-
-        {/* ── Leveransadress — ingen bakgrund/border ── */}
-        <div style={{ marginBottom: 4 }}>
-          <Typography className={styles.contractSectionTitle} style={{ marginBottom: 12 }}>Leveransadress</Typography>
-          <div style={THREE_COL}>
-            <ROField label="Namn" value="" />
-            <ROField label="Adress" value="" />
-            <ROField label="Adress 2" value="" />
-            <ROField label="Postadress" value="" />
-            <ROField label="Land" value="" />
-          </div>
-        </div>
-
-        <hr className={styles.contractFlatDivider} />
+      <div className={styles.contractFlatSection} style={{ maxWidth: 1000, margin: "0 auto", width: "100%", gap: 16 }}>
 
         {/* ── Transport & Lossning ── */}
-        <div className={styles.contractDataSection}>
+        <div className={styles.contractDataSection} style={{ padding: 16, background: "#fafafa" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <Typography className={styles.contractSectionTitle}>Transport &amp; Lossning</Typography>
-            {editing ? (
-              <div style={{ display: "flex", gap: 6 }}>
-                <Button size="small" className={styles.freightSaveButton} onClick={handleSave}>Spara</Button>
-                <Button size="small" className={styles.freightCancelButton} onClick={handleCancel}>Avbryt</Button>
-              </div>
-            ) : (
-              <Button variant="contained" size="small" startIcon={<EditOutlinedIcon fontSize="small" />} onClick={handleEdit}>
-                Redigera
-              </Button>
-            )}
+            <Button variant="contained" size="small" startIcon={<EditOutlinedIcon fontSize="small" />} onClick={() => setEditDialogOpen(true)}>
+              Redigera
+            </Button>
           </div>
 
           <div style={THREE_COL}>
-            {editing ? (
-              <>
-                <TextField
-                  select fullWidth size="small" label="Leveransort"
-                  value={draft.leveransort}
-                  onChange={(e) => handleOrtChange(e.target.value)}
-                >
-                  <MenuItem value=""><em style={{ color: "#6a7483" }}>—</em></MenuItem>
-                  <MenuItem disabled sx={{ opacity: 1, pointerEvents: "none", py: "2px" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 50px", width: "100%", gap: 8 }}>
-                      <Typography style={{ fontSize: 11, fontWeight: 700, color: "#6a7483" }}>Ort</Typography>
-                      <Typography style={{ fontSize: 11, fontWeight: 700, color: "#6a7483" }}>Postnr</Typography>
-                      <Typography style={{ fontSize: 11, fontWeight: 700, color: "#6a7483" }}>Land</Typography>
-                    </div>
-                  </MenuItem>
-                  <Divider />
-                  {LEVERANSORTER.map((o) => (
-                    <MenuItem key={o.ort} value={o.ort}>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 50px", width: "100%", gap: 8 }}>
-                        <Typography style={{ fontSize: 13 }}>{o.ort}</Typography>
-                        <Typography style={{ fontSize: 13, color: "#6a7483" }}>{o.postnr}</Typography>
-                        <Typography style={{ fontSize: 13, color: "#6a7483" }}>{o.land}</Typography>
-                      </div>
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <ROField label="Postnr" value={draft.postnr} />
-              </>
-            ) : (
-              <>
-                <ROField
-                  label="Leveransort"
-                  value={ortOption ? `${ortOption.ort}  ·  ${ortOption.postnr}  ·  ${ortOption.land}` : fmt(saved.leveransort)}
-                />
-                <ROField label="Postnr" value={fmt(saved.postnr)} />
-              </>
-            )}
+            <ROField label="Leveransort" value={fmt(saved.leveransort)} />
+            <ROField label="Postnr" value={fmt(saved.postnr)} />
+            <ROField label="Öppettider" value={fmt(saved.oppettider)} helperText="Visas på fraktsedeln" />
           </div>
 
           <div style={{ ...THREE_COL, marginTop: 8 }}>
-            {editing ? (
-              <>
-                <TextField fullWidth size="small" label="Öppettider"
-                  helperText="Visas på fraktsedeln"
-                  value={draft.oppettider}
-                  onChange={(e) => set("oppettider", e.target.value)} />
-                <TextField fullWidth size="small" label="Aviseringstelefon"
-                  value={draft.aviseringstelefon}
-                  onChange={(e) => set("aviseringstelefon", e.target.value)} />
-                <TextField fullWidth size="small" label="Aviseringsinformation" multiline rows={3}
-                  helperText="Visas på fraktsedel, skickas till C-Load"
-                  value={draft.aviseringsinformation}
-                  onChange={(e) => set("aviseringsinformation", e.target.value)}
-                  style={{ gridColumn: "1 / -1" }} />
-                <TextField fullWidth size="small" label="Tillfällig aviseringsinformation" multiline rows={3}
-                  value={draft.tillfalligAviseringsinformation}
-                  onChange={(e) => set("tillfalligAviseringsinformation", e.target.value)}
-                  style={{ gridColumn: "1 / -1" }} />
-                <TextField fullWidth size="small" label="Tillfällig aviseringsinformation giltig från"
-                  type="date" slotProps={{ inputLabel: { shrink: true } }}
-                  value={draft.tillfalligFran}
-                  onChange={(e) => set("tillfalligFran", e.target.value)} />
-                <TextField fullWidth size="small" label="Tillfällig aviseringsinformation giltig till"
-                  type="date" slotProps={{ inputLabel: { shrink: true } }}
-                  value={draft.tillfalligTom}
-                  onChange={(e) => set("tillfalligTom", e.target.value)} />
-              </>
-            ) : (
-              <>
-                <ROField label="Öppettider" value={fmt(saved.oppettider)} helperText="Visas på fraktsedeln" />
-                <ROField label="Aviseringstelefon" value={fmt(saved.aviseringstelefon)} />
-                <ROField label="Aviseringsinformation" value={fmt(saved.aviseringsinformation)} helperText="Visas på fraktsedel, skickas till C-Load" style={{ gridColumn: "1 / -1" }} />
-                <ROField label="Tillfällig aviseringsinformation" value={fmt(saved.tillfalligAviseringsinformation)} style={{ gridColumn: "1 / -1" }} />
-                <ROField label="Tillfällig aviseringsinformation giltig från" value={fmt(saved.tillfalligFran)} />
-                <ROField label="Tillfällig aviseringsinformation giltig till" value={fmt(saved.tillfalligTom)} />
-              </>
-            )}
+            <ROField label="Aviseringstelefon" value={fmt(saved.aviseringstelefon)} />
+            <ROField label="Aviseringsinformation" value={fmt(saved.aviseringsinformation)} helperText="Visas på fraktsedel, skickas till C-Load" style={{ gridColumn: "1 / -1" }} />
+            <ROField label="Tillfällig aviseringsinformation" value={fmt(saved.tillfalligAviseringsinformation)} style={{ gridColumn: "1 / -1" }} />
+            <ROField label="Tillfällig aviseringsinformation giltig från" value={fmt(saved.tillfalligFran)} />
+            <ROField label="Tillfällig aviseringsinformation giltig till" value={fmt(saved.tillfalligTom)} />
           </div>
         </div>
 
       </div>
 
+      <TransportLossningDialog
+        key={editDialogOpen ? "open" : "closed"}
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        initialDraft={saved}
+        onSave={(d) => setSaved(d)}
+      />
+
       {/* ── Alternativa leveransadresser ── */}
       <div className={styles.lineItemsSection}>
-        <Typography className={styles.contractSectionTitle} style={{ padding: "4px 12px 4px 0" }}>
+        {/* <Typography className={styles.contractSectionTitle} style={{ padding: "4px 12px 4px 0" }}>
           Alternativa leveransadresser
-        </Typography>
+        </Typography> */}
         <ActionRow
           items={[{
-            label: "Ny",
+            label: "Alternativ leveransadress",
             icon: <AddIcon fontSize="small" />,
             tone: "primary",
             onClick: () => { setNyDialogKey((k) => k + 1); setNyDialogOpen(true); },
@@ -514,6 +535,9 @@ export function LeveransTab() {
           onRowClick={(i) => setSelectedAltRow(i === selectedAltRow ? null : i)}
           fillRemainingSpace
           renderCell={(row, col) => {
+            if (col.key === "namn" && row.namn === "Leveransadress") {
+              return <span style={{ fontWeight: 700 }}>{row.namn}</span>;
+            }
             if (col.key === "_actions") {
               return (
                 <span className={styles.freightActionCell}>

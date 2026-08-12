@@ -630,6 +630,144 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     skapad: "2021-11-03 09:20",
     andradAv: "Erik Andersson",
     andrad: "2026-05-05 11:11"
+  },
+  "Björk & Ek Bygg AB": {
+    customerNumber: "K-1007",
+    organizationNumber: "556101-1007",
+    country: "SE",
+    city: "Falun",
+    primaryContact: "Peter Berg",
+    accountManager: "Maria Lindqvist",
+    email: "info@bjorkek.se",
+    phone: "023-560 12 00",
+    activeContracts: "3",
+    priceList: "PL-202606",
+    creditLimit: "250 000 SEK",
+    limitStatus: "error",
+    comment: "Utlastningsspärr aktiv. Kunden är aktiv framför allt under Q2–Q3.",
+    kortnamn: "BJEK",
+    tillhor: "Marknad Syd",
+    giltiFran: "2023-04-01",
+    giltigTom: "2026-09-30",
+    skapadAv: "Maria Lindqvist",
+    skapad: "2023-04-05 09:40",
+    andradAv: "Maria Lindqvist",
+    andrad: "2026-06-01 08:12"
+  },
+  "Granit & Grus HB": {
+    customerNumber: "K-1008",
+    organizationNumber: "556101-1008",
+    country: "SE",
+    city: "Mölndal",
+    primaryContact: "Lena Holm",
+    accountManager: "Maria Lindqvist",
+    email: "info@granitgrus.se",
+    phone: "031-440 23 10",
+    activeContracts: "5",
+    priceList: "PL-202607",
+    creditLimit: "400 000 SEK",
+    limitStatus: "ok",
+    comment: "Stabil betalningshistorik och oregelbundet köpmönster.",
+    kortnamn: "GGRU",
+    tillhor: "Marknad Syd",
+    giltiFran: "2022-08-01",
+    giltigTom: "2026-12-31",
+    skapadAv: "Maria Lindqvist",
+    skapad: "2022-08-04 10:05",
+    andradAv: "Maria Lindqvist",
+    andrad: "2026-03-15 13:47"
+  },
+  "Norrlands Trä AB": {
+    customerNumber: "K-1009",
+    organizationNumber: "556101-1009",
+    country: "SE",
+    city: "Boden",
+    primaryContact: "Karin Ström",
+    accountManager: "Jane Doe",
+    email: "info@norrlandstra.se",
+    phone: "0921-420 11 00",
+    activeContracts: "2",
+    priceList: "PL-202608",
+    creditLimit: "150 000 SEK",
+    limitStatus: "error",
+    comment: "Kund pausad och utlastningsspärr aktiv. Kontaktas Q1 2027.",
+    kortnamn: "NORTR",
+    tillhor: "Marknad Nord",
+    giltiFran: "2018-05-01",
+    giltigTom: "2025-12-31",
+    skapadAv: "Jane Doe",
+    skapad: "2018-05-09 09:00",
+    andradAv: "Jane Doe",
+    andrad: "2026-01-10 11:20"
+  },
+  "Bygg & Handel Syd AB": {
+    customerNumber: "K-1010",
+    organizationNumber: "556101-1010",
+    country: "SE",
+    city: "Malmö",
+    primaryContact: "Johan Persson",
+    accountManager: "Erik Andersson",
+    email: "info@bygghandelsyd.se",
+    phone: "040-340 56 00",
+    activeContracts: "8",
+    priceList: "PL-202609",
+    creditLimit: "600 000 SEK",
+    limitStatus: "ok",
+    comment: "Bra betalningshistorik. EDI-faktura aktiverat 2025.",
+    kortnamn: "BHS",
+    tillhor: "Marknad Syd",
+    giltiFran: "2021-02-01",
+    giltigTom: "2026-12-31",
+    skapadAv: "Erik Andersson",
+    skapad: "2021-02-08 08:30",
+    andradAv: "Erik Andersson",
+    andrad: "2026-04-22 09:55"
+  },
+  "Timra Hus AB": {
+    customerNumber: "K-1011",
+    organizationNumber: "556101-1011",
+    country: "SE",
+    city: "Timrå",
+    primaryContact: "Maja Sjöberg",
+    accountManager: "Maria Lindqvist",
+    email: "info@timrahus.se",
+    phone: "060-570 30 20",
+    activeContracts: "4",
+    priceList: "PL-202610",
+    creditLimit: "300 000 SEK",
+    limitStatus: "ok",
+    comment: "Regelbundet köpmönster, inga avvikelser noterade.",
+    kortnamn: "TIMHU",
+    tillhor: "Marknad Nord",
+    giltiFran: "2022-03-01",
+    giltigTom: "2026-09-30",
+    skapadAv: "Maria Lindqvist",
+    skapad: "2022-03-06 10:15",
+    andradAv: "Maria Lindqvist",
+    andrad: "2026-02-19 14:02"
+  },
+  "BalticBuild OÜ": {
+    customerNumber: "K-1012",
+    organizationNumber: "10234567",
+    country: "EE",
+    city: "Tallinn",
+    primaryContact: "Kristjan Saar",
+    accountManager: "Jane Doe",
+    email: "orders@balticbuild.ee",
+    phone: "+372 600 3400",
+    activeContracts: "12",
+    priceList: "PL-202611",
+    creditLimit: "900 000 SEK",
+    limitStatus: "ok",
+    comment: "Exportkund. EDI-faktura via PEPPOL.",
+    kortnamn: "BLTB",
+    tillhor: "Marknad Export",
+    giltiFran: "2020-06-01",
+    giltigTom: "2027-12-31",
+    skapadAv: "Jane Doe",
+    skapad: "2020-06-03 09:10",
+    andradAv: "Jane Doe",
+    andrad: "2026-05-30 15:25"
   }
 };
 
@@ -874,7 +1012,7 @@ const lineItemRows: LineItemRow[] = Array.from({ length: 12 }).map((_, idx) => (
 // ─── Customer list ────────────────────────────────────────────────────────────
 
 type CustomerSearchFieldKey =
-  | "kundnr" | "fakturanamn" | "kortnamn" | "postadress" | "land" | "hyvelprofil" | "kategori"
+  | "kundnr" | "fakturanamn" | "kortnamn" | "postadress" | "land" | "kategori"
   | "tillhor" | "orgNr" | "vatNr" | "varningsnivaFordran" | "varningsnivaLimit"
   | "kundansvarig" | "saljare" | "agent" | "limitDatumFran" | "limitDatumTill"
   | "kundgrupp" | "kopmonster" | "aktiv" | "utlastningssparr";
@@ -892,6 +1030,7 @@ type CustomerSearchFieldConfig = {
   control: "text" | "date" | "select" | "checkbox";
   visible: boolean;
   favorite: boolean;
+  multi?: boolean;
 };
 
 type CustomerColumnConfig = {
@@ -902,20 +1041,19 @@ type CustomerColumnConfig = {
   width?: number;
 };
 
-type CustomerSearchValueMap = Record<CustomerSearchFieldKey, string | boolean>;
+type CustomerSearchValueMap = Record<CustomerSearchFieldKey, string | string[] | boolean>;
 
 type CustomerRow = Record<CustomerColumnKey, string>;
 
 const defaultCustomerSearchFields: CustomerSearchFieldConfig[] = [
   { key: "kundnr", label: "Kundnr", control: "text", visible: true, favorite: true },
   { key: "kortnamn", label: "Kortnamn", control: "text", visible: true, favorite: true },
-  { key: "kundansvarig", label: "Kundansvarig", control: "select", visible: true, favorite: true },
-  { key: "saljare", label: "Säljare/innesäljare", control: "select", visible: true, favorite: true },
+  { key: "kundansvarig", label: "Kundansvarig", control: "select", visible: true, favorite: true, multi: true },
+  { key: "saljare", label: "Säljare/innesäljare", control: "select", visible: true, favorite: true, multi: true },
   { key: "fakturanamn", label: "Fakturanamn", control: "text", visible: false, favorite: false },
   { key: "postadress", label: "Postadress", control: "text", visible: false, favorite: false },
   { key: "land", label: "Land", control: "select", visible: false, favorite: false },
-  { key: "hyvelprofil", label: "Hyvelprofil", control: "select", visible: false, favorite: false },
-  { key: "kategori", label: "Kategori", control: "select", visible: false, favorite: false },
+  { key: "kategori", label: "Kategori", control: "select", visible: false, favorite: false, multi: true },
   { key: "tillhor", label: "Tillhör", control: "text", visible: false, favorite: false },
   { key: "orgNr", label: "OrgNr", control: "text", visible: false, favorite: false },
   { key: "vatNr", label: "VatNr", control: "text", visible: false, favorite: false },
@@ -924,7 +1062,7 @@ const defaultCustomerSearchFields: CustomerSearchFieldConfig[] = [
   { key: "agent", label: "Agent", control: "select", visible: false, favorite: false },
   { key: "limitDatumFran", label: "Limit datum från", control: "date", visible: false, favorite: false },
   { key: "limitDatumTill", label: "Limit datum till", control: "date", visible: false, favorite: false },
-  { key: "kundgrupp", label: "Kundgrupp", control: "select", visible: false, favorite: false },
+  { key: "kundgrupp", label: "Kundgrupp", control: "select", visible: false, favorite: false, multi: true },
   { key: "kopmonster", label: "Köpmönster", control: "select", visible: false, favorite: false },
   { key: "aktiv", label: "Aktiv", control: "checkbox", visible: false, favorite: false },
   { key: "utlastningssparr", label: "Utlastningsspärr", control: "checkbox", visible: false, favorite: false },
@@ -932,7 +1070,6 @@ const defaultCustomerSearchFields: CustomerSearchFieldConfig[] = [
 
 const customerSelectOptionsByField: Partial<Record<CustomerSearchFieldKey, string[]>> = {
   land: ["SE", "NO", "FI", "DK", "DE", "EE"],
-  hyvelprofil: ["Aktiv", "Inaktiv", "Alla"],
   kategori: ["Bygghandel", "Industri", "Sågverk"],
   varningsnivaFordran: ["Ingen", "Låg", "Medium", "Hög"],
   varningsnivaLimit: ["Ingen", "Låg", "Medium", "Hög"],
@@ -944,10 +1081,10 @@ const customerSelectOptionsByField: Partial<Record<CustomerSearchFieldKey, strin
 };
 
 const initialCustomerSearchValues: CustomerSearchValueMap = {
-  kundnr: "", fakturanamn: "", kortnamn: "", postadress: "", land: "", hyvelprofil: "",
-  kategori: "", tillhor: "", orgNr: "", vatNr: "", varningsnivaFordran: "", varningsnivaLimit: "",
-  kundansvarig: "", saljare: "", agent: "", limitDatumFran: "", limitDatumTill: "",
-  kundgrupp: "", kopmonster: "", aktiv: false, utlastningssparr: false,
+  kundnr: "", fakturanamn: "", kortnamn: "", postadress: "", land: "",
+  kategori: [], tillhor: "", orgNr: "", vatNr: "", varningsnivaFordran: "", varningsnivaLimit: "",
+  kundansvarig: [], saljare: [], agent: "", limitDatumFran: "", limitDatumTill: "",
+  kundgrupp: [], kopmonster: "", aktiv: false, utlastningssparr: false,
 };
 
 const defaultCustomerColumns: CustomerColumnConfig[] = [
@@ -1802,9 +1939,15 @@ export default function Home() {
           if (field.key === "utlastningssparr" && row.utlastningssparr !== "Ja") return false;
           continue;
         }
-        const filterValue = String(customerSearchValues[field.key] ?? "").trim().toLowerCase();
-        if (!filterValue) continue;
+        const fieldValue = customerSearchValues[field.key];
         const rowValue = (row[field.key as CustomerColumnKey] ?? "").toLowerCase();
+        if (Array.isArray(fieldValue)) {
+          if (fieldValue.length === 0) continue;
+          if (!fieldValue.some((option) => rowValue.includes(option.trim().toLowerCase()))) return false;
+          continue;
+        }
+        const filterValue = String(fieldValue ?? "").trim().toLowerCase();
+        if (!filterValue) continue;
         if (!rowValue.includes(filterValue)) return false;
       }
       return true;
@@ -2674,7 +2817,7 @@ export default function Home() {
             onClearSearchValues={clearSearchValues}
             onGlobalSearchChange={setGlobalSearchValue}
             onSearchTextChange={(key, value) => handleSearchTextChange(key as SearchFieldKey, value)}
-            onSearchSelectChange={(key, value) => handleSearchSelectChange(key as SearchFieldKey, value)}
+            onSearchSelectChange={(key, value) => handleSearchSelectChange(key as SearchFieldKey, Array.isArray(value) ? value.join(", ") : value)}
             onSearchCheckboxChange={(key, checked) =>
               handleSearchCheckboxChange(key as SearchFieldKey, checked)
             }
@@ -2730,7 +2873,7 @@ export default function Home() {
             allTextFields={allCustomerTextSearchFields}
             allSelectFields={allCustomerSelectSearchFields}
             allCheckboxFields={allCustomerCheckboxSearchFields}
-            searchValues={customerSearchValues as Record<string, string | boolean>}
+            searchValues={customerSearchValues as Record<string, string | string[] | boolean>}
             globalSearchValue={customerGlobalSearchValue}
             isSearchMenuOpen={isCustomerSearchMenuOpen}
             draftSearchFields={draftCustomerSearchFields}
@@ -2773,7 +2916,7 @@ export default function Home() {
             }}
           />
         ) : isCustomerDetailOpen && selectedCustomerName ? (
-          <CustomerDetailView customerName={selectedCustomerName} detail={selectedCustomerDetail} />
+          <CustomerDetailView key={selectedCustomerName} customerName={selectedCustomerName} detail={selectedCustomerDetail} />
         ) : isAndraStatusRoute ? (
           <div className={styles.contractDetailPanel}>
             <AndraStatusView onBack={() => navigateWithLoading("/marknad/leveranslista")} />
@@ -2877,7 +3020,7 @@ export default function Home() {
               allTextFields={allCustomerTextSearchFields}
               allSelectFields={allCustomerSelectSearchFields}
               allCheckboxFields={allCustomerCheckboxSearchFields}
-              values={customerSearchValues as Record<string, string | boolean>}
+              values={customerSearchValues as Record<string, string | string[] | boolean>}
               globalSearchValue={customerGlobalSearchValue}
               isMenuOpen={isCustomerSearchMenuOpen}
               draftFields={draftCustomerSearchFields}
@@ -2891,12 +3034,12 @@ export default function Home() {
                 {
                   label: "Allmänt",
                   fields: [
-                    { key: "enhet", label: "Enhet", control: "select", options: ["Bolag A", "Bolag B", "Bolag C"] },
-                    { key: "lagerstalle", label: "Lagerställe", control: "select", options: ["Lager 1", "Lager 2", "Lager 3"] },
+                    { key: "enhet", label: "Enhet", control: "select", options: ["Bolag A", "Bolag B", "Bolag C"], multi: true },
+                    { key: "lagerstalle", label: "Lagerställe", control: "select", options: ["Lager 1", "Lager 2", "Lager 3"], multi: true },
                     { key: "tradslag", label: "Trädslag", control: "select", options: ["Gran", "Furu"] },
                     { key: "aktTjocklek", label: "Akt tjocklek", control: "text", nomToggle: true, nomGroup: "tjocklekBredd" },
                     { key: "aktBredd", label: "Akt bredd", control: "text", nomToggle: true, nomGroup: "tjocklekBredd" },
-                    { key: "kvalitet", label: "Kvalitet", control: "select", options: ["O/S", "C16", "C24", "NOBB", "Finsåg"] },
+                    { key: "kvalitet", label: "Kvalitet", control: "select", options: ["O/S", "C16", "C24", "NOBB", "Finsåg"], multi: true },
                     { key: "kvalitetsgrupp", label: "Kvalitetsgrupp", control: "select", options: ["KG1", "KG2", "KG3"] },
                     { key: "artNr", label: "ArtNr", control: "select", options: ["22120", "22121", "22122", "22123", "22124", "22125", "22126"] },
                     { key: "veckaFran", label: "Vecka från", control: "text" },

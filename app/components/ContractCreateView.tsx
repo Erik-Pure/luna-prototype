@@ -22,6 +22,7 @@ import {
     Button,
     Checkbox,
     Chip,
+    Divider,
     IconButton,
     InputAdornment,
     MenuItem,
@@ -200,14 +201,22 @@ const mockDeliveryAddresses = [
 export type ContractCreateViewProps = {
     onSave?: (draft: NewContractDraft, files: UploadedFileItem[]) => void;
     onCancel?: () => void;
+    initialDraft?: NewContractDraft;
+    initialFiles?: UploadedFileItem[];
+    title?: string;
+    mode?: "create" | "edit";
 };
 
-export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps) {
-    const [draft, setDraft] = useState<NewContractDraft>(emptyNewContractDraft);
+export function ContractCreateView({ onSave, onCancel, initialDraft, initialFiles, title, mode = "create" }: ContractCreateViewProps) {
+    const [draft, setDraft] = useState<NewContractDraft>(initialDraft ?? emptyNewContractDraft);
     const [expandedPanels, setExpandedPanels] = useState<string[]>(["obligatoriska", "allmant", "villkor", "leverans", "dokument"]);
-    const [uploadedFiles, setUploadedFiles] = useState<UploadedFileItem[]>([]);
+    const [uploadedFiles, setUploadedFiles] = useState<UploadedFileItem[]>(initialFiles ?? []);
     const [isDragOver, setIsDragOver] = useState(false);
-    const [selectedCustomer, setSelectedCustomer] = useState<CustomerData | null>(null);
+    const [selectedCustomer, setSelectedCustomer] = useState<CustomerData | null>(
+        mockCustomers.find((c) => c.name === initialDraft?.customer) ?? null
+    );
+    const isEdit = mode === "edit";
+    const [isEditing, setIsEditing] = useState(!isEdit);
 
     const updateDraftField = (key: keyof NewContractDraft, value: string | boolean) => {
         setDraft((previous) => ({
@@ -325,14 +334,24 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
         <>
             <div className={styles.contractModernTopRow}>
                 <div className={styles.contractModernTitleWrap}>
-                    <Typography className={styles.contractModernTitle} style={{ letterSpacing: "-0.5px" }}>Nytt kontrakt</Typography>
+                    <Typography className={styles.contractModernTitle} style={{ letterSpacing: "-0.5px" }}>{title ?? "Nytt kontrakt"}</Typography>
                 </div>
                 <div className={styles.contractModernTopActions}>
-                    <Button className={styles.contractSaveButton} size="small" onClick={handleSave}>
-                        Skapa kontrakt
-                    </Button>
-                    <Button className={styles.contractQuickActionButton} size="small" onClick={handleCancel}>
-                        Avbryt
+                    {isEditing ? (
+                        <Button className={styles.contractSaveButton} size="small" onClick={handleSave}>
+                            {isEdit ? "Spara" : "Skapa kontrakt"}
+                        </Button>
+                    ) : (
+                        <Button className={styles.contractSaveButton} size="small" onClick={() => setIsEditing(true)}>
+                            Redigera
+                        </Button>
+                    )}
+                    <Button
+                        className={styles.contractQuickActionButton}
+                        size="small"
+                        onClick={isEditing && isEdit ? () => setIsEditing(false) : handleCancel}
+                    >
+                        {isEdit ? (isEditing ? "Avbryt" : "Stäng") : "Avbryt"}
                     </Button>
                 </div>
             </div>
@@ -353,11 +372,13 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     <Typography className={styles.contractModernAccordionTitle}>Obligatoriska fält</Typography>
                                 </div>
                             </AccordionSummary>
-                            <AccordionDetails className={styles.contractCreateRequiredContent}>
-                                <Typography className={styles.contractCreateRequiredHint}>Alla fält nedan krävs för att skapa kontraktet</Typography>
+                            <AccordionDetails className={`${styles.contractCreateRequiredContent} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                                <Typography className={styles.contractCreateRequiredHint}>
+                                    {isEdit ? "Alla fält nedan krävs för att kontraktet ska vara giltigt" : "Alla fält nedan krävs för att skapa kontraktet"}
+                                </Typography>
 
                                 {/* ── Allmänt ── */}
-                                <Typography className={styles.contractSectionChip}>Allmänt</Typography>
+                                <Typography className={styles.contractSectionGroupLabel}>Allmänt</Typography>
 
                                 {/* Kund — full-width standalone with search adornment */}
                                 <div style={{ marginBottom: 10 }}>
@@ -416,10 +437,10 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     </TextField>
                                 </div>
 
-                                <div className={styles.contractCreateSectionDivider} />
+                                <Divider className={styles.contractSectionDivider} />
 
                                 {/* ── Villkor ── */}
-                                <Typography className={styles.contractSectionChip}>Villkor</Typography>
+                                <Typography className={styles.contractSectionGroupLabel}>Villkor</Typography>
 
                                 {/* Row 1 – 3-col: Valuta, Betalningsvillkor, Certifiering */}
                                 <div className={styles.contractFormGrid3} style={{ marginBottom: 10 }}>
@@ -483,10 +504,10 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                         InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
                                 </div>
 
-                                <div className={styles.contractCreateSectionDivider} />
+                                <Divider className={styles.contractSectionDivider} />
 
                                 {/* ── Leverans ── */}
-                                <Typography className={styles.contractSectionChip}>Leverans</Typography>
+                                <Typography className={styles.contractSectionGroupLabel}>Leverans</Typography>
                                 <div className={styles.contractFormGrid82}>
                                     <TextField select fullWidth label="Leveransort *" value={draft.deliveryLocation} onChange={(e) => handleDeliveryLocationChange(e.target.value)} size="small">
                                         <MenuItem value="">— Välj ort —</MenuItem>
@@ -497,10 +518,10 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     <TextField fullWidth value={draft.deliveryLocationPostalCode} disabled label="Postnummer" helperText="Fylls i automatiskt" size="small" />
                                 </div>
 
-                                <div className={styles.contractCreateSectionDivider} />
+                                <Divider className={styles.contractSectionDivider} />
 
                                 {/* ── Kommentarer ── plain text, 2-col */}
-                                <Typography className={styles.contractSectionChip}>Kommentarer</Typography>
+                                <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
                                 <div className={styles.contractFormGrid2}>
                                     <div>
                                         <Typography variant="caption" style={{ display: "block", marginBottom: 3, color: "#6b7585" }}>Kommentar från kund</Typography>
@@ -530,8 +551,8 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
                                 </span>
                             </AccordionSummary>
-                            <AccordionDetails className={styles.contractSectionDetailsArea}>
-                                <Typography className={styles.contractSectionSubLabel} style={{ marginTop: 0 }}>Allmänt</Typography>
+                            <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                                <Typography className={styles.contractSectionGroupLabel} style={{ marginTop: 0 }}>Allmänt</Typography>
                                 <div className={styles.contractFormGrid2} style={{ marginBottom: 10 }}>
                                     <TextField select fullWidth label="Kundens referens" value={draft.customerRef} onChange={(e) => updateDraftField("customerRef", e.target.value)} size="small">
                                         <MenuItem value="">— Välj —</MenuItem>
@@ -576,8 +597,8 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     <TextField fullWidth type="date" value={draft.validUntil} onChange={(e) => updateDraftField("validUntil", e.target.value)} label="Giltig t.o.m" InputLabelProps={{ shrink: true }} size="small" />
                                 </div>
 
-                                <div className={styles.contractCreateSectionDivider} />
-                                <Typography className={styles.contractSectionSubLabel}>Anteckningar</Typography>
+                                <Divider className={styles.contractSectionDivider} />
+                                <Typography className={styles.contractSectionGroupLabel}>Anteckningar</Typography>
                                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                     <TextField fullWidth multiline rows={3} value={draft.miscNote} onChange={(e) => updateDraftField("miscNote", e.target.value)} label="Övrigt" size="small"
                                         helperText="Visas på utskrift av kontrakt och orderbekräftelse. Skickas även vid orderbekräftelse till PRI Handel" />
@@ -594,8 +615,8 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     <Typography className={styles.contractSectionTitle}>Villkor</Typography>
                                 </span>
                             </AccordionSummary>
-                            <AccordionDetails className={styles.contractSectionDetailsArea}>
-                                <Typography className={styles.contractSectionSubLabel} style={{ marginTop: 0 }}>Valuta &amp; Betalning</Typography>
+                            <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                                <Typography className={styles.contractSectionGroupLabel} style={{ marginTop: 0 }}>Valuta &amp; Betalning</Typography>
                                 <div className={styles.contractFormGrid2} style={{ marginBottom: 10 }}>
                                     <TextField fullWidth type="date" value={draft.exchangeRateDate} onChange={(e) => updateDraftField("exchangeRateDate", e.target.value)} label="Kursdatum valuta" InputLabelProps={{ shrink: true }} size="small" />
                                     <TextField select fullWidth label="Moms" value={draft.vat} onChange={(e) => updateDraftField("vat", e.target.value)} size="small">
@@ -609,8 +630,8 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     <TextField fullWidth type="number" value={draft.paymentTermsDays} onChange={(e) => updateDraftField("paymentTermsDays", e.target.value)} label="Betalningsvillkor dagar" size="small" />
                                 </div>
 
-                                <div className={styles.contractCreateSectionDivider} />
-                                <Typography className={styles.contractSectionSubLabel}>Rabatter &amp; Avgifter</Typography>
+                                <Divider className={styles.contractSectionDivider} />
+                                <Typography className={styles.contractSectionGroupLabel}>Rabatter &amp; Avgifter</Typography>
                                 <div className={styles.contractFormGrid3} style={{ marginBottom: 10 }}>
                                     <TextField fullWidth type="number" value={draft.cashDiscount} onChange={(e) => updateDraftField("cashDiscount", e.target.value)} label="Kassarabatt"
                                         size="small" InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
@@ -638,8 +659,8 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                         size="small" InputProps={{ endAdornment: <InputAdornment position="end">{draft.currency}</InputAdornment> }} />
                                 </div>
 
-                                <div className={styles.contractCreateSectionDivider} />
-                                <Typography className={styles.contractSectionSubLabel}>Lager</Typography>
+                                <Divider className={styles.contractSectionDivider} />
+                                <Typography className={styles.contractSectionGroupLabel}>Lager</Typography>
                                 <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", marginBottom: 10 }}>
                                     <Checkbox checked={draft.consignmentStock} onChange={(e) => updateDraftField("consignmentStock", e.target.checked)} size="small" />
                                     <Typography variant="body2">Konsignationslager</Typography>
@@ -655,8 +676,8 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     <Typography className={styles.contractSectionTitle}>Leverans</Typography>
                                 </span>
                             </AccordionSummary>
-                            <AccordionDetails className={styles.contractSectionDetailsArea}>
-                                <Typography className={styles.contractSectionSubLabel} style={{ marginTop: 0 }}>Allmänt</Typography>
+                            <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                                <Typography className={styles.contractSectionGroupLabel} style={{ marginTop: 0 }}>Allmänt</Typography>
 
                                 {/* Read-only mirror of required fields */}
                                 <div className={styles.contractFormGrid3} style={{ marginBottom: 10 }}>
@@ -696,8 +717,8 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     </Paper>
                                 )}
 
-                                <div className={styles.contractCreateSectionDivider} />
-                                <Typography className={styles.contractSectionSubLabel}>Lossning</Typography>
+                                <Divider className={styles.contractSectionDivider} />
+                                <Typography className={styles.contractSectionGroupLabel}>Lossning</Typography>
                                 <div className={styles.contractFormGrid2} style={{ marginBottom: 10 }}>
                                     <TextField fullWidth value={draft.unloadingPhone} onChange={(e) => updateDraftField("unloadingPhone", e.target.value)} label="Telefon" type="tel" size="small" />
                                     <TextField fullWidth value={draft.unloadingHours} onChange={(e) => updateDraftField("unloadingHours", e.target.value)} label="Öppettider" size="small" helperText="Visas på fraktsedel" />
@@ -705,8 +726,8 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     <TextField fullWidth multiline rows={3} value={draft.notificationInfo} onChange={(e) => updateDraftField("notificationInfo", e.target.value)} label="Aviseringsinformation" size="small" helperText="Visas på fraktsedel, skickas till C-Load" />
                                 </div>
 
-                                <div className={styles.contractCreateSectionDivider} />
-                                <Typography className={styles.contractSectionSubLabel}>Sjöfrakt</Typography>
+                                <Divider className={styles.contractSectionDivider} />
+                                <Typography className={styles.contractSectionGroupLabel}>Sjöfrakt</Typography>
                                 <div className={styles.contractFormGrid3}>
                                     <TextField fullWidth size="small" label="Utlastande hamn" value="" InputProps={{ readOnly: true }} />
                                     <TextField fullWidth size="small" label="Speditör" value="" InputProps={{ readOnly: true }} />
@@ -728,7 +749,7 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                                     </Typography>
                                 </span>
                             </AccordionSummary>
-                            <AccordionDetails className={styles.contractSectionDetailsArea}>
+                            <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
                                 <Stack spacing={1.5}>
                                     <Paper
                                         onDragOver={handleDragOver}
@@ -772,14 +793,21 @@ export function ContractCreateView({ onSave, onCancel }: ContractCreateViewProps
                         </Accordion>
 
                     </div>
-                    <div className={styles.contractCreateFooter}>
-                        <Button className={styles.contractSaveButton} size="small" onClick={handleSave}>
-                            Skapa kontrakt
-                        </Button>
-                        <Button variant="text" size="small" onClick={handleCancel} style={{ color: "#555e6d" }}>
-                            Avbryt
-                        </Button>
-                    </div>
+                    {isEditing ? (
+                        <div className={styles.contractCreateFooter}>
+                            <Button className={styles.contractSaveButton} size="small" onClick={handleSave}>
+                                {isEdit ? "Spara" : "Skapa kontrakt"}
+                            </Button>
+                            <Button
+                                variant="text"
+                                size="small"
+                                onClick={isEdit ? () => setIsEditing(false) : handleCancel}
+                                style={{ color: "#555e6d" }}
+                            >
+                                Avbryt
+                            </Button>
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </>

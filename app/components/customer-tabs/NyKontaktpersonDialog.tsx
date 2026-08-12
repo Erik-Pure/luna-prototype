@@ -134,8 +134,8 @@ export function NyKontaktpersonDialog({ open, initialDraft, title = "Ny kontaktp
   const showAnnanAdress = draft.adresstyp === "Annan adress";
   const adressText =
     draft.adresstyp === "Faktura" ? (kundAdresser?.faktura ?? null) :
-    draft.adresstyp === "Leverans" ? (kundAdresser?.leverans ?? null) :
-    null;
+      draft.adresstyp === "Leverans" ? (kundAdresser?.leverans ?? null) :
+        null;
 
   const canSave =
     draft.namn.trim() !== "" &&
@@ -195,7 +195,6 @@ export function NyKontaktpersonDialog({ open, initialDraft, title = "Ny kontaktp
             />
           </div>
 
-          <Divider />
 
           {/* ── Adress ── */}
           <div className={styles.contractModernFormGrid}>
@@ -289,7 +288,7 @@ export function NyKontaktpersonDialog({ open, initialDraft, title = "Ny kontaktp
             )}
           </div>
 
-          <Divider />
+
 
           {/* ── Kommentar ── */}
           <TextField
@@ -305,7 +304,7 @@ export function NyKontaktpersonDialog({ open, initialDraft, title = "Ny kontaktp
 
           {/* ── Information ── */}
           <div>
-            <Typography style={{ fontSize: 12, fontWeight: 700, color: "#6a7483", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+            <Typography style={{ fontSize: 12, fontWeight: 700, color: "#2f3743", letterSpacing: "0.05em", marginBottom: 8 }}>
               Information
             </Typography>
             <FormGroup row style={{ gap: "0 16px" }}>
@@ -329,7 +328,7 @@ export function NyKontaktpersonDialog({ open, initialDraft, title = "Ny kontaktp
 
           {/* ── Utskick ── */}
           <div>
-            <Typography style={{ fontSize: 12, fontWeight: 700, color: "#6a7483", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+            <Typography style={{ fontSize: 12, fontWeight: 700, color: "#2f3743", letterSpacing: "0.05em", marginBottom: 8 }}>
               Utskick
             </Typography>
             <FormGroup style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>

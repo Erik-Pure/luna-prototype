@@ -23,7 +23,6 @@ type FraktRow = {
   _id: string;
   enhet: string;
   snittprisCLoad: string;
-  fas: boolean;
   bilJvgFrakt: string;
   valutaBilJvg: string;
   spedTermkostn: string;
@@ -48,7 +47,6 @@ const INITIAL_ROWS: FraktRow[] = ENHETER.map((enhet, i) => ({
   _id: String(i + 1),
   enhet,
   snittprisCLoad: "",
-  fas: false,
   bilJvgFrakt: "",
   valutaBilJvg: "SEK",
   spedTermkostn: "",
@@ -62,14 +60,13 @@ const INITIAL_ROWS: FraktRow[] = ENHETER.map((enhet, i) => ({
 const COLUMNS = [
   { key: "enhet", label: "Enhet", pinned: true },
   { key: "snittprisCLoad", label: "Snittpris i C-Load" },
-  { key: "fas", label: "FAS" },
   { key: "bilJvgFrakt", label: "BilJvgFrakt" },
   { key: "valutaBilJvg", label: "Valuta" },
   { key: "spedTermkostn", label: "Sped/Termkostn." },
   { key: "valutaSped", label: "Valuta" },
   { key: "sjofr", label: "Sjöfrakt" },
   { key: "valutaSjofr", label: "Valuta" },
-  { key: "fraktNetoSek", label: "Frakt, netto (SEK)" },
+  { key: "fraktNetoSek", label: "Total fraktkostnad" },
   { key: "kalkylgrundande", label: "Kalkylgrundande" },
   { key: "_actions", label: "", pinnedRight: true, width: 44 },
 ] satisfies Array<{ key: string; label: string; pinned?: boolean; pinnedRight?: boolean; width?: number }>;
@@ -88,7 +85,6 @@ export function FraktTab() {
     setEditing({
       row,
       draft: {
-        fas: row.fas,
         bilJvgFrakt: row.bilJvgFrakt,
         valutaBilJvg: row.valutaBilJvg,
         spedTermkostn: row.spedTermkostn,
@@ -136,7 +132,6 @@ export function FraktTab() {
                       </Tooltip>
                     );
                   }
-                  if (col.key === "fas") return row.fas ? "Ja" : "–";
                   if (col.key === "kalkylgrundande") return row.kalkylgrundande ? "Ja" : "–";
                   const val = row[col.key as keyof FraktRow];
                   return typeof val === "boolean" ? "–" : (val || "–");
@@ -175,11 +170,7 @@ export function FraktTab() {
                     {VALUTA_OPTIONS.map((v) => <MenuItem key={v} value={v}>{v}</MenuItem>)}
                   </TextField>
                 </div>
-                <TextField fullWidth size="small" label="Frakt, netto (SEK)" value={editing.draft.fraktNetoSek} onChange={(e) => setDraftStr("fraktNetoSek", e.target.value)} />
-                <label style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid rgba(0,0,0,0.23)", borderRadius: 7, padding: "6px 12px 6px 8px", cursor: "pointer" }}>
-                  <Checkbox size="small" checked={editing.draft.fas} onChange={(e) => setDraftBool("fas", e.target.checked)} sx={{ p: 0 }} />
-                  <Typography className={styles.searchCheckboxLabel}>FAS</Typography>
-                </label>
+                <TextField fullWidth size="small" label="Total fraktkostnad" value={editing.draft.fraktNetoSek} onChange={(e) => setDraftStr("fraktNetoSek", e.target.value)} />
                 <label style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid rgba(0,0,0,0.23)", borderRadius: 7, padding: "6px 12px 6px 8px", cursor: "pointer" }}>
                   <Checkbox size="small" checked={editing.draft.kalkylgrundande} onChange={(e) => setDraftBool("kalkylgrundande", e.target.checked)} sx={{ p: 0 }} />
                   <Typography className={styles.searchCheckboxLabel}>Kalkylgrundande</Typography>

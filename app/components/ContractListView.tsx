@@ -37,7 +37,7 @@ type ContractListViewProps = {
   onClearSearchValues: () => void;
   onGlobalSearchChange: (value: string) => void;
   onSearchTextChange: (key: string, value: string) => void;
-  onSearchSelectChange: (key: string, value: string) => void;
+  onSearchSelectChange: (key: string, value: string | string[]) => void;
   onSearchCheckboxChange: (key: string, checked: boolean) => void;
   actionItems: Array<{ label: string; icon: ReactNode; requiresSelection: boolean }>;
   onCreateContract: () => void;

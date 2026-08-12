@@ -14,7 +14,7 @@ import { DataTable } from "./shared/DataTable";
 import { SearchFiltersPanel } from "./shared/SearchFiltersPanel";
 import styles from "../page.module.scss";
 
-type FieldDef = { key: string; label: string; control: "text" | "date" | "select" | "checkbox" };
+type FieldDef = { key: string; label: string; control: "text" | "date" | "select" | "checkbox"; multi?: boolean };
 
 type CustomerListViewProps = {
   textFields: FieldDef[];
@@ -23,7 +23,7 @@ type CustomerListViewProps = {
   allTextFields: FieldDef[];
   allSelectFields: FieldDef[];
   allCheckboxFields: FieldDef[];
-  searchValues: Record<string, string | boolean>;
+  searchValues: Record<string, string | string[] | boolean>;
   globalSearchValue: string;
   isSearchMenuOpen: boolean;
   draftSearchFields: Array<FieldDef & { visible: boolean; favorite?: boolean }>;
@@ -40,7 +40,7 @@ type CustomerListViewProps = {
   onClearSearchValues: () => void;
   onGlobalSearchChange: (value: string) => void;
   onSearchTextChange: (key: string, value: string) => void;
-  onSearchSelectChange: (key: string, value: string) => void;
+  onSearchSelectChange: (key: string, value: string | string[]) => void;
   onSearchCheckboxChange: (key: string, checked: boolean) => void;
   actionItems: Array<{ label: string; icon: ReactNode; requiresSelection: boolean }>;
   hasSelectedRows: boolean;
