@@ -210,6 +210,7 @@ type CustomerDetailViewProps = {
   detail: CustomerDetailData | null;
 };
 
+
 function buildCustomerDraftFromDetail(detail: CustomerDetailData | null, customerName: string): CustomerDraft {
   if (!detail) {
     return { ...INITIAL_DRAFT, faktNamn: customerName, levNamn: customerName };
