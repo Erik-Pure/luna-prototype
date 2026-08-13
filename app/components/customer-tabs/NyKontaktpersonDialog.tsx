@@ -156,43 +156,48 @@ export function NyKontaktpersonDialog({ open, initialDraft, title = "Ny kontaktp
         <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingTop: 4 }}>
 
           {/* ── Grunduppgifter ── */}
-          <div className={styles.contractModernFormGrid}>
-            <TextField
-              fullWidth size="small"
-              label="Namn *"
-              value={draft.namn}
-              onChange={(e) => set("namn", e.target.value)}
-              className={styles.lineItemRequiredControl}
-              style={{ gridColumn: "1 / -1" }}
-            />
-            <TextField
-              select fullWidth size="small"
-              label="Funktion"
-              value={draft.funktion}
-              onChange={(e) => set("funktion", e.target.value)}
-            >
-              <MenuItem value="">—</MenuItem>
-              {FUNKTION_OPTIONS.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-            </TextField>
-            <TextField
-              fullWidth size="small"
-              label="Telefon"
-              value={draft.telefon}
-              onChange={(e) => set("telefon", e.target.value)}
-            />
-            <TextField
-              fullWidth size="small"
-              label="Mobil"
-              value={draft.mobil}
-              onChange={(e) => set("mobil", e.target.value)}
-            />
-            <TextField
-              fullWidth size="small"
-              label="E-post"
-              type="email"
-              value={draft.epost}
-              onChange={(e) => set("epost", e.target.value)}
-            />
+          <div>
+            <Typography style={{ fontSize: 12, fontWeight: 700, color: "#2f3743", letterSpacing: "0.05em", marginBottom: 8 }}>
+              Grunduppgifter
+            </Typography>
+            <div className={styles.contractModernFormGrid}>
+              <TextField
+                fullWidth size="small"
+                label="Namn *"
+                value={draft.namn}
+                onChange={(e) => set("namn", e.target.value)}
+                className={styles.lineItemRequiredControl}
+                style={{ gridColumn: "1 / -1" }}
+              />
+              <TextField
+                select fullWidth size="small"
+                label="Funktion"
+                value={draft.funktion}
+                onChange={(e) => set("funktion", e.target.value)}
+              >
+                <MenuItem value="">—</MenuItem>
+                {FUNKTION_OPTIONS.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+              </TextField>
+              <TextField
+                fullWidth size="small"
+                label="Telefon"
+                value={draft.telefon}
+                onChange={(e) => set("telefon", e.target.value)}
+              />
+              <TextField
+                fullWidth size="small"
+                label="Mobil"
+                value={draft.mobil}
+                onChange={(e) => set("mobil", e.target.value)}
+              />
+              <TextField
+                fullWidth size="small"
+                label="E-post"
+                type="email"
+                value={draft.epost}
+                onChange={(e) => set("epost", e.target.value)}
+              />
+            </div>
           </div>
 
 

@@ -132,7 +132,7 @@ export function PriceListCreateView({
   const [draft, setDraft] = useState<NewPriceListDraft>(initialDraft ?? emptyDraft);
   const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant", "villkor", "utskrift"]);
   const [fastTrackEnabled, setFastTrackEnabled] = useState(true);
-  const [isEditing, setIsEditing] = useState(mode === "create");
+  const [isEditing, setIsEditing] = useState(true);
   const accordionWrapRef = useRef<HTMLDivElement | null>(null);
 
   const update = (key: keyof NewPriceListDraft, value: string | boolean) =>
@@ -280,6 +280,7 @@ export function PriceListCreateView({
                 </AccordionSummary>
                 <AccordionDetails className={styles.contractSectionDetailsArea}>
 
+                  <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       fullWidth size="small"

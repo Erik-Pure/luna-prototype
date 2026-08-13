@@ -170,7 +170,7 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
   const [draft, setDraft] = useState<NewCustomerDraft>(initialDraft ?? emptyDraft);
   const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant", "kontakt", "villkor"]);
   const [fastTrackEnabled, setFastTrackEnabled] = useState(true);
-  const [isEditing, setIsEditing] = useState(mode === "create");
+  const [isEditing, setIsEditing] = useState(true);
   const accordionWrapRef = useRef<HTMLDivElement | null>(null);
 
   const update = (key: keyof NewCustomerDraft, value: string | boolean) =>
@@ -316,7 +316,7 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                 </AccordionSummary>
                 <AccordionDetails className={styles.contractSectionDetailsArea}>
 
-                  {/* Grid: main fields */}
+                  <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"

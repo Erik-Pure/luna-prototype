@@ -216,7 +216,7 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
         mockCustomers.find((c) => c.name === initialDraft?.customer) ?? null
     );
     const isEdit = mode === "edit";
-    const [isEditing, setIsEditing] = useState(!isEdit);
+    const [isEditing, setIsEditing] = useState(true);
 
     const updateDraftField = (key: keyof NewContractDraft, value: string | boolean) => {
         setDraft((previous) => ({

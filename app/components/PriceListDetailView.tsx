@@ -7,8 +7,10 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
+import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
-import OpenInFullOutlinedIcon from "@mui/icons-material/OpenInFullOutlined";
+import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import {
@@ -17,8 +19,6 @@ import {
   AccordionSummary,
   Button,
   Checkbox,
-  Dialog,
-  DialogContent,
   Divider,
   FormControlLabel,
   IconButton,
@@ -91,6 +91,9 @@ type PriceListDetailViewProps = {
   onOpenPrislistekalkyl: () => void;
 };
 
+const MIN_SECTIONS_PANEL_WIDTH = 220;
+const MAX_SECTIONS_PANEL_WIDTH = 900;
+
 export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail, onCreatePriceRow, onOpenPrislistekalkyl }: PriceListDetailViewProps) {
   const [activeTab, setActiveTab] = useState<PriceListTab>("Prislisterader");
   const [draft, setDraft] = useState<PriceListDraft>({ ...MOCK_DRAFT, prislistenr: selectedPriceListId });
@@ -125,7 +128,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
     const startWidth = sectionsPanelWidth ?? (isExtraWide ? 380 : 290);
     const onMouseMove = (e: globalThis.MouseEvent) => {
       const delta = startX - e.clientX;
-      setSectionsPanelWidth(Math.max(220, Math.min(900, startWidth + delta)));
+      setSectionsPanelWidth(Math.max(MIN_SECTIONS_PANEL_WIDTH, Math.min(MAX_SECTIONS_PANEL_WIDTH, startWidth + delta)));
     };
     const onMouseUp = () => {
       document.removeEventListener("mousemove", onMouseMove);
@@ -135,6 +138,12 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
     document.addEventListener("mouseup", onMouseUp);
   };
 
+  const isSectionsPanelMaxWidth = sectionsPanelWidth === MAX_SECTIONS_PANEL_WIDTH;
+
+  const toggleSectionsPanelWidth = () => {
+    setSectionsPanelWidth((current) => (current === MAX_SECTIONS_PANEL_WIDTH ? null : MAX_SECTIONS_PANEL_WIDTH));
+  };
+
   const set = (key: keyof PriceListDraft, value: string | boolean) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
 
@@ -142,6 +151,16 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
 
   return (
     <div className={styles.contractDetailPanel}>
+      {expandedDialogOpen ? (
+        <PriceListCreateView
+          mode="edit"
+          title={`Prislista ${selectedPriceListId}`}
+          initialDraft={draft}
+          onSave={(saved) => { setDraft(saved); setExpandedDialogOpen(false); }}
+          onCancel={() => setExpandedDialogOpen(false)}
+        />
+      ) : (
+      <>
       {/* ── Header ── */}
       <div className={styles.contractModernTopRow}>
         <div className={styles.contractModernTitleWrap}>
@@ -181,7 +200,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
           ) : null}
 
           <div className={styles.contractSectionsPanelHeader}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
+            <div className={styles.contractSectionsPanelTitleRow} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
               {!isSectionsPanelCollapsed ? (
                 <Typography className={styles.contractSectionsPanelTitle}>Prislisteinformation</Typography>
               ) : null}
@@ -230,16 +249,33 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     Redigera
                   </Button>
                 )}
-                <Tooltip title="Öppna i dialog">
+                <Divider orientation="vertical" flexItem style={{ margin: "4px 0" }} />
+                <Tooltip title="Redigera i formulär">
                   <Button
                     size="small"
                     className={styles.contractHeaderDotsButton}
                     onClick={() => setExpandedDialogOpen(true)}
                     style={{ minWidth: 0 }}
                   >
-                    <OpenInFullOutlinedIcon fontSize="small" />
+                    <EditNoteOutlinedIcon fontSize="small" />
                   </Button>
                 </Tooltip>
+                {isWide ? (
+                  <Tooltip title={isSectionsPanelMaxWidth ? "Återställ panelbredd" : "Maximera panelbredd"}>
+                    <Button
+                      size="small"
+                      className={styles.contractHeaderDotsButton}
+                      onClick={toggleSectionsPanelWidth}
+                      style={{ minWidth: 0 }}
+                    >
+                      {isSectionsPanelMaxWidth ? (
+                        <KeyboardDoubleArrowRightIcon fontSize="small" />
+                      ) : (
+                        <KeyboardDoubleArrowLeftIcon fontSize="small" />
+                      )}
+                    </Button>
+                  </Tooltip>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -255,6 +291,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                   </span>
                 </AccordionSummary>
                 <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                  <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Prislistenr" value={draft.prislistenr} onChange={(e) => set("prislistenr", e.target.value)} />
                     <TextField fullWidth size="small" label="Kopierat från" value={draft.kopieratFran} onChange={(e) => set("kopieratFran", e.target.value)} />
@@ -524,25 +561,8 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
           </div>
         </div>
       </div>
-
-      {/* ── Expanded dialog ── */}
-      <Dialog
-        open={expandedDialogOpen}
-        onClose={() => setExpandedDialogOpen(false)}
-        maxWidth="lg"
-        fullWidth
-        slotProps={{ paper: { sx: { height: "90vh" } } }}
-      >
-        <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <PriceListCreateView
-            mode="edit"
-            title={`Prislista ${selectedPriceListId}`}
-            initialDraft={draft}
-            onSave={(saved) => { setDraft(saved); setExpandedDialogOpen(false); }}
-            onCancel={() => setExpandedDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      </>
+      )}
     </div>
   );
 }

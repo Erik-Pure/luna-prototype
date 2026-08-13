@@ -7,8 +7,10 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FormatListBulletedOutlinedIcon from "@mui/icons-material/FormatListBulletedOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
+import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
-import OpenInFullOutlinedIcon from "@mui/icons-material/OpenInFullOutlined";
+import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SyncAltOutlinedIcon from "@mui/icons-material/SyncAlt";
 import {
@@ -18,8 +20,6 @@ import {
   Button,
   Checkbox,
   Chip,
-  Dialog,
-  DialogContent,
   Divider,
   FormControlLabel,
   IconButton,
@@ -210,6 +210,9 @@ type CustomerDetailViewProps = {
   detail: CustomerDetailData | null;
 };
 
+const MIN_SECTIONS_PANEL_WIDTH = 220;
+const MAX_SECTIONS_PANEL_WIDTH = 900;
+
 
 function buildCustomerDraftFromDetail(detail: CustomerDetailData | null, customerName: string): CustomerDraft {
   if (!detail) {
@@ -265,7 +268,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
     const startWidth = sectionsPanelWidth ?? (isExtraWide ? 380 : 290);
     const onMouseMove = (e: globalThis.MouseEvent) => {
       const delta = startX - e.clientX;
-      setSectionsPanelWidth(Math.max(220, Math.min(900, startWidth + delta)));
+      setSectionsPanelWidth(Math.max(MIN_SECTIONS_PANEL_WIDTH, Math.min(MAX_SECTIONS_PANEL_WIDTH, startWidth + delta)));
     };
     const onMouseUp = () => {
       document.removeEventListener("mousemove", onMouseMove);
@@ -275,6 +278,12 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
     document.addEventListener("mouseup", onMouseUp);
   };
 
+  const isSectionsPanelMaxWidth = sectionsPanelWidth === MAX_SECTIONS_PANEL_WIDTH;
+
+  const toggleSectionsPanelWidth = () => {
+    setSectionsPanelWidth((current) => (current === MAX_SECTIONS_PANEL_WIDTH ? null : MAX_SECTIONS_PANEL_WIDTH));
+  };
+
   const set = (key: keyof CustomerDraft, value: string | boolean) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
 
@@ -282,6 +291,16 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
 
   return (
     <div className={styles.contractDetailPanel}>
+      {expandedDialogOpen ? (
+        <CustomerCreateView
+          mode="edit"
+          title={customerName}
+          initialDraft={draft as NewCustomerDraft}
+          onSave={(saved) => { setDraft(saved as CustomerDraft); setExpandedDialogOpen(false); }}
+          onCancel={() => setExpandedDialogOpen(false)}
+        />
+      ) : (
+      <>
       {/* ── Header ── */}
       <div className={styles.contractModernTopRow}>
         <div className={styles.contractModernTitleWrap}>
@@ -321,7 +340,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
           ) : null}
 
           <div className={styles.contractSectionsPanelHeader}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
+            <div className={styles.contractSectionsPanelTitleRow} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
               {!isSectionsPanelCollapsed ? (
                 <Typography className={styles.contractSectionsPanelTitle}>Kundinformation</Typography>
               ) : null}
@@ -370,16 +389,33 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                     Redigera
                   </Button>
                 )}
-                <Tooltip title="Öppna i dialog">
+                <Divider orientation="vertical" flexItem style={{ margin: "4px 0" }} />
+                <Tooltip title="Redigera i formulär">
                   <Button
                     size="small"
                     className={styles.contractHeaderDotsButton}
                     onClick={() => setExpandedDialogOpen(true)}
                     style={{ minWidth: 0 }}
                   >
-                    <OpenInFullOutlinedIcon fontSize="small" />
+                    <EditNoteOutlinedIcon fontSize="small" />
                   </Button>
                 </Tooltip>
+                {isWide ? (
+                  <Tooltip title={isSectionsPanelMaxWidth ? "Återställ panelbredd" : "Maximera panelbredd"}>
+                    <Button
+                      size="small"
+                      className={styles.contractHeaderDotsButton}
+                      onClick={toggleSectionsPanelWidth}
+                      style={{ minWidth: 0 }}
+                    >
+                      {isSectionsPanelMaxWidth ? (
+                        <KeyboardDoubleArrowRightIcon fontSize="small" />
+                      ) : (
+                        <KeyboardDoubleArrowLeftIcon fontSize="small" />
+                      )}
+                    </Button>
+                  </Tooltip>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -395,6 +431,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                   </span>
                 </AccordionSummary>
                 <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                  <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Kategori" value={draft.kategori} onChange={(e) => set("kategori", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -538,6 +575,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                   </span>
                 </AccordionSummary>
                 <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                  <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; betalning</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Valuta" value={draft.valuta} onChange={(e) => set("valuta", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -562,6 +600,11 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                       <MenuItem value="0">Förskott</MenuItem>
                     </TextField>
                     <TextField fullWidth size="small" label="Bet.villkor.dag" type="number" value={draft.betvillkorDag} onChange={(e) => set("betvillkorDag", e.target.value)} />
+                  </div>
+
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Rabatt &amp; bonus</Typography>
+                  <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Kassarabatt" value={draft.kassarabatt} onChange={(e) => set("kassarabatt", e.target.value)}
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
                     <TextField fullWidth size="small" label="Bonus" value={draft.bonus} onChange={(e) => set("bonus", e.target.value)}
@@ -572,6 +615,11 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                       <MenuItem value="Volym">Volym</MenuItem>
                       <MenuItem value="Antal order">Antal order</MenuItem>
                     </TextField>
+                  </div>
+
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Ränta &amp; påminnelse</Typography>
+                  <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Ränterutin" value={draft.ranterutin} onChange={(e) => set("ranterutin", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
                       <MenuItem value="Standard">Standard</MenuItem>
@@ -584,6 +632,11 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                     </TextField>
                     <TextField fullWidth size="small" label="Kravränta" value={draft.kravRanta} onChange={(e) => set("kravRanta", e.target.value)}
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
+                  </div>
+
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; leverans</Typography>
+                  <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Certifiering" value={draft.certifiering} onChange={(e) => set("certifiering", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
                       <MenuItem value="FSC">FSC</MenuItem>
@@ -610,7 +663,20 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                       <MenuItem value="FCA">FCA</MenuItem>
                       <MenuItem value="CIF">CIF</MenuItem>
                     </TextField>
+                    <TextField fullWidth size="small" label="Införselavgift" value={draft.inforsElavgift} onChange={(e) => set("inforsElavgift", e.target.value)}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} />
                     <TextField fullWidth size="small" label="Text på kontrakt/faktura" value={draft.textPaKontrakt} onChange={(e) => set("textPaKontrakt", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <FormControlLabel
+                      control={<Checkbox size="small" checked={draft.leveransdatumPaFaktura} onChange={(e) => set("leveransdatumPaFaktura", e.target.checked)} />}
+                      label={<Typography style={{ fontSize: 13 }}>Leveransdatum på faktura</Typography>}
+                    />
+                  </div>
+
+                  <Divider className={styles.contractSectionDivider} />
+                  <Typography className={styles.contractSectionGroupLabel}>Agent</Typography>
+                  <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Agent" value={draft.agent} onChange={(e) => set("agent", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
                       <MenuItem value="Nordic Agent AB">Nordic Agent AB</MenuItem>
@@ -618,14 +684,6 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                     </TextField>
                     <TextField fullWidth size="small" label="Provision agent" value={draft.provisionAgent} onChange={(e) => set("provisionAgent", e.target.value)}
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
-                    <TextField fullWidth size="small" label="Införselavgift" value={draft.inforsElavgift} onChange={(e) => set("inforsElavgift", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} />
-                  </div>
-                  <div style={{ marginTop: 8 }}>
-                    <FormControlLabel
-                      control={<Checkbox size="small" checked={draft.leveransdatumPaFaktura} onChange={(e) => set("leveransdatumPaFaktura", e.target.checked)} />}
-                      label={<Typography style={{ fontSize: 13 }}>Leveransdatum på faktura</Typography>}
-                    />
                   </div>
                 </AccordionDetails>
               </Accordion>
@@ -659,24 +717,8 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
           </div>
         </div>
       </div>
-
-      <Dialog
-        open={expandedDialogOpen}
-        onClose={() => setExpandedDialogOpen(false)}
-        maxWidth="lg"
-        fullWidth
-        slotProps={{ paper: { sx: { height: "90vh" } } }}
-      >
-        <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <CustomerCreateView
-            mode="edit"
-            title={customerName}
-            initialDraft={draft as NewCustomerDraft}
-            onSave={(saved) => { setDraft(saved as CustomerDraft); setExpandedDialogOpen(false); }}
-            onCancel={() => setExpandedDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      </>
+      )}
     </div>
   );
 }

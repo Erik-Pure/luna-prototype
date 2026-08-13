@@ -2684,8 +2684,15 @@
   gap: 6px;
 }
 
+.contractSectionsPanelTitleRow {
+  margin: -10px -12px 0;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background-color: #eef0f4;
+}
+
 .contractSectionsPanelMinimizeBtn {
-  color: #6b7280 !important;
+  color: #4a5565 !important;
   flex-shrink: 0;
 }
 
@@ -5820,6 +5827,10 @@
 :global(html[data-color-mode="dark"]) .contractSectionsPanelHeader {
   border-color: #3a3f4a;
   background-color: #1a1d24;
+}
+
+:global(html[data-color-mode="dark"]) .contractSectionsPanelTitleRow {
+  background-color: #20242c;
 }
 
 :global(html[data-color-mode="dark"]) .contractSectionsPanelMinimizeBtn {

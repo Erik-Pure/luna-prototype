@@ -4,17 +4,19 @@ import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import OpenInFullOutlinedIcon from "@mui/icons-material/OpenInFullOutlined";
+import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
+import KeyboardDoubleArrowLeftIcon from "@mui/icons-material/KeyboardDoubleArrowLeft";
+import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { Accordion, AccordionDetails, AccordionSummary, Button, Chip, Dialog, DialogContent, Divider, IconButton, Menu, MenuItem, Tooltip, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Button, Chip, Divider, IconButton, Menu, MenuItem, Tooltip, Typography } from "@mui/material";
 import { useState, useSyncExternalStore, type MouseEvent, type RefObject } from "react";
 import { CallOffTab } from "./contract-tabs/CallOffTab";
 import { ContractRowsTab } from "./contract-tabs/ContractRowsTab";
@@ -136,6 +138,9 @@ type ContractDetailViewProps = {
   onOpenAvropsrad: (id: string, data?: Record<string, string>) => void;
 };
 
+const MIN_SECTIONS_PANEL_WIDTH = 220;
+const MAX_SECTIONS_PANEL_WIDTH = 900;
+
 export function ContractDetailView({
   isLineItemDetailOpen,
   selectedLineItemId,
@@ -224,7 +229,7 @@ export function ContractDetailView({
     const startWidth = sectionsPanelWidth ?? (isExtraWide ? 380 : 290);
     const onMouseMove = (e: globalThis.MouseEvent) => {
       const delta = startX - e.clientX;
-      setSectionsPanelWidth(Math.max(220, Math.min(900, startWidth + delta)));
+      setSectionsPanelWidth(Math.max(MIN_SECTIONS_PANEL_WIDTH, Math.min(MAX_SECTIONS_PANEL_WIDTH, startWidth + delta)));
     };
     const onMouseUp = () => {
       document.removeEventListener("mousemove", onMouseMove);
@@ -232,6 +237,12 @@ export function ContractDetailView({
     };
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
+  };
+
+  const isSectionsPanelMaxWidth = sectionsPanelWidth === MAX_SECTIONS_PANEL_WIDTH;
+
+  const toggleSectionsPanelWidth = () => {
+    setSectionsPanelWidth((current) => (current === MAX_SECTIONS_PANEL_WIDTH ? null : MAX_SECTIONS_PANEL_WIDTH));
   };
 
   const isMoreMenuOpen = moreMenuAnchor !== null;
@@ -246,7 +257,15 @@ export function ContractDetailView({
 
   return (
     <div className={styles.contractDetailPanel}>
-      {selectedContractId === "new" ? (
+      {expandedDialogOpen ? (
+        <ContractCreateView
+          mode="edit"
+          title={`Kontrakt ${selectedContractId} - ${contractDetails.summary.customer}`}
+          initialDraft={buildContractDraftFromDetails(contractDetails)}
+          onSave={() => setExpandedDialogOpen(false)}
+          onCancel={() => setExpandedDialogOpen(false)}
+        />
+      ) : selectedContractId === "new" ? (
         <ContractCreateView
           onSave={() => {
             // TODO: Handle contract save
@@ -346,7 +365,7 @@ export function ContractDetailView({
 
               {/* Panel header: minimize button left + Redigera button right */}
               <div className={styles.contractSectionsPanelHeader}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
+                <div className={styles.contractSectionsPanelTitleRow} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
                   {!isSectionsPanelCollapsed ? (
                     <Typography className={styles.contractSectionsPanelTitle}>Kontraktsinformation</Typography>
                   ) : null}
@@ -389,16 +408,33 @@ export function ContractDetailView({
                         Redigera
                       </Button>
                     )}
-                    <Tooltip title="Öppna i dialog">
+                    <Divider orientation="vertical" flexItem style={{ margin: "4px 0" }} />
+                    <Tooltip title="Redigera i formulär">
                       <Button
                         size="small"
                         className={styles.contractHeaderDotsButton}
                         onClick={() => setExpandedDialogOpen(true)}
                         style={{ minWidth: 0 }}
                       >
-                        <OpenInFullOutlinedIcon fontSize="small" />
+                        <EditNoteOutlinedIcon fontSize="small" />
                       </Button>
                     </Tooltip>
+                    {isWide ? (
+                      <Tooltip title={isSectionsPanelMaxWidth ? "Återställ panelbredd" : "Maximera panelbredd"}>
+                        <Button
+                          size="small"
+                          className={styles.contractHeaderDotsButton}
+                          onClick={toggleSectionsPanelWidth}
+                          style={{ minWidth: 0 }}
+                        >
+                          {isSectionsPanelMaxWidth ? (
+                            <KeyboardDoubleArrowRightIcon fontSize="small" />
+                          ) : (
+                            <KeyboardDoubleArrowLeftIcon fontSize="small" />
+                          )}
+                        </Button>
+                      </Tooltip>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -662,23 +698,6 @@ export function ContractDetailView({
         onClose={() => setIsBytPrislistaOpen(false)}
         onConfirm={() => setIsBytPrislistaOpen(false)}
       />
-      <Dialog
-        open={expandedDialogOpen}
-        onClose={() => setExpandedDialogOpen(false)}
-        maxWidth="lg"
-        fullWidth
-        slotProps={{ paper: { sx: { height: "90vh" } } }}
-      >
-        <DialogContent sx={{ p: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <ContractCreateView
-            mode="edit"
-            title={`Kontrakt ${selectedContractId} - ${contractDetails.summary.customer}`}
-            initialDraft={buildContractDraftFromDetails(contractDetails)}
-            onSave={() => setExpandedDialogOpen(false)}
-            onCancel={() => setExpandedDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
