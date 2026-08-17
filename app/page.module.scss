@@ -2834,9 +2834,21 @@
 .contractSectionDetailsAreaLocked {
   pointer-events: none;
 
-  .MuiInputBase-root,
-  .MuiFormControlLabel-root {
+  :global(.MuiFormControlLabel-root) {
     opacity: 0.7;
+  }
+
+  :global(.MuiOutlinedInput-root) {
+    background-color: #f8f9fa;
+  }
+
+  :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: #e8eaf0;
+  }
+
+  :global(.MuiInputBase-input.Mui-disabled) {
+    color: #3c4452;
+    -webkit-text-fill-color: #3c4452;
   }
 }
 
@@ -5922,6 +5934,19 @@
   border-color: var(--color-champagne-dark) !important;
   background-color: var(--color-champagne) !important;
   color: #ffffff !important;
+}
+
+:global(html[data-color-mode="dark"]) .contractSectionDetailsAreaLocked :global(.MuiOutlinedInput-root) {
+  background-color: #262a33;
+}
+
+:global(html[data-color-mode="dark"]) .contractSectionDetailsAreaLocked :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .contractSectionDetailsAreaLocked :global(.MuiInputBase-input.Mui-disabled) {
+  color: #c7ccd5;
+  -webkit-text-fill-color: #c7ccd5;
 }
 
 :global(html[data-color-mode="dark"]) .contractSectionsPanelHeader {

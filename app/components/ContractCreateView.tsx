@@ -609,7 +609,7 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </div>
 
                                 <Divider className={styles.contractSectionDivider} />
-                                <Typography className={styles.contractSectionGroupLabel}>Agenter</Typography>
+                                <Typography className={styles.contractSectionGroupLabel}>Agent</Typography>
                                 <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
                                     <TextField select fullWidth label="Agent *" value={draft.agent1} onChange={(e) => updateDraftField("agent1", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
                                         <MenuItem value="">— Välj —</MenuItem>

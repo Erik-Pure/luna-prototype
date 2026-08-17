@@ -78,6 +78,8 @@ type SectionKey = "hem" | "marknad" | "produktion" | "leverans" | "rapporter" | 
 // Not affected by StrictMode double-invoke since it's only written/read in event handlers.
 let _savedReturnLineItemId: string | null = null;
 let _savedAvropsradEditData: Record<string, string> | null = null;
+// Remembers whether a prislisterad detail view was opened from the Prislistekalkyl view, so the breadcrumb can chain through it and "close" can return there.
+let _savedReturnToKalkyl = false;
 
 type TopMenuItemDef = {
   slug: string;
@@ -2530,7 +2532,19 @@ export default function Home() {
     if (!selectedPriceListId) {
       return;
     }
+    _savedReturnToKalkyl = isPrislistekalkylRoute;
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}/${priceRowId}`);
+  };
+
+  const closePriceRowDetail = () => {
+    if (!selectedPriceListId) return;
+    const returnToKalkyl = _savedReturnToKalkyl;
+    _savedReturnToKalkyl = false;
+    if (returnToKalkyl) {
+      navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}/kalkyl`);
+    } else {
+      navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}`);
+    }
   };
 
   const openPrislistekalkyl = () => {
@@ -2836,6 +2850,8 @@ export default function Home() {
         lineItemDetailHref={_savedReturnLineItemId && selectedContractId ? `/${sectionSlug}/${menuSlug}/${selectedContractId}/${_savedReturnLineItemId}` : null}
         isContainerRoute={isContainerRoute}
         isPrislistekalkylRoute={isPrislistekalkylRoute}
+        returnToPrislistekalkyl={_savedReturnToKalkyl}
+        prislistekalkylHref={selectedPriceListId ? `/${sectionSlug}/${menuSlug}/${selectedPriceListId}/kalkyl` : null}
       >
 
         {isHomePage ? (
@@ -3002,7 +3018,7 @@ export default function Home() {
             </div>
           ) : isPriceListRowDetailOpen && selectedPriceRowId ? (
             <div className={styles.contractDetailPanel}>
-              <PriceListRowDetailView priceListId={selectedPriceListId} priceRowId={selectedPriceRowId} onClose={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}`)} />
+              <PriceListRowDetailView priceListId={selectedPriceListId} priceRowId={selectedPriceRowId} onClose={closePriceRowDetail} />
             </div>
           ) : (
             <PriceListDetailView
