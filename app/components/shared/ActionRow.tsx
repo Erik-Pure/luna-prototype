@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@mui/material";
+import { Button, Tooltip } from "@mui/material";
 import type { ReactNode } from "react";
 import styles from "../../page.module.scss";
 
@@ -13,6 +13,7 @@ type ActionRowItem =
     enabled?: boolean;
     onClick?: () => void;
     tone?: "default" | "primary";
+    title?: string;
   }
   | { key?: string; kind: "divider"; label?: string }
   | { key?: string; kind: "node"; node: ReactNode; label?: string };
@@ -37,9 +38,8 @@ export function ActionRow({ items, rightSlot }: ActionRowProps) {
         const enabled = item.enabled ?? true;
         const isPrimary = item.tone === "primary";
 
-        return (
+        const button = (
           <Button
-            key={item.key ?? `${item.label}-${index}`}
             size="small"
             variant={isPrimary ? "contained" : "outlined"}
             color={isPrimary ? "primary" : "inherit"}
@@ -50,6 +50,18 @@ export function ActionRow({ items, rightSlot }: ActionRowProps) {
           >
             {item.label}
           </Button>
+        );
+
+        const wrapperStyle = enabled ? undefined : { cursor: "not-allowed" as const };
+
+        if (!item.title) {
+          return <span key={item.key ?? `${item.label}-${index}`} style={wrapperStyle}>{button}</span>;
+        }
+
+        return (
+          <Tooltip key={item.key ?? `${item.label}-${index}`} title={item.title}>
+            <span style={wrapperStyle}>{button}</span>
+          </Tooltip>
         );
       })}
 

@@ -24,7 +24,7 @@ const defaultVisa = () =>
 
 export function KlarSokPanel() {
   const [activeTab, setActiveTab] = useState<"allmant" | "visa">("allmant");
-  const [showAllFields, setShowAllFields] = useState(false);
+  const [showAllFields, setShowAllFields] = useState(true);
   const [enhet, setEnhet] = useState("");
   const [kundNr, setKundNr] = useState("");
   const [prislisteNr, setPrislisteNr] = useState("");

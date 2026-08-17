@@ -4,6 +4,8 @@ import Link from "next/link";
 import SearchIcon from "@mui/icons-material/Search";
 import TableRowsOutlinedIcon from "@mui/icons-material/TableRowsOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import LinkIcon from "@mui/icons-material/Link";
 import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
@@ -62,6 +64,7 @@ type ContractListViewProps = {
   getCellValue: (row: Record<string, string | undefined>, columnKey: string) => string;
   onOpenContractDetail: (contractId: string) => void;
   getCustomerDetailHref: (customerName: string) => string;
+  onOpenCustomerFordran: (customerName: string) => void;
   isLineColumnsMenuOpen: boolean;
   draftLineColumns: Array<{ key: string; label: string; visible: boolean }>;
   lineColumnsMenuRef: RefObject<HTMLDivElement | null>;
@@ -126,6 +129,7 @@ export function ContractListView({
   getCellValue,
   onOpenContractDetail,
   getCustomerDetailHref,
+  onOpenCustomerFordran,
   isLineColumnsMenuOpen,
   draftLineColumns,
   lineColumnsMenuRef,
@@ -302,47 +306,67 @@ export function ContractListView({
 
                   if (column.key === "kund") {
                     const limitStatus = row["limitStatus"];
+                    const hasForfallenFordran = row["forfallenFordran"] === "true";
                     const customerName = getCellValue(row, column.key);
-                    return (
-                      <Link
-                        href={getCustomerDetailHref(customerName)}
-                        className={styles.kundCellLink}
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <span className={styles.kundCell}>
-                          {limitStatus === "error" ? (
-                            <span className={styles.kundStatusDotError} />
-                          ) : limitStatus === "warning" ? (
-                            <span className={styles.kundStatusDotWarning} />
-                          ) : null}
+                    // Only the single worst warning is shown in the list; the detail view shows all of them.
+                    const warningLabel =
+                      limitStatus === "error" ? "Överskriden limit" : hasForfallenFordran ? "Förfallen fordran" : null;
+                    const nameValue = warningLabel ? (
+                      <Tooltip title={warningLabel} placement="top">
+                        <span
+                          className={`${styles.kortnamnBadge} ${limitStatus === "error" ? styles.kortnamnBadgeHigh : styles.kortnamnBadgeMedium}`}
+                        >
+                          <WarningAmberOutlinedIcon className={styles.kortnamnBadgeIcon} />
                           {customerName}
                         </span>
-                      </Link>
+                      </Tooltip>
+                    ) : (
+                      <span>{customerName}</span>
+                    );
+                    return (
+                      <span className={styles.limitCell}>
+                        <span className={styles.limitCellValue}>{nameValue}</span>
+                        <Link
+                          href={getCustomerDetailHref(customerName)}
+                          className={styles.limitLinkIconButton}
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <LinkIcon className={styles.limitLinkIcon} fontSize="small" />
+                        </Link>
+                      </span>
                     );
                   }
 
                   if (column.key === "limit") {
                     const limitStatus = row["limitStatus"];
                     const limitNumber = getCellValue(row, column.key);
-                    if (limitStatus === "error") {
-                      return (
+                    const customerName = getCellValue(row, "kund");
+                    const limitValue =
+                      limitStatus === "error" ? (
                         <Chip
+                          icon={<WarningAmberOutlinedIcon />}
                           label={limitNumber}
                           size="small"
-                          color="error"
+                          className={styles.limitErrorChip}
                         />
+                      ) : (
+                        <span>{limitNumber}</span>
                       );
-                    }
-                    if (limitStatus === "warning") {
-                      return (
-                        <Chip
-                          label={limitNumber}
-                          size="small"
-                          color="warning"
-                        />
-                      );
-                    }
-                    return <span>{limitNumber}</span>;
+                    return (
+                      <span className={styles.limitCell}>
+                        <span className={styles.limitCellValue}>{limitValue}</span>
+                        <button
+                          type="button"
+                          className={styles.limitLinkIconButton}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onOpenCustomerFordran(customerName);
+                          }}
+                        >
+                          <LinkIcon className={styles.limitLinkIcon} fontSize="small" />
+                        </button>
+                      </span>
+                    );
                   }
 
                   return getCellValue(row, column.key);

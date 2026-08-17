@@ -179,7 +179,13 @@ export function ContainerView({ onBack }: ContainerViewProps) {
     setSelectedOriginalIndices(new Set());
   };
 
-  const canFlyttaTillHel = Array.from(selectedOriginalIndices).some((i) => containerRows[i]?.delAvContainer === "true");
+  const selectedDelAvEnheter = new Set(
+    Array.from(selectedOriginalIndices)
+      .filter((i) => containerRows[i]?.delAvContainer === "true")
+      .map((i) => containerRows[i]!.enhet)
+  );
+  const flyttaTillHelEnhetMismatch = selectedDelAvEnheter.size > 1;
+  const canFlyttaTillHel = selectedDelAvEnheter.size > 0 && !flyttaTillHelEnhetMismatch;
   const canFlyttaTillDel = Array.from(selectedOriginalIndices).some((i) => containerRows[i]?.delAvContainer === "false");
 
   // Assigns the lowest nummer among selected rows to all selected rows.
@@ -250,6 +256,7 @@ export function ContainerView({ onBack }: ContainerViewProps) {
       key: "flytta-till-hel",
       label: "Flytta till Hel container",
       enabled: canFlyttaTillHel,
+      title: flyttaTillHelEnhetMismatch ? "Enhet måste vara samma" : undefined,
       onClick: handleFlyttaTillHel,
     },
     {

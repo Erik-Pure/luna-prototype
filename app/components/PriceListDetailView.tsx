@@ -33,6 +33,7 @@ import styles from "../page.module.scss";
 import { PriceListCreateView, type NewPriceListDraft } from "./PriceListCreateView";
 import { FraktTab } from "./price-list-tabs/FraktTab";
 import { PrislisteraderTab } from "./price-list-tabs/PrislisteraderTab";
+import { SectionQuickNav, scrollSectionIntoView, type QuickNavSection } from "./shared/SectionQuickNav";
 
 const priceListTabs = ["Prislisterader", "Frakt"] as const;
 type PriceListTab = (typeof priceListTabs)[number];
@@ -94,6 +95,12 @@ type PriceListDetailViewProps = {
 const MIN_SECTIONS_PANEL_WIDTH = 220;
 const MAX_SECTIONS_PANEL_WIDTH = 900;
 
+const PRICE_LIST_SECTIONS: QuickNavSection[] = [
+  { key: "allmant", label: "Allmänt" },
+  { key: "villkor", label: "Villkor" },
+  { key: "utskrift", label: "Utskrift" },
+];
+
 export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail, onCreatePriceRow, onOpenPrislistekalkyl }: PriceListDetailViewProps) {
   const [activeTab, setActiveTab] = useState<PriceListTab>("Prislisterader");
   const [draft, setDraft] = useState<PriceListDraft>({ ...MOCK_DRAFT, prislistenr: selectedPriceListId });
@@ -102,6 +109,29 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
   const [expandedDialogOpen, setExpandedDialogOpen] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const draftSnapshotRef = useRef<PriceListDraft | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    () => new Set(PRICE_LIST_SECTIONS.map((section) => section.key))
+  );
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const sectionsHeaderRef = useRef<HTMLDivElement | null>(null);
+
+  const toggleSection = (key: string, isExpanded: boolean) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (isExpanded) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
+
+  const jumpToSection = (key: string) => {
+    setExpandedSections((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+    requestAnimationFrame(() => {
+      const target = sectionRefs.current[key];
+      if (target) scrollSectionIntoView(target, sectionsHeaderRef.current);
+    });
+  };
+
   const isWide = useSyncExternalStore(
     (cb) => {
       const mq = window.matchMedia("(min-width: 1280px)");
@@ -199,7 +229,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
             <div className={styles.contractSectionsResizeHandle} onMouseDown={startResizeSections} />
           ) : null}
 
-          <div className={styles.contractSectionsPanelHeader}>
+          <div ref={sectionsHeaderRef} className={styles.contractSectionsPanelHeader}>
             <div className={styles.contractSectionsPanelTitleRow} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
               {!isSectionsPanelCollapsed ? (
                 <Typography className={styles.contractSectionsPanelTitle}>Prislisteinformation</Typography>
@@ -282,8 +312,17 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
 
           {!isSectionsPanelCollapsed ? (
             <>
+              <SectionQuickNav sections={PRICE_LIST_SECTIONS} onSelect={jumpToSection} />
+
               {/* ── Allmänt ── */}
-              <Accordion defaultExpanded disableGutters elevation={0} className={styles.contractSectionAccordion}>
+              <Accordion
+                expanded={expandedSections.has("allmant")}
+                onChange={(_, isExpanded) => toggleSection("allmant", isExpanded)}
+                ref={(el) => { sectionRefs.current.allmant = el; }}
+                disableGutters
+                elevation={0}
+                className={styles.contractSectionAccordion}
+              >
                 <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
                   <span className={styles.contractSectionTitleRow}>
                     <InfoOutlinedIcon className={styles.contractSectionIcon} />
@@ -371,7 +410,14 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
               </Accordion>
 
               {/* ── Villkor ── */}
-              <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
+              <Accordion
+                expanded={expandedSections.has("villkor")}
+                onChange={(_, isExpanded) => toggleSection("villkor", isExpanded)}
+                ref={(el) => { sectionRefs.current.villkor = el; }}
+                disableGutters
+                elevation={0}
+                className={styles.contractSectionAccordion}
+              >
                 <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
                   <span className={styles.contractSectionTitleRow}>
                     <GavelOutlinedIcon className={styles.contractSectionIcon} />
@@ -501,7 +547,14 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
               </Accordion>
 
               {/* ── Utskrift ── */}
-              <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
+              <Accordion
+                expanded={expandedSections.has("utskrift")}
+                onChange={(_, isExpanded) => toggleSection("utskrift", isExpanded)}
+                ref={(el) => { sectionRefs.current.utskrift = el; }}
+                disableGutters
+                elevation={0}
+                className={styles.contractSectionAccordion}
+              >
                 <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
                   <span className={styles.contractSectionTitleRow}>
                     <PrintOutlinedIcon className={styles.contractSectionIcon} />

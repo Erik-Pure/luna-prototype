@@ -3,7 +3,8 @@
 import FileDownloadIcon from "@mui/icons-material/FileDownloadOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import SearchIcon from "@mui/icons-material/Search";
-import { Button, IconButton, Tooltip } from "@mui/material";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import { Button, Chip, IconButton, Tooltip } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 import { AndraKundgruppDialog } from "./customer-tabs/AndraKundgruppDialog";
@@ -12,6 +13,7 @@ import { ActionRow } from "./shared/ActionRow";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
 import { DataTable } from "./shared/DataTable";
 import { SearchFiltersPanel } from "./shared/SearchFiltersPanel";
+import { getCustomerWarnings, getWarningTone } from "./shared/customerWarnings";
 import styles from "../page.module.scss";
 
 type FieldDef = { key: string; label: string; control: "text" | "date" | "select" | "checkbox"; multi?: boolean };
@@ -270,6 +272,32 @@ export function CustomerListView({
                       </button>
                     );
                   }
+
+                  if (column.key === "kortnamn") {
+                    const kortnamn = row[column.key] ?? "-";
+                    const tone = getWarningTone(row);
+                    if (tone === "none") return kortnamn;
+                    const tooltipText = getCustomerWarnings(row).map((w) => w.label).join(" · ");
+                    const badgeClass = tone === "red" ? styles.kortnamnBadgeHigh : styles.kortnamnBadgeMedium;
+                    return (
+                      <Tooltip title={tooltipText} placement="top">
+                        <span className={`${styles.kortnamnBadge} ${badgeClass}`}>
+                          <WarningAmberOutlinedIcon className={styles.kortnamnBadgeIcon} />
+                          {kortnamn}
+                        </span>
+                      </Tooltip>
+                    );
+                  }
+
+                  if (column.key === "limit") {
+                    const limitValue = row[column.key] ?? "-";
+                    if (row["varningsnivaLimit"] === "Hög") {
+                      const label = row["limitChipDisplay"] === "belopp" ? limitValue : "Överskriden";
+                      return <Chip label={label} size="small" className={styles.limitErrorChip} />;
+                    }
+                    return limitValue;
+                  }
+
                   return row[column.key] ?? "-";
                 }}
               />

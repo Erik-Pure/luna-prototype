@@ -8,7 +8,7 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SearchIcon from "@mui/icons-material/Search";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, List, ListItemButton, ListItemText, Popover, Typography } from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, List, ListItemButton, ListItemText, Popover, TextField, Tooltip, Typography } from "@mui/material";
 import { ActionRow } from "./shared/ActionRow";
 import { ActionMenuButton } from "./shared/ActionMenuButton";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
@@ -235,6 +235,27 @@ const BOTTOM_TABLE_ROWS = [
   },
 ];
 
+const parseVolymNum = (v: string) => Number(String(v).replace(/\s/g, "").replace(",", ".")) || 0;
+
+const sumByKey = (rows: typeof BOTTOM_TABLE_ROWS, key: string) =>
+  rows.reduce((acc, row) => acc + parseVolymNum((row as Record<string, string>)[key] ?? "0"), 0);
+
+const buildFooterSummary = (typ: string) => {
+  const rows = BOTTOM_TABLE_ROWS.filter((row) => row["Typ"] === typ);
+  return {
+    antal: String(rows.length),
+    volym: String(sumByKey(rows, "Volym")),
+    loVolym: String(sumByKey(rows, "Volym LO")),
+    levVolym: String(sumByKey(rows, "Levererad volym")),
+    restVolym: String(sumByKey(rows, "Avropsrest")),
+  };
+};
+
+const FOOTER_SUMMARY = {
+  kontrakt: buildFooterSummary("Kontrakt"),
+  avrop: buildFooterSummary("Avrop"),
+};
+
 const VOLYM_TONE_BY_KONTRAKT: Record<string, "red" | "blue"> = {
   "K-2024-001": "red",
   "K-2024-002": "blue",
@@ -377,13 +398,14 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
                   </div>
                 ) : null}
               </div>
-              <IconButton
-                onClick={() => setLangdspecOpen((v) => !v)}
-                className={`${styles.columnsIconButton} ${langdspecOpen ? styles.columnsIconButtonActive : ""}`}
-                title="Visa/dölj längdspecifikation"
-              >
-                <StraightenIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Visa/dölj längdspecifikation" placement="top">
+                <IconButton
+                  onClick={() => setLangdspecOpen((v) => !v)}
+                  className={`${styles.columnsIconButton} ${langdspecOpen ? styles.columnsIconButtonActive : ""}`}
+                >
+                  <StraightenIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <ColumnManagerDropdown
                 isOpen={columnsManager.isOpen}
                 columns={columnsManager.draftColumns}
@@ -526,6 +548,39 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
                 }}
               />
             </div>
+          </div>
+
+          <div className={styles.deliveryListFooter}>
+            <table className={styles.deliveryListFooterTable}>
+              <thead>
+                <tr>
+                  <th className={styles.langdspecTh}></th>
+                  <th className={styles.langdspecTh}>Antal</th>
+                  <th className={styles.langdspecTh}>Volym</th>
+                  <th className={styles.langdspecTh}>LOVolym</th>
+                  <th className={styles.langdspecTh}>Lev. volym</th>
+                  <th className={styles.langdspecTh}>Rest. volym</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className={styles.langdspecTd}>Kontrakt</td>
+                  <td className={styles.langdspecTd}>{FOOTER_SUMMARY.kontrakt.antal}</td>
+                  <td className={styles.langdspecTd}>{FOOTER_SUMMARY.kontrakt.volym}</td>
+                  <td className={styles.langdspecTd}>{FOOTER_SUMMARY.kontrakt.loVolym}</td>
+                  <td className={styles.langdspecTd}>{FOOTER_SUMMARY.kontrakt.levVolym}</td>
+                  <td className={styles.langdspecTd}>{FOOTER_SUMMARY.kontrakt.restVolym}</td>
+                </tr>
+                <tr>
+                  <td className={styles.langdspecTd}>Avrop</td>
+                  <td className={styles.langdspecTd}>{FOOTER_SUMMARY.avrop.antal}</td>
+                  <td className={styles.langdspecTd}>{FOOTER_SUMMARY.avrop.volym}</td>
+                  <td className={styles.langdspecTd}>{FOOTER_SUMMARY.avrop.loVolym}</td>
+                  <td className={styles.langdspecTd}>{FOOTER_SUMMARY.avrop.levVolym}</td>
+                  <td className={styles.langdspecTd}>{FOOTER_SUMMARY.avrop.restVolym}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 

@@ -1387,6 +1387,23 @@
   }
 }
 
+/* Copy-id button shown next to a clickable identifier link */
+.klarSokCopyBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  vertical-align: middle;
+  color: rgba(0,0,0,.4);
+
+  &:hover {
+    color: rgba(0,0,0,.87);
+    background-color: rgba(0,0,0,.04);
+  }
+}
+
 /* Parenthetical metadata (secondary text) */
 .klarSokTreeMeta {
   color: rgba(0,0,0,.6);
@@ -1508,9 +1525,9 @@
 }
 
 .tableSearchButtonActive {
-  border-color: #1976d2 !important;
-  background-color: #e8f0fe !important;
-  color: #1976d2 !important;
+  border-color: #c47900 !important;
+  background-color: #fff3df !important;
+  color: #c47900 !important;
 }
 
 .tableSearchDropdown {
@@ -1729,6 +1746,10 @@
     background-color: #f9fafb;
     color: #1f2937;
   }
+
+  &:global(.Mui-disabled) {
+    cursor: not-allowed;
+  }
 }
 
 .columnsIconButton {
@@ -1751,9 +1772,9 @@
 }
 
 .columnsIconButtonActive {
-  border-color: #1976d2 !important;
-  background-color: #e8f0fe !important;
-  color: #1976d2 !important;
+  border-color: #c47900 !important;
+  background-color: #fff3df !important;
+  color: #c47900 !important;
 }
 
 .contractRowInlineInput {
@@ -2710,6 +2731,48 @@
   background: rgba(0, 0, 0, 0.06) !important;
 }
 
+.contractSectionsQuickNav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background-color: #eef0f4;
+  text-align: right;
+  width: 100%;
+}
+
+.contractSectionsQuickNavIcon {
+  font-size: 13px !important;
+  color: #9aa3b2;
+  flex-shrink: 0;
+}
+
+.contractSectionsQuickNavBtn {
+  color: #555e6d !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  font-size: 11.5px !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  line-height: 1.6 !important;
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+
+.contractSectionsQuickNavBtn:hover {
+  color: #1a2233 !important;
+  background-color: transparent !important;
+  text-decoration: underline;
+}
+
 .contractBodyTabsCol {
   display: flex;
   flex-direction: column;
@@ -3041,6 +3104,16 @@
   }
 }
 
+.contractMudTabItemDisabled {
+  color: #b4bac3;
+  cursor: not-allowed;
+
+  &:hover {
+    color: #b4bac3;
+    background-color: transparent;
+  }
+}
+
 .contractDetailTitle {
   color: #222b36;
   font-size: 26px;
@@ -3108,6 +3181,10 @@
 .prislistekalkylActionRow .actionItemPrimary,
 .prislistekalkylActionRow .lineItemsToggleButton {
   min-height: 32px;
+}
+
+.prislistekalkylActionRow {
+  margin-top: -6px;
 }
 
 .contractHeaderLink {
@@ -3386,6 +3463,27 @@
   flex: 1;
   min-height: 0;
   padding: 0 10px 10px;
+}
+
+.deliveryListFooter {
+  flex: 0 0 auto;
+  border: 1px solid #d9dee7;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  overflow: hidden;
+}
+
+.deliveryListFooterTable {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+  white-space: nowrap;
+
+  th:first-child,
+  td:first-child {
+    background-color: #f4f6f9;
+    font-weight: 700;
+  }
 }
 
 .gaTillPopover {
@@ -3688,12 +3786,14 @@
   position: sticky;
   left: 0;
   z-index: 4;
+  background-color: #f4f6f9;
 }
 
 .stickyLineCell {
   position: sticky;
   left: 0;
   z-index: 3;
+  background-color: #ffffff;
 }
 
 .lineItemsRow:hover .lineItemsCell,
@@ -5846,6 +5946,24 @@
   background: rgba(255, 255, 255, 0.08) !important;
 }
 
+:global(html[data-color-mode="dark"]) .contractSectionsQuickNav {
+  background-color: #20242c;
+}
+
+:global(html[data-color-mode="dark"]) .contractSectionsQuickNavIcon {
+  color: #6b7280;
+}
+
+:global(html[data-color-mode="dark"]) .contractSectionsQuickNavBtn {
+  color: #8a93a6 !important;
+  background-color: transparent !important;
+}
+
+:global(html[data-color-mode="dark"]) .contractSectionsQuickNavBtn:hover {
+  color: #dbe1ea !important;
+  background-color: transparent !important;
+}
+
 :global(html[data-color-mode="dark"]) .columnsDropdownFooter {
   border-color: #3a3f4a;
   background-color: #1f222a;
@@ -7454,6 +7572,12 @@ body button {
     font-weight: 600;
     padding: 0 8px;
   }
+
+  :global(.MuiChip-icon) {
+    color: inherit !important;
+    font-size: 14px !important;
+    margin-left: 6px;
+  }
 }
 
 .limitWarningChip {
@@ -7466,42 +7590,87 @@ body button {
     font-weight: 600;
     padding: 0 8px;
   }
-}
 
-.kundCell {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.kundCellLink {
-  display: inline-flex;
-  align-items: center;
-  color: var(--color-champagne-dark);
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-    text-underline-offset: 2px;
+  :global(.MuiChip-icon) {
+    color: inherit !important;
+    font-size: 14px !important;
+    margin-left: 6px;
   }
 }
 
-.kundStatusDotError {
-  flex-shrink: 0;
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #c0292e;
+.customerHeaderWarningChip {
+  :global(.MuiChip-label) {
+    font-size: 13px !important;
+  }
+
+  :global(.MuiChip-icon) {
+    font-size: 16px !important;
+  }
 }
 
-.kundStatusDotWarning {
+.limitCell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+}
+
+.limitCellValue {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.limitLinkIconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #d4860a;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  padding: 5px;
+  margin: -5px;
+  cursor: pointer;
+  color: #5d6574;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    color: #1a1d22;
+    background-color: #e8ebf0;
+  }
+}
+
+.limitLinkIcon {
+  font-size: 16px !important;
+}
+
+.kortnamnBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.kortnamnBadgeIcon {
+  font-size: 13px !important;
+  flex-shrink: 0;
+}
+
+.kortnamnBadgeMedium {
+  background-color: #fef3cc;
+  color: #7a5800;
+}
+
+.kortnamnBadgeHigh {
+  background-color: #f4d8db;
+  color: #7e2b30;
 }
 
 .callOffLinkButton {

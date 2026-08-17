@@ -6,7 +6,6 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
-import AssignmentTurnedInOutlinedIcon from "@mui/icons-material/AssignmentTurnedInOutlined";
 import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
 import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
@@ -15,6 +14,7 @@ import FolderZipOutlinedIcon from "@mui/icons-material/FolderZipOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import {
     Accordion,
     AccordionDetails,
@@ -31,7 +31,7 @@ import {
     Paper,
     Stack
 } from "@mui/material";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import styles from "../page.module.scss";
 
 export type NewContractDraft = {
@@ -93,7 +93,7 @@ type UploadedFileItem = {
     addedAt: Date;
 };
 
-type CustomerData = {
+export type CustomerData = {
     name: string;
     orgNr: string;
     language: string;
@@ -152,7 +152,7 @@ const emptyNewContractDraft: NewContractDraft = {
     notificationInfo: ""
 };
 
-const mockCustomers: CustomerData[] = [
+export const mockCustomers: CustomerData[] = [
     {
         name: "Acme AB",
         orgNr: "556123-4567",
@@ -182,7 +182,7 @@ const mockCustomers: CustomerData[] = [
     }
 ];
 
-const mockDeliveryLocations = [
+export const mockDeliveryLocations = [
     { name: "Stockholm", postalCode: "111 20" },
     { name: "Stockholm", postalCode: "114 35" },
     { name: "Göteborg", postalCode: "411 17" },
@@ -191,7 +191,7 @@ const mockDeliveryLocations = [
     { name: "Berlin", postalCode: "10115" }
 ];
 
-const mockDeliveryAddresses = [
+export const mockDeliveryAddresses = [
     "Byggmax Abildsö, Enebakkveien 309, NO-1188 OSLO, Norge",
     "Lager Stockholm, Industrigatan 12, 112 46 Stockholm, Sverige",
     "Göteborg Hamn, Hamnvägen 1, 417 07 Göteborg, Sverige"
@@ -209,7 +209,7 @@ export type ContractCreateViewProps = {
 
 export function ContractCreateView({ onSave, onCancel, initialDraft, initialFiles, title, mode = "create" }: ContractCreateViewProps) {
     const [draft, setDraft] = useState<NewContractDraft>(initialDraft ?? emptyNewContractDraft);
-    const [expandedPanels, setExpandedPanels] = useState<string[]>(["obligatoriska", "allmant", "villkor", "leverans", "dokument"]);
+    const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant", "villkor", "leverans", "dokument"]);
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFileItem[]>(initialFiles ?? []);
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<CustomerData | null>(
@@ -217,6 +217,7 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
     );
     const isEdit = mode === "edit";
     const [isEditing, setIsEditing] = useState(true);
+    const accordionWrapRef = useRef<HTMLDivElement | null>(null);
 
     const updateDraftField = (key: keyof NewContractDraft, value: string | boolean) => {
         setDraft((previous) => ({
@@ -231,6 +232,25 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                 ? previous.filter((item) => item !== panel)
                 : [...previous, panel]
         );
+    };
+
+    const getFastTrackFocusableElements = (container: HTMLElement) =>
+        Array.from(container.querySelectorAll<HTMLElement>(`.${styles.lineItemRequiredControl} .MuiInputBase-root`));
+
+    const handleFastTrackKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (event.key !== "Enter" || !(event.ctrlKey || event.metaKey)) return;
+        const container = accordionWrapRef.current;
+        if (!container) return;
+        const controls = getFastTrackFocusableElements(container);
+        if (controls.length === 0) return;
+        const active = document.activeElement as HTMLElement | null;
+        const currentIndex = controls.findIndex((el) => el === active || el.contains(active));
+        event.preventDefault();
+        if (currentIndex === -1) { controls[0]?.focus(); return; }
+        const nextIndex = event.shiftKey
+            ? (currentIndex - 1 + controls.length) % controls.length
+            : (currentIndex + 1) % controls.length;
+        controls[nextIndex]?.focus();
     };
 
     const handleCustomerChange = (customerName: string) => {
@@ -358,30 +378,37 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
 
             <div className={`${styles.detailTwoColumnLayout} ${styles.lineItemCreateStackLayout} ${styles.contractCreateLayout}`} style={{ flex: 1, overflowY: "auto" }}>
                 <div className={styles.detailFormColumn}>
-                    <div className={styles.contractModernAccordionWrap}>
+                    <div
+                        ref={accordionWrapRef}
+                        className={styles.contractModernAccordionWrap}
+                        onKeyDownCapture={handleFastTrackKeyDown}
+                    >
 
-                        {/* ── OBLIGATORISKA FÄLT ── */}
-                        <Accordion
-                            expanded={expandedPanels.includes("obligatoriska")}
-                            onChange={() => togglePanel("obligatoriska")}
-                            className={`${styles.contractModernAccordion} ${styles.lineItemRequiredSection}`}
-                        >
-                            <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractModernAccordionSummary}>
-                                <div className={styles.contractModernAccordionTitleRow}>
-                                    <AssignmentTurnedInOutlinedIcon className={styles.contractModernAccordionIcon} />
-                                    <Typography className={styles.contractModernAccordionTitle}>Obligatoriska fält</Typography>
+                        {/* ── Snabbspår ── */}
+                        {isEditing ? (
+                            <div className={styles.lineItemFastTrackBar}>
+                                <div className={styles.lineItemFastTrackMain}>
+                                    <span className={styles.lineItemFastTrackTitle}>Snabbspår</span>
+                                    <span className={styles.lineItemFastTrackDivider} aria-hidden="true">-</span>
+                                    <span className={styles.lineItemFastTrackText}>
+                                        Tryck Ctrl+Enter för att hoppa mellan obligatoriska fält
+                                    </span>
                                 </div>
+                            </div>
+                        ) : null}
+
+                        {/* ── ALLMÄNT ── */}
+                        <Accordion expanded={expandedPanels.includes("allmant")} onChange={() => togglePanel("allmant")} disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                                <span className={styles.contractSectionTitleRow}>
+                                    <BusinessOutlinedIcon className={styles.contractSectionIcon} />
+                                    <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
+                                </span>
                             </AccordionSummary>
-                            <AccordionDetails className={`${styles.contractCreateRequiredContent} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                                <Typography className={styles.contractCreateRequiredHint}>
-                                    {isEdit ? "Alla fält nedan krävs för att kontraktet ska vara giltigt" : "Alla fält nedan krävs för att skapa kontraktet"}
-                                </Typography>
+                            <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                                <Typography className={styles.contractSectionGroupLabel} style={{ marginTop: 0 }}>Grunduppgifter</Typography>
 
-                                {/* ── Allmänt ── */}
-                                <Typography className={styles.contractSectionGroupLabel}>Allmänt</Typography>
-
-                                {/* Kund — full-width standalone with search adornment */}
-                                <div style={{ marginBottom: 10 }}>
+                                <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
                                     <TextField
                                         select
                                         fullWidth
@@ -389,6 +416,7 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                         value={draft.customer}
                                         onChange={(e) => handleCustomerChange(e.target.value)}
                                         size="small"
+                                        className={styles.lineItemRequiredControl}
                                         InputProps={{
                                             startAdornment: (
                                                 <InputAdornment position="start">
@@ -402,158 +430,48 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                             <MenuItem key={c.name} value={c.name}>{c.name}</MenuItem>
                                         ))}
                                     </TextField>
-                                </div>
 
-                                {/* Customer warnings — immediately below Kund */}
-                                {(customerWarnings.exceededClaim || customerWarnings.exceededLimit) && (
-                                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-                                        {customerWarnings.exceededClaim && (
-                                            <Chip label="Kunden har överskriden fordran" color="warning" size="medium" />
-                                        )}
-                                        {customerWarnings.exceededLimit && (
-                                            <Chip label="Kunden har överskriden limit" color="error" size="medium" />
-                                        )}
-                                    </div>
-                                )}
+                                    {/* Customer warnings — immediately below Kund, spans the full row */}
+                                    {(customerWarnings.exceededClaim || customerWarnings.exceededLimit) && (
+                                        <div style={{ gridColumn: "1 / -1", display: "flex", gap: 8 }}>
+                                            {customerWarnings.exceededClaim && (
+                                                <Chip
+                                                    icon={<WarningAmberOutlinedIcon />}
+                                                    label="Kunden har överskriden fordran"
+                                                    size="medium"
+                                                    className={`${styles.limitWarningChip} ${styles.customerHeaderWarningChip}`}
+                                                    style={{ fontWeight: 500, padding: "0 4px", gap: 2 }}
+                                                />
+                                            )}
+                                            {customerWarnings.exceededLimit && (
+                                                <Chip
+                                                    icon={<WarningAmberOutlinedIcon />}
+                                                    label="Kunden har överskriden limit"
+                                                    size="medium"
+                                                    className={`${styles.limitErrorChip} ${styles.customerHeaderWarningChip}`}
+                                                    style={{ fontWeight: 500, padding: "0 4px", gap: 2 }}
+                                                />
+                                            )}
+                                        </div>
+                                    )}
 
-                                {/* Status, Registrerad av, Datum, Språk — explicit 2-col grid */}
-                                <div className={styles.contractFormGrid2} style={{ marginBottom: 10 }}>
-                                    <TextField select fullWidth label="Status *" value={draft.status} onChange={(e) => updateDraftField("status", e.target.value)} size="small">
+                                    <TextField select fullWidth label="Status *" value={draft.status} onChange={(e) => updateDraftField("status", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
                                         <MenuItem value="Aktivt kontrakt">Aktivt kontrakt</MenuItem>
                                         <MenuItem value="Utkast">Utkast</MenuItem>
                                         <MenuItem value="Avslutat">Avslutat</MenuItem>
                                         <MenuItem value="Pausat">Pausat</MenuItem>
                                     </TextField>
-                                    <TextField select fullWidth label="Registrerad av *" value={draft.createdBy} onChange={(e) => updateDraftField("createdBy", e.target.value)} size="small">
+                                    <TextField select fullWidth label="Registrerad av *" value={draft.createdBy} onChange={(e) => updateDraftField("createdBy", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
                                         <MenuItem value="">— Välj person —</MenuItem>
                                         <MenuItem value="John Doe">John Doe</MenuItem>
                                         <MenuItem value="Jane Smith">Jane Smith</MenuItem>
                                     </TextField>
-                                    <TextField fullWidth type="date" value={draft.contractDate} onChange={(e) => updateDraftField("contractDate", e.target.value)} label="Kontraktsdatum *" InputLabelProps={{ shrink: true }} size="small" />
-                                    <TextField select fullWidth label="Språk *" value={draft.language} onChange={(e) => updateDraftField("language", e.target.value)} size="small">
+                                    <TextField fullWidth type="date" value={draft.contractDate} onChange={(e) => updateDraftField("contractDate", e.target.value)} label="Kontraktsdatum *" InputLabelProps={{ shrink: true }} size="small" className={styles.lineItemRequiredControl} />
+                                    <TextField select fullWidth label="Språk *" value={draft.language} onChange={(e) => updateDraftField("language", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
                                         <MenuItem value="Svenska">Svenska</MenuItem>
                                         <MenuItem value="English">English</MenuItem>
                                         <MenuItem value="Deutsch">Deutsch</MenuItem>
                                     </TextField>
-                                </div>
-
-                                <Divider className={styles.contractSectionDivider} />
-
-                                {/* ── Villkor ── */}
-                                <Typography className={styles.contractSectionGroupLabel}>Villkor</Typography>
-
-                                {/* Row 1 – 3-col: Valuta, Betalningsvillkor, Certifiering */}
-                                <div className={styles.contractFormGrid3} style={{ marginBottom: 10 }}>
-                                    <TextField select fullWidth label="Valuta *" value={draft.currency} onChange={(e) => updateDraftField("currency", e.target.value)} size="small">
-                                        <MenuItem value="SEK">SEK</MenuItem>
-                                        <MenuItem value="EUR">EUR</MenuItem>
-                                        <MenuItem value="USD">USD</MenuItem>
-                                    </TextField>
-                                    <TextField select fullWidth label="Betalningsvillkor *" value={draft.paymentTerms} onChange={(e) => updateDraftField("paymentTerms", e.target.value)} size="small">
-                                        <MenuItem value="30 dagar netto">30 dagar netto</MenuItem>
-                                        <MenuItem value="14 dagar netto">14 dagar netto</MenuItem>
-                                        <MenuItem value="Förskott">Förskott</MenuItem>
-                                    </TextField>
-                                    <TextField select fullWidth label="Certifiering *" value={draft.certification} onChange={(e) => updateDraftField("certification", e.target.value)} size="small">
-                                        <MenuItem value="">— Välj —</MenuItem>
-                                        <MenuItem value="ISO 9001">ISO 9001</MenuItem>
-                                        <MenuItem value="ISO 14001">ISO 14001</MenuItem>
-                                        <MenuItem value="CE-märkning">CE-märkning</MenuItem>
-                                        <MenuItem value="Ingen">Ingen</MenuItem>
-                                    </TextField>
-                                </div>
-
-                                {/* Row 2 – 3-col: Kontraktsformulär, Leveranssätt, Leveransvillkor */}
-                                <div className={styles.contractFormGrid3} style={{ marginBottom: 10 }}>
-                                    <TextField select fullWidth label="Kontraktsformulär *" value={draft.contractForm} onChange={(e) => updateDraftField("contractForm", e.target.value)} size="small">
-                                        <MenuItem value="">— Välj —</MenuItem>
-                                        <MenuItem value="Example contract">Example contract</MenuItem>
-                                        <MenuItem value="Standard avtal">Standard avtal</MenuItem>
-                                        <MenuItem value="Ramavtal">Ramavtal</MenuItem>
-                                    </TextField>
-                                    <TextField select fullWidth label="Leveranssätt *" value={draft.deliveryMethod} onChange={(e) => updateDraftField("deliveryMethod", e.target.value)} size="small">
-                                        <MenuItem value="Hämta">Hämta</MenuItem>
-                                        <MenuItem value="DHL Express">DHL Express</MenuItem>
-                                        <MenuItem value="PostNord">PostNord</MenuItem>
-                                        <MenuItem value="Egen transport">Egen transport</MenuItem>
-                                    </TextField>
-                                    <TextField select fullWidth label="Leveransvillkor *" value={draft.deliveryTerms} onChange={(e) => updateDraftField("deliveryTerms", e.target.value)} size="small">
-                                        <MenuItem value="FCA">FCA</MenuItem>
-                                        <MenuItem value="EXW">EXW</MenuItem>
-                                        <MenuItem value="DAP">DAP</MenuItem>
-                                        <MenuItem value="DDP">DDP</MenuItem>
-                                        <MenuItem value="CIF">CIF</MenuItem>
-                                        <MenuItem value="FOB">FOB</MenuItem>
-                                    </TextField>
-                                </div>
-
-                                {/* Leveransvillkor ort — full-width */}
-                                <div style={{ marginBottom: 10 }}>
-                                    <TextField fullWidth value={draft.deliveryTermsCity} onChange={(e) => updateDraftField("deliveryTermsCity", e.target.value)} label="Leveransvillkor ort *" size="small" />
-                                </div>
-
-                                {/* 2:1 grid: Agent 1 + Provision */}
-                                <div className={styles.contractFormGrid82} style={{ marginBottom: 10 }}>
-                                    <TextField select fullWidth label="Agent 1 *" value={draft.agent1} onChange={(e) => updateDraftField("agent1", e.target.value)} size="small">
-                                        <MenuItem value="">— Välj —</MenuItem>
-                                        <MenuItem value="Janne B">Janne B</MenuItem>
-                                        <MenuItem value="Anna K">Anna K</MenuItem>
-                                        <MenuItem value="Erik S">Erik S</MenuItem>
-                                    </TextField>
-                                    <TextField fullWidth type="number" value={draft.agent1Pct} onChange={(e) => updateDraftField("agent1Pct", e.target.value)} label="Provision (%)" size="small"
-                                        InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
-                                </div>
-
-                                <Divider className={styles.contractSectionDivider} />
-
-                                {/* ── Leverans ── */}
-                                <Typography className={styles.contractSectionGroupLabel}>Leverans</Typography>
-                                <div className={styles.contractFormGrid82}>
-                                    <TextField select fullWidth label="Leveransort *" value={draft.deliveryLocation} onChange={(e) => handleDeliveryLocationChange(e.target.value)} size="small">
-                                        <MenuItem value="">— Välj ort —</MenuItem>
-                                        {mockDeliveryLocations.map((loc) => (
-                                            <MenuItem key={`${loc.name}-${loc.postalCode}`} value={loc.name}>{loc.name} ({loc.postalCode})</MenuItem>
-                                        ))}
-                                    </TextField>
-                                    <TextField fullWidth value={draft.deliveryLocationPostalCode} disabled label="Postnummer" helperText="Fylls i automatiskt" size="small" />
-                                </div>
-
-                                <Divider className={styles.contractSectionDivider} />
-
-                                {/* ── Kommentarer ── plain text, 2-col */}
-                                <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
-                                <div className={styles.contractFormGrid2}>
-                                    <div>
-                                        <Typography variant="caption" style={{ display: "block", marginBottom: 3, color: "#6b7585" }}>Kommentar från kund</Typography>
-                                        <Typography variant="body2" style={!selectedCustomer?.customerComment ? { color: "rgba(0,0,0,0.38)", fontStyle: "italic" } : {}}>
-                                            {selectedCustomer?.customerComment || "Ingen kommentar"}
-                                        </Typography>
-                                    </div>
-                                    <div>
-                                        <Typography variant="caption" style={{ display: "block", marginBottom: 3, color: "#6b7585" }}>Kommentar från innesälj</Typography>
-                                        <Typography variant="body2" style={!selectedCustomer?.internalComment ? { color: "rgba(0,0,0,0.38)", fontStyle: "italic" } : {}}>
-                                            {selectedCustomer?.internalComment || "Ingen kommentar"}
-                                        </Typography>
-                                    </div>
-                                </div>
-                            </AccordionDetails>
-                        </Accordion>
-
-                        <Typography sx={{ ml: 0.5, mb: 1, mt: 1, display: "block" }}>
-                            Kompletterande uppgifter
-                        </Typography>
-
-                        {/* ── ALLMÄNT ── */}
-                        <Accordion expanded={expandedPanels.includes("allmant")} onChange={() => togglePanel("allmant")} disableGutters elevation={0} className={styles.contractSectionAccordion}>
-                            <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
-                                <span className={styles.contractSectionTitleRow}>
-                                    <BusinessOutlinedIcon className={styles.contractSectionIcon} />
-                                    <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
-                                </span>
-                            </AccordionSummary>
-                            <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                                <Typography className={styles.contractSectionGroupLabel} style={{ marginTop: 0 }}>Allmänt</Typography>
-                                <div className={styles.contractFormGrid2} style={{ marginBottom: 10 }}>
                                     <TextField select fullWidth label="Kundens referens" value={draft.customerRef} onChange={(e) => updateDraftField("customerRef", e.target.value)} size="small">
                                         <MenuItem value="">— Välj —</MenuItem>
                                         <MenuItem value="Faktura">Faktura</MenuItem>
@@ -598,6 +516,23 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </div>
 
                                 <Divider className={styles.contractSectionDivider} />
+                                <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
+                                <div className={styles.contractModernFormGrid} style={{ marginBottom: 10 }}>
+                                    <div>
+                                        <Typography variant="caption" style={{ display: "block", marginBottom: 3, color: "#6b7585" }}>Kommentar från kund</Typography>
+                                        <Typography variant="body2" style={!selectedCustomer?.customerComment ? { color: "rgba(0,0,0,0.38)", fontStyle: "italic" } : {}}>
+                                            {selectedCustomer?.customerComment || "Ingen kommentar"}
+                                        </Typography>
+                                    </div>
+                                    <div>
+                                        <Typography variant="caption" style={{ display: "block", marginBottom: 3, color: "#6b7585" }}>Kommentar från innesälj</Typography>
+                                        <Typography variant="body2" style={!selectedCustomer?.internalComment ? { color: "rgba(0,0,0,0.38)", fontStyle: "italic" } : {}}>
+                                            {selectedCustomer?.internalComment || "Ingen kommentar"}
+                                        </Typography>
+                                    </div>
+                                </div>
+
+                                <Divider className={styles.contractSectionDivider} />
                                 <Typography className={styles.contractSectionGroupLabel}>Anteckningar</Typography>
                                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                     <TextField fullWidth multiline rows={3} value={draft.miscNote} onChange={(e) => updateDraftField("miscNote", e.target.value)} label="Övrigt" size="small"
@@ -617,7 +552,17 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                             </AccordionSummary>
                             <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
                                 <Typography className={styles.contractSectionGroupLabel} style={{ marginTop: 0 }}>Valuta &amp; Betalning</Typography>
-                                <div className={styles.contractFormGrid2} style={{ marginBottom: 10 }}>
+                                <div className={styles.contractModernFormGrid} style={{ marginBottom: 10 }}>
+                                    <TextField select fullWidth label="Valuta *" value={draft.currency} onChange={(e) => updateDraftField("currency", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
+                                        <MenuItem value="SEK">SEK</MenuItem>
+                                        <MenuItem value="EUR">EUR</MenuItem>
+                                        <MenuItem value="USD">USD</MenuItem>
+                                    </TextField>
+                                    <TextField select fullWidth label="Betalningsvillkor *" value={draft.paymentTerms} onChange={(e) => updateDraftField("paymentTerms", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
+                                        <MenuItem value="30 dagar netto">30 dagar netto</MenuItem>
+                                        <MenuItem value="14 dagar netto">14 dagar netto</MenuItem>
+                                        <MenuItem value="Förskott">Förskott</MenuItem>
+                                    </TextField>
                                     <TextField fullWidth type="date" value={draft.exchangeRateDate} onChange={(e) => updateDraftField("exchangeRateDate", e.target.value)} label="Kursdatum valuta" InputLabelProps={{ shrink: true }} size="small" />
                                     <TextField select fullWidth label="Moms" value={draft.vat} onChange={(e) => updateDraftField("vat", e.target.value)} size="small">
                                         <MenuItem value="25">25%</MenuItem>
@@ -631,8 +576,54 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </div>
 
                                 <Divider className={styles.contractSectionDivider} />
+                                <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; Leverans</Typography>
+                                <div className={styles.contractModernFormGrid} style={{ marginBottom: 10 }}>
+                                    <TextField select fullWidth label="Certifiering *" value={draft.certification} onChange={(e) => updateDraftField("certification", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
+                                        <MenuItem value="">— Välj —</MenuItem>
+                                        <MenuItem value="ISO 9001">ISO 9001</MenuItem>
+                                        <MenuItem value="ISO 14001">ISO 14001</MenuItem>
+                                        <MenuItem value="CE-märkning">CE-märkning</MenuItem>
+                                        <MenuItem value="Ingen">Ingen</MenuItem>
+                                    </TextField>
+                                    <TextField select fullWidth label="Kontraktsformulär *" value={draft.contractForm} onChange={(e) => updateDraftField("contractForm", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
+                                        <MenuItem value="">— Välj —</MenuItem>
+                                        <MenuItem value="Example contract">Example contract</MenuItem>
+                                        <MenuItem value="Standard avtal">Standard avtal</MenuItem>
+                                        <MenuItem value="Ramavtal">Ramavtal</MenuItem>
+                                    </TextField>
+                                    <TextField select fullWidth label="Leveranssätt *" value={draft.deliveryMethod} onChange={(e) => updateDraftField("deliveryMethod", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
+                                        <MenuItem value="Hämta">Hämta</MenuItem>
+                                        <MenuItem value="DHL Express">DHL Express</MenuItem>
+                                        <MenuItem value="PostNord">PostNord</MenuItem>
+                                        <MenuItem value="Egen transport">Egen transport</MenuItem>
+                                    </TextField>
+                                    <TextField select fullWidth label="Leveransvillkor *" value={draft.deliveryTerms} onChange={(e) => updateDraftField("deliveryTerms", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
+                                        <MenuItem value="FCA">FCA</MenuItem>
+                                        <MenuItem value="EXW">EXW</MenuItem>
+                                        <MenuItem value="DAP">DAP</MenuItem>
+                                        <MenuItem value="DDP">DDP</MenuItem>
+                                        <MenuItem value="CIF">CIF</MenuItem>
+                                        <MenuItem value="FOB">FOB</MenuItem>
+                                    </TextField>
+                                    <TextField fullWidth value={draft.deliveryTermsCity} onChange={(e) => updateDraftField("deliveryTermsCity", e.target.value)} label="Leveransvillkor ort *" size="small" className={styles.lineItemRequiredControl} />
+                                </div>
+
+                                <Divider className={styles.contractSectionDivider} />
+                                <Typography className={styles.contractSectionGroupLabel}>Agenter</Typography>
+                                <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
+                                    <TextField select fullWidth label="Agent *" value={draft.agent1} onChange={(e) => updateDraftField("agent1", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
+                                        <MenuItem value="">— Välj —</MenuItem>
+                                        <MenuItem value="Janne B">Janne B</MenuItem>
+                                        <MenuItem value="Anna K">Anna K</MenuItem>
+                                        <MenuItem value="Erik S">Erik S</MenuItem>
+                                    </TextField>
+                                    <TextField fullWidth type="number" value={draft.agent1Pct} onChange={(e) => updateDraftField("agent1Pct", e.target.value)} label="Provision (%)" size="small"
+                                        InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
+                                </div>
+
+                                <Divider className={styles.contractSectionDivider} />
                                 <Typography className={styles.contractSectionGroupLabel}>Rabatter &amp; Avgifter</Typography>
-                                <div className={styles.contractFormGrid3} style={{ marginBottom: 10 }}>
+                                <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
                                     <TextField fullWidth type="number" value={draft.cashDiscount} onChange={(e) => updateDraftField("cashDiscount", e.target.value)} label="Kassarabatt"
                                         size="small" InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
                                     <TextField fullWidth type="number" value={draft.bonus} onChange={(e) => updateDraftField("bonus", e.target.value)} label="Bonus"
@@ -642,8 +633,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                         <MenuItem value="Nettovärde">Nettovärde</MenuItem>
                                         <MenuItem value="Fakturerat värde">Fakturerat värde</MenuItem>
                                     </TextField>
-                                </div>
-                                <div className={styles.contractFormGrid2} style={{ marginBottom: 10 }}>
                                     <TextField fullWidth type="number" value={draft.pickingSurchargeMin} onChange={(e) => updateDraftField("pickingSurchargeMin", e.target.value)} label="Plocktillägg, minst"
                                         size="small" InputProps={{ endAdornment: <InputAdornment position="end">{`${draft.currency}/avropsrad`}</InputAdornment> }} />
                                     <TextField fullWidth type="number" value={draft.pickingSurchargePct} onChange={(e) => updateDraftField("pickingSurchargePct", e.target.value)} label="Plocktillägg"
@@ -653,8 +642,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                     <TextField fullWidth type="number" value={draft.paintingSurchargeThreshold} onChange={(e) => updateDraftField("paintingSurchargeThreshold", e.target.value)} label="Målningstillägg tröskel"
                                         size="small" helperText="Tillägg vid mindre än detta värde"
                                         InputProps={{ endAdornment: <InputAdornment position="end">lpm</InputAdornment> }} />
-                                </div>
-                                <div style={{ marginBottom: 10 }}>
                                     <TextField fullWidth type="number" value={draft.importFee} onChange={(e) => updateDraftField("importFee", e.target.value)} label="Införselavgift"
                                         size="small" InputProps={{ endAdornment: <InputAdornment position="end">{draft.currency}</InputAdornment> }} />
                                 </div>
@@ -679,14 +666,14 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                             <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
                                 <Typography className={styles.contractSectionGroupLabel} style={{ marginTop: 0 }}>Allmänt</Typography>
 
-                                {/* Read-only mirror of required fields */}
-                                <div className={styles.contractFormGrid3} style={{ marginBottom: 10 }}>
-                                    <TextField fullWidth size="small" label="Leveranssätt" value={draft.deliveryMethod} InputProps={{ readOnly: true }} helperText="Satt i obligatoriska fält" />
-                                    <TextField fullWidth size="small" label="Leveransvillkor" value={draft.deliveryTerms} InputProps={{ readOnly: true }} helperText="Satt i obligatoriska fält" />
-                                    <TextField fullWidth size="small" label="Lev. villkor ort" value={draft.deliveryTermsCity} InputProps={{ readOnly: true }} helperText="Satt i obligatoriska fält" />
-                                </div>
-
-                                <div className={styles.contractFormGrid2} style={{ marginBottom: 10 }}>
+                                <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
+                                    <TextField select fullWidth label="Leveransort *" value={draft.deliveryLocation} onChange={(e) => handleDeliveryLocationChange(e.target.value)} size="small" className={styles.lineItemRequiredControl}>
+                                        <MenuItem value="">— Välj ort —</MenuItem>
+                                        {mockDeliveryLocations.map((loc) => (
+                                            <MenuItem key={`${loc.name}-${loc.postalCode}`} value={loc.name}>{loc.name} ({loc.postalCode})</MenuItem>
+                                        ))}
+                                    </TextField>
+                                    <TextField fullWidth value={draft.deliveryLocationPostalCode} disabled label="Postnummer" helperText="Fylls i automatiskt" size="small" />
                                     <TextField select fullWidth label="Mottagarland" value={draft.receiverCountry} onChange={(e) => updateDraftField("receiverCountry", e.target.value)} size="small">
                                         <MenuItem value="">— Välj —</MenuItem>
                                         <MenuItem value="Sverige">Sverige</MenuItem>
@@ -698,9 +685,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                         <MenuItem value="Övriga EU">Övriga EU</MenuItem>
                                     </TextField>
                                     <TextField fullWidth value={draft.deliveryPeriod} onChange={(e) => updateDraftField("deliveryPeriod", e.target.value)} label="Leveransperiod" size="small" />
-                                </div>
-
-                                <div style={{ marginBottom: 10 }}>
                                     <TextField select fullWidth label="Leveransadress" value={draft.deliveryAddress} onChange={(e) => updateDraftField("deliveryAddress", e.target.value)} size="small">
                                         <MenuItem value="">— Välj adress —</MenuItem>
                                         {mockDeliveryAddresses.map((addr) => (
@@ -719,7 +703,7 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
 
                                 <Divider className={styles.contractSectionDivider} />
                                 <Typography className={styles.contractSectionGroupLabel}>Lossning</Typography>
-                                <div className={styles.contractFormGrid2} style={{ marginBottom: 10 }}>
+                                <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
                                     <TextField fullWidth value={draft.unloadingPhone} onChange={(e) => updateDraftField("unloadingPhone", e.target.value)} label="Telefon" type="tel" size="small" />
                                     <TextField fullWidth value={draft.unloadingHours} onChange={(e) => updateDraftField("unloadingHours", e.target.value)} label="Öppettider" size="small" helperText="Visas på fraktsedel" />
                                     <TextField fullWidth value={draft.notificationPhone} onChange={(e) => updateDraftField("notificationPhone", e.target.value)} label="Aviseringstelefon" type="tel" size="small" />
@@ -728,7 +712,7 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
 
                                 <Divider className={styles.contractSectionDivider} />
                                 <Typography className={styles.contractSectionGroupLabel}>Sjöfrakt</Typography>
-                                <div className={styles.contractFormGrid3}>
+                                <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
                                     <TextField fullWidth size="small" label="Utlastande hamn" value="" InputProps={{ readOnly: true }} />
                                     <TextField fullWidth size="small" label="Speditör" value="" InputProps={{ readOnly: true }} />
                                     <TextField fullWidth size="small" label="Mottagande hamn" value="" InputProps={{ readOnly: true }} />

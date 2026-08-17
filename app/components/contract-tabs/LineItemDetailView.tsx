@@ -20,7 +20,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, Switch, TextField, Tooltip, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, TextField, Tooltip, Typography } from "@mui/material";
 import { getContractDetails, type ContractDocument } from "./contractDetails";
 import { DataTable } from "../shared/DataTable";
 import styles from "../../page.module.scss";
@@ -824,7 +824,6 @@ export function LineItemDetailView({
   const [savedDraftNr, setSavedDraftNr] = useState<string | null>(null);
   const [showSavedSnackbar, setShowSavedSnackbar] = useState(false);
   const [showAllReviewFields, setShowAllReviewFields] = useState(false);
-  const [fastTrackEnabled, setFastTrackEnabled] = useState(true);
   const [optionalFastTrackKeys, setOptionalFastTrackKeys] = useState<Set<keyof NewLineItemDraft>>(new Set());
   const [hiddenFieldKeys, setHiddenFieldKeys] = useState<Set<keyof NewLineItemDraft>>(new Set());
   const [showAllOptionalFields, setShowAllOptionalFields] = useState(false);
@@ -934,7 +933,7 @@ export function LineItemDetailView({
       });
 
   const handleFastTrackKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (!fastTrackEnabled || !isNewLineItem || createStep !== 0 || event.key !== "Tab") {
+    if (!isNewLineItem || createStep !== 0 || event.key !== "Enter" || !(event.ctrlKey || event.metaKey)) {
       return;
     }
 
@@ -960,24 +959,6 @@ export function LineItemDetailView({
       : (currentIndex + 1) % focusableRequiredControls.length;
 
     focusableRequiredControls[nextIndex]?.focus();
-  };
-
-  const handleToggleFastTrack = () => {
-    setFastTrackEnabled((previous) => {
-      const nextValue = !previous;
-
-      if (nextValue) {
-        openRequiredPanels();
-        requestAnimationFrame(() => {
-          const firstRequiredControl = accordionWrapRef.current
-            ? getFastTrackFocusableElements(accordionWrapRef.current)[0]
-            : null;
-          firstRequiredControl?.focus();
-        });
-      }
-
-      return nextValue;
-    });
   };
 
   const getOptionalFieldMode = (key: keyof NewLineItemDraft): "normal" | "fasttrack" | "hidden" => {
@@ -1849,7 +1830,7 @@ export function LineItemDetailView({
                   <span className={styles.lineItemFastTrackTitle}>Snabbspår</span>
                   <span className={styles.lineItemFastTrackDivider} aria-hidden="true">-</span>
                   <span className={styles.lineItemFastTrackText}>
-                    Tabba endast mellan de viktigaste fälten i kontraktsradshuvudet
+                    Tryck Ctrl+Enter för att hoppa mellan de viktigaste fälten i kontraktsradshuvudet
                   </span>
                   <button
                     type="button"
@@ -1862,26 +1843,6 @@ export function LineItemDetailView({
                     {quickTrackSavedAt && !showAllOptionalFields && hiddenFieldKeys.size === 0 ? <span className={styles.lineItemFastTrackSavedDot} aria-label="Snabbspår sparat" /> : null}
                     <ExpandMoreIcon style={{ fontSize: 14, transition: "transform 0.2s", transform: showAllOptionalFields ? "rotate(180deg)" : "none", marginLeft: 2 }} />
                   </button>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "4px" }}>
-                    <span style={{ fontSize: "11px", fontWeight: 500, lineHeight: "1.2", color: "#748195" }}>Snabbspår</span>
-                    <Switch
-                      checked={fastTrackEnabled}
-                      onChange={handleToggleFastTrack}
-                      size="medium"
-                      sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': {
-                          color: '#c47900',
-                          '&:hover': {
-                            backgroundColor: 'rgba(196, 121, 0, 0.08)',
-                          },
-                        },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                          backgroundColor: '#c47900',
-                        },
-                      }}
-                    />
-                  </div>
-
                 </div>
                 {showAllOptionalFields ? (
                   <div className={styles.lineItemFastTrackChipsPanel}>

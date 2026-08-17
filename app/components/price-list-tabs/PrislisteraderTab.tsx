@@ -29,7 +29,7 @@ type PrislisteradRow = {
 };
 
 const COLUMNS = [
-  { key: "_id", label: "Prislistarad ID", pinned: true },
+  { key: "_id", label: "Prislisterad ID", pinned: true },
   { key: "artNr", label: "ArtNr" },
   { key: "produkt", label: "Produkt" },
   { key: "pakettyp", label: "Pakettyp" },

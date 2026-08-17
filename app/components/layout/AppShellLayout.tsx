@@ -378,7 +378,7 @@ export function AppShellLayout({
                     </Typography>
                     <ChevronRightIcon className={styles.breadcrumbArrow} />
                     <Typography className={styles.breadcrumbActive}>
-                      {isCreatingPriceRow ? "Ny prislistrad" : `Prislistrad ${selectedPriceRowId}`}
+                      {isCreatingPriceRow ? "Ny prislisterad" : `Prislisterad ${selectedPriceRowId}`}
                     </Typography>
                   </>
                 ) : (

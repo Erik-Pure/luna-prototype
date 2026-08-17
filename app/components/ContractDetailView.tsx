@@ -16,8 +16,9 @@ import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArro
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { Accordion, AccordionDetails, AccordionSummary, Button, Chip, Divider, IconButton, Menu, MenuItem, Tooltip, Typography } from "@mui/material";
-import { useState, useSyncExternalStore, type MouseEvent, type RefObject } from "react";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, Chip, Divider, IconButton, InputAdornment, Menu, MenuItem, TextField, Tooltip, Typography } from "@mui/material";
+import { useRef, useState, useSyncExternalStore, type MouseEvent, type RefObject } from "react";
 import { CallOffTab } from "./contract-tabs/CallOffTab";
 import { ContractRowsTab } from "./contract-tabs/ContractRowsTab";
 import { DeliveryTab } from "./contract-tabs/DeliveryTab";
@@ -33,7 +34,8 @@ import { TermsTab } from "./contract-tabs/TermsTab";
 import { TilläggsTab } from "./contract-tabs/TilläggsTab";
 import { getContractDetails, type ContractDetails, type FieldValue } from "./contract-tabs/contractDetails";
 import { BytPrislistaDialog } from "./contract-tabs/BytPrislistaDialog";
-import { ContractCreateView, type NewContractDraft } from "./ContractCreateView";
+import { ContractCreateView, mockCustomers, mockDeliveryLocations, mockDeliveryAddresses, type NewContractDraft } from "./ContractCreateView";
+import { SectionQuickNav, scrollSectionIntoView, type QuickNavSection } from "./shared/SectionQuickNav";
 import styles from "../page.module.scss";
 
 const stripDiacritics = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -136,10 +138,18 @@ type ContractDetailViewProps = {
   onOpenContainer: () => void;
   onCreateAvropsrad: () => void;
   onOpenAvropsrad: (id: string, data?: Record<string, string>) => void;
+  onCancelNewContract: () => void;
 };
 
 const MIN_SECTIONS_PANEL_WIDTH = 220;
 const MAX_SECTIONS_PANEL_WIDTH = 900;
+
+const CONTRACT_SECTIONS: QuickNavSection[] = [
+  { key: "allmant", label: "Allmänt" },
+  { key: "villkor", label: "Villkor" },
+  { key: "leverans", label: "Leverans" },
+  { key: "dokument", label: "Dokument" },
+];
 
 export function ContractDetailView({
   isLineItemDetailOpen,
@@ -176,6 +186,7 @@ export function ContractDetailView({
   onOpenContainer,
   onCreateAvropsrad,
   onOpenAvropsrad,
+  onCancelNewContract,
 }: ContractDetailViewProps) {
   const contractDetails = getContractDetails(selectedContractId);
   const leveransAllmant = [
@@ -202,6 +213,40 @@ export function ContractDetailView({
   const [isBytPrislistaOpen, setIsBytPrislistaOpen] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [expandedDialogOpen, setExpandedDialogOpen] = useState(false);
+  const [draft, setDraft] = useState<NewContractDraft>(() => buildContractDraftFromDetails(contractDetails));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    () => new Set(CONTRACT_SECTIONS.map((section) => section.key))
+  );
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const sectionsHeaderRef = useRef<HTMLDivElement | null>(null);
+
+  const toggleSection = (key: string, isExpanded: boolean) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (isExpanded) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
+
+  const jumpToSection = (key: string) => {
+    setExpandedSections((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+    requestAnimationFrame(() => {
+      const target = sectionRefs.current[key];
+      if (target) scrollSectionIntoView(target, sectionsHeaderRef.current);
+    });
+  };
+
+  const set = (key: keyof NewContractDraft, value: string | boolean) =>
+    setDraft((prev) => ({ ...prev, [key]: value }));
+
+  const handleDeliveryLocationChange = (locationName: string) => {
+    set("deliveryLocation", locationName);
+    const location = mockDeliveryLocations.find((l) => l.name === locationName);
+    if (location) set("deliveryLocationPostalCode", location.postalCode);
+  };
+
+  const agent2Field = contractDetails.villkor.find((f) => f.label === "Agent 2");
 
   const isWide = useSyncExternalStore(
     (cb) => {
@@ -270,9 +315,7 @@ export function ContractDetailView({
           onSave={() => {
             // TODO: Handle contract save
           }}
-          onCancel={() => {
-            // TODO: Handle cancel - navigate back to list
-          }}
+          onCancel={onCancelNewContract}
         />
       ) : isLineItemDetailOpen ? (
         <LineItemDetailView
@@ -297,9 +340,10 @@ export function ContractDetailView({
               <Typography className={styles.contractModernTitle}>Kontrakt {selectedContractId} - {contractDetails.summary.customer}</Typography>
               {contractDetails.summary.warning ? (
                 <Chip
+                  icon={<WarningAmberOutlinedIcon />}
                   label={contractDetails.summary.warning}
-                  size="small"
-                  color="error"
+                  size="medium"
+                  className={`${styles.limitErrorChip} ${styles.customerHeaderWarningChip}`}
                   style={{ marginLeft: 8, fontWeight: 500, padding: "0 4px" }}
                 />
               ) : null}
@@ -364,7 +408,7 @@ export function ContractDetailView({
               ) : null}
 
               {/* Panel header: minimize button left + Redigera button right */}
-              <div className={styles.contractSectionsPanelHeader}>
+              <div ref={sectionsHeaderRef} className={styles.contractSectionsPanelHeader}>
                 <div className={styles.contractSectionsPanelTitleRow} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
                   {!isSectionsPanelCollapsed ? (
                     <Typography className={styles.contractSectionsPanelTitle}>Kontraktsinformation</Typography>
@@ -440,33 +484,104 @@ export function ContractDetailView({
               </div>
 
               {!isSectionsPanelCollapsed ? (<>
+                <SectionQuickNav sections={CONTRACT_SECTIONS} onSelect={jumpToSection} />
+
                 {/* ── Allmänt ── */}
-                <Accordion defaultExpanded disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                <Accordion
+                  expanded={expandedSections.has("allmant")}
+                  onChange={(_, isExpanded) => toggleSection("allmant", isExpanded)}
+                  ref={(el) => { sectionRefs.current.allmant = el; }}
+                  disableGutters
+                  elevation={0}
+                  className={styles.contractSectionAccordion}
+                >
                   <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
                     <span className={styles.contractSectionTitleRow}>
                       <InfoOutlinedIcon className={styles.contractSectionIcon} />
                       <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
                     </span>
                   </AccordionSummary>
-                  <AccordionDetails className={styles.contractSectionDetailsArea}>
-                    <div className={styles.contractDataGridCompact}>
-                      {contractDetails.allmant.map((field) => (
-                        <div key={field.label} className={styles.contractDataItem}>
-                          <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                          <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                        </div>
-                      ))}
+                  <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                    <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
+                    <div className={styles.contractModernFormGrid}>
+                      <TextField select fullWidth size="small" label="Kund" value={draft.customer} onChange={(e) => set("customer", e.target.value)}>
+                        <MenuItem value="">—</MenuItem>
+                        {mockCustomers.map((c) => <MenuItem key={c.name} value={c.name}>{c.name}</MenuItem>)}
+                      </TextField>
+                      <TextField fullWidth size="small" label="Kontraktsnr" value={selectedContractId ?? ""} disabled />
+                      <TextField fullWidth size="small" label="Externt kontraktsnr" value={draft.externalContractNumber} onChange={(e) => set("externalContractNumber", e.target.value)} />
+                      <TextField select fullWidth size="small" label="Prislista" value={draft.priceList} onChange={(e) => set("priceList", e.target.value)}>
+                        <MenuItem value="">— Standardpris —</MenuItem>
+                        <MenuItem value="PL-2024-A">PL-2024-A (Storkundspris)</MenuItem>
+                        <MenuItem value="PL-2024-B">PL-2024-B (Återförsäljare)</MenuItem>
+                        <MenuItem value="PL-2024-C">PL-2024-C (Kampanjpris)</MenuItem>
+                        <MenuItem value="PL-Export">PL-Export (Exportpris)</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Status" value={draft.status} onChange={(e) => set("status", e.target.value)}>
+                        <MenuItem value="Aktivt kontrakt">Aktivt kontrakt</MenuItem>
+                        <MenuItem value="Utkast">Utkast</MenuItem>
+                        <MenuItem value="Avslutat">Avslutat</MenuItem>
+                        <MenuItem value="Pausat">Pausat</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Upprättat av" value={draft.createdBy} onChange={(e) => set("createdBy", e.target.value)}>
+                        <MenuItem value="">—</MenuItem>
+                        <MenuItem value="John Doe">John Doe</MenuItem>
+                        <MenuItem value="Jane Smith">Jane Smith</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Språk" value={draft.language} onChange={(e) => set("language", e.target.value)}>
+                        <MenuItem value="Svenska">Svenska</MenuItem>
+                        <MenuItem value="English">English</MenuItem>
+                        <MenuItem value="Deutsch">Deutsch</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Kategori" value={draft.category} onChange={(e) => set("category", e.target.value)}>
+                        <MenuItem value="Bygghandel">Bygghandel</MenuItem>
+                        <MenuItem value="Industri">Industri</MenuItem>
+                        <MenuItem value="Offentlig sektor">Offentlig sektor</MenuItem>
+                        <MenuItem value="Grossist">Grossist</MenuItem>
+                        <MenuItem value="Övrigt">Övrigt</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Land" value={draft.country} onChange={(e) => set("country", e.target.value)}>
+                        <MenuItem value="Sverige">Sverige</MenuItem>
+                        <MenuItem value="Norge">Norge</MenuItem>
+                        <MenuItem value="Danmark">Danmark</MenuItem>
+                        <MenuItem value="Finland">Finland</MenuItem>
+                        <MenuItem value="Tyskland">Tyskland</MenuItem>
+                        <MenuItem value="Frankrike">Frankrike</MenuItem>
+                        <MenuItem value="Övriga EU">Övriga EU</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Kontraktstyp" value={draft.contractType} onChange={(e) => set("contractType", e.target.value)}>
+                        <MenuItem value="Försäljningskontrakt">Försäljningskontrakt</MenuItem>
+                        <MenuItem value="Ramavtal">Ramavtal</MenuItem>
+                        <MenuItem value="Inköpskontrakt">Inköpskontrakt</MenuItem>
+                        <MenuItem value="Servicekontrakt">Servicekontrakt</MenuItem>
+                        <MenuItem value="Samarbetsavtal">Samarbetsavtal</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Kundens referens" value={draft.customerRef} onChange={(e) => set("customerRef", e.target.value)}>
+                        <MenuItem value="">—</MenuItem>
+                        <MenuItem value="Faktura">Faktura</MenuItem>
+                        <MenuItem value="Offert">Offert</MenuItem>
+                        <MenuItem value="Order">Order</MenuItem>
+                        <MenuItem value="Avtal">Avtal</MenuItem>
+                      </TextField>
+                      <TextField fullWidth size="small" label="Giltig t.o.m." type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.validUntil} onChange={(e) => set("validUntil", e.target.value)} />
                     </div>
                     {contractDetails.kommentarer.length > 0 ? (
                       <>
                         <Divider className={styles.contractSectionDivider} />
                         <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
-                        <div className={styles.contractDataGridCompact}>
+                        <div className={styles.contractModernFormGrid}>
                           {contractDetails.kommentarer.map((field) => (
-                            <div key={field.label} className={`${styles.contractDataItem} ${styles.contractDataItemWide}`}>
-                              <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                              <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                            </div>
+                            <TextField
+                              key={field.label}
+                              fullWidth
+                              size="small"
+                              multiline
+                              rows={3}
+                              label={field.label}
+                              value={field.value}
+                              disabled
+                              style={{ gridColumn: "1 / -1" }}
+                            />
                           ))}
                         </div>
                       </>
@@ -475,53 +590,92 @@ export function ContractDetailView({
                 </Accordion>
 
                 {/* ── Villkor ── */}
-                <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                <Accordion
+                  expanded={expandedSections.has("villkor")}
+                  onChange={(_, isExpanded) => toggleSection("villkor", isExpanded)}
+                  ref={(el) => { sectionRefs.current.villkor = el; }}
+                  disableGutters
+                  elevation={0}
+                  className={styles.contractSectionAccordion}
+                >
                   <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
                     <span className={styles.contractSectionTitleRow}>
                       <GavelOutlinedIcon className={styles.contractSectionIcon} />
                       <Typography className={styles.contractSectionTitle}>Villkor</Typography>
                     </span>
                   </AccordionSummary>
-                  <AccordionDetails className={styles.contractSectionDetailsArea}>
+                  <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
                     {/* Valuta & Betalning */}
                     <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; Betalning</Typography>
-                    <div className={styles.contractDataGridCompact}>
-                      {contractDetails.villkor
-                        .filter((f) => ["Valuta", "Betalningsvillkor", "Betalningsvillkor dagar", "Moms"].includes(f.label))
-                        .map((field) => (
-                          <div key={field.label} className={styles.contractDataItem}>
-                            <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                            <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                          </div>
-                        ))}
+                    <div className={styles.contractModernFormGrid}>
+                      <TextField select fullWidth size="small" label="Valuta" value={draft.currency} onChange={(e) => set("currency", e.target.value)}>
+                        <MenuItem value="SEK">SEK</MenuItem>
+                        <MenuItem value="EUR">EUR</MenuItem>
+                        <MenuItem value="USD">USD</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Betalningsvillkor" value={draft.paymentTerms} onChange={(e) => set("paymentTerms", e.target.value)}>
+                        <MenuItem value="30 dagar netto">30 dagar netto</MenuItem>
+                        <MenuItem value="14 dagar netto">14 dagar netto</MenuItem>
+                        <MenuItem value="Förskott">Förskott</MenuItem>
+                      </TextField>
+                      <TextField fullWidth size="small" label="Betalningsvillkor dagar" type="number" value={draft.paymentTermsDays} onChange={(e) => set("paymentTermsDays", e.target.value)} />
+                      <TextField select fullWidth size="small" label="Moms" value={draft.vat} onChange={(e) => set("vat", e.target.value)}>
+                        <MenuItem value="25">25%</MenuItem>
+                        <MenuItem value="12">12%</MenuItem>
+                        <MenuItem value="6">6%</MenuItem>
+                        <MenuItem value="0">0% (momsfri)</MenuItem>
+                      </TextField>
                     </div>
                     {/* Kontrakt & Leverans */}
                     <Divider className={styles.contractSectionDivider} />
                     <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; Leverans</Typography>
-                    <div className={styles.contractDataGridCompact}>
-                      {contractDetails.villkor
-                        .filter((f) => ["Certifiering", "Kontraktsformular", "Kontraktsformulär", "Leveranssatt", "Leveranssätt", "Leveransvillkor", "Leveransvillkor ort"].includes(f.label))
-                        .map((field) => (
-                          <div key={field.label} className={styles.contractDataItem}>
-                            <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                            <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                          </div>
-                        ))}
+                    <div className={styles.contractModernFormGrid}>
+                      <TextField select fullWidth size="small" label="Certifiering" value={draft.certification} onChange={(e) => set("certification", e.target.value)}>
+                        <MenuItem value="">—</MenuItem>
+                        <MenuItem value="ISO 9001">ISO 9001</MenuItem>
+                        <MenuItem value="ISO 14001">ISO 14001</MenuItem>
+                        <MenuItem value="CE-märkning">CE-märkning</MenuItem>
+                        <MenuItem value="Ingen">Ingen</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Kontraktsformulär" value={draft.contractForm} onChange={(e) => set("contractForm", e.target.value)}>
+                        <MenuItem value="">—</MenuItem>
+                        <MenuItem value="Example contract">Example contract</MenuItem>
+                        <MenuItem value="Standard avtal">Standard avtal</MenuItem>
+                        <MenuItem value="Ramavtal">Ramavtal</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Leveranssätt" value={draft.deliveryMethod} onChange={(e) => set("deliveryMethod", e.target.value)}>
+                        <MenuItem value="Hämta">Hämta</MenuItem>
+                        <MenuItem value="DHL Express">DHL Express</MenuItem>
+                        <MenuItem value="PostNord">PostNord</MenuItem>
+                        <MenuItem value="Egen transport">Egen transport</MenuItem>
+                      </TextField>
+                      <TextField select fullWidth size="small" label="Leveransvillkor" value={draft.deliveryTerms} onChange={(e) => set("deliveryTerms", e.target.value)}>
+                        <MenuItem value="FCA">FCA</MenuItem>
+                        <MenuItem value="EXW">EXW</MenuItem>
+                        <MenuItem value="DAP">DAP</MenuItem>
+                        <MenuItem value="DDP">DDP</MenuItem>
+                        <MenuItem value="CIF">CIF</MenuItem>
+                        <MenuItem value="FOB">FOB</MenuItem>
+                      </TextField>
+                      <TextField fullWidth size="small" label="Leveransvillkor ort" value={draft.deliveryTermsCity} onChange={(e) => set("deliveryTermsCity", e.target.value)} />
                     </div>
                     {/* Agenter */}
                     {contractDetails.villkor.some((f) => f.label.startsWith("Agent")) ? (
                       <>
                         <Divider className={styles.contractSectionDivider} />
                         <Typography className={styles.contractSectionGroupLabel}>Agenter</Typography>
-                        <div className={styles.contractDataGridCompact}>
-                          {contractDetails.villkor
-                            .filter((f) => f.label.startsWith("Agent"))
-                            .map((field) => (
-                              <div key={field.label} className={styles.contractDataItem}>
-                                <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                                <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                              </div>
-                            ))}
+                        <div className={styles.contractModernFormGrid}>
+                          <TextField select fullWidth size="small" label="Agent 1" value={draft.agent1} onChange={(e) => set("agent1", e.target.value)}>
+                            <MenuItem value="">—</MenuItem>
+                            <MenuItem value="Janne B">Janne B</MenuItem>
+                            <MenuItem value="Anna K">Anna K</MenuItem>
+                            <MenuItem value="Erik S">Erik S</MenuItem>
+                          </TextField>
+                          <TextField fullWidth size="small" label="Provision agent 1" type="number" value={draft.agent1Pct} onChange={(e) => set("agent1Pct", e.target.value)}
+                            slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
+                          {agent2Field ? (
+                            <TextField fullWidth size="small" label="Agent 2" value={agent2Field.value} disabled />
+                          ) : null}
                         </div>
                       </>
                     ) : null}
@@ -530,15 +684,22 @@ export function ContractDetailView({
                       <>
                         <Divider className={styles.contractSectionDivider} />
                         <Typography className={styles.contractSectionGroupLabel}>Rabatter &amp; Avgifter</Typography>
-                        <div className={styles.contractDataGridCompact}>
-                          {contractDetails.villkor
-                            .filter((f) => ["Kassarabatt", "Bonus", "Plocktillagg", "Plocktillägg", "Malningstillagg", "Målningstillägg", "Inforselavgift", "Införselavgift"].includes(f.label))
-                            .map((field) => (
-                              <div key={field.label} className={styles.contractDataItem}>
-                                <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                                <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                              </div>
-                            ))}
+                        <div className={styles.contractModernFormGrid}>
+                          <TextField fullWidth size="small" label="Kassarabatt" type="number" value={draft.cashDiscount} onChange={(e) => set("cashDiscount", e.target.value)}
+                            slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
+                          <TextField fullWidth size="small" label="Bonus" type="number" value={draft.bonus} onChange={(e) => set("bonus", e.target.value)}
+                            slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
+                          <TextField select fullWidth size="small" label="Bonusbas" value={draft.bonusBase} onChange={(e) => set("bonusBase", e.target.value)}>
+                            <MenuItem value="Bruttovärde">Bruttovärde</MenuItem>
+                            <MenuItem value="Nettovärde">Nettovärde</MenuItem>
+                            <MenuItem value="Fakturerat värde">Fakturerat värde</MenuItem>
+                          </TextField>
+                          <TextField fullWidth size="small" label="Plocktillägg, minst" type="number" value={draft.pickingSurchargeMin} onChange={(e) => set("pickingSurchargeMin", e.target.value)}
+                            slotProps={{ input: { endAdornment: <InputAdornment position="end">{`${draft.currency}/avropsrad`}</InputAdornment> } }} />
+                          <TextField fullWidth size="small" label="Målningstillägg" type="number" value={draft.paintingSurcharge} onChange={(e) => set("paintingSurcharge", e.target.value)}
+                            slotProps={{ input: { endAdornment: <InputAdornment position="end">{`${draft.currency}/avropsrad`}</InputAdornment> } }} />
+                          <TextField fullWidth size="small" label="Införselavgift" type="number" value={draft.importFee} onChange={(e) => set("importFee", e.target.value)}
+                            slotProps={{ input: { endAdornment: <InputAdornment position="end">{draft.currency}</InputAdornment> } }} />
                         </div>
                       </>
                     ) : null}
@@ -547,64 +708,83 @@ export function ContractDetailView({
                       <>
                         <Divider className={styles.contractSectionDivider} />
                         <Typography className={styles.contractSectionGroupLabel}>Lager</Typography>
-                        <div className={styles.contractDataGridCompact}>
-                          {contractDetails.villkor
-                            .filter((f) => f.label === "Konsignationslager")
-                            .map((field) => (
-                              <div key={field.label} className={styles.contractDataItem}>
-                                <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                                <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                              </div>
-                            ))}
-                        </div>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: isEditingInfo ? "pointer" : "default" }}>
+                          <Checkbox checked={draft.consignmentStock} onChange={(e) => set("consignmentStock", e.target.checked)} size="small" disabled={!isEditingInfo} />
+                          <Typography variant="body2">Konsignationslager</Typography>
+                        </label>
                       </>
                     ) : null}
                   </AccordionDetails>
                 </Accordion>
 
                 {/* ── Leverans ── */}
-                <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                <Accordion
+                  expanded={expandedSections.has("leverans")}
+                  onChange={(_, isExpanded) => toggleSection("leverans", isExpanded)}
+                  ref={(el) => { sectionRefs.current.leverans = el; }}
+                  disableGutters
+                  elevation={0}
+                  className={styles.contractSectionAccordion}
+                >
                   <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
                     <span className={styles.contractSectionTitleRow}>
                       <LocalShippingOutlinedIcon className={styles.contractSectionIcon} />
                       <Typography className={styles.contractSectionTitle}>Leverans</Typography>
                     </span>
                   </AccordionSummary>
-                  <AccordionDetails className={styles.contractSectionDetailsArea}>
+                  <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
                     <Typography className={styles.contractSectionGroupLabel}>Allmänt</Typography>
-                    <div className={styles.contractDataGridCompact}>
-                      {leveransAllmant.map((field) => (
-                        <div key={field.label} className={styles.contractDataItem}>
-                          <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                          <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                        </div>
-                      ))}
+                    <div className={styles.contractModernFormGrid}>
+                      <TextField select fullWidth size="small" label="Leveransort" value={draft.deliveryLocation} onChange={(e) => handleDeliveryLocationChange(e.target.value)}>
+                        <MenuItem value="">—</MenuItem>
+                        {mockDeliveryLocations.map((loc) => (
+                          <MenuItem key={`${loc.name}-${loc.postalCode}`} value={loc.name}>{loc.name} ({loc.postalCode})</MenuItem>
+                        ))}
+                      </TextField>
+                      <TextField fullWidth size="small" label="Postnummer" value={draft.deliveryLocationPostalCode} disabled helperText="Fylls i automatiskt" />
+                      <TextField select fullWidth size="small" label="Mottagarland" value={draft.receiverCountry} onChange={(e) => set("receiverCountry", e.target.value)}>
+                        <MenuItem value="">—</MenuItem>
+                        <MenuItem value="Sverige">Sverige</MenuItem>
+                        <MenuItem value="Norge">Norge</MenuItem>
+                        <MenuItem value="Danmark">Danmark</MenuItem>
+                        <MenuItem value="Finland">Finland</MenuItem>
+                        <MenuItem value="Tyskland">Tyskland</MenuItem>
+                        <MenuItem value="Frankrike">Frankrike</MenuItem>
+                        <MenuItem value="Övriga EU">Övriga EU</MenuItem>
+                      </TextField>
+                      <TextField fullWidth size="small" label="Leveransperiod" value={draft.deliveryPeriod} onChange={(e) => set("deliveryPeriod", e.target.value)} />
+                      <TextField select fullWidth size="small" label="Leveransadress" value={draft.deliveryAddress} onChange={(e) => set("deliveryAddress", e.target.value)} style={{ gridColumn: "1 / -1" }}>
+                        <MenuItem value="">—</MenuItem>
+                        {mockDeliveryAddresses.map((addr) => <MenuItem key={addr} value={addr}>{addr}</MenuItem>)}
+                      </TextField>
                     </div>
                     <Divider className={styles.contractSectionDivider} />
                     <Typography className={styles.contractSectionGroupLabel}>Lossning</Typography>
-                    <div className={styles.contractDataGridCompact}>
-                      {leveransLossning.map((field) => (
-                        <div key={field.label} className={styles.contractDataItem}>
-                          <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                          <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                        </div>
-                      ))}
+                    <div className={styles.contractModernFormGrid}>
+                      <TextField fullWidth size="small" label="Telefon lossning" type="tel" value={draft.unloadingPhone} onChange={(e) => set("unloadingPhone", e.target.value)} />
+                      <TextField fullWidth size="small" label="Öppettider" value={draft.unloadingHours} onChange={(e) => set("unloadingHours", e.target.value)} />
+                      <TextField fullWidth size="small" label="Aviseringstelefon" type="tel" value={draft.notificationPhone} onChange={(e) => set("notificationPhone", e.target.value)} />
+                      <TextField fullWidth size="small" label="Aviseringsinformation" multiline rows={3} value={draft.notificationInfo} onChange={(e) => set("notificationInfo", e.target.value)} style={{ gridColumn: "1 / -1" }} />
                     </div>
                     <Divider className={styles.contractSectionDivider} />
                     <Typography className={styles.contractSectionGroupLabel}>Sjöfrakt</Typography>
-                    <div className={styles.contractDataGridCompact}>
+                    <div className={styles.contractModernFormGrid}>
                       {leveransSjofrakt.map((field) => (
-                        <div key={field.label} className={styles.contractDataItem}>
-                          <Typography className={styles.contractDataLabel}>{field.label}</Typography>
-                          <Typography className={styles.contractDataValue}>{field.value || "—"}</Typography>
-                        </div>
+                        <TextField key={field.label} fullWidth size="small" label={field.label} value={field.value} disabled />
                       ))}
                     </div>
                   </AccordionDetails>
                 </Accordion>
 
                 {/* ── Dokument ── */}
-                <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
+                <Accordion
+                  expanded={expandedSections.has("dokument")}
+                  onChange={(_, isExpanded) => toggleSection("dokument", isExpanded)}
+                  ref={(el) => { sectionRefs.current.dokument = el; }}
+                  disableGutters
+                  elevation={0}
+                  className={styles.contractSectionAccordion}
+                >
                   <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
                     <span className={styles.contractSectionTitleRow}>
                       <FolderOutlinedIcon className={styles.contractSectionIcon} />

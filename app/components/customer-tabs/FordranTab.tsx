@@ -89,7 +89,7 @@ const KREDITHISTORIK = [
 
 const LASS_COLUMNS = [
   { key: "lassNr", label: "LassNr" },
-  { key: "bolag", label: "Bolag" },
+  { key: "bolag", label: "Enhet" },
   { key: "levererad", label: "Levererad" },
   { key: "godkandDatum", label: "Godkänd datum" },
   { key: "volym", label: "Volym" },
@@ -102,28 +102,28 @@ const LASS_ROWS: LassRow[] = [
 ];
 
 const FORDRAN_EX_RANTA_COLUMNS = [
-  { key: "kundnr", label: "Kundnr", width: 80 },
+  { key: "kundnr", label: "Kundnr", width: 90 },
   { key: "kund", label: "Kund", width: 160 },
-  { key: "kreditforsakringsbelopp", label: "Kreditförsäkringsbelopp", width: 130 },
-  { key: "internLimit", label: "Intern limit", width: 100 },
-  { key: "internLimitTom", label: "Intern limit t.o.m.", width: 120 },
-  { key: "antFordran", label: "Ant fordran", width: 90 },
-  { key: "belFordran", label: "Bel fordran", width: 90 },
-  { key: "antForfalletT", label: "Ant förfallet", width: 90 },
-  { key: "belForfalletT", label: "Bel förfallet", width: 90 },
-  { key: "antForf3_14", label: "Ant förf 3-14", width: 90 },
-  { key: "belForf3_14", label: "Bel förf 3-14", width: 90 },
-  { key: "antForf15_19", label: "Ant förf 15-19", width: 90 },
-  { key: "belForf15_19", label: "Bel förf 15-19", width: 90 },
-  { key: "antForf20", label: "Ant förf 20-", width: 90 },
-  { key: "belForf20", label: "Bel förf 20-", width: 90 },
-  { key: "utlastning202625", label: "Utlastning 202625", width: 110 },
-  { key: "utlastning202626", label: "Utlastning 202626", width: 110 },
-  { key: "utlastning202627", label: "Utlastning 202627", width: 110 },
-  { key: "utlastning202628", label: "Utlastning 202628", width: 110 },
-  { key: "tilhorKundnr", label: "Tillhör kundnr", width: 100 },
-  { key: "ediFaktura", label: "EDI Faktura", width: 90 },
-  { key: "senastHamtad", label: "Senast hämtad", width: 110 },
+  { key: "kreditforsakringsbelopp", label: "Kreditförsäkringsbelopp", width: 190 },
+  { key: "internLimit", label: "Intern limit", width: 115 },
+  { key: "internLimitTom", label: "Intern limit t.o.m.", width: 150 },
+  { key: "antFordran", label: "Ant fordran", width: 105 },
+  { key: "belFordran", label: "Bel fordran", width: 105 },
+  { key: "antForfalletT", label: "Ant förfallet", width: 115 },
+  { key: "belForfalletT", label: "Bel förfallet", width: 115 },
+  { key: "antForf3_14", label: "Ant förf 3-14", width: 120 },
+  { key: "belForf3_14", label: "Bel förf 3-14", width: 120 },
+  { key: "antForf15_19", label: "Ant förf 15-19", width: 125 },
+  { key: "belForf15_19", label: "Bel förf 15-19", width: 125 },
+  { key: "antForf20", label: "Ant förf 20-", width: 115 },
+  { key: "belForf20", label: "Bel förf 20-", width: 115 },
+  { key: "utlastning202625", label: "Utlastning 202625", width: 150 },
+  { key: "utlastning202626", label: "Utlastning 202626", width: 150 },
+  { key: "utlastning202627", label: "Utlastning 202627", width: 150 },
+  { key: "utlastning202628", label: "Utlastning 202628", width: 150 },
+  { key: "tilhorKundnr", label: "Tillhör kundnr", width: 130 },
+  { key: "ediFaktura", label: "EDI Faktura", width: 110 },
+  { key: "senastHamtad", label: "Senast hämtad", width: 125 },
 ] satisfies Array<{ key: string; label: string; width?: number }>;
 
 const FORDRAN_EX_RANTA_ROWS: FordranRow[] = [
@@ -347,22 +347,8 @@ export function FordranTab() {
         </div>
       </div>
 
-      {/* ── Tabell 1: Lass ── */}
+      {/* ── Tabell 1: Fordran exkl. ränta ── */}
       <div style={{ padding: "0 18px" }}>
-        <TableSection title="Utlastade eller utlastningsspärrade godkända lass som inte är fakturerade">
-          <DataTable
-            variant="line"
-            columns={LASS_COLUMNS}
-            rows={LASS_ROWS as unknown as Array<Record<string, string | undefined>>}
-            rowKey={(_row, i) => `lass-${i}`}
-            selectedRowIndex={selectedLass}
-            onRowClick={(i) => setSelectedLass((prev) => (prev === i ? null : i))}
-          />
-        </TableSection>
-      </div>
-
-      {/* ── Tabell 2: Fordran exkl. ränta ── */}
-      <div style={{ padding: "16px 18px 0" }}>
         <TableSection title="Fordran exklusive ränta">
           <DataTable
             variant="line"
@@ -371,6 +357,20 @@ export function FordranTab() {
             rowKey={(_row, i) => `fordran-${i}`}
             selectedRowIndex={selectedFordran}
             onRowClick={(i) => setSelectedFordran((prev) => (prev === i ? null : i))}
+          />
+        </TableSection>
+      </div>
+
+      {/* ── Tabell 2: Lass ── */}
+      <div style={{ padding: "16px 18px 0" }}>
+        <TableSection title="Utlastade eller utlastningsspärrade godkända lass som inte är fakturerade">
+          <DataTable
+            variant="line"
+            columns={LASS_COLUMNS}
+            rows={LASS_ROWS as unknown as Array<Record<string, string | undefined>>}
+            rowKey={(_row, i) => `lass-${i}`}
+            selectedRowIndex={selectedLass}
+            onRowClick={(i) => setSelectedLass((prev) => (prev === i ? null : i))}
           />
         </TableSection>
       </div>

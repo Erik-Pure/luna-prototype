@@ -58,10 +58,10 @@ type PriceListViewProps = {
 
 const defaultSearchFields: PriceListSearchField[] = [
   { key: "prislistenr", label: "Prislistenr", control: "text", visible: true, favorite: true },
-  { key: "artNr", label: "ArtNr", control: "text", visible: true, favorite: true },
+  { key: "artNr", label: "ArtNr", control: "text", visible: true, favorite: false },
   { key: "kund", label: "Kund", control: "select", visible: true, favorite: true },
   { key: "upprattatAv", label: "Upprättat av", control: "select", visible: true, favorite: true },
-  { key: "status", label: "Status", control: "select", visible: true, favorite: false },
+  { key: "status", label: "Status", control: "select", visible: true, favorite: true },
   { key: "externPrislistenr", label: "Externt prislistenr", control: "text", visible: true, favorite: false },
   { key: "prisdatumFran", label: "Prisdatum från", control: "date", visible: true, favorite: false },
   { key: "prisdatumTill", label: "Prisdatum till", control: "date", visible: true, favorite: false },

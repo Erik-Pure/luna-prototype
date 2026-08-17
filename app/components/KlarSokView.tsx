@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type MouseEvent as ReactMouseEvent } from "react";
+import { IconButton, Snackbar } from "@mui/material";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import CloseIcon from "@mui/icons-material/Close";
 import styles from "../page.module.scss";
 import { KlarSokPanel } from "./KlarSokPanel";
 
@@ -36,6 +39,16 @@ function splitLabel(label: string): { link: string; rest: string } {
   const idx = label.indexOf("(");
   if (idx === -1) return { link: label, rest: "" };
   return { link: label.slice(0, idx).trim(), rest: " " + label.slice(idx) };
+}
+
+function extractIdNumber(link: string): string {
+  const match = link.trim().match(/(\S+)$/);
+  return match ? match[1] : link.trim();
+}
+
+function handleCopyId(e: ReactMouseEvent, id: string, onCopied: (id: string) => void) {
+  e.stopPropagation();
+  void navigator.clipboard.writeText(id).then(() => onCopied(id));
 }
 
 const ALMASSA_TREE: TreeNode[] = [
@@ -133,6 +146,7 @@ function TreeRow({
   selectedId,
   onToggle,
   onSelect,
+  onCopy,
 }: {
   node: TreeNode;
   depth: number;
@@ -140,6 +154,7 @@ function TreeRow({
   selectedId: string | null;
   onToggle: (id: string) => void;
   onSelect: (id: string) => void;
+  onCopy: (id: string) => void;
 }) {
   const isExpanded = expandedIds.has(node.id);
   const hasChildren = !!node.children?.length;
@@ -167,6 +182,15 @@ function TreeRow({
         </button>
         <span className={styles.klarSokTreeLabel}>
           <span className={styles.klarSokTreeLink}>{link}</span>
+          <IconButton
+            size="small"
+            className={styles.klarSokCopyBtn}
+            style={{ marginLeft: 8, marginRight: 2 }}
+            title="Kopiera ID"
+            onClick={(e) => handleCopyId(e, extractIdNumber(link), onCopy)}
+          >
+            <ContentCopyIcon style={{ fontSize: 14 }} />
+          </IconButton>
           {rest && <span className={styles.klarSokTreeMeta}>{rest}</span>}
         </span>
         <span className={styles.klarSokTreeAktiv}>{node.aktiv ? "Ja" : "Nej"}</span>
@@ -180,6 +204,7 @@ function TreeRow({
           selectedId={selectedId}
           onToggle={onToggle}
           onSelect={onSelect}
+          onCopy={onCopy}
         />
       ))}
     </>
@@ -190,6 +215,11 @@ export function KlarSokView() {
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [selectedTreeId, setSelectedTreeId] = useState<string | null>(null);
+  const [copyToast, setCopyToast] = useState<{ open: boolean; message: string; key: number }>({ open: false, message: "", key: 0 });
+
+  const handleCopied = (id: string) => {
+    setCopyToast((prev) => ({ open: true, message: `Kopierade \"${id}\"`, key: prev.key + 1 }));
+  };
 
   const selectedResult = SEARCH_RESULTS.find((r) => r.id === selectedResultId) ?? null;
 
@@ -228,7 +258,24 @@ export function KlarSokView() {
                 onClick={() => handleSelectResult(row.id)}
               >
                 <span className={styles.klarSokFlatRowLabel}>
-                  {(() => { const { link, rest } = splitLabel(row.label); return <><span className={styles.klarSokTreeLink}>{link}</span>{rest && <span className={styles.klarSokTreeMeta}>{rest}</span>}</>; })()}
+                  {(() => {
+                    const { link, rest } = splitLabel(row.label);
+                    return (
+                      <>
+                        <span className={styles.klarSokTreeLink}>{link}</span>
+                        <IconButton
+                          size="small"
+                          className={styles.klarSokCopyBtn}
+                          style={{ marginLeft: 8, marginRight: 2 }}
+                          title="Kopiera ID"
+                          onClick={(e) => handleCopyId(e, extractIdNumber(link), handleCopied)}
+                        >
+                          <ContentCopyIcon style={{ fontSize: 14 }} />
+                        </IconButton>
+                        {rest && <span className={styles.klarSokTreeMeta}>{rest}</span>}
+                      </>
+                    );
+                  })()}
                 </span>
                 <span className={styles.klarSokFlatRowAktiv}>{row.aktiv ? "Ja" : "Nej"}</span>
               </div>
@@ -252,6 +299,7 @@ export function KlarSokView() {
                   selectedId={selectedTreeId}
                   onToggle={handleToggle}
                   onSelect={setSelectedTreeId}
+                  onCopy={handleCopied}
                 />
               ))
             ) : (
@@ -262,6 +310,25 @@ export function KlarSokView() {
           </div>
         </div>
       </div>
+
+      <Snackbar
+        key={copyToast.key}
+        open={copyToast.open}
+        autoHideDuration={2000}
+        onClose={() => setCopyToast((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        message={copyToast.message}
+        ContentProps={{ sx: { backgroundColor: "rgba(33, 33, 33, 0.85)" } }}
+        action={
+          <IconButton
+            size="small"
+            color="inherit"
+            onClick={() => setCopyToast((prev) => ({ ...prev, open: false }))}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        }
+      />
     </div>
   );
 }

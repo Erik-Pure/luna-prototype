@@ -354,17 +354,17 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
 
       <div className={styles.contractModernAdditionsWrap}>
         {/* ── Affärsparametrar (info) ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap", padding: "8px 14px", background: "#f4f6fb", border: "1px solid #dfe3ea", borderRadius: 10 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "#6a7483", letterSpacing: "0.2px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", padding: "6px 14px", background: "#f4f6fb", border: "1px solid #dfe3ea", borderRadius: 10 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: "#696969", letterSpacing: "0.2px" }}>
             Affärsparametrar
           </span>
           <Divider orientation="vertical" flexItem style={{ margin: "2px 0" }} />
           {(["frakt", "provision", "bonus", "kassarabatt", "kalkylkurs"] as HeaderEditField[]).map((field) => (
-            <div key={field} style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "flex-start" }}>
+            <div key={field} style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
               <span style={{ fontSize: 11, fontWeight: 500, color: "#6a7483", letterSpacing: "0.3px" }}>
                 {headerEditConfig[field].label}
               </span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: "#2f3743", minWidth: 56, textAlign: "left" }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "#2f3743" }}>
                 {headerEditConfig[field].value}
                 {headerEditConfig[field].unit ? ` ${headerEditConfig[field].unit}` : ""}
               </span>
@@ -411,11 +411,15 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
                   select
                   value={filterTradslag}
                   onChange={(e) => setFilterTradslag(e.target.value)}
-                  sx={{ minWidth: 140 }}
+                  sx={{ minWidth: 140, "& .MuiOutlinedInput-root": { height: 40 } }}
                   slotProps={{
                     select: {
                       endAdornment: filterTradslag ? (
-                        <IconButton size="small" sx={{ mr: 1 }} onMouseDown={(e) => { e.stopPropagation(); setFilterTradslag(""); }}>
+                        <IconButton
+                          size="small"
+                          sx={{ mr: 1, padding: "2px", position: "absolute", right: 24 }}
+                          onMouseDown={(e) => { e.stopPropagation(); setFilterTradslag(""); }}
+                        >
                           <ClearIcon sx={{ fontSize: 14 }} />
                         </IconButton>
                       ) : undefined,
@@ -432,7 +436,7 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
                   value={filterUnderproduktgrupp}
                   onChange={(_e, newValue) => setFilterUnderproduktgrupp(newValue)}
                   disableCloseOnSelect
-                  sx={{ width: 200, flexShrink: 0, "& .MuiAutocomplete-inputRoot": { flexWrap: "nowrap" } }}
+                  sx={{ width: 200, flexShrink: 0, "& .MuiAutocomplete-inputRoot": { flexWrap: "nowrap", height: 40 } }}
                   renderValue={(selectedOptions) => (
                     <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {(selectedOptions as string[]).join(", ")}
@@ -456,7 +460,7 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
                   value={filterPakettyp}
                   onChange={(_e, newValue) => setFilterPakettyp(newValue)}
                   disableCloseOnSelect
-                  sx={{ width: 160, flexShrink: 0, "& .MuiAutocomplete-inputRoot": { flexWrap: "nowrap" } }}
+                  sx={{ width: 160, flexShrink: 0, "& .MuiAutocomplete-inputRoot": { flexWrap: "nowrap", height: 40 } }}
                   renderValue={(selectedOptions) => (
                     <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {(selectedOptions as string[]).join(", ")}
@@ -658,21 +662,22 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 24,
+          gap: 18,
           flexWrap: "wrap",
-          padding: "8px 14px",
+          padding: "6px 14px",
           borderTop: "1px solid #dfe3ea",
           background: "#f9fafb",
           flexShrink: 0,
         }}
       >
-        <span style={{ fontSize: 10, fontWeight: 500, color: "#8a93a3", letterSpacing: "0.2px" }}>
+        <span style={{ fontSize: 10, fontWeight: 600, color: "#696969", letterSpacing: "0.2px" }}>
           Ekonomi sammanställning
         </span>
+        <Divider orientation="vertical" flexItem style={{ margin: "2px 0" }} />
         {footerItems.map((item) => (
-          <div key={item.key} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <span style={{ fontSize: 10, fontWeight: 500, color: "#8a93a3", letterSpacing: "0.1px" }}>{item.label}</span>
-            <span style={{ fontSize: 13, fontWeight: 800, color: "#2f3743" }}>{item.value || "–"} {item.unit}</span>
+          <div key={item.key} style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 500, color: "#6a7483", letterSpacing: "0.1px" }}>{item.label}</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#2f3743" }}>{item.value || "–"} {item.unit}</span>
           </div>
         ))}
       </div>

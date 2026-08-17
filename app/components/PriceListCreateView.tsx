@@ -14,7 +14,6 @@ import {
   FormControlLabel,
   InputAdornment,
   MenuItem,
-  Switch,
   TextField,
   Typography,
 } from "@mui/material";
@@ -131,7 +130,6 @@ export function PriceListCreateView({
 }: PriceListCreateViewProps) {
   const [draft, setDraft] = useState<NewPriceListDraft>(initialDraft ?? emptyDraft);
   const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant", "villkor", "utskrift"]);
-  const [fastTrackEnabled, setFastTrackEnabled] = useState(true);
   const [isEditing, setIsEditing] = useState(true);
   const accordionWrapRef = useRef<HTMLDivElement | null>(null);
 
@@ -147,7 +145,7 @@ export function PriceListCreateView({
     Array.from(container.querySelectorAll<HTMLElement>(`.${styles.lineItemRequiredControl} .MuiInputBase-root`));
 
   const handleFastTrackKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!fastTrackEnabled || event.key !== "Tab") return;
+    if (event.key !== "Enter" || !(event.ctrlKey || event.metaKey)) return;
     const container = accordionWrapRef.current;
     if (!container) return;
     const controls = getFastTrackFocusableElements(container);
@@ -241,25 +239,8 @@ export function PriceListCreateView({
                     <span className={styles.lineItemFastTrackTitle}>Snabbspår</span>
                     <span className={styles.lineItemFastTrackDivider} aria-hidden="true">-</span>
                     <span className={styles.lineItemFastTrackText}>
-                      Tabba endast mellan obligatoriska fält
+                      Tryck Ctrl+Enter för att hoppa mellan obligatoriska fält
                     </span>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
-                      <span style={{ fontSize: "11px", fontWeight: 500, lineHeight: "1.2", color: "#748195" }}>Snabbspår</span>
-                      <Switch
-                        checked={fastTrackEnabled}
-                        onChange={() => setFastTrackEnabled((v) => !v)}
-                        size="medium"
-                        sx={{
-                          '& .MuiSwitch-switchBase.Mui-checked': {
-                            color: '#c47900',
-                            '&:hover': { backgroundColor: 'rgba(196, 121, 0, 0.08)' },
-                          },
-                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                            backgroundColor: '#c47900',
-                          },
-                        }}
-                      />
-                    </div>
                   </div>
                 </div>
               ) : null}

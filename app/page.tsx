@@ -54,7 +54,7 @@ import {
   PriceListRowDetailView,
   PriceListView
 } from "./components/views";
-import { CustomerDetailView, type CustomerDetailData } from "./components/CustomerDetailView";
+import { CustomerDetailView, type CustomerDetailData, requestCustomerFordranTab } from "./components/CustomerDetailView";
 import { CustomerCreateView } from "./components/CustomerCreateView";
 import { PriceListCreateView } from "./components/PriceListCreateView";
 import { AvropsradDetailView } from "./components/contract-tabs/AvropsradDetailView";
@@ -111,7 +111,7 @@ const topMenusBySection: Record<SectionKey, TopMenuItemDef[]> = {
     { slug: "prislistor", label: "Prislistor" },
     { slug: "kontraktlista", label: "Kontraktlista" },
     { slug: "leveranslista", label: "Leveranslista" },
-    { slug: "klar-sok", label: "Klar sök" },
+    { slug: "klar-sok", label: "Luna sök" },
     {
       slug: "e-handel",
       label: "E-handel",
@@ -281,7 +281,8 @@ type TableRow = {
   utlastningssparr?: string;
   tillhor?: string;
   limit?: string;
-  limitStatus?: "ok" | "warning" | "error";
+  limitStatus?: "ok" | "error";
+  forfallenFordran?: "true";
 } & Partial<Record<keyof NewContractDraft, string>>;
 
 type SearchFieldKey =
@@ -459,7 +460,7 @@ const CONTRACT_COLUMN_DEFAULT_WIDTHS: Partial<Record<ColumnKey, number>> = {
   status: 120,
   leveransperiod: 146,
   upprattatAv: 156,
-  limit: 132,
+  limit: 150,
 };
 
 const defaultColumns: ColumnConfig[] = [
@@ -472,13 +473,13 @@ const defaultColumns: ColumnConfig[] = [
     .map(({ key, label }) => ({ key, label, visible: false, pinned: false, width: CONTRACT_COLUMN_DEFAULT_WIDTHS[key] })),
 ];
 
-const LIMIT_DATA: Array<{ limit: string; limitStatus: "ok" | "warning" | "error" }> = [
+const LIMIT_DATA: Array<{ limit: string; limitStatus: "ok" | "error"; forfallenFordran?: boolean }> = [
   { limit: "500 000 SEK", limitStatus: "ok" },
-  { limit: "1 200 000 SEK", limitStatus: "ok" },
+  { limit: "1 200 000 SEK", limitStatus: "ok", forfallenFordran: true },
   { limit: "350 000 SEK", limitStatus: "error" },
-  { limit: "800 000 SEK", limitStatus: "warning" },
+  { limit: "800 000 SEK", limitStatus: "ok" },
   { limit: "2 100 000 SEK", limitStatus: "ok" },
-  { limit: "660 000 SEK", limitStatus: "warning" },
+  { limit: "660 000 SEK", limitStatus: "error", forfallenFordran: true },
 ];
 
 const CONTRACT_IDS = ["163311", "163452", "163518", "163601", "163744", "163890"] as const;
@@ -505,7 +506,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "14",
     priceList: "PL-202600",
     creditLimit: "500 000 SEK",
-    limitStatus: "ok",
+    varningsnivaFordran: "Ingen",
+    varningsnivaLimit: "Ingen",
+    utlastningssparr: "Nej",
     comment: "Strategisk kund med löpande projektleveranser och hög prognosprecision.",
     kortnamn: "ACME",
     tillhor: "Marknad Nord",
@@ -514,7 +517,8 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     skapadAv: "Jane Doe",
     skapad: "2022-01-15 08:45",
     andradAv: "Jane Doe",
-    andrad: "2026-03-10 14:22"
+    andrad: "2026-03-10 14:22",
+    ediDisabled: true
   },
   "Globex Corp": {
     customerNumber: "K-1002",
@@ -528,7 +532,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "9",
     priceList: "PL-202601",
     creditLimit: "1 200 000 SEK",
-    limitStatus: "ok",
+    varningsnivaFordran: "Ingen",
+    varningsnivaLimit: "Ingen",
+    utlastningssparr: "Nej",
     comment: "Kräver engelska dokument och samlad avisering inför varje delleverans.",
     kortnamn: "GLOBEX",
     tillhor: "Marknad Export",
@@ -551,7 +557,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "6",
     priceList: "PL-202602",
     creditLimit: "350 000 SEK",
-    limitStatus: "error",
+    varningsnivaFordran: "Hög",
+    varningsnivaLimit: "Hög",
+    utlastningssparr: "Nej",
     comment: "Limitöverskridande kund. Kontrollera godkännande innan ny order släpps vidare.",
     kortnamn: "INITECH",
     tillhor: "Marknad Export",
@@ -560,7 +568,8 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     skapadAv: "Jane Doe",
     skapad: "2023-03-05 11:30",
     andradAv: "Jane Doe",
-    andrad: "2026-04-02 15:48"
+    andrad: "2026-04-02 15:48",
+    ediDisabled: true
   },
   "Nordic Sten & Mark AB": {
     customerNumber: "K-1004",
@@ -574,7 +583,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "11",
     priceList: "PL-202603",
     creditLimit: "800 000 SEK",
-    limitStatus: "warning",
+    varningsnivaFordran: "Ingen",
+    varningsnivaLimit: "Medium",
+    utlastningssparr: "Nej",
     comment: "Föredrar leveransfönster tisdag till torsdag och avisering senast dagen före.",
     kortnamn: "NSM",
     tillhor: "Marknad Nord",
@@ -583,7 +594,8 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     skapadAv: "Erik Andersson",
     skapad: "2020-09-10 13:00",
     andradAv: "Erik Andersson",
-    andrad: "2025-11-18 10:34"
+    andrad: "2025-11-18 10:34",
+    ediDisabled: true
   },
   "Luna Infrastruktur AB": {
     customerNumber: "K-1005",
@@ -596,9 +608,11 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     phone: "060-220 45 10",
     activeContracts: "18",
     priceList: "PL-202604",
-    creditLimit: "2 100 000 SEK",
-    limitStatus: "ok",
-    comment: "Stor kund med flera parallella projekt. Samordna prislista och kontraktsförlängningar.",
+    creditLimit: "1 300 000 SEK",
+    varningsnivaFordran: "Ingen",
+    varningsnivaLimit: "Hög",
+    utlastningssparr: "Nej",
+    comment: "Limitöverskridande kund. Stor kund med flera parallella projekt, samordna prislista och kontraktsförlängningar.",
     kortnamn: "LUNA",
     tillhor: "Marknad Nord",
     giltiFran: "2019-01-01",
@@ -620,7 +634,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "7",
     priceList: "PL-202605",
     creditLimit: "660 000 SEK",
-    limitStatus: "warning",
+    varningsnivaFordran: "Låg",
+    varningsnivaLimit: "Medium",
+    utlastningssparr: "Nej",
     comment: "Kund med tät uppföljning på leveransprecision och månatlig avstämning av limit.",
     kortnamn: "SKIS",
     tillhor: "Marknad Export",
@@ -643,7 +659,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "3",
     priceList: "PL-202606",
     creditLimit: "250 000 SEK",
-    limitStatus: "error",
+    varningsnivaFordran: "Ingen",
+    varningsnivaLimit: "Ingen",
+    utlastningssparr: "Ja",
     comment: "Utlastningsspärr aktiv. Kunden är aktiv framför allt under Q2–Q3.",
     kortnamn: "BJEK",
     tillhor: "Marknad Syd",
@@ -666,7 +684,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "5",
     priceList: "PL-202607",
     creditLimit: "400 000 SEK",
-    limitStatus: "ok",
+    varningsnivaFordran: "Ingen",
+    varningsnivaLimit: "Ingen",
+    utlastningssparr: "Nej",
     comment: "Stabil betalningshistorik och oregelbundet köpmönster.",
     kortnamn: "GGRU",
     tillhor: "Marknad Syd",
@@ -689,7 +709,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "2",
     priceList: "PL-202608",
     creditLimit: "150 000 SEK",
-    limitStatus: "error",
+    varningsnivaFordran: "Ingen",
+    varningsnivaLimit: "Ingen",
+    utlastningssparr: "Ja",
     comment: "Kund pausad och utlastningsspärr aktiv. Kontaktas Q1 2027.",
     kortnamn: "NORTR",
     tillhor: "Marknad Nord",
@@ -712,7 +734,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "8",
     priceList: "PL-202609",
     creditLimit: "600 000 SEK",
-    limitStatus: "ok",
+    varningsnivaFordran: "Ingen",
+    varningsnivaLimit: "Ingen",
+    utlastningssparr: "Nej",
     comment: "Bra betalningshistorik. EDI-faktura aktiverat 2025.",
     kortnamn: "BHS",
     tillhor: "Marknad Syd",
@@ -735,7 +759,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "4",
     priceList: "PL-202610",
     creditLimit: "300 000 SEK",
-    limitStatus: "ok",
+    varningsnivaFordran: "Ingen",
+    varningsnivaLimit: "Ingen",
+    utlastningssparr: "Nej",
     comment: "Regelbundet köpmönster, inga avvikelser noterade.",
     kortnamn: "TIMHU",
     tillhor: "Marknad Nord",
@@ -758,7 +784,9 @@ const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
     activeContracts: "12",
     priceList: "PL-202611",
     creditLimit: "900 000 SEK",
-    limitStatus: "ok",
+    varningsnivaFordran: "Ingen",
+    varningsnivaLimit: "Ingen",
+    utlastningssparr: "Nej",
     comment: "Exportkund. EDI-faktura via PEPPOL.",
     kortnamn: "BLTB",
     tillhor: "Marknad Export",
@@ -779,12 +807,15 @@ function decodePathSegment(segment: string): string {
   }
 }
 
-const tableRows: TableRow[] = Array.from({ length: 6 }).map((_, idx) => ({
+const tableRows: TableRow[] = Array.from({ length: 6 }).map((_, idx) => {
+  const customerName = CONTRACT_CUSTOMERS[idx % CONTRACT_CUSTOMERS.length];
+  const customerDetail = CUSTOMER_DETAILS[customerName];
+  return {
   kontrakt: CONTRACT_IDS[idx % CONTRACT_IDS.length],
   externNr: `2026/${String(idx + 1).padStart(2, "0")} REG ${idx + 2}`,
   belopp: `${(26651 + idx * 7450).toLocaleString("sv-SE")}`,
   artNr: `22${120 + idx}`,
-  kund: CONTRACT_CUSTOMERS[idx % CONTRACT_CUSTOMERS.length],
+  kund: customerName,
   land: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
   kontraktsdatum: `2026-0${(idx % 5) + 1}-0${(idx % 7) + 1}`,
   giltigTom: `2026-12-${String(10 + idx).padStart(2, "0")}`,
@@ -799,9 +830,10 @@ const tableRows: TableRow[] = Array.from({ length: 6 }).map((_, idx) => ({
   prislistaNr: `PL-${202600 + idx}`,
   utlastningssparr: idx % 4 === 0 ? "Ja" : "Nej",
   tillhor: idx % 2 === 0 ? "Marknad Nord" : "Marknad Syd",
-  limit: LIMIT_DATA[idx % LIMIT_DATA.length].limit,
-  limitStatus: LIMIT_DATA[idx % LIMIT_DATA.length].limitStatus,
-  customer: CONTRACT_CUSTOMERS[idx % CONTRACT_CUSTOMERS.length],
+  limit: customerDetail?.creditLimit ?? LIMIT_DATA[idx % LIMIT_DATA.length].limit,
+  limitStatus: customerDetail?.varningsnivaLimit === "Hög" ? "error" : "ok",
+  forfallenFordran: customerDetail?.varningsnivaFordran === "Hög" ? "true" : undefined,
+  customer: customerName,
   createdBy: idx % 2 === 0 ? "Jane Doe" : "Erik Andersson",
   contractDate: `2026-0${(idx % 5) + 1}-0${(idx % 7) + 1}`,
   language: idx % 2 === 0 ? "Svenska" : "English",
@@ -850,7 +882,8 @@ const tableRows: TableRow[] = Array.from({ length: 6 }).map((_, idx) => ({
   unloadingHours: "07:00-16:00",
   notificationPhone: "070-000 00 00",
   notificationInfo: "Avisera 24h innan leverans",
-}));
+  };
+});
 
 const LINE_ITEM_CREATE_FIELD_COLUMNS: Array<{ key: keyof NewLineItemDraft; label: string }> = [
   { key: "senderCompany", label: "Säljande bolag" },
@@ -1043,7 +1076,11 @@ type CustomerColumnConfig = {
 
 type CustomerSearchValueMap = Record<CustomerSearchFieldKey, string | string[] | boolean>;
 
-type CustomerRow = Record<CustomerColumnKey, string>;
+type CustomerRow = Record<CustomerColumnKey, string> & {
+  varningsnivaFordran?: "Ingen" | "Låg" | "Medium" | "Hög";
+  varningsnivaLimit?: "Ingen" | "Låg" | "Medium" | "Hög";
+  limitChipDisplay?: "text" | "belopp";
+};
 
 const defaultCustomerSearchFields: CustomerSearchFieldConfig[] = [
   { key: "kundnr", label: "Kundnr", control: "text", visible: true, favorite: true },
@@ -1123,7 +1160,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "125 000", kreditforsakring: "500 000", internLimit: "750 000",
     internLimitTom: "2026-12-31", limit: "500 000", omsattning2025: "2 340 000",
     omsattning2026: "1 890 000", kundgrupp: "A", kategori: "Bygghandel",
-    kopmonster: "Regelbunden", kommentarSaljare: "Strategisk kund med löpande projektleveranser."
+    kopmonster: "Regelbunden", kommentarSaljare: "Strategisk kund med löpande projektleveranser.",
+    varningsnivaFordran: "Ingen", varningsnivaLimit: "Ingen"
   },
   {
     kundnr: "K-1002", kundansvarig: "Erik Andersson", kontrakt12Man: "9",
@@ -1133,7 +1171,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "340 000", kreditforsakring: "1 200 000", internLimit: "1 500 000",
     internLimitTom: "2027-06-30", limit: "1 200 000", omsattning2025: "4 120 000",
     omsattning2026: "3 880 000", kundgrupp: "A", kategori: "Industri",
-    kopmonster: "Regelbunden", kommentarSaljare: "Kräver engelska dokument och samlad avisering."
+    kopmonster: "Regelbunden", kommentarSaljare: "Kräver engelska dokument och samlad avisering.",
+    varningsnivaFordran: "Ingen", varningsnivaLimit: "Ingen"
   },
   {
     kundnr: "K-1003", kundansvarig: "Jane Doe", kontrakt12Man: "6",
@@ -1143,7 +1182,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "410 000", kreditforsakring: "350 000", internLimit: "400 000",
     internLimitTom: "2026-06-30", limit: "350 000", omsattning2025: "980 000",
     omsattning2026: "760 000", kundgrupp: "B", kategori: "Bygghandel",
-    kopmonster: "Oregelbunden", kommentarSaljare: "Limitöverskridande. Kräver godkännande."
+    kopmonster: "Oregelbunden", kommentarSaljare: "Limitöverskridande. Kräver godkännande.",
+    varningsnivaFordran: "Hög", varningsnivaLimit: "Hög"
   },
   {
     kundnr: "K-1004", kundansvarig: "Erik Andersson", kontrakt12Man: "11",
@@ -1153,7 +1193,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "210 000", kreditforsakring: "800 000", internLimit: "1 000 000",
     internLimitTom: "2026-12-31", limit: "800 000", omsattning2025: "3 450 000",
     omsattning2026: "2 970 000", kundgrupp: "A", kategori: "Bygghandel",
-    kopmonster: "Regelbunden", kommentarSaljare: "Föredrar leveransfönster tisdag–torsdag."
+    kopmonster: "Regelbunden", kommentarSaljare: "Föredrar leveransfönster tisdag–torsdag.",
+    varningsnivaFordran: "Ingen", varningsnivaLimit: "Medium"
   },
   {
     kundnr: "K-1005", kundansvarig: "Jane Doe", kontrakt12Man: "18",
@@ -1161,9 +1202,10 @@ const customerTableRows: CustomerRow[] = [
     adress: "Norrmalmsvägen 44", postadress: "852 30 Sundsvall", telefon: "060-220 45 10",
     aktiv: "Ja", tillhor: "Marknad Nord", utlastningssparr: "Nej", ediFaktura: "Ja",
     fordran: "80 000", kreditforsakring: "2 100 000", internLimit: "2 500 000",
-    internLimitTom: "2027-03-31", limit: "2 100 000", omsattning2025: "7 800 000",
+    internLimitTom: "2027-03-31", limit: "1 300 000", omsattning2025: "7 800 000",
     omsattning2026: "6 450 000", kundgrupp: "A", kategori: "Industri",
-    kopmonster: "Regelbunden", kommentarSaljare: "Stor kund med parallella projekt."
+    kopmonster: "Regelbunden", kommentarSaljare: "Limitöverskridande. Stor kund med parallella projekt.",
+    varningsnivaFordran: "Ingen", varningsnivaLimit: "Hög", limitChipDisplay: "belopp"
   },
   {
     kundnr: "K-1006", kundansvarig: "Erik Andersson", kontrakt12Man: "7",
@@ -1173,7 +1215,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "520 000", kreditforsakring: "660 000", internLimit: "700 000",
     internLimitTom: "2026-12-31", limit: "660 000", omsattning2025: "2 100 000",
     omsattning2026: "1 750 000", kundgrupp: "B", kategori: "Industri",
-    kopmonster: "Regelbunden", kommentarSaljare: "Månatlig avstämning av limit och leveransprecision."
+    kopmonster: "Regelbunden", kommentarSaljare: "Månatlig avstämning av limit och leveransprecision.",
+    varningsnivaFordran: "Låg", varningsnivaLimit: "Medium"
   },
   {
     kundnr: "K-1007", kundansvarig: "Maria Lindqvist", kontrakt12Man: "3",
@@ -1183,7 +1226,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "45 000", kreditforsakring: "250 000", internLimit: "300 000",
     internLimitTom: "2026-09-30", limit: "250 000", omsattning2025: "620 000",
     omsattning2026: "540 000", kundgrupp: "C", kategori: "Bygghandel",
-    kopmonster: "Säsongsbetonad", kommentarSaljare: "Aktiv framför allt under Q2–Q3."
+    kopmonster: "Säsongsbetonad", kommentarSaljare: "Aktiv framför allt under Q2–Q3.",
+    varningsnivaFordran: "Ingen", varningsnivaLimit: "Ingen"
   },
   {
     kundnr: "K-1008", kundansvarig: "Maria Lindqvist", kontrakt12Man: "5",
@@ -1193,7 +1237,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "90 000", kreditforsakring: "400 000", internLimit: "450 000",
     internLimitTom: "2026-12-31", limit: "400 000", omsattning2025: "1 240 000",
     omsattning2026: "1 080 000", kundgrupp: "B", kategori: "Bygghandel",
-    kopmonster: "Oregelbunden", kommentarSaljare: ""
+    kopmonster: "Oregelbunden", kommentarSaljare: "",
+    varningsnivaFordran: "Ingen", varningsnivaLimit: "Ingen"
   },
   {
     kundnr: "K-1009", kundansvarig: "Jane Doe", kontrakt12Man: "2",
@@ -1203,7 +1248,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "0", kreditforsakring: "150 000", internLimit: "200 000",
     internLimitTom: "2025-12-31", limit: "150 000", omsattning2025: "310 000",
     omsattning2026: "0", kundgrupp: "C", kategori: "Sågverk",
-    kopmonster: "Oregelbunden", kommentarSaljare: "Kund pausad. Kontaktas Q1 2027."
+    kopmonster: "Oregelbunden", kommentarSaljare: "Kund pausad. Kontaktas Q1 2027.",
+    varningsnivaFordran: "Ingen", varningsnivaLimit: "Ingen"
   },
   {
     kundnr: "K-1010", kundansvarig: "Erik Andersson", kontrakt12Man: "8",
@@ -1213,7 +1259,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "165 000", kreditforsakring: "600 000", internLimit: "650 000",
     internLimitTom: "2026-12-31", limit: "600 000", omsattning2025: "2 890 000",
     omsattning2026: "2 540 000", kundgrupp: "A", kategori: "Bygghandel",
-    kopmonster: "Regelbunden", kommentarSaljare: "Bra betalningshistorik. EDI aktiverat 2025."
+    kopmonster: "Regelbunden", kommentarSaljare: "Bra betalningshistorik. EDI aktiverat 2025.",
+    varningsnivaFordran: "Ingen", varningsnivaLimit: "Ingen"
   },
   {
     kundnr: "K-1011", kundansvarig: "Maria Lindqvist", kontrakt12Man: "4",
@@ -1223,7 +1270,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "55 000", kreditforsakring: "300 000", internLimit: "350 000",
     internLimitTom: "2026-09-30", limit: "300 000", omsattning2025: "780 000",
     omsattning2026: "690 000", kundgrupp: "B", kategori: "Bygghandel",
-    kopmonster: "Regelbunden", kommentarSaljare: ""
+    kopmonster: "Regelbunden", kommentarSaljare: "",
+    varningsnivaFordran: "Ingen", varningsnivaLimit: "Ingen"
   },
   {
     kundnr: "K-1012", kundansvarig: "Jane Doe", kontrakt12Man: "12",
@@ -1233,7 +1281,8 @@ const customerTableRows: CustomerRow[] = [
     fordran: "280 000", kreditforsakring: "900 000", internLimit: "1 000 000",
     internLimitTom: "2027-12-31", limit: "900 000", omsattning2025: "3 200 000",
     omsattning2026: "2 980 000", kundgrupp: "A", kategori: "Bygghandel",
-    kopmonster: "Regelbunden", kommentarSaljare: "Exportkund. EDI faktura via PEPPOL."
+    kopmonster: "Regelbunden", kommentarSaljare: "Exportkund. EDI faktura via PEPPOL.",
+    varningsnivaFordran: "Ingen", varningsnivaLimit: "Ingen"
   },
 ];
 
@@ -2498,6 +2547,11 @@ export default function Home() {
 
   const getCustomerDetailHref = (customerName: string) => `/marknad/kundlista/${encodeURIComponent(customerName)}`;
 
+  const openCustomerFordran = (customerName: string) => {
+    requestCustomerFordranTab();
+    navigateWithLoading(`${getCustomerDetailHref(customerName)}#fordran`);
+  };
+
   const openLineItemDetail = (lineItemId: string) => {
     setActiveContractTab("Kontraktsrader");
     setActiveLineItemTab("Nettolager");
@@ -2644,7 +2698,7 @@ export default function Home() {
     }
 
     if (isPriceListRowDetailOpen && selectedPriceRowId) {
-      return isCreatingPriceRow ? "Ny prislistrad" : `Prislistrad ${selectedPriceRowId}`;
+      return isCreatingPriceRow ? "Ny prislisterad" : `Prislisterad ${selectedPriceRowId}`;
     }
 
     if (isCreatingPriceList) {
@@ -2844,6 +2898,7 @@ export default function Home() {
             getCellValue={(row, columnKey) => getCellValue(row as TableRow, columnKey as ColumnKey)}
             onOpenContractDetail={openContractDetail}
             getCustomerDetailHref={getCustomerDetailHref}
+            onOpenCustomerFordran={openCustomerFordran}
             isLineColumnsMenuOpen={isLineColumnsMenuOpen}
             draftLineColumns={draftLineColumns}
             lineColumnsMenuRef={lineColumnsMenuRef}
@@ -2973,6 +3028,7 @@ export default function Home() {
             />
           ) : (
             <ContractDetailView
+              key={selectedContractId}
               isLineItemDetailOpen={isLineItemDetailOpen}
               selectedLineItemId={selectedLineItemId}
               newLineItemDraftVersion={newLineItemDraftVersion}
@@ -3009,6 +3065,7 @@ export default function Home() {
               onOpenContainer={openContainerView}
               onCreateAvropsrad={openNewAvropsrad}
               onOpenAvropsrad={openAvropsradDetail}
+              onCancelNewContract={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}`)}
             />
           )
         ) : isSaljstodPage ? (
@@ -3115,7 +3172,6 @@ export default function Home() {
                     size="small"
                     color="inherit"
                     className={styles.lineItemsToggleButton}
-                    onClick={() => navigateWithLoading("/marknad/leveranslista")}
                   >
                     Till lagerlista
                   </Button>

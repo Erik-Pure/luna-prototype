@@ -19,6 +19,11 @@ import {
   Button,
   Checkbox,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
   FormControl,
   FormControlLabel,
   IconButton,
@@ -28,8 +33,8 @@ import {
   Paper,
   Select,
   Stack,
-  Switch,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useRef, useState } from "react";
@@ -138,14 +143,19 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
   const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant", "dokument"]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [fastTrackEnabled, setFastTrackEnabled] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const accordionWrapRef = useRef<HTMLDivElement | null>(null);
+
+  const handleDeleteConfirm = () => {
+    setIsDeleteDialogOpen(false);
+    onClose?.();
+  };
 
   const getFastTrackFocusableElements = (container: HTMLElement) =>
     Array.from(container.querySelectorAll<HTMLElement>(`.${styles.lineItemRequiredControl} .MuiInputBase-root`));
 
   const handleFastTrackKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!fastTrackEnabled || event.key !== "Tab") return;
+    if (event.key !== "Enter" || !(event.ctrlKey || event.metaKey)) return;
     const container = accordionWrapRef.current;
     if (!container) return;
     const controls = getFastTrackFocusableElements(container);
@@ -173,7 +183,7 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
       ...prev,
       {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        name: `prislistrad_dokument_${prev.length + 1}.pdf`,
+        name: `prislisterad_dokument_${prev.length + 1}.pdf`,
         addedAt: new Date(),
       },
     ]);
@@ -191,7 +201,7 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
       <div className={styles.contractModernTopRow}>
         <div className={styles.contractModernTitleWrap}>
           <Typography className={styles.contractModernTitle}>
-            {isNewPriceRow ? "Ny prislistrad" : `Prislistrad ${priceRowId}`}
+            {isNewPriceRow ? "Ny prislisterad" : `Prislisterad ${priceRowId}`}
           </Typography>
         </div>
         <div className={styles.contractModernTopActions}>
@@ -202,7 +212,7 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
                 size="small"
                 onClick={() => { setSavedDraft(draft); setIsEditing(false); }}
               >
-                {isNewPriceRow ? "Skapa prislistrad" : "Spara"}
+                {isNewPriceRow ? "Skapa prislisterad" : "Spara"}
               </Button>
               <Button
                 className={styles.contractQuickActionButton}
@@ -227,6 +237,21 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
                   Stäng
                 </Button>
               )}
+              {!isNewPriceRow && (
+                <>
+                  <Divider orientation="vertical" flexItem style={{ margin: "4px 0" }} />
+                  <Tooltip title="Ta bort">
+                    <IconButton
+                      size="small"
+                      className={styles.contractHeaderDotsButton}
+                      aria-label="Ta bort prislisterad"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                      <DeleteOutlineOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </>
+              )}
             </>
           )}
         </div>
@@ -247,19 +272,7 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
               <div className={styles.lineItemFastTrackMain}>
                 <span className={styles.lineItemFastTrackTitle}>Snabbspår</span>
                 <span className={styles.lineItemFastTrackDivider} aria-hidden="true">-</span>
-                <span className={styles.lineItemFastTrackText}>Tabba endast mellan obligatoriska fält</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
-                  <span style={{ fontSize: 11, fontWeight: 500, lineHeight: "1.2", color: "#748195" }}>Snabbspår</span>
-                  <Switch
-                    checked={fastTrackEnabled}
-                    onChange={() => setFastTrackEnabled((v) => !v)}
-                    size="medium"
-                    sx={{
-                      "& .MuiSwitch-switchBase.Mui-checked": { color: "#c47900", "&:hover": { backgroundColor: "rgba(196,121,0,0.08)" } },
-                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#c47900" },
-                    }}
-                  />
-                </div>
+                <span className={styles.lineItemFastTrackText}>Tryck Ctrl+Enter för att hoppa mellan obligatoriska fält</span>
               </div>
             </div>
 
@@ -541,6 +554,23 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
           </div>
         </div>
       </div >
+
+      <Dialog open={isDeleteDialogOpen} onClose={() => setIsDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle fontSize={16}>Ta bort prislisterad</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" lineHeight={1} marginBottom={0}>
+            Vill du ta bort prislisterad {priceRowId}? Åtgärden går inte att ångra.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ margin: "0 12px 12px 0" }}>
+          <Button color="error" variant="contained" onClick={handleDeleteConfirm} sx={{ textTransform: "none" }}>
+            Ta bort
+          </Button>
+          <Button variant="outlined" color="inherit" onClick={() => setIsDeleteDialogOpen(false)} sx={{ textTransform: "none" }}>
+            Avbryt
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

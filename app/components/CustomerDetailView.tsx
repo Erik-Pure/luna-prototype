@@ -13,6 +13,7 @@ import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SyncAltOutlinedIcon from "@mui/icons-material/SyncAlt";
+import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
 import {
   Accordion,
   AccordionDetails,
@@ -38,6 +39,8 @@ import { FordranTab } from "./customer-tabs/FordranTab";
 import { KontaktloggTab } from "./customer-tabs/KontaktloggTab";
 import { KontaktpersonerTab } from "./customer-tabs/KontaktpersonerTab";
 import { LeveransTab } from "./customer-tabs/LeveransTab";
+import { getCustomerWarnings, type CustomerWarning } from "./shared/customerWarnings";
+import { SectionQuickNav, scrollSectionIntoView, type QuickNavSection } from "./shared/SectionQuickNav";
 
 export type CustomerDetailData = {
   customerNumber: string;
@@ -51,7 +54,9 @@ export type CustomerDetailData = {
   activeContracts: string;
   priceList: string;
   creditLimit: string;
-  limitStatus: "ok" | "warning" | "error";
+  varningsnivaFordran: "Ingen" | "Låg" | "Medium" | "Hög";
+  varningsnivaLimit: "Ingen" | "Låg" | "Medium" | "Hög";
+  utlastningssparr: "Ja" | "Nej";
   comment: string;
   kortnamn: string;
   tillhor: string;
@@ -61,6 +66,7 @@ export type CustomerDetailData = {
   skapad: string;
   andradAv: string;
   andrad: string;
+  ediDisabled?: boolean;
 };
 
 const customerTabs = [
@@ -73,6 +79,14 @@ const customerTabs = [
 ] as const;
 
 type CustomerTab = (typeof customerTabs)[number];
+
+// Set just before navigating here so the requested tab wins even when the
+// hash hasn't reached window.location yet at mount time (SPA navigation).
+let _pendingCustomerDetailTab: CustomerTab | null = null;
+
+export function requestCustomerFordranTab() {
+  _pendingCustomerDetailTab = "Fordran";
+}
 
 type CustomerDraft = {
   // Allmänt
@@ -213,6 +227,12 @@ type CustomerDetailViewProps = {
 const MIN_SECTIONS_PANEL_WIDTH = 220;
 const MAX_SECTIONS_PANEL_WIDTH = 900;
 
+const CUSTOMER_SECTIONS: QuickNavSection[] = [
+  { key: "allmant", label: "Allmänt" },
+  { key: "kontakt", label: "Kontaktuppgifter" },
+  { key: "villkor", label: "Villkor" },
+];
+
 
 function buildCustomerDraftFromDetail(detail: CustomerDetailData | null, customerName: string): CustomerDraft {
   if (!detail) {
@@ -234,13 +254,43 @@ function buildCustomerDraftFromDetail(detail: CustomerDetailData | null, custome
 }
 
 export function CustomerDetailView({ customerName, detail }: CustomerDetailViewProps) {
-  const [activeTab, setActiveTab] = useState<CustomerTab>("Kontaktpersoner");
+  const [activeTab, setActiveTab] = useState<CustomerTab>(() => {
+    if (_pendingCustomerDetailTab) {
+      const pendingTab = _pendingCustomerDetailTab;
+      _pendingCustomerDetailTab = null;
+      return pendingTab;
+    }
+    return typeof window !== "undefined" && window.location.hash === "#fordran" ? "Fordran" : "Kontaktpersoner";
+  });
+  const disabledTabs = new Set<CustomerTab>(detail?.ediDisabled ? ["EDI"] : []);
   const [draft, setDraft] = useState<CustomerDraft>(() => buildCustomerDraftFromDetail(detail, customerName));
   const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
   const [sectionsPanelWidth, setSectionsPanelWidth] = useState<number | null>(null);
   const [expandedDialogOpen, setExpandedDialogOpen] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const draftSnapshotRef = useRef<CustomerDraft | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    () => new Set(CUSTOMER_SECTIONS.map((section) => section.key))
+  );
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const sectionsHeaderRef = useRef<HTMLDivElement | null>(null);
+
+  const toggleSection = (key: string, isExpanded: boolean) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (isExpanded) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
+
+  const jumpToSection = (key: string) => {
+    setExpandedSections((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
+    requestAnimationFrame(() => {
+      const target = sectionRefs.current[key];
+      if (target) scrollSectionIntoView(target, sectionsHeaderRef.current);
+    });
+  };
 
   const isWide = useSyncExternalStore(
     (cb) => {
@@ -287,7 +337,11 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
   const set = (key: keyof CustomerDraft, value: string | boolean) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
 
-  const hasLimitExceeded = detail?.limitStatus === "error";
+  const warnings = detail ? getCustomerWarnings(detail) : [];
+  const warningChipClass: Record<CustomerWarning["type"], string> = {
+    Limit: styles.limitErrorChip,
+    Fordran: styles.limitWarningChip,
+  };
 
   return (
     <div className={styles.contractDetailPanel}>
@@ -300,424 +354,456 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
           onCancel={() => setExpandedDialogOpen(false)}
         />
       ) : (
-      <>
-      {/* ── Header ── */}
-      <div className={styles.contractModernTopRow}>
-        <div className={styles.contractModernTitleWrap}>
-          <Typography className={styles.contractModernTitle}>{customerName}</Typography>
-          {hasLimitExceeded ? (
-            <Chip
-              label="Kunden har överskriden limit"
-              size="small"
-              color="error"
-              style={{ marginLeft: 8, fontWeight: 500, padding: "0 4px" }}
-            />
-          ) : null}
-        </div>
-        <div className={styles.contractModernTopActions}>
-          <Button className={styles.contractQuickActionButton} size="small" startIcon={<AccountBoxOutlinedIcon fontSize="small" />}>
-            Kundkort
-          </Button>
-          <Button className={styles.contractQuickActionButton} size="small" startIcon={<FormatListBulletedOutlinedIcon fontSize="small" />}>
-            Restorderlista
-          </Button>
-          <Button className={styles.contractQuickActionButton} size="small" startIcon={<SyncAltOutlinedIcon fontSize="small" />}>
-            Överför till Visma
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Body layout ── */}
-      <div className={`${styles.contractBodyLayout} ${isWide ? styles.contractBodyLayoutWide : ""}`}>
-
-        {/* ── Sections panel (right on wide / top on narrow) ── */}
-        <div
-          className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : ""} ${isExtraWide && !sectionsPanelWidth && !isSectionsPanelCollapsed ? styles.contractBodySectionsColExtraWide : ""} ${isSectionsPanelCollapsed ? styles.contractBodySectionsColCollapsed : ""}`}
-          style={isWide && sectionsPanelWidth && !isSectionsPanelCollapsed ? { width: sectionsPanelWidth, maxWidth: sectionsPanelWidth } : undefined}
-        >
-          {isWide && !isSectionsPanelCollapsed ? (
-            <div className={styles.contractSectionsResizeHandle} onMouseDown={startResizeSections} />
-          ) : null}
-
-          <div className={styles.contractSectionsPanelHeader}>
-            <div className={styles.contractSectionsPanelTitleRow} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
-              {!isSectionsPanelCollapsed ? (
-                <Typography className={styles.contractSectionsPanelTitle}>Kundinformation</Typography>
-              ) : null}
-              <Tooltip title={isSectionsPanelCollapsed ? "Expandera kundpanel" : "Minimera kundpanel"}>
-                <IconButton
-                  size="small"
-                  className={styles.contractSectionsPanelMinimizeBtn}
-                  onClick={() => setIsSectionsPanelCollapsed((v) => !v)}
-                >
-                  <MenuOpenIcon fontSize="small" style={isSectionsPanelCollapsed ? { transform: "scaleX(1)" } : { transform: "scaleX(-1)" }} />
-                </IconButton>
-              </Tooltip>
-            </div>
-            {!isSectionsPanelCollapsed ? (
-              <div className={styles.contractSectionsPanelHeaderActionsRow}>
-                {isEditingInfo ? (
-                  <>
-                    <Button
-                      size="small"
-                      className={styles.freightSaveButton}
-                      onClick={() => setIsEditingInfo(false)}
-                    >
-                      Spara
-                    </Button>
-                    <Button
-                      size="small"
-                      className={styles.freightCancelButton}
-                      onClick={() => {
-                        if (draftSnapshotRef.current) setDraft(draftSnapshotRef.current);
-                        setIsEditingInfo(false);
-                      }}
-                    >
-                      Avbryt
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    size="small"
-                    className={styles.contractSaveButton}
-                    startIcon={<EditOutlinedIcon fontSize="small" />}
-                    onClick={() => {
-                      draftSnapshotRef.current = draft;
-                      setIsEditingInfo(true);
-                    }}
-                  >
-                    Redigera
-                  </Button>
-                )}
-                <Divider orientation="vertical" flexItem style={{ margin: "4px 0" }} />
-                <Tooltip title="Redigera i formulär">
-                  <Button
-                    size="small"
-                    className={styles.contractHeaderDotsButton}
-                    onClick={() => setExpandedDialogOpen(true)}
-                    style={{ minWidth: 0 }}
-                  >
-                    <EditNoteOutlinedIcon fontSize="small" />
-                  </Button>
-                </Tooltip>
-                {isWide ? (
-                  <Tooltip title={isSectionsPanelMaxWidth ? "Återställ panelbredd" : "Maximera panelbredd"}>
-                    <Button
-                      size="small"
-                      className={styles.contractHeaderDotsButton}
-                      onClick={toggleSectionsPanelWidth}
-                      style={{ minWidth: 0 }}
-                    >
-                      {isSectionsPanelMaxWidth ? (
-                        <KeyboardDoubleArrowRightIcon fontSize="small" />
-                      ) : (
-                        <KeyboardDoubleArrowLeftIcon fontSize="small" />
-                      )}
-                    </Button>
-                  </Tooltip>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          {!isSectionsPanelCollapsed ? (
-            <>
-              {/* ── Allmänt ── */}
-              <Accordion defaultExpanded disableGutters elevation={0} className={styles.contractSectionAccordion}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
-                  <span className={styles.contractSectionTitleRow}>
-                    <InfoOutlinedIcon className={styles.contractSectionIcon} />
-                    <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
-                  </span>
-                </AccordionSummary>
-                <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                  <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField select fullWidth size="small" label="Kategori" value={draft.kategori} onChange={(e) => set("kategori", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Bygghandel">Bygghandel</MenuItem>
-                      <MenuItem value="Industri">Industri</MenuItem>
-                      <MenuItem value="Sågverk">Sågverk</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Språk" value={draft.sprak} onChange={(e) => set("sprak", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Svenska">Svenska</MenuItem>
-                      <MenuItem value="English">English</MenuItem>
-                      <MenuItem value="Norsk">Norsk</MenuItem>
-                      <MenuItem value="Suomi">Suomi</MenuItem>
-                      <MenuItem value="Dansk">Dansk</MenuItem>
-                    </TextField>
-                    <TextField fullWidth size="small" label="Orgnr/Personnr" value={draft.orgnr} onChange={(e) => set("orgnr", e.target.value)} />
-                    <TextField fullWidth size="small" label="VATnr" value={draft.vatnr} onChange={(e) => set("vatnr", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end"><IconButton size="small" edge="end"><OpenInNewIcon style={{ fontSize: 15 }} /></IconButton></InputAdornment> } }} />
-                    <TextField fullWidth size="small" label="Nordek kundNr" value={draft.nordekKundNr} onChange={(e) => set("nordekKundNr", e.target.value)} />
-                    <TextField fullWidth size="small" label="Controlled Wood Code" value={draft.controlledWoodCode} onChange={(e) => set("controlledWoodCode", e.target.value)} />
-                    <TextField fullWidth size="small" label="CW Code giltig t.o.m" type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.cwCodeGiltigTom} onChange={(e) => set("cwCodeGiltigTom", e.target.value)} />
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Identifierare</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField fullWidth size="small" label="EORInr" value={draft.eorInr} onChange={(e) => set("eorInr", e.target.value)} />
-                    <TextField fullWidth size="small" label="Kedjans kundnr" value={draft.kedjansKundnr} onChange={(e) => set("kedjansKundnr", e.target.value)} />
-                    <TextField fullWidth size="small" label="KVK" value={draft.kvk} onChange={(e) => set("kvk", e.target.value)} />
-                    <TextField fullWidth size="small" label="Maersk kundnr" value={draft.maerskKundNr} onChange={(e) => set("maerskKundNr", e.target.value)} />
-                    <TextField fullWidth size="small" label="Medlemsnummer" value={draft.medlemsnummer} onChange={(e) => set("medlemsnummer", e.target.value)} />
-                    <TextField fullWidth size="small" label="NTN" value={draft.ntn} onChange={(e) => set("ntn", e.target.value)} />
-                    <TextField fullWidth size="small" label="PRI identitet" value={draft.priIdentitet} onChange={(e) => set("priIdentitet", e.target.value)} />
-                    <TextField fullWidth size="small" label="USCI" value={draft.usci} onChange={(e) => set("usci", e.target.value)} />
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Ansvar &amp; klassificering</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField select fullWidth size="small" label="Kundansvarig" value={draft.kundansvarig} onChange={(e) => set("kundansvarig", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Jane Doe">Jane Doe</MenuItem>
-                      <MenuItem value="Erik Andersson">Erik Andersson</MenuItem>
-                      <MenuItem value="Maria Lindqvist">Maria Lindqvist</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Säljare/innesäljare" value={draft.saljareInnesaljare} onChange={(e) => set("saljareInnesaljare", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Jane Doe">Jane Doe</MenuItem>
-                      <MenuItem value="Erik Andersson">Erik Andersson</MenuItem>
-                      <MenuItem value="Maria Lindqvist">Maria Lindqvist</MenuItem>
-                      <MenuItem value="Oskar Berg">Oskar Berg</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Kundgrupp" value={draft.kundgrupp} onChange={(e) => set("kundgrupp", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="A">A</MenuItem>
-                      <MenuItem value="B">B</MenuItem>
-                      <MenuItem value="C">C</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Köpmönster" value={draft.kopmonster} onChange={(e) => set("kopmonster", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Regelbunden">Regelbunden</MenuItem>
-                      <MenuItem value="Oregelbunden">Oregelbunden</MenuItem>
-                      <MenuItem value="Säsongsbetonad">Säsongsbetonad</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Leverantör" value={draft.leverantor} onChange={(e) => set("leverantor", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Nordic Agent AB">Nordic Agent AB</MenuItem>
-                      <MenuItem value="Baltic Trade AB">Baltic Trade AB</MenuItem>
-                    </TextField>
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Leveransfönster</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField fullWidth size="small" label="Lev.fönster före" type="number" value={draft.levFonsterFore} onChange={(e) => set("levFonsterFore", e.target.value)} />
-                    <TextField fullWidth size="small" label="Lev.fönster efter" type="number" value={draft.levFonsterEfter} onChange={(e) => set("levFonsterEfter", e.target.value)} />
-                  </div>
-
-                  <div style={{ marginTop: 8 }}>
-                    <FormControlLabel
-                      control={<Checkbox size="small" checked={draft.automatfaktura} onChange={(e) => set("automatfaktura", e.target.checked)} />}
-                      label={<Typography style={{ fontSize: 13 }}>Automatfaktura</Typography>}
-                    />
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField fullWidth size="small" multiline rows={3} label="Kommentar (kund)" value={draft.kommentarKund} onChange={(e) => set("kommentarKund", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" multiline rows={3} label="Kommentar (Business support)" value={draft.kommentarBusinessSupport} onChange={(e) => set("kommentarBusinessSupport", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" multiline rows={3} label="Kommentar (innesäljare)" value={draft.kommentarInnesaljare} onChange={(e) => set("kommentarInnesaljare", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" multiline rows={3} label="Kommentar (säljare)" value={draft.kommentarSaljare} onChange={(e) => set("kommentarSaljare", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                  </div>
-                </AccordionDetails>
-              </Accordion>
-
-              {/* ── Kontaktuppgifter ── */}
-              <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
-                  <span className={styles.contractSectionTitleRow}>
-                    <ContactsOutlinedIcon className={styles.contractSectionIcon} />
-                    <Typography className={styles.contractSectionTitle}>Kontaktuppgifter</Typography>
-                  </span>
-                </AccordionSummary>
-                <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                  <Typography className={styles.contractSectionGroupLabel}>Fakturaadress</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField fullWidth size="small" label="Namn" value={draft.faktNamn} onChange={(e) => set("faktNamn", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" label="Adress" value={draft.faktAdress1} onChange={(e) => set("faktAdress1", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" label="Adress 2" value={draft.faktAdress2} onChange={(e) => set("faktAdress2", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" label="Postadress" value={draft.faktPostadress} onChange={(e) => set("faktPostadress", e.target.value)} />
-                    <TextField select fullWidth size="small" label="Land" value={draft.faktLand} onChange={(e) => set("faktLand", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="SE">SE — Sverige</MenuItem>
-                      <MenuItem value="NO">NO — Norge</MenuItem>
-                      <MenuItem value="FI">FI — Finland</MenuItem>
-                      <MenuItem value="DK">DK — Danmark</MenuItem>
-                      <MenuItem value="DE">DE — Tyskland</MenuItem>
-                      <MenuItem value="EE">EE — Estland</MenuItem>
-                    </TextField>
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Kontakt</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField fullWidth size="small" label="Telefon" value={draft.telefon} onChange={(e) => set("telefon", e.target.value)} />
-                    <TextField fullWidth size="small" label="E-post" type="email" value={draft.epost} onChange={(e) => set("epost", e.target.value)} />
-                    <TextField fullWidth size="small" label="Web" value={draft.web} onChange={(e) => set("web", e.target.value)} />
-                    <TextField fullWidth size="small" label="Leveransort" value={draft.leveransort} onChange={(e) => set("leveransort", e.target.value)} />
-                    <TextField fullWidth size="small" label="Postnummer" value={draft.postnummer} onChange={(e) => set("postnummer", e.target.value)} />
-                  </div>
-                </AccordionDetails>
-              </Accordion>
-
-              {/* ── Villkor ── */}
-              <Accordion disableGutters elevation={0} className={styles.contractSectionAccordion}>
-                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
-                  <span className={styles.contractSectionTitleRow}>
-                    <GavelOutlinedIcon className={styles.contractSectionIcon} />
-                    <Typography className={styles.contractSectionTitle}>Villkor</Typography>
-                  </span>
-                </AccordionSummary>
-                <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                  <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; betalning</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField select fullWidth size="small" label="Valuta" value={draft.valuta} onChange={(e) => set("valuta", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="SEK">SEK</MenuItem>
-                      <MenuItem value="EUR">EUR</MenuItem>
-                      <MenuItem value="USD">USD</MenuItem>
-                      <MenuItem value="NOK">NOK</MenuItem>
-                      <MenuItem value="DKK">DKK</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Moms" value={draft.moms} onChange={(e) => set("moms", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="25">25 %</MenuItem>
-                      <MenuItem value="12">12 %</MenuItem>
-                      <MenuItem value="6">6 %</MenuItem>
-                      <MenuItem value="0">0 %</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Bet.villkor" value={draft.betvillkor} onChange={(e) => set("betvillkor", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="30">30 dagar netto</MenuItem>
-                      <MenuItem value="14">14 dagar netto</MenuItem>
-                      <MenuItem value="10">10 dagar netto</MenuItem>
-                      <MenuItem value="0">Förskott</MenuItem>
-                    </TextField>
-                    <TextField fullWidth size="small" label="Bet.villkor.dag" type="number" value={draft.betvillkorDag} onChange={(e) => set("betvillkorDag", e.target.value)} />
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Rabatt &amp; bonus</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField fullWidth size="small" label="Kassarabatt" value={draft.kassarabatt} onChange={(e) => set("kassarabatt", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
-                    <TextField fullWidth size="small" label="Bonus" value={draft.bonus} onChange={(e) => set("bonus", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">% av</InputAdornment> } }} />
-                    <TextField select fullWidth size="small" label="Bonusgrund" value={draft.bonusgrund} onChange={(e) => set("bonusgrund", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Omsättning">Omsättning</MenuItem>
-                      <MenuItem value="Volym">Volym</MenuItem>
-                      <MenuItem value="Antal order">Antal order</MenuItem>
-                    </TextField>
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Ränta &amp; påminnelse</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField select fullWidth size="small" label="Ränterutin" value={draft.ranterutin} onChange={(e) => set("ranterutin", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Standard">Standard</MenuItem>
-                      <MenuItem value="Ingen ränta">Ingen ränta</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Påminnelsekod" value={draft.paminnelsekod} onChange={(e) => set("paminnelsekod", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Standard">Standard</MenuItem>
-                      <MenuItem value="Ingen påminnelse">Ingen påminnelse</MenuItem>
-                    </TextField>
-                    <TextField fullWidth size="small" label="Kravränta" value={draft.kravRanta} onChange={(e) => set("kravRanta", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; leverans</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField select fullWidth size="small" label="Certifiering" value={draft.certifiering} onChange={(e) => set("certifiering", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="FSC">FSC</MenuItem>
-                      <MenuItem value="PEFC">PEFC</MenuItem>
-                      <MenuItem value="Ingen">Ingen</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Kontraktsformulär" value={draft.kontraktsformular} onChange={(e) => set("kontraktsformular", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Standard">Standard</MenuItem>
-                      <MenuItem value="Export">Export</MenuItem>
-                      <MenuItem value="Industri">Industri</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Leveranssätt" value={draft.leveranssatt} onChange={(e) => set("leveranssatt", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Bil">Bil</MenuItem>
-                      <MenuItem value="Tåg">Tåg</MenuItem>
-                      <MenuItem value="Båt">Båt</MenuItem>
-                      <MenuItem value="Flyg">Flyg</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Leveransvillkor" value={draft.leveransvillkor} onChange={(e) => set("leveransvillkor", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="DAP">DAP</MenuItem>
-                      <MenuItem value="EXW">EXW</MenuItem>
-                      <MenuItem value="FCA">FCA</MenuItem>
-                      <MenuItem value="CIF">CIF</MenuItem>
-                    </TextField>
-                    <TextField fullWidth size="small" label="Införselavgift" value={draft.inforsElavgift} onChange={(e) => set("inforsElavgift", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} />
-                    <TextField fullWidth size="small" label="Text på kontrakt/faktura" value={draft.textPaKontrakt} onChange={(e) => set("textPaKontrakt", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                  </div>
-                  <div style={{ marginTop: 8 }}>
-                    <FormControlLabel
-                      control={<Checkbox size="small" checked={draft.leveransdatumPaFaktura} onChange={(e) => set("leveransdatumPaFaktura", e.target.checked)} />}
-                      label={<Typography style={{ fontSize: 13 }}>Leveransdatum på faktura</Typography>}
-                    />
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Agent</Typography>
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField select fullWidth size="small" label="Agent" value={draft.agent} onChange={(e) => set("agent", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Nordic Agent AB">Nordic Agent AB</MenuItem>
-                      <MenuItem value="Baltic Trade AB">Baltic Trade AB</MenuItem>
-                    </TextField>
-                    <TextField fullWidth size="small" label="Provision agent" value={draft.provisionAgent} onChange={(e) => set("provisionAgent", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
-                  </div>
-                </AccordionDetails>
-              </Accordion>
-            </>
-          ) : null}
-        </div>
-
-        {/* ── Tabs panel (left on wide / bottom on narrow) ── */}
-        <div className={`${styles.contractBodyTabsCol} ${isWide ? styles.contractBodyTabsColWide : ""}`}>
-          <div className={styles.contractModernAdditionsWrap}>
-            <div className={styles.contractMudTabBar}>
-              {customerTabs.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  className={`${styles.contractMudTabItem} ${activeTab === tab ? styles.contractMudTabItemActive : ""}`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab}
-                </button>
+        <>
+          {/* ── Header ── */}
+          <div className={styles.contractModernTopRow}>
+            <div className={styles.contractModernTitleWrap}>
+              <Typography style={{ marginRight: 8 }} className={styles.contractModernTitle}>{customerName}</Typography>
+              {warnings.map((warning) => (
+                <Chip
+                  key={warning.type}
+                  icon={<WarningAmberOutlinedIcon />}
+                  label={warning.label}
+                  size="medium"
+                  className={`${warningChipClass[warning.type]} ${styles.customerHeaderWarningChip}`}
+                  style={{ fontWeight: 500, padding: "0 4px", gap: 2 }}
+                />
               ))}
             </div>
-            <div className={styles.contractDetailMainContent}>
-              {activeTab === "Kontaktpersoner" ? <KontaktpersonerTab /> : null}
-              {activeTab === "Kontaktlogg" ? <KontaktloggTab /> : null}
-              {activeTab === "Fordran" ? <FordranTab /> : null}
-              {activeTab === "Leverans" ? <LeveransTab /> : null}
-              {activeTab === "EDI" ? <EdiTab /> : null}
-              {activeTab === "Dokument" ? <DokumentTab /> : null}
+            <div className={styles.contractModernTopActions}>
+              <Button className={styles.contractQuickActionButton} size="small" startIcon={<AccountBoxOutlinedIcon fontSize="small" />}>
+                Kundkort
+              </Button>
+              <Button className={styles.contractQuickActionButton} size="small" startIcon={<FormatListBulletedOutlinedIcon fontSize="small" />}>
+                Restorderlista
+              </Button>
+              <Button className={styles.contractQuickActionButton} size="small" startIcon={<SyncAltOutlinedIcon fontSize="small" />}>
+                Överför till Visma
+              </Button>
             </div>
           </div>
-        </div>
-      </div>
-      </>
+
+          {/* ── Body layout ── */}
+          <div className={`${styles.contractBodyLayout} ${isWide ? styles.contractBodyLayoutWide : ""}`}>
+
+            {/* ── Sections panel (right on wide / top on narrow) ── */}
+            <div
+              className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : ""} ${isExtraWide && !sectionsPanelWidth && !isSectionsPanelCollapsed ? styles.contractBodySectionsColExtraWide : ""} ${isSectionsPanelCollapsed ? styles.contractBodySectionsColCollapsed : ""}`}
+              style={isWide && sectionsPanelWidth && !isSectionsPanelCollapsed ? { width: sectionsPanelWidth, maxWidth: sectionsPanelWidth } : undefined}
+            >
+              {isWide && !isSectionsPanelCollapsed ? (
+                <div className={styles.contractSectionsResizeHandle} onMouseDown={startResizeSections} />
+              ) : null}
+
+              <div ref={sectionsHeaderRef} className={styles.contractSectionsPanelHeader}>
+                <div className={styles.contractSectionsPanelTitleRow} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
+                  {!isSectionsPanelCollapsed ? (
+                    <Typography className={styles.contractSectionsPanelTitle}>Kundinformation</Typography>
+                  ) : null}
+                  <Tooltip title={isSectionsPanelCollapsed ? "Expandera kundpanel" : "Minimera kundpanel"}>
+                    <IconButton
+                      size="small"
+                      className={styles.contractSectionsPanelMinimizeBtn}
+                      onClick={() => setIsSectionsPanelCollapsed((v) => !v)}
+                    >
+                      <MenuOpenIcon fontSize="small" style={isSectionsPanelCollapsed ? { transform: "scaleX(1)" } : { transform: "scaleX(-1)" }} />
+                    </IconButton>
+                  </Tooltip>
+                </div>
+                {!isSectionsPanelCollapsed ? (
+                  <div className={styles.contractSectionsPanelHeaderActionsRow}>
+                    {isEditingInfo ? (
+                      <>
+                        <Button
+                          size="small"
+                          className={styles.freightSaveButton}
+                          onClick={() => setIsEditingInfo(false)}
+                        >
+                          Spara
+                        </Button>
+                        <Button
+                          size="small"
+                          className={styles.freightCancelButton}
+                          onClick={() => {
+                            if (draftSnapshotRef.current) setDraft(draftSnapshotRef.current);
+                            setIsEditingInfo(false);
+                          }}
+                        >
+                          Avbryt
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="small"
+                        className={styles.contractSaveButton}
+                        startIcon={<EditOutlinedIcon fontSize="small" />}
+                        onClick={() => {
+                          draftSnapshotRef.current = draft;
+                          setIsEditingInfo(true);
+                        }}
+                      >
+                        Redigera
+                      </Button>
+                    )}
+                    <Divider orientation="vertical" flexItem style={{ margin: "4px 0" }} />
+                    <Tooltip title="Redigera i formulär">
+                      <Button
+                        size="small"
+                        className={styles.contractHeaderDotsButton}
+                        onClick={() => setExpandedDialogOpen(true)}
+                        style={{ minWidth: 0 }}
+                      >
+                        <EditNoteOutlinedIcon fontSize="small" />
+                      </Button>
+                    </Tooltip>
+                    {isWide ? (
+                      <Tooltip title={isSectionsPanelMaxWidth ? "Återställ panelbredd" : "Maximera panelbredd"}>
+                        <Button
+                          size="small"
+                          className={styles.contractHeaderDotsButton}
+                          onClick={toggleSectionsPanelWidth}
+                          style={{ minWidth: 0 }}
+                        >
+                          {isSectionsPanelMaxWidth ? (
+                            <KeyboardDoubleArrowRightIcon fontSize="small" />
+                          ) : (
+                            <KeyboardDoubleArrowLeftIcon fontSize="small" />
+                          )}
+                        </Button>
+                      </Tooltip>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+
+              {!isSectionsPanelCollapsed ? (
+                <>
+                  <SectionQuickNav sections={CUSTOMER_SECTIONS} onSelect={jumpToSection} />
+
+                  {/* ── Allmänt ── */}
+                  <Accordion
+                    expanded={expandedSections.has("allmant")}
+                    onChange={(_, isExpanded) => toggleSection("allmant", isExpanded)}
+                    ref={(el) => { sectionRefs.current.allmant = el; }}
+                    disableGutters
+                    elevation={0}
+                    className={styles.contractSectionAccordion}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                      <span className={styles.contractSectionTitleRow}>
+                        <InfoOutlinedIcon className={styles.contractSectionIcon} />
+                        <Typography className={styles.contractSectionTitle}>Allmänt</Typography>
+                      </span>
+                    </AccordionSummary>
+                    <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                      <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField select fullWidth size="small" label="Kategori" value={draft.kategori} onChange={(e) => set("kategori", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Bygghandel">Bygghandel</MenuItem>
+                          <MenuItem value="Industri">Industri</MenuItem>
+                          <MenuItem value="Sågverk">Sågverk</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Språk" value={draft.sprak} onChange={(e) => set("sprak", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Svenska">Svenska</MenuItem>
+                          <MenuItem value="English">English</MenuItem>
+                          <MenuItem value="Norsk">Norsk</MenuItem>
+                          <MenuItem value="Suomi">Suomi</MenuItem>
+                          <MenuItem value="Dansk">Dansk</MenuItem>
+                        </TextField>
+                        <TextField fullWidth size="small" label="Orgnr/Personnr" value={draft.orgnr} onChange={(e) => set("orgnr", e.target.value)} />
+                        <TextField fullWidth size="small" label="VATnr" value={draft.vatnr} onChange={(e) => set("vatnr", e.target.value)}
+                          slotProps={{ input: { endAdornment: <InputAdornment position="end"><IconButton size="small" edge="end"><OpenInNewIcon style={{ fontSize: 15 }} /></IconButton></InputAdornment> } }} />
+                        <TextField fullWidth size="small" label="Nordek kundNr" value={draft.nordekKundNr} onChange={(e) => set("nordekKundNr", e.target.value)} />
+                        <TextField fullWidth size="small" label="Controlled Wood Code" value={draft.controlledWoodCode} onChange={(e) => set("controlledWoodCode", e.target.value)} />
+                        <TextField fullWidth size="small" label="CW Code giltig t.o.m" type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.cwCodeGiltigTom} onChange={(e) => set("cwCodeGiltigTom", e.target.value)} />
+                      </div>
+
+                      <Divider className={styles.contractSectionDivider} />
+                      <Typography className={styles.contractSectionGroupLabel}>Identifierare</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField fullWidth size="small" label="EORInr" value={draft.eorInr} onChange={(e) => set("eorInr", e.target.value)} />
+                        <TextField fullWidth size="small" label="Kedjans kundnr" value={draft.kedjansKundnr} onChange={(e) => set("kedjansKundnr", e.target.value)} />
+                        <TextField fullWidth size="small" label="KVK" value={draft.kvk} onChange={(e) => set("kvk", e.target.value)} />
+                        <TextField fullWidth size="small" label="Maersk kundnr" value={draft.maerskKundNr} onChange={(e) => set("maerskKundNr", e.target.value)} />
+                        <TextField fullWidth size="small" label="Medlemsnummer" value={draft.medlemsnummer} onChange={(e) => set("medlemsnummer", e.target.value)} />
+                        <TextField fullWidth size="small" label="NTN" value={draft.ntn} onChange={(e) => set("ntn", e.target.value)} />
+                        <TextField fullWidth size="small" label="PRI identitet" value={draft.priIdentitet} onChange={(e) => set("priIdentitet", e.target.value)} />
+                        <TextField fullWidth size="small" label="USCI" value={draft.usci} onChange={(e) => set("usci", e.target.value)} />
+                      </div>
+
+                      <Divider className={styles.contractSectionDivider} />
+                      <Typography className={styles.contractSectionGroupLabel}>Ansvar &amp; klassificering</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField select fullWidth size="small" label="Kundansvarig" value={draft.kundansvarig} onChange={(e) => set("kundansvarig", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Jane Doe">Jane Doe</MenuItem>
+                          <MenuItem value="Erik Andersson">Erik Andersson</MenuItem>
+                          <MenuItem value="Maria Lindqvist">Maria Lindqvist</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Säljare/innesäljare" value={draft.saljareInnesaljare} onChange={(e) => set("saljareInnesaljare", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Jane Doe">Jane Doe</MenuItem>
+                          <MenuItem value="Erik Andersson">Erik Andersson</MenuItem>
+                          <MenuItem value="Maria Lindqvist">Maria Lindqvist</MenuItem>
+                          <MenuItem value="Oskar Berg">Oskar Berg</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Kundgrupp" value={draft.kundgrupp} onChange={(e) => set("kundgrupp", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="A">A</MenuItem>
+                          <MenuItem value="B">B</MenuItem>
+                          <MenuItem value="C">C</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Köpmönster" value={draft.kopmonster} onChange={(e) => set("kopmonster", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Regelbunden">Regelbunden</MenuItem>
+                          <MenuItem value="Oregelbunden">Oregelbunden</MenuItem>
+                          <MenuItem value="Säsongsbetonad">Säsongsbetonad</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Leverantör" value={draft.leverantor} onChange={(e) => set("leverantor", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Nordic Agent AB">Nordic Agent AB</MenuItem>
+                          <MenuItem value="Baltic Trade AB">Baltic Trade AB</MenuItem>
+                        </TextField>
+                      </div>
+
+                      <Divider className={styles.contractSectionDivider} />
+                      <Typography className={styles.contractSectionGroupLabel}>Leveransfönster</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField fullWidth size="small" label="Lev.fönster före" type="number" value={draft.levFonsterFore} onChange={(e) => set("levFonsterFore", e.target.value)} />
+                        <TextField fullWidth size="small" label="Lev.fönster efter" type="number" value={draft.levFonsterEfter} onChange={(e) => set("levFonsterEfter", e.target.value)} />
+                      </div>
+
+                      <div style={{ marginTop: 8 }}>
+                        <FormControlLabel
+                          control={<Checkbox size="small" checked={draft.automatfaktura} onChange={(e) => set("automatfaktura", e.target.checked)} />}
+                          label={<Typography style={{ fontSize: 13 }}>Automatfaktura</Typography>}
+                        />
+                      </div>
+
+                      <Divider className={styles.contractSectionDivider} />
+                      <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField fullWidth size="small" multiline rows={3} label="Kommentar (kund)" value={draft.kommentarKund} onChange={(e) => set("kommentarKund", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                        <TextField fullWidth size="small" multiline rows={3} label="Kommentar (Business support)" value={draft.kommentarBusinessSupport} onChange={(e) => set("kommentarBusinessSupport", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                        <TextField fullWidth size="small" multiline rows={3} label="Kommentar (innesäljare)" value={draft.kommentarInnesaljare} onChange={(e) => set("kommentarInnesaljare", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                        <TextField fullWidth size="small" multiline rows={3} label="Kommentar (säljare)" value={draft.kommentarSaljare} onChange={(e) => set("kommentarSaljare", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                      </div>
+                    </AccordionDetails>
+                  </Accordion>
+
+                  {/* ── Kontaktuppgifter ── */}
+                  <Accordion
+                    expanded={expandedSections.has("kontakt")}
+                    onChange={(_, isExpanded) => toggleSection("kontakt", isExpanded)}
+                    ref={(el) => { sectionRefs.current.kontakt = el; }}
+                    disableGutters
+                    elevation={0}
+                    className={styles.contractSectionAccordion}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                      <span className={styles.contractSectionTitleRow}>
+                        <ContactsOutlinedIcon className={styles.contractSectionIcon} />
+                        <Typography className={styles.contractSectionTitle}>Kontaktuppgifter</Typography>
+                      </span>
+                    </AccordionSummary>
+                    <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                      <Typography className={styles.contractSectionGroupLabel}>Fakturaadress</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField fullWidth size="small" label="Namn" value={draft.faktNamn} onChange={(e) => set("faktNamn", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                        <TextField fullWidth size="small" label="Adress" value={draft.faktAdress1} onChange={(e) => set("faktAdress1", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                        <TextField fullWidth size="small" label="Adress 2" value={draft.faktAdress2} onChange={(e) => set("faktAdress2", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                        <TextField fullWidth size="small" label="Postadress" value={draft.faktPostadress} onChange={(e) => set("faktPostadress", e.target.value)} />
+                        <TextField select fullWidth size="small" label="Land" value={draft.faktLand} onChange={(e) => set("faktLand", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="SE">SE — Sverige</MenuItem>
+                          <MenuItem value="NO">NO — Norge</MenuItem>
+                          <MenuItem value="FI">FI — Finland</MenuItem>
+                          <MenuItem value="DK">DK — Danmark</MenuItem>
+                          <MenuItem value="DE">DE — Tyskland</MenuItem>
+                          <MenuItem value="EE">EE — Estland</MenuItem>
+                        </TextField>
+                      </div>
+
+                      <Divider className={styles.contractSectionDivider} />
+                      <Typography className={styles.contractSectionGroupLabel}>Kontakt</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField fullWidth size="small" label="Telefon" value={draft.telefon} onChange={(e) => set("telefon", e.target.value)} />
+                        <TextField fullWidth size="small" label="E-post" type="email" value={draft.epost} onChange={(e) => set("epost", e.target.value)} />
+                        <TextField fullWidth size="small" label="Web" value={draft.web} onChange={(e) => set("web", e.target.value)} />
+                        <TextField fullWidth size="small" label="Leveransort" value={draft.leveransort} onChange={(e) => set("leveransort", e.target.value)} />
+                        <TextField fullWidth size="small" label="Postnummer" value={draft.postnummer} onChange={(e) => set("postnummer", e.target.value)} />
+                      </div>
+                    </AccordionDetails>
+                  </Accordion>
+
+                  {/* ── Villkor ── */}
+                  <Accordion
+                    expanded={expandedSections.has("villkor")}
+                    onChange={(_, isExpanded) => toggleSection("villkor", isExpanded)}
+                    ref={(el) => { sectionRefs.current.villkor = el; }}
+                    disableGutters
+                    elevation={0}
+                    className={styles.contractSectionAccordion}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                      <span className={styles.contractSectionTitleRow}>
+                        <GavelOutlinedIcon className={styles.contractSectionIcon} />
+                        <Typography className={styles.contractSectionTitle}>Villkor</Typography>
+                      </span>
+                    </AccordionSummary>
+                    <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
+                      <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; betalning</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField select fullWidth size="small" label="Valuta" value={draft.valuta} onChange={(e) => set("valuta", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="SEK">SEK</MenuItem>
+                          <MenuItem value="EUR">EUR</MenuItem>
+                          <MenuItem value="USD">USD</MenuItem>
+                          <MenuItem value="NOK">NOK</MenuItem>
+                          <MenuItem value="DKK">DKK</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Moms" value={draft.moms} onChange={(e) => set("moms", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="25">25 %</MenuItem>
+                          <MenuItem value="12">12 %</MenuItem>
+                          <MenuItem value="6">6 %</MenuItem>
+                          <MenuItem value="0">0 %</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Bet.villkor" value={draft.betvillkor} onChange={(e) => set("betvillkor", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="30">30 dagar netto</MenuItem>
+                          <MenuItem value="14">14 dagar netto</MenuItem>
+                          <MenuItem value="10">10 dagar netto</MenuItem>
+                          <MenuItem value="0">Förskott</MenuItem>
+                        </TextField>
+                        <TextField fullWidth size="small" label="Bet.villkor.dag" type="number" value={draft.betvillkorDag} onChange={(e) => set("betvillkorDag", e.target.value)} />
+                      </div>
+
+                      <Divider className={styles.contractSectionDivider} />
+                      <Typography className={styles.contractSectionGroupLabel}>Rabatt &amp; bonus</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField fullWidth size="small" label="Kassarabatt" value={draft.kassarabatt} onChange={(e) => set("kassarabatt", e.target.value)}
+                          slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
+                        <TextField fullWidth size="small" label="Bonus" value={draft.bonus} onChange={(e) => set("bonus", e.target.value)}
+                          slotProps={{ input: { endAdornment: <InputAdornment position="end">% av</InputAdornment> } }} />
+                        <TextField select fullWidth size="small" label="Bonusgrund" value={draft.bonusgrund} onChange={(e) => set("bonusgrund", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Omsättning">Omsättning</MenuItem>
+                          <MenuItem value="Volym">Volym</MenuItem>
+                          <MenuItem value="Antal order">Antal order</MenuItem>
+                        </TextField>
+                      </div>
+
+                      <Divider className={styles.contractSectionDivider} />
+                      <Typography className={styles.contractSectionGroupLabel}>Ränta &amp; påminnelse</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField select fullWidth size="small" label="Ränterutin" value={draft.ranterutin} onChange={(e) => set("ranterutin", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Standard">Standard</MenuItem>
+                          <MenuItem value="Ingen ränta">Ingen ränta</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Påminnelsekod" value={draft.paminnelsekod} onChange={(e) => set("paminnelsekod", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Standard">Standard</MenuItem>
+                          <MenuItem value="Ingen påminnelse">Ingen påminnelse</MenuItem>
+                        </TextField>
+                        <TextField fullWidth size="small" label="Kravränta" value={draft.kravRanta} onChange={(e) => set("kravRanta", e.target.value)}
+                          slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
+                      </div>
+
+                      <Divider className={styles.contractSectionDivider} />
+                      <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; leverans</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField select fullWidth size="small" label="Certifiering" value={draft.certifiering} onChange={(e) => set("certifiering", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="FSC">FSC</MenuItem>
+                          <MenuItem value="PEFC">PEFC</MenuItem>
+                          <MenuItem value="Ingen">Ingen</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Kontraktsformulär" value={draft.kontraktsformular} onChange={(e) => set("kontraktsformular", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Standard">Standard</MenuItem>
+                          <MenuItem value="Export">Export</MenuItem>
+                          <MenuItem value="Industri">Industri</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Leveranssätt" value={draft.leveranssatt} onChange={(e) => set("leveranssatt", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Bil">Bil</MenuItem>
+                          <MenuItem value="Tåg">Tåg</MenuItem>
+                          <MenuItem value="Båt">Båt</MenuItem>
+                          <MenuItem value="Flyg">Flyg</MenuItem>
+                        </TextField>
+                        <TextField select fullWidth size="small" label="Leveransvillkor" value={draft.leveransvillkor} onChange={(e) => set("leveransvillkor", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="DAP">DAP</MenuItem>
+                          <MenuItem value="EXW">EXW</MenuItem>
+                          <MenuItem value="FCA">FCA</MenuItem>
+                          <MenuItem value="CIF">CIF</MenuItem>
+                        </TextField>
+                        <TextField fullWidth size="small" label="Införselavgift" value={draft.inforsElavgift} onChange={(e) => set("inforsElavgift", e.target.value)}
+                          slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} />
+                        <TextField fullWidth size="small" label="Text på kontrakt/faktura" value={draft.textPaKontrakt} onChange={(e) => set("textPaKontrakt", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                      </div>
+                      <div style={{ marginTop: 8 }}>
+                        <FormControlLabel
+                          control={<Checkbox size="small" checked={draft.leveransdatumPaFaktura} onChange={(e) => set("leveransdatumPaFaktura", e.target.checked)} />}
+                          label={<Typography style={{ fontSize: 13 }}>Leveransdatum på faktura</Typography>}
+                        />
+                      </div>
+
+                      <Divider className={styles.contractSectionDivider} />
+                      <Typography className={styles.contractSectionGroupLabel}>Agent</Typography>
+                      <div className={styles.contractModernFormGrid}>
+                        <TextField select fullWidth size="small" label="Agent" value={draft.agent} onChange={(e) => set("agent", e.target.value)}>
+                          <MenuItem value="">—</MenuItem>
+                          <MenuItem value="Nordic Agent AB">Nordic Agent AB</MenuItem>
+                          <MenuItem value="Baltic Trade AB">Baltic Trade AB</MenuItem>
+                        </TextField>
+                        <TextField fullWidth size="small" label="Provision agent" value={draft.provisionAgent} onChange={(e) => set("provisionAgent", e.target.value)}
+                          slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
+                      </div>
+                    </AccordionDetails>
+                  </Accordion>
+                </>
+              ) : null}
+            </div>
+
+            {/* ── Tabs panel (left on wide / bottom on narrow) ── */}
+            <div className={`${styles.contractBodyTabsCol} ${isWide ? styles.contractBodyTabsColWide : ""}`}>
+              <div className={styles.contractModernAdditionsWrap}>
+                <div className={styles.contractMudTabBar}>
+                  {customerTabs.map((tab) => {
+                    const isDisabled = disabledTabs.has(tab);
+                    return (
+                      <button
+                        key={tab}
+                        type="button"
+                        disabled={isDisabled}
+                        className={`${styles.contractMudTabItem} ${activeTab === tab ? styles.contractMudTabItemActive : ""} ${isDisabled ? styles.contractMudTabItemDisabled : ""}`}
+                        onClick={() => {
+                          if (isDisabled) return;
+                          setActiveTab(tab);
+                        }}
+                      >
+                        {tab}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className={styles.contractDetailMainContent}>
+                  {activeTab === "Kontaktpersoner" ? <KontaktpersonerTab /> : null}
+                  {activeTab === "Kontaktlogg" ? <KontaktloggTab /> : null}
+                  {activeTab === "Fordran" ? <FordranTab /> : null}
+                  {activeTab === "Leverans" ? <LeveransTab /> : null}
+                  {activeTab === "EDI" ? <EdiTab /> : null}
+                  {activeTab === "Dokument" ? <DokumentTab /> : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
