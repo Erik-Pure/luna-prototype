@@ -14,7 +14,7 @@ import FolderZipOutlinedIcon from "@mui/icons-material/FolderZipOutlined";
 import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
-import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import WarningIcon from "@mui/icons-material/WarningAmberOutlined";
 import {
     Accordion,
     AccordionDetails,
@@ -340,13 +340,13 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
     const customerWarnings = (() => {
         switch (draft.customer) {
             case "Acme AB":
-                return { exceededClaim: true, exceededLimit: false };
+                return { exceededClaim: true, limitTone: "none" as const };
             case "Globex Corp":
-                return { exceededClaim: false, exceededLimit: true };
+                return { exceededClaim: false, limitTone: "orange" as const };
             case "Initech HB":
-                return { exceededClaim: true, exceededLimit: true };
+                return { exceededClaim: true, limitTone: "red" as const };
             default:
-                return { exceededClaim: false, exceededLimit: false };
+                return { exceededClaim: false, limitTone: "none" as const };
         }
     })();
 
@@ -432,23 +432,23 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                     </TextField>
 
                                     {/* Customer warnings — immediately below Kund, spans the full row */}
-                                    {(customerWarnings.exceededClaim || customerWarnings.exceededLimit) && (
+                                    {(customerWarnings.exceededClaim || customerWarnings.limitTone !== "none") && (
                                         <div style={{ gridColumn: "1 / -1", display: "flex", gap: 8 }}>
                                             {customerWarnings.exceededClaim && (
                                                 <Chip
-                                                    icon={<WarningAmberOutlinedIcon />}
+                                                    icon={<WarningIcon />}
                                                     label="Kunden har överskriden fordran"
                                                     size="medium"
                                                     className={`${styles.limitWarningChip} ${styles.customerHeaderWarningChip}`}
                                                     style={{ fontWeight: 500, padding: "0 4px", gap: 2 }}
                                                 />
                                             )}
-                                            {customerWarnings.exceededLimit && (
+                                            {customerWarnings.limitTone !== "none" && (
                                                 <Chip
-                                                    icon={<WarningAmberOutlinedIcon />}
+                                                    icon={<WarningIcon />}
                                                     label="Kunden har överskriden limit"
                                                     size="medium"
-                                                    className={`${styles.limitErrorChip} ${styles.customerHeaderWarningChip}`}
+                                                    className={`${customerWarnings.limitTone === "orange" ? styles.limitModerateChip : styles.limitErrorChip} ${styles.customerHeaderWarningChip}`}
                                                     style={{ fontWeight: 500, padding: "0 4px", gap: 2 }}
                                                 />
                                             )}

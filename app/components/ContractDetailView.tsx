@@ -16,9 +16,9 @@ import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArro
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import WarningIcon from "@mui/icons-material/WarningAmberOutlined";
 import { Accordion, AccordionDetails, AccordionSummary, Button, Checkbox, Chip, Divider, IconButton, InputAdornment, Menu, MenuItem, TextField, Tooltip, Typography } from "@mui/material";
-import { useRef, useState, useSyncExternalStore, type MouseEvent, type RefObject } from "react";
+import { useRef, useState, type MouseEvent, type RefObject } from "react";
 import { CallOffTab } from "./contract-tabs/CallOffTab";
 import { ContractRowsTab } from "./contract-tabs/ContractRowsTab";
 import { DeliveryTab } from "./contract-tabs/DeliveryTab";
@@ -36,6 +36,7 @@ import { getContractDetails, type ContractDetails, type FieldValue } from "./con
 import { BytPrislistaDialog } from "./contract-tabs/BytPrislistaDialog";
 import { ContractCreateView, mockCustomers, mockDeliveryLocations, mockDeliveryAddresses, type NewContractDraft } from "./ContractCreateView";
 import { SectionQuickNav, scrollSectionIntoView, type QuickNavSection } from "./shared/SectionQuickNav";
+import { useMediaQuery, WIDE_LAYOUT_QUERY, EXTRA_WIDE_LAYOUT_QUERY } from "../hooks/useMediaQuery";
 import styles from "../page.module.scss";
 
 const stripDiacritics = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -133,6 +134,9 @@ type ContractDetailViewProps = {
   onSaveLineColumnChanges: () => void;
   onResetLineColumnChanges: () => void;
   onToggleLineColumnPin: (key: string) => void;
+  getLineColumnWidth?: (key: string) => number | undefined;
+  onIncreaseLineColumnWidth?: (key: string) => void;
+  onDecreaseLineColumnWidth?: (key: string) => void;
   onOpenLineItemDetail: (lineItemId: string) => void;
   onCreateLineItem: () => void;
   onOpenContainer: () => void;
@@ -181,6 +185,9 @@ export function ContractDetailView({
   onSaveLineColumnChanges,
   onResetLineColumnChanges,
   onToggleLineColumnPin,
+  getLineColumnWidth,
+  onIncreaseLineColumnWidth,
+  onDecreaseLineColumnWidth,
   onOpenLineItemDetail,
   onCreateLineItem,
   onOpenContainer,
@@ -248,25 +255,8 @@ export function ContractDetailView({
 
   const agent2Field = contractDetails.villkor.find((f) => f.label === "Agent 2");
 
-  const isWide = useSyncExternalStore(
-    (cb) => {
-      const mq = window.matchMedia("(min-width: 1280px)");
-      mq.addEventListener("change", cb);
-      return () => mq.removeEventListener("change", cb);
-    },
-    () => window.matchMedia("(min-width: 1280px)").matches,
-    () => false
-  );
-
-  const isExtraWide = useSyncExternalStore(
-    (cb) => {
-      const mq = window.matchMedia("(min-width: 1700px)");
-      mq.addEventListener("change", cb);
-      return () => mq.removeEventListener("change", cb);
-    },
-    () => window.matchMedia("(min-width: 1700px)").matches,
-    () => false
-  );
+  const isWide = useMediaQuery(WIDE_LAYOUT_QUERY);
+  const isExtraWide = useMediaQuery(EXTRA_WIDE_LAYOUT_QUERY);
 
   const startResizeSections = (mouseDownEvent: React.MouseEvent) => {
     mouseDownEvent.preventDefault();
@@ -340,10 +330,10 @@ export function ContractDetailView({
               <Typography className={styles.contractModernTitle}>Kontrakt {selectedContractId} - {contractDetails.summary.customer}</Typography>
               {contractDetails.summary.warning ? (
                 <Chip
-                  icon={<WarningAmberOutlinedIcon />}
+                  icon={<WarningIcon />}
                   label={contractDetails.summary.warning}
                   size="medium"
-                  className={`${styles.limitErrorChip} ${styles.customerHeaderWarningChip}`}
+                  className={`${contractDetails.summary.warningTone === "orange" ? styles.limitModerateChip : styles.limitErrorChip} ${styles.customerHeaderWarningChip}`}
                   style={{ marginLeft: 8, fontWeight: 500, padding: "0 4px" }}
                 />
               ) : null}
@@ -400,7 +390,7 @@ export function ContractDetailView({
           <div className={`${styles.contractBodyLayout} ${isWide ? styles.contractBodyLayoutWide : ""}`}>
             {/* Right on large / top on small: accordion detail sections */}
             <div
-              className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : ""} ${isExtraWide && !sectionsPanelWidth && !isSectionsPanelCollapsed ? styles.contractBodySectionsColExtraWide : ""} ${isSectionsPanelCollapsed ? styles.contractBodySectionsColCollapsed : ""}`}
+              className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : styles.contractBodySectionsColStacked} ${isExtraWide && !sectionsPanelWidth && !isSectionsPanelCollapsed ? styles.contractBodySectionsColExtraWide : ""} ${isSectionsPanelCollapsed ? (isWide ? styles.contractBodySectionsColCollapsed : styles.contractBodySectionsColCollapsedNarrow) : ""}`}
               style={isWide && sectionsPanelWidth && !isSectionsPanelCollapsed ? { width: sectionsPanelWidth, maxWidth: sectionsPanelWidth } : undefined}
             >
               {isWide && !isSectionsPanelCollapsed ? (
@@ -410,7 +400,7 @@ export function ContractDetailView({
               {/* Panel header: minimize button left + Redigera button right */}
               <div ref={sectionsHeaderRef} className={styles.contractSectionsPanelHeader}>
                 <div className={styles.contractSectionsPanelTitleRow} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
-                  {!isSectionsPanelCollapsed ? (
+                  {!isSectionsPanelCollapsed || !isWide ? (
                     <Typography className={styles.contractSectionsPanelTitle}>Kontraktsinformation</Typography>
                   ) : null}
                   <Tooltip title={isSectionsPanelCollapsed ? "Expandera kontrakshuvud" : "Minimera kontrakshuvud"}>
@@ -423,6 +413,9 @@ export function ContractDetailView({
                     </IconButton>
                   </Tooltip>
                 </div>
+                {!isSectionsPanelCollapsed ? (
+                  <SectionQuickNav sections={CONTRACT_SECTIONS} onSelect={jumpToSection} />
+                ) : null}
                 {!isSectionsPanelCollapsed ? (
                   <div className={styles.contractSectionsPanelHeaderActionsRow}>
                     {isEditingInfo ? (
@@ -484,8 +477,6 @@ export function ContractDetailView({
               </div>
 
               {!isSectionsPanelCollapsed ? (<>
-                <SectionQuickNav sections={CONTRACT_SECTIONS} onSelect={jumpToSection} />
-
                 {/* ── Allmänt ── */}
                 <Accordion
                   expanded={expandedSections.has("allmant")}
@@ -827,7 +818,7 @@ export function ContractDetailView({
             {/* Left on large / bottom on small: contract tabs */}
             <div className={`${styles.contractBodyTabsCol} ${isWide ? styles.contractBodyTabsColWide : ""}`}>
               <div className={styles.contractModernAdditionsWrap}>
-                <div className={styles.contractMudTabBar}>
+                <div className={`${styles.contractMudTabBar} ${!isWide ? styles.contractMudTabBarStackedSticky : ""}`}>
                   {contractTabs.map((tab) => (
                     <button
                       key={tab}
@@ -855,6 +846,9 @@ export function ContractDetailView({
                       onSaveColumnChanges={onSaveLineColumnChanges}
                       onResetColumnChanges={onResetLineColumnChanges}
                       onToggleColumnPin={onToggleLineColumnPin}
+                      getColumnWidth={getLineColumnWidth}
+                      onIncreaseColumnWidth={onIncreaseLineColumnWidth}
+                      onDecreaseColumnWidth={onDecreaseLineColumnWidth}
                       onOpenRowDetail={onOpenLineItemDetail}
                       onCreateRow={onCreateLineItem}
                       onOpenContainer={onOpenContainer}

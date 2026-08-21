@@ -13,7 +13,7 @@ import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SyncAltOutlinedIcon from "@mui/icons-material/SyncAlt";
-import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
+import WarningIcon from "@mui/icons-material/WarningAmberOutlined";
 import {
   Accordion,
   AccordionDetails,
@@ -30,7 +30,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState } from "react";
 import styles from "../page.module.scss";
 import { CustomerCreateView, type NewCustomerDraft } from "./CustomerCreateView";
 import { DokumentTab } from "./customer-tabs/DokumentTab";
@@ -41,6 +41,7 @@ import { KontaktpersonerTab } from "./customer-tabs/KontaktpersonerTab";
 import { LeveransTab } from "./customer-tabs/LeveransTab";
 import { getCustomerWarnings, type CustomerWarning } from "./shared/customerWarnings";
 import { SectionQuickNav, scrollSectionIntoView, type QuickNavSection } from "./shared/SectionQuickNav";
+import { useMediaQuery, WIDE_LAYOUT_QUERY, EXTRA_WIDE_LAYOUT_QUERY } from "../hooks/useMediaQuery";
 
 export type CustomerDetailData = {
   customerNumber: string;
@@ -292,25 +293,8 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
     });
   };
 
-  const isWide = useSyncExternalStore(
-    (cb) => {
-      const mq = window.matchMedia("(min-width: 1280px)");
-      mq.addEventListener("change", cb);
-      return () => mq.removeEventListener("change", cb);
-    },
-    () => window.matchMedia("(min-width: 1280px)").matches,
-    () => false
-  );
-
-  const isExtraWide = useSyncExternalStore(
-    (cb) => {
-      const mq = window.matchMedia("(min-width: 1700px)");
-      mq.addEventListener("change", cb);
-      return () => mq.removeEventListener("change", cb);
-    },
-    () => window.matchMedia("(min-width: 1700px)").matches,
-    () => false
-  );
+  const isWide = useMediaQuery(WIDE_LAYOUT_QUERY);
+  const isExtraWide = useMediaQuery(EXTRA_WIDE_LAYOUT_QUERY);
 
   const startResizeSections = (mouseDownEvent: React.MouseEvent) => {
     mouseDownEvent.preventDefault();
@@ -338,9 +322,10 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
     setDraft((prev) => ({ ...prev, [key]: value }));
 
   const warnings = detail ? getCustomerWarnings(detail) : [];
-  const warningChipClass: Record<CustomerWarning["type"], string> = {
-    Limit: styles.limitErrorChip,
-    Fordran: styles.limitWarningChip,
+  const warningChipClass: Record<CustomerWarning["tone"], string> = {
+    red: styles.limitErrorChip,
+    orange: styles.limitModerateChip,
+    amber: styles.limitWarningChip,
   };
 
   return (
@@ -362,10 +347,10 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
               {warnings.map((warning) => (
                 <Chip
                   key={warning.type}
-                  icon={<WarningAmberOutlinedIcon />}
+                  icon={<WarningIcon />}
                   label={warning.label}
                   size="medium"
-                  className={`${warningChipClass[warning.type]} ${styles.customerHeaderWarningChip}`}
+                  className={`${warningChipClass[warning.tone]} ${styles.customerHeaderWarningChip}`}
                   style={{ fontWeight: 500, padding: "0 4px", gap: 2 }}
                 />
               ))}
@@ -388,7 +373,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
 
             {/* ── Sections panel (right on wide / top on narrow) ── */}
             <div
-              className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : ""} ${isExtraWide && !sectionsPanelWidth && !isSectionsPanelCollapsed ? styles.contractBodySectionsColExtraWide : ""} ${isSectionsPanelCollapsed ? styles.contractBodySectionsColCollapsed : ""}`}
+              className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : styles.contractBodySectionsColStacked} ${isExtraWide && !sectionsPanelWidth && !isSectionsPanelCollapsed ? styles.contractBodySectionsColExtraWide : ""} ${isSectionsPanelCollapsed ? (isWide ? styles.contractBodySectionsColCollapsed : styles.contractBodySectionsColCollapsedNarrow) : ""}`}
               style={isWide && sectionsPanelWidth && !isSectionsPanelCollapsed ? { width: sectionsPanelWidth, maxWidth: sectionsPanelWidth } : undefined}
             >
               {isWide && !isSectionsPanelCollapsed ? (
@@ -397,7 +382,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
 
               <div ref={sectionsHeaderRef} className={styles.contractSectionsPanelHeader}>
                 <div className={styles.contractSectionsPanelTitleRow} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
-                  {!isSectionsPanelCollapsed ? (
+                  {!isSectionsPanelCollapsed || !isWide ? (
                     <Typography className={styles.contractSectionsPanelTitle}>Kundinformation</Typography>
                   ) : null}
                   <Tooltip title={isSectionsPanelCollapsed ? "Expandera kundpanel" : "Minimera kundpanel"}>
@@ -410,6 +395,9 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                     </IconButton>
                   </Tooltip>
                 </div>
+                {!isSectionsPanelCollapsed ? (
+                  <SectionQuickNav sections={CUSTOMER_SECTIONS} onSelect={jumpToSection} />
+                ) : null}
                 {!isSectionsPanelCollapsed ? (
                   <div className={styles.contractSectionsPanelHeaderActionsRow}>
                     {isEditingInfo ? (
@@ -478,8 +466,6 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
 
               {!isSectionsPanelCollapsed ? (
                 <>
-                  <SectionQuickNav sections={CUSTOMER_SECTIONS} onSelect={jumpToSection} />
-
                   {/* ── Allmänt ── */}
                   <Accordion
                     expanded={expandedSections.has("allmant")}
@@ -773,7 +759,7 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
             {/* ── Tabs panel (left on wide / bottom on narrow) ── */}
             <div className={`${styles.contractBodyTabsCol} ${isWide ? styles.contractBodyTabsColWide : ""}`}>
               <div className={styles.contractModernAdditionsWrap}>
-                <div className={styles.contractMudTabBar}>
+                <div className={`${styles.contractMudTabBar} ${!isWide ? styles.contractMudTabBarStackedSticky : ""}`}>
                   {customerTabs.map((tab) => {
                     const isDisabled = disabledTabs.has(tab);
                     return (

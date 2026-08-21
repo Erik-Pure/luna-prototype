@@ -5,14 +5,17 @@ import SearchIcon from "@mui/icons-material/Search";
 import TableRowsOutlinedIcon from "@mui/icons-material/TableRowsOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
-import LinkIcon from "@mui/icons-material/Link";
-import { Button, Chip, IconButton, Tooltip, Typography } from "@mui/material";
+import ArrowForwardIcon from "@mui/icons-material/ChevronRight";
+import { Button, IconButton, Tooltip, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 import { ActionRow } from "./shared/ActionRow";
+import { ColumnHeaderCell } from "./shared/ColumnHeaderCell";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
 import { DataTable } from "./shared/DataTable";
 import { SearchFiltersPanel } from "./shared/SearchFiltersPanel";
+import { useColumnHeaderMenu } from "./shared/useColumnHeaderMenu";
+import { useSortFilterTable } from "./shared/useSortFilterTable";
 import styles from "../page.module.scss";
 
 type ContractListViewProps = {
@@ -57,6 +60,9 @@ type ContractListViewProps = {
   onSaveColumnChanges: () => void;
   onResetColumnChanges: () => void;
   onToggleColumnPin: (key: string) => void;
+  getColumnWidth?: (key: string) => number | undefined;
+  onIncreaseColumnWidth?: (key: string) => void;
+  onDecreaseColumnWidth?: (key: string) => void;
   orderedVisibleColumns: Array<{ key: string; label: string; width?: number }>;
   tableRows: Array<Record<string, string | undefined>>;
   selectedRowId: number | null;
@@ -76,6 +82,9 @@ type ContractListViewProps = {
   onSaveLineColumnChanges: () => void;
   onResetLineColumnChanges: () => void;
   onToggleLineColumnPin: (key: string) => void;
+  getLineColumnWidth?: (key: string) => number | undefined;
+  onIncreaseLineColumnWidth?: (key: string) => void;
+  onDecreaseLineColumnWidth?: (key: string) => void;
   visibleLineColumns: Array<{ key: string; label: string }>;
   lineItemRows: Array<Record<string, string>>;
 };
@@ -122,6 +131,9 @@ export function ContractListView({
   onSaveColumnChanges,
   onResetColumnChanges,
   onToggleColumnPin,
+  getColumnWidth,
+  onIncreaseColumnWidth,
+  onDecreaseColumnWidth,
   orderedVisibleColumns,
   tableRows,
   selectedRowId,
@@ -141,12 +153,21 @@ export function ContractListView({
   onSaveLineColumnChanges,
   onResetLineColumnChanges,
   onToggleLineColumnPin,
+  getLineColumnWidth,
+  onIncreaseLineColumnWidth,
+  onDecreaseLineColumnWidth,
   visibleLineColumns,
   lineItemRows
 }: ContractListViewProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const { openHeaderMenuKey, setOpenHeaderMenuKey, headerMenuWrapperRef } = useColumnHeaderMenu();
+  const { columnSort, columnFilters, toggleColumnSort, setColumnFilterOperator, setColumnFilterValue, displayRowEntries, getDisplayRowIndex } =
+    useSortFilterTable(tableRows, getCellValue);
+
+  const selectedDisplayRowIndex = getDisplayRowIndex(selectedRowId);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -271,6 +292,10 @@ export function ContractListView({
               onSave={onSaveColumnChanges}
               onReset={onResetColumnChanges}
               onTogglePin={onToggleColumnPin}
+              canAdjustWidth={getColumnWidth ? () => true : undefined}
+              getColumnWidth={getColumnWidth}
+              onDecreaseWidth={onDecreaseColumnWidth}
+              onIncreaseWidth={onIncreaseColumnWidth}
               iconOnly
             />
           </>
@@ -278,16 +303,31 @@ export function ContractListView({
       />
 
       <div className={`${styles.tablesLayout} ${isLineItemsTableVisible ? styles.tablesLayoutSplit : ""}`}>
-        <div className={`${styles.tableContainer} ${isLineItemsTableVisible ? styles.tableContainerSplit : ""}`}>
+        <div className={`${styles.tableContainer} ${styles.contractTableCompact} ${isLineItemsTableVisible ? styles.tableContainerSplit : ""}`}>
           <div className={styles.tableScrollWrap}>
             <div className={styles.tableInner}>
               <DataTable
                 variant="main"
                 columns={orderedVisibleColumns}
-                rows={tableRows}
+                rows={displayRowEntries.map((entry) => entry.row)}
                 rowKey={(row, idx) => `${row.kontrakt}-${idx}`}
-                selectedRowIndex={selectedRowId}
-                onRowClick={onSelectMainTableRow}
+                selectedRowIndex={selectedDisplayRowIndex}
+                onRowClick={(displayIndex) => onSelectMainTableRow(displayRowEntries[displayIndex].originalIndex)}
+                fillRemainingSpace
+                renderHeaderCell={(column) => (
+                  <ColumnHeaderCell
+                    columnKey={column.key}
+                    columnLabel={column.label}
+                    columnSort={columnSort}
+                    onToggleSort={toggleColumnSort}
+                    columnFilter={columnFilters[column.key]}
+                    onSetFilterOperator={setColumnFilterOperator}
+                    onSetFilterValue={setColumnFilterValue}
+                    isMenuOpen={openHeaderMenuKey === column.key}
+                    onToggleMenu={() => setOpenHeaderMenuKey((prev) => (prev === column.key ? null : column.key))}
+                    headerMenuWrapperRef={headerMenuWrapperRef}
+                  />
+                )}
                 renderCell={(row, column) => {
                   if (column.key === "kontrakt") {
                     return (
@@ -305,23 +345,19 @@ export function ContractListView({
                   }
 
                   if (column.key === "kund") {
-                    const limitStatus = row["limitStatus"];
                     const hasForfallenFordran = row["forfallenFordran"] === "true";
                     const customerName = getCellValue(row, column.key);
-                    // Only the single worst warning is shown in the list; the detail view shows all of them.
-                    const warningLabel =
-                      limitStatus === "error" ? "Överskriden limit" : hasForfallenFordran ? "Förfallen fordran" : null;
-                    const nameValue = warningLabel ? (
-                      <Tooltip title={warningLabel} placement="top">
-                        <span
-                          className={`${styles.kortnamnBadge} ${limitStatus === "error" ? styles.kortnamnBadgeHigh : styles.kortnamnBadgeMedium}`}
-                        >
-                          <WarningAmberOutlinedIcon className={styles.kortnamnBadgeIcon} />
-                          {customerName}
+                    const nameValue = hasForfallenFordran ? (
+                      <Tooltip title={`Förfallen fordran — ${customerName}`} placement="top">
+                        <span className={`${styles.warningCellContent} ${styles.warningCellContentMedium}`}>
+                          <WarningAmberOutlinedIcon className={styles.warningCellIcon} />
+                          <span className={styles.warningCellText}>{customerName}</span>
                         </span>
                       </Tooltip>
                     ) : (
-                      <span>{customerName}</span>
+                      <Tooltip title={customerName} placement="top">
+                        <span className={styles.warningCellText}>{customerName}</span>
+                      </Tooltip>
                     );
                     return (
                       <span className={styles.limitCell}>
@@ -331,7 +367,7 @@ export function ContractListView({
                           className={styles.limitLinkIconButton}
                           onClick={(event) => event.stopPropagation()}
                         >
-                          <LinkIcon className={styles.limitLinkIcon} fontSize="small" />
+                          <ArrowForwardIcon className={styles.limitLinkIcon} fontSize="small" />
                         </Link>
                       </span>
                     );
@@ -339,18 +375,22 @@ export function ContractListView({
 
                   if (column.key === "limit") {
                     const limitStatus = row["limitStatus"];
-                    const limitNumber = getCellValue(row, column.key);
+                    const limitNumber = getCellValue(row, column.key).replace(/\s*SEK$/, "");
                     const customerName = getCellValue(row, "kund");
                     const limitValue =
-                      limitStatus === "error" ? (
-                        <Chip
-                          icon={<WarningAmberOutlinedIcon />}
-                          label={limitNumber}
-                          size="small"
-                          className={styles.limitErrorChip}
-                        />
+                      limitStatus === "error" || limitStatus === "warning" ? (
+                        <Tooltip title={`Överskriden limit — ${limitNumber} SEK`} placement="top">
+                          <span
+                            className={`${styles.warningCellContent} ${limitStatus === "error" ? styles.warningCellContentHigh : styles.warningCellContentOrange}`}
+                          >
+                            <WarningAmberOutlinedIcon className={styles.warningCellIcon} />
+                            <span className={styles.warningCellText}>{limitNumber}</span>
+                          </span>
+                        </Tooltip>
                       ) : (
-                        <span>{limitNumber}</span>
+                        <Tooltip title={`${limitNumber} SEK`} placement="top">
+                          <span className={styles.warningCellText}>{limitNumber}</span>
+                        </Tooltip>
                       );
                     return (
                       <span className={styles.limitCell}>
@@ -363,7 +403,7 @@ export function ContractListView({
                             onOpenCustomerFordran(customerName);
                           }}
                         >
-                          <LinkIcon className={styles.limitLinkIcon} fontSize="small" />
+                          <ArrowForwardIcon className={styles.limitLinkIcon} fontSize="small" />
                         </button>
                       </span>
                     );
@@ -379,7 +419,7 @@ export function ContractListView({
         </div>
 
         {isLineItemsTableVisible ? (
-          <div className={`${styles.lineItemsSection} ${styles.lineItemsSectionSplit}`}>
+          <div className={`${styles.lineItemsSection} ${styles.lineItemsSectionSplit} ${styles.contractTableCompact}`}>
             <div className={styles.lineItemsHeader}>
               <div className={styles.lineItemsTitleGroup}>
                 {selectedRowId !== null && tableRows[selectedRowId]?.["kontrakt"] ? (
@@ -404,6 +444,10 @@ export function ContractListView({
                 onSave={onSaveLineColumnChanges}
                 onReset={onResetLineColumnChanges}
                 onTogglePin={onToggleLineColumnPin}
+                canAdjustWidth={getLineColumnWidth ? () => true : undefined}
+                getColumnWidth={getLineColumnWidth}
+                onDecreaseWidth={onDecreaseLineColumnWidth}
+                onIncreaseWidth={onIncreaseLineColumnWidth}
                 iconOnly
               />
             </div>

@@ -11,10 +11,14 @@ import SearchIcon from "@mui/icons-material/Search";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, List, ListItemButton, ListItemText, Popover, TextField, Tooltip, Typography } from "@mui/material";
 import { ActionRow } from "./shared/ActionRow";
 import { ActionMenuButton } from "./shared/ActionMenuButton";
+import { ColumnHeaderCell } from "./shared/ColumnHeaderCell";
+import { ColumnInfoDialog } from "./shared/ColumnInfoDialog";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
 import { AndraDetaljerDialog } from "./AndraDetaljerDialog";
 import { SearchFiltersPanel } from "./shared/SearchFiltersPanel";
 import { DataTable } from "./shared/DataTable";
+import { useColumnHeaderMenu } from "./shared/useColumnHeaderMenu";
+import { useSortFilterTable } from "./shared/useSortFilterTable";
 import { useColumnManager } from "../hooks/useColumnManager";
 import styles from "../page.module.scss";
 
@@ -235,6 +239,9 @@ const BOTTOM_TABLE_ROWS = [
   },
 ];
 
+const getCellValue = (row: (typeof BOTTOM_TABLE_ROWS)[number], columnKey: string) =>
+  (row as Record<string, string>)[columnKey] ?? "-";
+
 const parseVolymNum = (v: string) => Number(String(v).replace(/\s/g, "").replace(",", ".")) || 0;
 
 const sumByKey = (rows: typeof BOTTOM_TABLE_ROWS, key: string) =>
@@ -307,6 +314,10 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
   const columnsMenuRef = useRef<HTMLDivElement | null>(null);
   const columnsButtonRef = useRef<HTMLButtonElement | null>(null);
   const columnsManager = useColumnManager(BOTTOM_TABLE_COLUMNS);
+  const { openHeaderMenuKey, setOpenHeaderMenuKey, infoColumnKey, setInfoColumnKey, headerMenuWrapperRef } =
+    useColumnHeaderMenu();
+  const { columnSort, columnFilters, toggleColumnSort, setColumnFilterOperator, setColumnFilterValue, displayRowEntries, getDisplayRowIndex } =
+    useSortFilterTable(BOTTOM_TABLE_ROWS, getCellValue);
 
   const handleToggleTableSearch = () => {
     setIsTableSearchOpen((prev) => {
@@ -418,6 +429,10 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
                 onSave={columnsManager.save}
                 onReset={columnsManager.reset}
                 onTogglePin={(key) => columnsManager.togglePin(key)}
+                canAdjustWidth={() => true}
+                getColumnWidth={columnsManager.getColumnWidth}
+                onDecreaseWidth={columnsManager.decreaseWidth}
+                onIncreaseWidth={columnsManager.increaseWidth}
                 iconOnly
               />
             </>
@@ -508,16 +523,31 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
             },
           ]}
         />
-        <div className={`${styles.tableContainer} ${langdspecOpen ? styles.tableContainerShrink : ""}`}>
+        <div className={`${styles.tableContainer} ${styles.contractTableCompact} ${langdspecOpen ? styles.tableContainerShrink : ""}`}>
           <div className={styles.tableScrollWrap}>
             <div className={styles.tableInner}>
               <DataTable
                 variant="main"
                 columns={columnsManager.orderedVisibleColumns}
-                rows={BOTTOM_TABLE_ROWS}
+                rows={displayRowEntries.map((entry) => entry.row)}
                 rowKey={(_, i) => String(i)}
-                selectedRowIndex={selectedRowIndex}
-                onRowClick={(i) => toggleRow(i)}
+                selectedRowIndex={getDisplayRowIndex(selectedRowIndex)}
+                onRowClick={(displayIndex) => toggleRow(displayRowEntries[displayIndex].originalIndex)}
+                renderHeaderCell={(column) => (
+                  <ColumnHeaderCell
+                    columnKey={column.key}
+                    columnLabel={column.label}
+                    columnSort={columnSort}
+                    onToggleSort={toggleColumnSort}
+                    columnFilter={columnFilters[column.key]}
+                    onSetFilterOperator={setColumnFilterOperator}
+                    onSetFilterValue={setColumnFilterValue}
+                    isMenuOpen={openHeaderMenuKey === column.key}
+                    onToggleMenu={() => setOpenHeaderMenuKey((prev) => (prev === column.key ? null : column.key))}
+                    headerMenuWrapperRef={headerMenuWrapperRef}
+                    onOpenInfo={setInfoColumnKey}
+                  />
+                )}
                 renderCell={(row, column) => {
                   const value = (row as Record<string, string>)[column.key];
                   if (column.key === "KontraktsNr" || column.key === "Avroprad nr") {
@@ -716,6 +746,8 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ColumnInfoDialog columnKey={infoColumnKey} onClose={() => setInfoColumnKey(null)} />
 
       <AndraDetaljerDialog
         open={andraDetaljerOpen}

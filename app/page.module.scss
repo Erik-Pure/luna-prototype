@@ -35,21 +35,11 @@
   width: 74px;
 }
 
-.sidebarHeader {
-  position: relative;
-  padding: 9px;
-  border-bottom: 1px solid #eaedf2;
-}
-
-.companyButton {
-  display: none;
-}
-
 .sidebarMenu {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 8px;
+  padding: 12px 8px 8px;
 }
 
 .sidebarBottomMenu {
@@ -57,141 +47,6 @@
   flex-direction: column;
   gap: 13px;
   padding: 0 8px 8px;
-}
-
-.companySelectorButton {
-  display: flex;
-  width: 100%;
-  min-height: 28px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 0 8px;
-  border: 1px solid #d4d9e0;
-  border-radius: 6px;
-  background-color: #ffffff;
-  color: #333333;
-  font-size: 11px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.companySelectorText {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.companySelectorArrow {
-  color: #333333;
-  font-size: 20px;
-}
-
-.companySelectorHomeIcon {
-  color: #333333;
-  font-size: 18px;
-}
-
-.companySelectorBadgeRoot {
-  display: inline-flex;
-}
-
-.companySelectorBadge {
-  background-color: var(--color-champagne);
-  color: #ffffff;
-  font-size: 8px;
-  font-weight: 700;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
-  border-radius: 8px;
-}
-
-.companySelectorTooltip {
-  position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
-  z-index: 30;
-  padding: 5px 8px;
-  border: 1px solid #d8dce5;
-  border-radius: 4px;
-  background-color: #ffffff;
-  color: #333333;
-  font-size: 11px;
-  line-height: 1;
-  white-space: nowrap;
-  pointer-events: none;
-  transform: translateY(-50%);
-  opacity: 0;
-}
-
-.companyDropdown {
-  position: absolute;
-  top: calc(100% - 1px);
-  left: 9px;
-  right: 9px;
-  z-index: 25;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid #d7dbe3;
-  border-radius: 6px;
-  background-color: #ffffff;
-  box-shadow: 0 8px 18px rgba(20, 31, 53, 0.14);
-}
-
-.companyDropdownCollapsed {
-  top: 8px;
-  left: calc(100% + 8px);
-  right: auto;
-  width: 220px;
-}
-
-.companyDropdownItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 36px;
-  padding: 6px 10px;
-  border: none;
-  border-bottom: 1px solid #edf1f5;
-  background: #ffffff;
-  color: #333333;
-  font-size: 12px;
-  text-align: left;
-  cursor: pointer;
-
-  &:hover,
-  &:focus-visible {
-    background-color: #f3f6fb;
-  }
-}
-
-.companyDropdownItemLabel {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.companyDropdownItemCode {
-  flex-shrink: 0;
-  font-size: 10px;
-  font-weight: 600;
-  color: #9da5b2;
-  background: #f0f2f6;
-  border-radius: 4px;
-  padding: 1px 5px;
-}
-
-.companyDropdownItem:last-child {
-  border-bottom: none;
-}
-
-.companyDropdownItemActive {
-  background-color: #eef2f8;
-  font-weight: 600;
 }
 
 .sidebarItemButton {
@@ -275,21 +130,6 @@
   pointer-events: none;
   transform: translateY(-50%);
   opacity: 0;
-}
-
-.sidebarCollapsed .companySelectorButton {
-  justify-content: center;
-  padding: 0;
-}
-
-.sidebarCollapsed .companySelectorButton:hover .companySelectorTooltip,
-.sidebarCollapsed .companySelectorButton:focus-visible .companySelectorTooltip {
-  opacity: 1;
-}
-
-.sidebarCollapsed .companySelectorText,
-.sidebarCollapsed .companySelectorArrow {
-  display: none;
 }
 
 .sidebarCollapsed .sidebarItemButton {
@@ -1160,6 +1000,14 @@
   font-size: 11px;
 }
 
+.searchCheckboxItemDisabled {
+  opacity: 0.55;
+
+  :global(.MuiCheckbox-root) {
+    pointer-events: none;
+  }
+}
+
 .klarSokGridCheckbox {
   display: flex;
   align-items: center;
@@ -2010,6 +1858,9 @@
 
 .tableHeaderCell {
   display: table-cell;
+  position: sticky;
+  top: 0;
+  z-index: 15;
   color: #2f343b;
   font-size: 12.5px;
   font-weight: 800;
@@ -2018,6 +1869,126 @@
   line-height: 1.3;
   white-space: nowrap;
   vertical-align: middle;
+  background-color: #f9fafb;
+}
+
+.tableHeaderCellContent {
+  position: relative;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+}
+
+.tableHeaderCellLabel {
+  display: block;
+  white-space: nowrap;
+}
+
+.tableHeaderCell:hover .tableHeaderCellLabel,
+.tableHeaderCellLabelTrimmed {
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tableHeaderCellIcons {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  padding-left: 6px;
+  background-color: transparent;
+}
+
+.tableHeaderCell:hover .tableHeaderCellIcons,
+.tableHeaderCellIconsActive {
+  background-color: #f9fafb;
+}
+
+.tableHeaderCellIcon {
+  width: 18px !important;
+  height: 18px !important;
+  padding: 2px !important;
+  color: #8a93a6;
+  background-color: transparent !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+
+  &:hover {
+    color: #1f2937;
+    background-color: #eef1f6 !important;
+  }
+
+  :global(svg) {
+    font-size: 14px;
+  }
+}
+
+.tableHeaderCell:hover .tableHeaderCellIcon,
+.tableHeaderCellIconActive {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tableHeaderCellIconHighlighted {
+  color: #c47900 !important;
+  background-color: #fff3df !important;
+
+  &:hover {
+    color: #c47900 !important;
+    background-color: #ffe8bf !important;
+  }
+}
+
+.tableHeaderActionsPopover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  width: 260px;
+  background-color: #ffffff;
+  border: 1px solid #d9dee7;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+}
+
+.tableHeaderPopoverFilterRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tableHeaderFilterInput,
+.tableHeaderFilterSelect {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #2f343b;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  outline: none;
+
+  &:focus {
+    border-color: var(--color-champagne-dark);
+  }
+}
+
+.tableHeaderFilterInput::placeholder {
+  color: #9aa4b5;
+}
+
+.tableHeaderFilterSelect {
+  cursor: pointer;
 }
 
 .tableRow {
@@ -2066,11 +2037,38 @@
   line-height: 34px;
   vertical-align: middle;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border-bottom: 1px solid #eef1f6;
+}
+
+.contractTableCompact .tableHeaderCell {
+  padding: 6px 12px;
+  min-width: 64px;
+}
+
+.contractTableCompact .tableCell {
+  padding: 4px 12px;
+  line-height: 22px;
+  min-width: 64px;
+}
+
+.contractTableCompact .lineItemsHeaderCell {
+  padding: 6px 12px;
+  min-width: 64px;
+}
+
+.contractTableCompact .lineItemsCell {
+  padding: 4px 12px;
+  line-height: 22px;
+  min-width: 64px;
 }
 
 .tableHeaderFillerCell {
   display: table-cell;
+  position: sticky;
+  top: 0;
+  z-index: 15;
   width: auto;
   min-width: 0;
   padding: 0;
@@ -2446,8 +2444,8 @@
 }
 
 .contractModernAlertChip {
-  background-color: #f4d8db !important;
-  color: #7e2b30 !important;
+  background-color: #FDE0E0 !important;
+  color: #A11D1D !important;
   border-radius: 999px;
 }
 
@@ -2657,6 +2655,17 @@
   border-bottom: 1px solid #e8ecf2;
 }
 
+.contractBodySectionsColStacked {
+  margin: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e4e8f0;
+  border-radius: 10px;
+  max-height: min(46vh, 420px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
 .contractBodySectionsColWide {
   order: 2;
   width: 290px;
@@ -2683,19 +2692,24 @@
   flex-shrink: 0;
 }
 
+.contractBodySectionsColCollapsedNarrow {
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
 .contractSectionsPanelHeader {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
-  padding-bottom: 8px;
+  gap: 4px;
+  padding-bottom: 4px;
   min-height: 32px;
   position: sticky;
-  top: -10;
+  top: -10px;
   z-index: 10;
   background-color: #fafafa;
   margin: -10px -12px 0;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 
 .contractSectionsPanelHeaderActionsRow {
@@ -2703,12 +2717,12 @@
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
+  margin-top: 4px;
 }
 
 .contractSectionsPanelTitleRow {
-  margin: -10px -12px 0;
-  padding: 10px 12px;
-  margin-bottom: 6px;
+  margin: -8px -12px 0;
+  padding: 6px 12px;
   background-color: #eef0f4;
 }
 
@@ -2737,12 +2751,8 @@
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 2px 10px;
-  margin-bottom: 8px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background-color: #eef0f4;
-  text-align: right;
   width: 100%;
+  margin-top: 4px;
 }
 
 .contractSectionsQuickNavIcon {
@@ -2762,7 +2772,7 @@
   font-size: 11.5px !important;
   font-weight: 400 !important;
   text-transform: none !important;
-  line-height: 1.6 !important;
+  line-height: 1.3 !important;
   justify-content: flex-end !important;
   text-align: right !important;
 }
@@ -3082,6 +3092,13 @@
   padding: 6px 0;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.contractMudTabBarStackedSticky {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: #ffffff;
 }
 
 .contractMudTabItem {
@@ -3615,10 +3632,19 @@
   background-color: #ffffff;
 }
 
+.lineItemsSectionFill {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .lineItemsSection .actionRow {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 40;
   background-color: #ffffff;
   min-height: 52px;
   gap: 8px;
@@ -3752,6 +3778,9 @@
 
 .lineItemsHeaderCell {
   display: table-cell;
+  position: sticky;
+  top: 0;
+  z-index: 15;
   color: #2f343b;
   font-size: 12px;
   font-weight: 800;
@@ -3773,11 +3802,16 @@
   line-height: 28px;
   vertical-align: middle;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border-bottom: 1px solid #eef1f6;
 }
 
 .lineItemsHeaderFillerCell {
   display: table-cell;
+  position: sticky;
+  top: 0;
+  z-index: 15;
   width: auto;
   min-width: 0;
   padding: 0;
@@ -5559,7 +5593,8 @@
 }
 
 .systemSettingsPanel {
-  margin: 16px;
+  width: 1028px;
+  margin: 16px auto;
   padding: 16px;
   border: 1px solid #d9dee7;
   border-radius: 8px;
@@ -5569,7 +5604,7 @@
 .systemSettingsTitle {
   color: #2f3743;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 600 !important;
   margin-bottom: 14px;
 }
 
@@ -5578,7 +5613,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 0;
+  padding: 14px 0;
+}
+
+.systemSettingRow + .systemSettingRow {
+  border-top: 1px solid #eaedf2;
 }
 
 .systemSettingLabel {
@@ -5590,6 +5629,26 @@
 .systemSettingDescription {
   color: #5f6774;
   font-size: 13px;
+}
+
+.systemSettingSelectControl {
+  min-width: 240px;
+}
+
+.systemSettingsActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eaedf2;
+}
+
+:global(html[data-color-mode="dark"]) .systemSettingsActions {
+  border-top-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .systemSettingRow + .systemSettingRow {
+  border-top-color: #3a3f4a;
 }
 
 :global(html[data-color-mode="dark"]) .systemSettingsPanel {
@@ -5621,7 +5680,11 @@
 }
 
 :global(html[data-color-mode="dark"]) .tableHeader,
-:global(html[data-color-mode="dark"]) .lineItemsHeaderRow {
+:global(html[data-color-mode="dark"]) .lineItemsHeaderRow,
+:global(html[data-color-mode="dark"]) .tableHeaderCell,
+:global(html[data-color-mode="dark"]) .lineItemsHeaderCell,
+:global(html[data-color-mode="dark"]) .tableHeaderFillerCell,
+:global(html[data-color-mode="dark"]) .lineItemsHeaderFillerCell {
   background-color: #282c34;
   border-color: #3a3f4a;
 }
@@ -5672,16 +5735,12 @@
   border-color: #3a3f4a;
 }
 
-:global(html[data-color-mode="dark"]) .sidebarHeader,
 :global(html[data-color-mode="dark"]) .sidebarFooter,
 :global(html[data-color-mode="dark"]) .topNav,
 :global(html[data-color-mode="dark"]) .collapseButtonWrap {
   border-color: #3a3f4a;
 }
 
-:global(html[data-color-mode="dark"]) .companySelectorButton,
-:global(html[data-color-mode="dark"]) .companyDropdown,
-:global(html[data-color-mode="dark"]) .companyDropdownItem,
 :global(html[data-color-mode="dark"]) .searchFieldsContainer,
 :global(html[data-color-mode="dark"]) .searchFieldsActions,
 :global(html[data-color-mode="dark"]) .searchFieldsDropdown,
@@ -5692,8 +5751,6 @@
   color: #dbe1ea;
 }
 
-:global(html[data-color-mode="dark"]) .companyDropdownItem:hover,
-:global(html[data-color-mode="dark"]) .companyDropdownItem:focus-visible,
 :global(html[data-color-mode="dark"]) .sidebarItemButton:hover,
 :global(html[data-color-mode="dark"]) .sidebarItemButton:focus-visible,
 :global(html[data-color-mode="dark"]) .topMenuItemActive,
@@ -5710,9 +5767,6 @@
 :global(html[data-color-mode="dark"]) .sidebarItemButton,
 :global(html[data-color-mode="dark"]) .sidebarItemIcon,
 :global(html[data-color-mode="dark"]) .sidebarItemIcon :global(svg),
-:global(html[data-color-mode="dark"]) .companySelectorButton,
-:global(html[data-color-mode="dark"]) .companySelectorArrow,
-:global(html[data-color-mode="dark"]) .companySelectorHomeIcon,
 :global(html[data-color-mode="dark"]) .topMenuItem,
 :global(html[data-color-mode="dark"]) .topMenuItem :global(svg),
 :global(html[data-color-mode="dark"]) .breadcrumbs,
@@ -5737,6 +5791,37 @@
 
 :global(html[data-color-mode="dark"]) .columnsWidthArrow {
   color: #c7cfdd;
+}
+
+:global(html[data-color-mode="dark"]) .tableHeaderCellIcon {
+  color: #9aa4b5;
+
+  &:hover {
+    color: #e5e9f0;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+  }
+}
+
+:global(html[data-color-mode="dark"]) .tableHeaderCell:hover .tableHeaderCellIcons,
+:global(html[data-color-mode="dark"]) .tableHeaderCellIconsActive {
+  background-color: #282c34;
+}
+
+:global(html[data-color-mode="dark"]) .tableHeaderActionsPopover {
+  background-color: #282c34;
+  border-color: #3a3f4a;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+:global(html[data-color-mode="dark"]) .tableHeaderFilterInput,
+:global(html[data-color-mode="dark"]) .tableHeaderFilterSelect {
+  color: #dbe1ea;
+  background-color: #23262f;
+  border-color: #3a3f4a;
+}
+
+:global(html[data-color-mode="dark"]) .tableHeaderFilterInput::placeholder {
+  color: #6b7280;
 }
 
 :global(html[data-color-mode="dark"]) .userAvatar {
@@ -5969,10 +6054,6 @@
 :global(html[data-color-mode="dark"]) .contractSectionsPanelMinimizeBtn:hover {
   color: #dbe1ea !important;
   background: rgba(255, 255, 255, 0.08) !important;
-}
-
-:global(html[data-color-mode="dark"]) .contractSectionsQuickNav {
-  background-color: #20242c;
 }
 
 :global(html[data-color-mode="dark"]) .contractSectionsQuickNavIcon {
@@ -7588,8 +7669,8 @@ body button {
 }
 
 .limitErrorChip {
-  background-color: #f4d8db !important;
-  color: #7e2b30 !important;
+  background-color: #FDE0E0 !important;
+  color: #A11D1D !important;
   border-radius: 999px;
 
   :global(.MuiChip-label) {
@@ -7606,8 +7687,26 @@ body button {
 }
 
 .limitWarningChip {
-  background-color: #fef3cc !important;
-  color: #7a5800 !important;
+  background-color: #FEF3C7 !important;
+  color: #8A5A00 !important;
+  border-radius: 999px;
+
+  :global(.MuiChip-label) {
+    font-size: 11px !important;
+    font-weight: 600;
+    padding: 0 8px;
+  }
+
+  :global(.MuiChip-icon) {
+    color: inherit !important;
+    font-size: 14px !important;
+    margin-left: 6px;
+  }
+}
+
+.limitModerateChip {
+  background-color: #FFE4CC !important;
+  color: #A34E00 !important;
   border-radius: 999px;
 
   :global(.MuiChip-label) {
@@ -7642,11 +7741,10 @@ body button {
 }
 
 .limitCellValue {
+  display: flex;
+  align-items: center;
   min-width: 0;
   flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .limitLinkIconButton {
@@ -7664,8 +7762,8 @@ body button {
   transition: background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
-    color: #1a1d22;
-    background-color: #e8ebf0;
+    color: var(--color-champagne-dark);
+    background-color: var(--color-champagne-20);
   }
 }
 
@@ -7689,13 +7787,53 @@ body button {
 }
 
 .kortnamnBadgeMedium {
-  background-color: #fef3cc;
-  color: #7a5800;
+  background-color: #FEF3C7;
+  color: #8A5A00;
 }
 
 .kortnamnBadgeHigh {
-  background-color: #f4d8db;
-  color: #7e2b30;
+  background-color: #FDE0E0;
+  color: #A11D1D;
+}
+
+.warningCellContent {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.warningCellContentMedium {
+  background-color: #FEF3C7;
+  color: #8A5A00;
+}
+
+.warningCellContentHigh {
+  background-color: #FDE0E0;
+  color: #A11D1D;
+}
+
+.warningCellContentOrange {
+  background-color: #FFE4CC;
+  color: #A34E00;
+}
+
+.warningCellIcon {
+  font-size: 15px !important;
+  flex-shrink: 0;
+}
+
+.warningCellText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .callOffLinkButton {
@@ -7831,6 +7969,14 @@ body button {
 
 .freightDialogContent {
   padding: 12px 20px 8px !important;
+}
+
+.columnInfoDialogContent {
+  padding: 12px 20px 22px !important;
+}
+
+.columnInfoLegendLabel:global(.MuiTypography-root) {
+  font-size: 12.5px !important;
 }
 
 .freightDialogActions {

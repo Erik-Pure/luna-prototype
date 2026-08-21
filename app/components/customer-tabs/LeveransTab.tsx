@@ -476,8 +476,8 @@ export function LeveransTab() {
   const fmt = (val: string) => val || "";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      <div className={styles.contractFlatSection} style={{ maxWidth: 1000, margin: "0 auto", width: "100%", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 0, height: "100%", minHeight: 0, overflow: "hidden" }}>
+      <div className={styles.contractFlatSection} style={{ maxWidth: 1000, margin: "0 auto", width: "100%", gap: 16, flexShrink: 0 }}>
 
         {/* ── Transport & Lossning ── */}
         <div className={styles.contractDataSection} style={{ padding: 16, background: "#fafafa" }}>
@@ -514,7 +514,7 @@ export function LeveransTab() {
       />
 
       {/* ── Alternativa leveransadresser ── */}
-      <div className={styles.lineItemsSection}>
+      <div className={`${styles.lineItemsSection} ${styles.lineItemsSectionFill}`}>
         {/* <Typography className={styles.contractSectionTitle} style={{ padding: "4px 12px 4px 0" }}>
           Alternativa leveransadresser
         </Typography> */}
@@ -526,42 +526,46 @@ export function LeveransTab() {
             onClick: () => { setNyDialogKey((k) => k + 1); setNyDialogOpen(true); },
           }]}
         />
-        <DataTable
-          variant="main"
-          columns={ALT_ADRESS_COLUMNS}
-          rows={altRows}
-          rowKey={(row) => row._id}
-          selectedRowIndex={selectedAltRow}
-          onRowClick={(i) => setSelectedAltRow(i === selectedAltRow ? null : i)}
-          fillRemainingSpace
-          renderCell={(row, col) => {
-            if (col.key === "namn" && row.namn === "Leveransadress") {
-              return <span style={{ fontWeight: 700 }}>{row.namn}</span>;
-            }
-            if (col.key === "_actions") {
-              return (
-                <span className={styles.freightActionCell}>
-                  <Tooltip title="Visa" placement="top">
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); setViewRow(row); }}>
-                      <VisibilityOutlinedIcon className={styles.freightActionIcon} />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Redigera" placement="top">
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); setEditRow(row); }}>
-                      <EditOutlinedIcon className={styles.freightActionIcon} />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Ta bort" placement="top">
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); setAltRows((prev) => prev.filter((r) => r._id !== row._id)); }}>
-                      <DeleteOutlineIcon className={styles.freightActionIcon} />
-                    </IconButton>
-                  </Tooltip>
-                </span>
-              );
-            }
-            return row[col.key as keyof AltAdressRow] ?? "";
-          }}
-        />
+        <div className={styles.tableScrollWrap}>
+          <div className={styles.tableInner}>
+            <DataTable
+              variant="main"
+              columns={ALT_ADRESS_COLUMNS}
+              rows={altRows}
+              rowKey={(row) => row._id}
+              selectedRowIndex={selectedAltRow}
+              onRowClick={(i) => setSelectedAltRow(i === selectedAltRow ? null : i)}
+              fillRemainingSpace
+              renderCell={(row, col) => {
+                if (col.key === "namn" && row.namn === "Leveransadress") {
+                  return <span style={{ fontWeight: 700 }}>{row.namn}</span>;
+                }
+                if (col.key === "_actions") {
+                  return (
+                    <span className={styles.freightActionCell}>
+                      <Tooltip title="Visa" placement="top">
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setViewRow(row); }}>
+                          <VisibilityOutlinedIcon className={styles.freightActionIcon} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Redigera" placement="top">
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setEditRow(row); }}>
+                          <EditOutlinedIcon className={styles.freightActionIcon} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Ta bort" placement="top">
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); setAltRows((prev) => prev.filter((r) => r._id !== row._id)); }}>
+                          <DeleteOutlineIcon className={styles.freightActionIcon} />
+                        </IconButton>
+                      </Tooltip>
+                    </span>
+                  );
+                }
+                return row[col.key as keyof AltAdressRow] ?? "";
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       <NyAlternativAdressDialog

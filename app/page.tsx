@@ -36,7 +36,6 @@ import {
   MenuItem,
   Popover,
   Select,
-  Switch,
   TextField,
   Typography
 } from "@mui/material";
@@ -68,8 +67,12 @@ import { DataTable } from "./components/shared/DataTable";
 import { ActionRow } from "./components/shared/ActionRow";
 import { ActionMenuButton } from "./components/shared/ActionMenuButton";
 import { ColumnManagerDropdown } from "./components/shared/ColumnManagerDropdown";
-import { useColumnManager } from "./hooks/useColumnManager";
-import { useColorMode, useUiState } from "./providers";
+import { ColumnHeaderCell } from "./components/shared/ColumnHeaderCell";
+import { useColumnHeaderMenu } from "./components/shared/useColumnHeaderMenu";
+import { useSortFilterTable } from "./components/shared/useSortFilterTable";
+import { COLUMN_INFO } from "./components/shared/columnInfo";
+import { useColumnManager, DEFAULT_COLUMN_WIDTH, COLUMN_WIDTH_STEP, clampColumnWidth } from "./hooks/useColumnManager";
+import { useUiState } from "./providers";
 import styles from "./page.module.scss";
 
 type SectionKey = "hem" | "marknad" | "produktion" | "leverans" | "rapporter" | "systemhantering" | "system";
@@ -166,11 +169,7 @@ const topMenusBySection: Record<SectionKey, TopMenuItemDef[]> = {
     { slug: "komponenter", label: "Komponenter" },
     { slug: "loggar", label: "Loggar" }
   ],
-  system: [
-    { slug: "installningar", label: "Inställningar" },
-    { slug: "anvandare", label: "Användare" },
-    { slug: "integrationer", label: "Integrationer" }
-  ]
+  system: []
 };
 
 const actionItems = [
@@ -258,6 +257,7 @@ type LineItemColumnConfig = {
   label: string;
   visible: boolean;
   pinned: boolean;
+  width?: number;
 };
 
 type LineItemRow = Record<string, string>;
@@ -283,7 +283,7 @@ type TableRow = {
   utlastningssparr?: string;
   tillhor?: string;
   limit?: string;
-  limitStatus?: "ok" | "error";
+  limitStatus?: "ok" | "warning" | "error";
   forfallenFordran?: "true";
 } & Partial<Record<keyof NewContractDraft, string>>;
 
@@ -452,17 +452,25 @@ const baseContractColumns: ColumnConfig[] = [
 ];
 
 const CONTRACT_COLUMN_DEFAULT_WIDTHS: Partial<Record<ColumnKey, number>> = {
-  kontrakt: 138,
-  externNr: 178,
-  belopp: 130,
-  kund: 230,
-  land: 90,
+  kontrakt: 118,
+  externNr: 166,
+  belopp: 104,
+  kund: 215,
+  land: 68,
   kontraktsdatum: 132,
-  giltigTom: 126,
+  giltigTom: 108,
+  egenAnmarkning: 144,
   status: 120,
-  leveransperiod: 146,
-  upprattatAv: 156,
-  limit: 150,
+  leveransperiod: 134,
+  upprattatAv: 128,
+  kontraktsvolym: 130,
+  levVolym: 96,
+  olevVolym: 66,
+  avropatProcent: 96,
+  prislistaNr: 102,
+  utlastningssparr: 150,
+  tillhor: 118,
+  limit: 118,
 };
 
 const defaultColumns: ColumnConfig[] = [
@@ -484,7 +492,20 @@ const LIMIT_DATA: Array<{ limit: string; limitStatus: "ok" | "error"; forfallenF
   { limit: "660 000 SEK", limitStatus: "error", forfallenFordran: true },
 ];
 
-const CONTRACT_IDS = ["163311", "163452", "163518", "163601", "163744", "163890"] as const;
+const CONTRACT_IDS = [
+  "163311",
+  "163452",
+  "163518",
+  "163601",
+  "163744",
+  "163890",
+  "163955",
+  "164027",
+  "164183",
+  "164256",
+  "164390",
+  "164512"
+] as const;
 
 const CONTRACT_CUSTOMERS = [
   "Acme AB",
@@ -492,7 +513,13 @@ const CONTRACT_CUSTOMERS = [
   "Initech HB",
   "Nordic Sten & Mark AB",
   "Luna Infrastruktur AB",
-  "Skandinavisk Industriservice"
+  "Skandinavisk Industriservice",
+  "Björk & Ek Bygg AB",
+  "Granit & Grus HB",
+  "Norrlands Trä AB",
+  "Bygg & Handel Syd AB",
+  "Timra Hus AB",
+  "BalticBuild OÜ"
 ] as const;
 
 const CUSTOMER_DETAILS: Record<string, CustomerDetailData> = {
@@ -809,81 +836,86 @@ function decodePathSegment(segment: string): string {
   }
 }
 
-const tableRows: TableRow[] = Array.from({ length: 6 }).map((_, idx) => {
+const tableRows: TableRow[] = Array.from({ length: 12 }).map((_, idx) => {
   const customerName = CONTRACT_CUSTOMERS[idx % CONTRACT_CUSTOMERS.length];
   const customerDetail = CUSTOMER_DETAILS[customerName];
   return {
-  kontrakt: CONTRACT_IDS[idx % CONTRACT_IDS.length],
-  externNr: `2026/${String(idx + 1).padStart(2, "0")} REG ${idx + 2}`,
-  belopp: `${(26651 + idx * 7450).toLocaleString("sv-SE")}`,
-  artNr: `22${120 + idx}`,
-  kund: customerName,
-  land: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
-  kontraktsdatum: `2026-0${(idx % 5) + 1}-0${(idx % 7) + 1}`,
-  giltigTom: `2026-12-${String(10 + idx).padStart(2, "0")}`,
-  egenAnmarkning: idx === 0 ? "Ny kund" : idx === 3 ? "Kreditkontroll" : "",
-  status: idx === 5 ? "Inaktivt kontrakt" : "Aktivt kontrakt",
-  leveransperiod: idx % 3 === 0 ? "Q1-Q2" : idx % 3 === 1 ? "Q2-Q3" : "Q3-Q4",
-  upprattatAv: idx % 2 === 0 ? "Jane Doe" : "Erik Andersson",
-  kontraktsvolym: `${10 + idx}`,
-  levVolym: `${4 + idx}`,
-  olevVolym: `${6}`,
-  avropatProcent: `${Math.round(((4 + idx) / (10 + idx)) * 100)}%`,
-  prislistaNr: `PL-${202600 + idx}`,
-  utlastningssparr: idx % 4 === 0 ? "Ja" : "Nej",
-  tillhor: idx % 2 === 0 ? "Marknad Nord" : "Marknad Syd",
-  limit: customerDetail?.creditLimit ?? LIMIT_DATA[idx % LIMIT_DATA.length].limit,
-  limitStatus: customerDetail?.varningsnivaLimit === "Hög" ? "error" : "ok",
-  forfallenFordran: customerDetail?.varningsnivaFordran === "Hög" ? "true" : undefined,
-  customer: customerName,
-  createdBy: idx % 2 === 0 ? "Jane Doe" : "Erik Andersson",
-  contractDate: `2026-0${(idx % 5) + 1}-0${(idx % 7) + 1}`,
-  language: idx % 2 === 0 ? "Svenska" : "English",
-  currency: idx % 3 === 0 ? "SEK" : idx % 3 === 1 ? "EUR" : "NOK",
-  paymentTerms: idx % 2 === 0 ? "30 dagar netto" : "14 dagar netto",
-  certification: idx % 2 === 0 ? "FSC" : "PEFC",
-  contractForm: "Standard",
-  deliveryMethod: idx % 2 === 0 ? "Hämta" : "Leverans",
-  deliveryTerms: "FCA",
-  deliveryTermsCity: ["Krokom", "Göteborg", "Stockholm"][idx % 3],
-  agent1: idx % 2 === 0 ? "Nordic Agent AB" : "",
-  agent1Pct: idx % 2 === 0 ? "2" : "0",
-  deliveryLocation: ["Krokom", "Sävar", "Kåge"][idx % 3],
-  deliveryLocationPostalCode: ["835 32", "918 32", "934 32"][idx % 3],
-  customerRef: `REF-${idx + 1}`,
-  priceList: `PL-${202600 + idx}`,
-  externalContractNumber: `EXT-${2026}${String(idx + 1).padStart(3, "0")}`,
-  priceAdjustPct: idx % 2 === 0 ? "0" : "1.5",
-  category: idx % 2 === 0 ? "Bygghandel" : "Industri",
-  country: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
-  contractType: "Försäljningskontrakt",
-  validUntil: `2026-12-${String(10 + idx).padStart(2, "0")}`,
-  miscNote: idx === 0 ? "Prioriterad kund" : "",
-  internalNote: idx === 3 ? "Kreditkontroll krävs" : "",
-  exchangeRateDate: "2026-01-01",
-  vat: "25",
-  exchangeRate: idx % 3 === 0 ? "1" : idx % 3 === 1 ? "11.35" : "10.05",
-  paymentTermsDays: idx % 2 === 0 ? "30" : "14",
-  cashDiscount: "",
-  bonus: "",
-  bonusBase: "Bruttovärde",
-  pickingSurchargeMin: "",
-  pickingSurchargePct: "",
-  paintingSurcharge: "",
-  paintingSurchargeThreshold: "",
-  importFee: "",
-  consignmentStock: idx % 2 === 0 ? "Nej" : "Ja",
-  receiverCountry: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
-  deliveryPeriod: idx % 3 === 0 ? "Q1-Q2" : idx % 3 === 1 ? "Q2-Q3" : "Q3-Q4",
-  deliveryAddress: [
-    "Industrigatan 12, 835 32 Krokom",
-    "Hamnvägen 1, 918 32 Sävar",
-    "Terminalvägen 2, 934 32 Kåge",
-  ][idx % 3],
-  unloadingPhone: "063-000 00 00",
-  unloadingHours: "07:00-16:00",
-  notificationPhone: "070-000 00 00",
-  notificationInfo: "Avisera 24h innan leverans",
+    kontrakt: CONTRACT_IDS[idx % CONTRACT_IDS.length],
+    externNr: `2026/${String(idx + 1).padStart(2, "0")} REG ${idx + 2}`,
+    belopp: `${(26651 + idx * 7450).toLocaleString("sv-SE")}`,
+    artNr: `22${120 + idx}`,
+    kund: customerName,
+    land: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
+    kontraktsdatum: `2026-0${(idx % 5) + 1}-0${(idx % 7) + 1}`,
+    giltigTom: `2026-12-${String(10 + idx).padStart(2, "0")}`,
+    egenAnmarkning: idx === 0 ? "Ny kund" : idx === 3 ? "Kreditkontroll" : "",
+    status: idx === 5 ? "Inaktivt kontrakt" : "Aktivt kontrakt",
+    leveransperiod: idx % 3 === 0 ? "Q1-Q2" : idx % 3 === 1 ? "Q2-Q3" : "Q3-Q4",
+    upprattatAv: idx % 2 === 0 ? "Jane Doe" : "Erik Andersson",
+    kontraktsvolym: `${10 + idx}`,
+    levVolym: `${4 + idx}`,
+    olevVolym: `${6}`,
+    avropatProcent: `${Math.round(((4 + idx) / (10 + idx)) * 100)}%`,
+    prislistaNr: `PL-${202600 + idx}`,
+    utlastningssparr: idx % 4 === 0 ? "Ja" : "Nej",
+    tillhor: idx % 2 === 0 ? "Marknad Nord" : "Marknad Syd",
+    limit: customerDetail?.creditLimit ?? LIMIT_DATA[idx % LIMIT_DATA.length].limit,
+    limitStatus:
+      customerDetail?.varningsnivaLimit === "Hög"
+        ? "error"
+        : customerDetail?.varningsnivaLimit === "Medium"
+          ? "warning"
+          : "ok",
+    forfallenFordran: customerDetail?.varningsnivaFordran === "Hög" ? "true" : undefined,
+    customer: customerName,
+    createdBy: idx % 2 === 0 ? "Jane Doe" : "Erik Andersson",
+    contractDate: `2026-0${(idx % 5) + 1}-0${(idx % 7) + 1}`,
+    language: idx % 2 === 0 ? "Svenska" : "English",
+    currency: idx % 3 === 0 ? "SEK" : idx % 3 === 1 ? "EUR" : "NOK",
+    paymentTerms: idx % 2 === 0 ? "30 dagar netto" : "14 dagar netto",
+    certification: idx % 2 === 0 ? "FSC" : "PEFC",
+    contractForm: "Standard",
+    deliveryMethod: idx % 2 === 0 ? "Hämta" : "Leverans",
+    deliveryTerms: "FCA",
+    deliveryTermsCity: ["Krokom", "Göteborg", "Stockholm"][idx % 3],
+    agent1: idx % 2 === 0 ? "Nordic Agent AB" : "",
+    agent1Pct: idx % 2 === 0 ? "2" : "0",
+    deliveryLocation: ["Krokom", "Sävar", "Kåge"][idx % 3],
+    deliveryLocationPostalCode: ["835 32", "918 32", "934 32"][idx % 3],
+    customerRef: `REF-${idx + 1}`,
+    priceList: `PL-${202600 + idx}`,
+    externalContractNumber: `EXT-${2026}${String(idx + 1).padStart(3, "0")}`,
+    priceAdjustPct: idx % 2 === 0 ? "0" : "1.5",
+    category: idx % 2 === 0 ? "Bygghandel" : "Industri",
+    country: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
+    contractType: "Försäljningskontrakt",
+    validUntil: `2026-12-${String(10 + idx).padStart(2, "0")}`,
+    miscNote: idx === 0 ? "Prioriterad kund" : "",
+    internalNote: idx === 3 ? "Kreditkontroll krävs" : "",
+    exchangeRateDate: "2026-01-01",
+    vat: "25",
+    exchangeRate: idx % 3 === 0 ? "1" : idx % 3 === 1 ? "11.35" : "10.05",
+    paymentTermsDays: idx % 2 === 0 ? "30" : "14",
+    cashDiscount: "",
+    bonus: "",
+    bonusBase: "Bruttovärde",
+    pickingSurchargeMin: "",
+    pickingSurchargePct: "",
+    paintingSurcharge: "",
+    paintingSurchargeThreshold: "",
+    importFee: "",
+    consignmentStock: idx % 2 === 0 ? "Nej" : "Ja",
+    receiverCountry: idx % 4 === 0 ? "SE" : idx % 4 === 1 ? "NO" : idx % 4 === 2 ? "FI" : "DK",
+    deliveryPeriod: idx % 3 === 0 ? "Q1-Q2" : idx % 3 === 1 ? "Q2-Q3" : "Q3-Q4",
+    deliveryAddress: [
+      "Industrigatan 12, 835 32 Krokom",
+      "Hamnvägen 1, 918 32 Sävar",
+      "Terminalvägen 2, 934 32 Kåge",
+    ][idx % 3],
+    unloadingPhone: "063-000 00 00",
+    unloadingHours: "07:00-16:00",
+    notificationPhone: "070-000 00 00",
+    notificationInfo: "Avisera 24h innan leverans",
   };
 });
 
@@ -1127,24 +1159,24 @@ const initialCustomerSearchValues: CustomerSearchValueMap = {
 };
 
 const defaultCustomerColumns: CustomerColumnConfig[] = [
-  { key: "kundnr", label: "Kundnr", visible: true, pinned: false, width: 100 },
-  { key: "kundansvarig", label: "Kundansvarig", visible: true, pinned: false, width: 150 },
+  { key: "kundnr", label: "Kundnr", visible: true, pinned: false, width: 84 },
+  { key: "kundansvarig", label: "Kundansvarig", visible: true, pinned: false, width: 132 },
   { key: "kontrakt12Man", label: "Kontrakt 12 mån", visible: true, pinned: false, width: 130 },
   { key: "leveransnamn", label: "Leveransnamn", visible: true, pinned: false, width: 200 },
-  { key: "kortnamn", label: "Kortnamn", visible: true, pinned: false, width: 110 },
+  { key: "kortnamn", label: "Kortnamn", visible: true, pinned: false, width: 100 },
   { key: "fakturanamn", label: "Fakturanamn", visible: true, pinned: false, width: 200 },
-  { key: "adress", label: "Adress", visible: true, pinned: false, width: 180 },
-  { key: "postadress", label: "Postadress", visible: true, pinned: false, width: 160 },
+  { key: "adress", label: "Adress", visible: true, pinned: false, width: 168 },
+  { key: "postadress", label: "Postadress", visible: true, pinned: false, width: 146 },
   { key: "telefon", label: "Telefon", visible: true, pinned: false, width: 140 },
-  { key: "aktiv", label: "Aktiv", visible: true, pinned: false, width: 80 },
-  { key: "tillhor", label: "Tillhör", visible: true, pinned: false, width: 150 },
+  { key: "aktiv", label: "Aktiv", visible: true, pinned: false, width: 68 },
+  { key: "tillhor", label: "Tillhör", visible: true, pinned: false, width: 134 },
   { key: "utlastningssparr", label: "Utlastningsspärr", visible: true, pinned: false, width: 150 },
   { key: "ediFaktura", label: "EDI Faktura", visible: true, pinned: false, width: 110 },
-  { key: "fordran", label: "Fordran", visible: true, pinned: false, width: 130 },
-  { key: "kreditforsakring", label: "Kreditförsäkring", visible: true, pinned: false, width: 150 },
-  { key: "internLimit", label: "Intern limit", visible: true, pinned: false, width: 120 },
+  { key: "fordran", label: "Fordran", visible: true, pinned: false, width: 112 },
+  { key: "kreditforsakring", label: "Kreditförsäkring", visible: true, pinned: false, width: 140 },
+  { key: "internLimit", label: "Intern limit", visible: true, pinned: false, width: 106 },
   { key: "internLimitTom", label: "Intern limit t.o.m.", visible: true, pinned: false, width: 150 },
-  { key: "limit", label: "Limit", visible: true, pinned: false, width: 130 },
+  { key: "limit", label: "Limit", visible: true, pinned: false, width: 118 },
   { key: "omsattning2025", label: "Omsättning 2025", visible: true, pinned: false, width: 150 },
   { key: "omsattning2026", label: "Omsättning 2026", visible: true, pinned: false, width: 150 },
   { key: "kundgrupp", label: "Kundgrupp", visible: true, pinned: false, width: 100 },
@@ -1685,7 +1717,7 @@ export default function Home() {
   const currentMenu =
     topMenuItems.find(
       (menu) => menu.slug === menuSlug || menu.options?.some((option) => option.slug === menuSlug)
-    ) ?? topMenuItems[0];
+    ) ?? topMenuItems[0] ?? { slug: menuSlug, label: sectionConfig.label };
   const currentMenuLabel = currentTopMenuOption?.label ?? currentMenu.label;
   const selectedCustomerDetail = selectedCustomerName ? CUSTOMER_DETAILS[selectedCustomerName] ?? null : null;
 
@@ -1702,7 +1734,6 @@ export default function Home() {
   );
   const [activeLineItemTab, setActiveLineItemTab] = useState<LineItemDetailTab>("Avropsrader");
   const [selectedCompany, setSelectedCompany] = useState(fakeCompanies[0]);
-  const [isCompanyMenuOpen, setIsCompanyMenuOpen] = useState(false);
   const [searchValues, setSearchValues] = useState<SearchValueMap>(initialSearchValues);
   const [globalSearchValue, setGlobalSearchValue] = useState("");
   const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false);
@@ -1730,12 +1761,10 @@ export default function Home() {
   const columnsButtonRef = useRef<HTMLButtonElement | null>(null);
   const lineColumnsMenuRef = useRef<HTMLDivElement | null>(null);
   const lineColumnsButtonRef = useRef<HTMLButtonElement | null>(null);
-  const companyMenuRef = useRef<HTMLDivElement | null>(null);
-  const companyButtonRef = useRef<HTMLButtonElement | null>(null);
-  const { mode, toggleMode } = useColorMode();
 
   // Customer list state
   const [saljstodTab, setSaljstodTab] = useState<"lager" | "avrop">("lager");
+  const [saljstodColumnInfoLabel, setSaljstodColumnInfoLabel] = useState<string | null>(null);
   const [selectedLagerRow, setSelectedLagerRow] = useState<number | null>(null);
   const [lagerVisaTommaRader, setLagerVisaTommaRader] = useState(false);
   const [lagerKontraktsvolymFran, setLagerKontraktsvolymFran] = useState("");
@@ -1751,6 +1780,8 @@ export default function Home() {
   const lagerColumnsManager = useColumnManager(LAGER_COLUMNS_MANAGED);
   const lagerColumnsMenuRef = useRef<HTMLDivElement | null>(null);
   const lagerColumnsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const { openHeaderMenuKey: lagerOpenHeaderMenuKey, setOpenHeaderMenuKey: setLagerOpenHeaderMenuKey, headerMenuWrapperRef: lagerHeaderMenuWrapperRef } =
+    useColumnHeaderMenu();
   const [avropLand, setAvropLand] = useState("");
   const [avropRegistreradAv, setAvropRegistreradAv] = useState("");
   const [avropFritext, setAvropFritext] = useState("");
@@ -1760,6 +1791,8 @@ export default function Home() {
   const avropColumnsManager = useColumnManager(AVROP_COLUMNS_MANAGED);
   const avropColumnsMenuRef = useRef<HTMLDivElement | null>(null);
   const avropColumnsButtonRef = useRef<HTMLButtonElement | null>(null);
+  const { openHeaderMenuKey: avropOpenHeaderMenuKey, setOpenHeaderMenuKey: setAvropOpenHeaderMenuKey, headerMenuWrapperRef: avropHeaderMenuWrapperRef } =
+    useColumnHeaderMenu();
   const [selectedAvropRow, setSelectedAvropRow] = useState<number | null>(null);
   const [avropAvreg, setAvropAvreg] = useState<"off" | "indeterminate" | "on">("off");
   const [isAvropStatusDialogOpen, setIsAvropStatusDialogOpen] = useState(false);
@@ -2066,6 +2099,30 @@ export default function Home() {
     );
   }, [avropFritext]);
 
+  const getSaljstodCellValue = (row: Record<string, string | undefined>, columnKey: string) => row[columnKey] ?? "";
+
+  const {
+    columnSort: lagerColumnSort,
+    columnFilters: lagerColumnFilters,
+    toggleColumnSort: toggleLagerColumnSort,
+    setColumnFilterOperator: setLagerColumnFilterOperator,
+    setColumnFilterValue: setLagerColumnFilterValue,
+    displayRowEntries: lagerDisplayRowEntries,
+    getDisplayRowIndex: getLagerDisplayRowIndex
+  } = useSortFilterTable(filteredLagerRows, getSaljstodCellValue);
+  const selectedLagerDisplayRow = getLagerDisplayRowIndex(selectedLagerRow);
+
+  const {
+    columnSort: avropColumnSort,
+    columnFilters: avropColumnFilters,
+    toggleColumnSort: toggleAvropColumnSort,
+    setColumnFilterOperator: setAvropColumnFilterOperator,
+    setColumnFilterValue: setAvropColumnFilterValue,
+    displayRowEntries: avropDisplayRowEntries,
+    getDisplayRowIndex: getAvropDisplayRowIndex
+  } = useSortFilterTable(filteredAvropRows, getSaljstodCellValue);
+  const selectedAvropDisplayRow = getAvropDisplayRowIndex(selectedAvropRow);
+
   const lagerActiveFilterCount = [
     lagerFritext,
     lagerKontraktsvolymFran, lagerKontraktsvolymTill,
@@ -2081,7 +2138,7 @@ export default function Home() {
   })();
 
   useEffect(() => {
-    if (!isColumnsMenuOpen && !isLineColumnsMenuOpen && !isSearchMenuOpen && !isCompanyMenuOpen && !isCustomerSearchMenuOpen && !isCustomerColumnsMenuOpen && !isLagerFilterMenuOpen && !isAvropFilterMenuOpen) {
+    if (!isColumnsMenuOpen && !isLineColumnsMenuOpen && !isSearchMenuOpen && !isCustomerSearchMenuOpen && !isCustomerColumnsMenuOpen && !isLagerFilterMenuOpen && !isAvropFilterMenuOpen) {
       return;
     }
 
@@ -2093,8 +2150,6 @@ export default function Home() {
       const clickedOnButton = columnsButtonRef.current?.contains(target);
       const clickedInsideLineMenu = lineColumnsMenuRef.current?.contains(target);
       const clickedLineButton = lineColumnsButtonRef.current?.contains(target);
-      const clickedInsideCompanyMenu = companyMenuRef.current?.contains(target);
-      const clickedCompanyButton = companyButtonRef.current?.contains(target);
       const clickedInsideCustomerSearchMenu = customerSearchMenuRef.current?.contains(target);
       const clickedCustomerSearchButton = customerSearchButtonRef.current?.contains(target);
       const clickedInsideCustomerColumnsMenu = customerColumnsMenuRef.current?.contains(target);
@@ -2117,10 +2172,6 @@ export default function Home() {
       if (isLineColumnsMenuOpen && !clickedInsideLineMenu && !clickedLineButton) {
         setDraftLineColumns(appliedLineColumns);
         setIsLineColumnsMenuOpen(false);
-      }
-
-      if (isCompanyMenuOpen && !clickedInsideCompanyMenu && !clickedCompanyButton) {
-        setIsCompanyMenuOpen(false);
       }
 
       if (isCustomerSearchMenuOpen && !clickedInsideCustomerSearchMenu && !clickedCustomerSearchButton) {
@@ -2148,7 +2199,6 @@ export default function Home() {
     isColumnsMenuOpen,
     isLineColumnsMenuOpen,
     isSearchMenuOpen,
-    isCompanyMenuOpen,
     isCustomerSearchMenuOpen,
     isCustomerColumnsMenuOpen,
     isLagerFilterMenuOpen,
@@ -2274,6 +2324,19 @@ export default function Home() {
     });
   };
 
+  const getColumnWidth = (key: ColumnKey) =>
+    draftColumns.find((column) => column.key === key)?.width ?? DEFAULT_COLUMN_WIDTH;
+
+  const setColumnWidth = (key: ColumnKey, width: number) => {
+    setDraftColumns((previous) =>
+      previous.map((column) => (column.key === key ? { ...column, width: clampColumnWidth(width) } : column))
+    );
+  };
+
+  const increaseColumnWidth = (key: ColumnKey) => setColumnWidth(key, getColumnWidth(key) + COLUMN_WIDTH_STEP);
+
+  const decreaseColumnWidth = (key: ColumnKey) => setColumnWidth(key, getColumnWidth(key) - COLUMN_WIDTH_STEP);
+
   const saveColumnChanges = () => {
     setAppliedColumns(draftColumns);
     setIsColumnsMenuOpen(false);
@@ -2329,6 +2392,21 @@ export default function Home() {
       return next;
     });
   };
+
+  const getLineColumnWidth = (key: LineItemColumnKey) =>
+    draftLineColumns.find((column) => column.key === key)?.width ?? DEFAULT_COLUMN_WIDTH;
+
+  const setLineColumnWidth = (key: LineItemColumnKey, width: number) => {
+    setDraftLineColumns((previous) =>
+      previous.map((column) => (column.key === key ? { ...column, width: clampColumnWidth(width) } : column))
+    );
+  };
+
+  const increaseLineColumnWidth = (key: LineItemColumnKey) =>
+    setLineColumnWidth(key, getLineColumnWidth(key) + COLUMN_WIDTH_STEP);
+
+  const decreaseLineColumnWidth = (key: LineItemColumnKey) =>
+    setLineColumnWidth(key, getLineColumnWidth(key) - COLUMN_WIDTH_STEP);
 
   const saveLineColumnChanges = () => {
     setAppliedLineColumns(draftLineColumns);
@@ -2441,6 +2519,21 @@ export default function Home() {
     });
   };
 
+  const getCustomerColumnWidth = (key: CustomerColumnKey) =>
+    draftCustomerColumns.find((col) => col.key === key)?.width ?? DEFAULT_COLUMN_WIDTH;
+
+  const setCustomerColumnWidth = (key: CustomerColumnKey, width: number) => {
+    setDraftCustomerColumns((prev) =>
+      prev.map((col) => (col.key === key ? { ...col, width: clampColumnWidth(width) } : col))
+    );
+  };
+
+  const increaseCustomerColumnWidth = (key: CustomerColumnKey) =>
+    setCustomerColumnWidth(key, getCustomerColumnWidth(key) + COLUMN_WIDTH_STEP);
+
+  const decreaseCustomerColumnWidth = (key: CustomerColumnKey) =>
+    setCustomerColumnWidth(key, getCustomerColumnWidth(key) - COLUMN_WIDTH_STEP);
+
   const saveCustomerColumnChanges = () => {
     setAppliedCustomerColumns(draftCustomerColumns);
     setIsCustomerColumnsMenuOpen(false);
@@ -2483,15 +2576,6 @@ export default function Home() {
       setIsRouteLoading(false);
     }, 900);
     router.push(targetPath);
-  };
-
-  const toggleCompanyMenu = () => {
-    setIsCompanyMenuOpen((previous) => !previous);
-  };
-
-  const handleCompanySelect = (company: string) => {
-    setSelectedCompany(company);
-    setIsCompanyMenuOpen(false);
   };
 
   const navigateToSection = (section: SectionKey, defaultMenuSlug: string) => {
@@ -2784,6 +2868,40 @@ export default function Home() {
     };
   }, []);
 
+  const renderLagerHeaderCell = (column: { key: string; label: string }) => (
+    <ColumnHeaderCell
+      columnKey={column.key}
+      columnLabel={column.label}
+      columnSort={lagerColumnSort}
+      onToggleSort={toggleLagerColumnSort}
+      columnFilter={lagerColumnFilters[column.key]}
+      onSetFilterOperator={setLagerColumnFilterOperator}
+      onSetFilterValue={setLagerColumnFilterValue}
+      isMenuOpen={lagerOpenHeaderMenuKey === column.key}
+      onToggleMenu={() => setLagerOpenHeaderMenuKey((prev) => (prev === column.key ? null : column.key))}
+      headerMenuWrapperRef={lagerHeaderMenuWrapperRef}
+      onOpenInfo={setSaljstodColumnInfoLabel}
+      infoKey={column.label}
+    />
+  );
+
+  const renderAvropHeaderCell = (column: { key: string; label: string }) => (
+    <ColumnHeaderCell
+      columnKey={column.key}
+      columnLabel={column.label}
+      columnSort={avropColumnSort}
+      onToggleSort={toggleAvropColumnSort}
+      columnFilter={avropColumnFilters[column.key]}
+      onSetFilterOperator={setAvropColumnFilterOperator}
+      onSetFilterValue={setAvropColumnFilterValue}
+      isMenuOpen={avropOpenHeaderMenuKey === column.key}
+      onToggleMenu={() => setAvropOpenHeaderMenuKey((prev) => (prev === column.key ? null : column.key))}
+      headerMenuWrapperRef={avropHeaderMenuWrapperRef}
+      onOpenInfo={setSaljstodColumnInfoLabel}
+      infoKey={column.label}
+    />
+  );
+
   return (
     <main className={styles.pageRoot}>
       {isRouteLoading ? (
@@ -2801,15 +2919,8 @@ export default function Home() {
       ) : null}
       <AppShellLayout
         isSidebarCollapsed={isSidebarCollapsed}
-        selectedCompany={selectedCompany}
-        isCompanyMenuOpen={isCompanyMenuOpen}
-        fakeCompanies={fakeCompanies}
         sectionSlug={sectionSlug}
         sectionDefinitions={sectionDefinitions}
-        companyButtonRef={companyButtonRef}
-        companyMenuRef={companyMenuRef}
-        onToggleCompanyMenu={toggleCompanyMenu}
-        onCompanySelect={handleCompanySelect}
         onNavigateSection={(section, defaultMenuSlug) => navigateToSection(section as SectionKey, defaultMenuSlug)}
         onToggleSidebar={toggleSidebar}
         leftTopMenuItems={leftTopMenuItems}
@@ -2907,6 +3018,9 @@ export default function Home() {
             onSaveColumnChanges={saveColumnChanges}
             onResetColumnChanges={resetColumnChanges}
             onToggleColumnPin={(key) => toggleColumnPin(key as ColumnKey)}
+            getColumnWidth={(key) => getColumnWidth(key as ColumnKey)}
+            onIncreaseColumnWidth={(key) => increaseColumnWidth(key as ColumnKey)}
+            onDecreaseColumnWidth={(key) => decreaseColumnWidth(key as ColumnKey)}
             orderedVisibleColumns={orderedVisibleColumns}
             tableRows={filteredContractRows as Array<Record<string, string | undefined>>}
             selectedRowId={selectedRowId}
@@ -2926,6 +3040,9 @@ export default function Home() {
             onSaveLineColumnChanges={saveLineColumnChanges}
             onResetLineColumnChanges={resetLineColumnChanges}
             onToggleLineColumnPin={(key) => toggleLineColumnPin(key as LineItemColumnKey)}
+            getLineColumnWidth={(key) => getLineColumnWidth(key as LineItemColumnKey)}
+            onIncreaseLineColumnWidth={(key) => increaseLineColumnWidth(key as LineItemColumnKey)}
+            onDecreaseLineColumnWidth={(key) => decreaseLineColumnWidth(key as LineItemColumnKey)}
             visibleLineColumns={visibleLineColumns}
             lineItemRows={lineItemRows}
           />
@@ -2977,6 +3094,9 @@ export default function Home() {
             onSaveColumnChanges={saveCustomerColumnChanges}
             onResetColumnChanges={resetCustomerColumnChanges}
             onToggleColumnPin={(key) => toggleCustomerColumnPin(key as CustomerColumnKey)}
+            getColumnWidth={(key) => getCustomerColumnWidth(key as CustomerColumnKey)}
+            onIncreaseColumnWidth={(key) => increaseCustomerColumnWidth(key as CustomerColumnKey)}
+            onDecreaseColumnWidth={(key) => decreaseCustomerColumnWidth(key as CustomerColumnKey)}
             orderedVisibleColumns={orderedVisibleCustomerColumns}
             tableRows={filteredCustomerRows as Array<Record<string, string | undefined>>}
             selectedRowId={selectedCustomerRowId}
@@ -3076,6 +3196,9 @@ export default function Home() {
               onSaveLineColumnChanges={saveLineColumnChanges}
               onResetLineColumnChanges={resetLineColumnChanges}
               onToggleLineColumnPin={(key) => toggleLineColumnPin(key as LineItemColumnKey)}
+              getLineColumnWidth={(key) => getLineColumnWidth(key as LineItemColumnKey)}
+              onIncreaseLineColumnWidth={(key) => increaseLineColumnWidth(key as LineItemColumnKey)}
+              onDecreaseLineColumnWidth={(key) => decreaseLineColumnWidth(key as LineItemColumnKey)}
               onOpenLineItemDetail={openLineItemDetail}
               onCreateLineItem={openNewLineItem}
               onOpenContainer={openContainerView}
@@ -3124,13 +3247,13 @@ export default function Home() {
                     { key: "avropsradNr", label: "Avroprad nr", control: "text" },
                     { key: "typ", label: "Typ", control: "select", options: ["Kontrakt och avrop", "Kontrakt", "Avrop"] },
                     { key: "_div1", control: "divider" },
-                    { key: "produkttypML", label: "ML", control: "checkbox-tri", sectionLabel: "Produkttyp" },
-                    { key: "produkttypFL", label: "FL", control: "checkbox-tri" },
-                    { key: "produkttypVFL", label: "VFL", control: "checkbox-tri" },
+                    { key: "produkttypML", label: "ML", control: "checkbox-tri", sectionLabel: "Produkttyp", disabled: saljstodTab !== "avrop", defaultValue: false },
+                    { key: "produkttypFL", label: "FL", control: "checkbox-tri", disabled: saljstodTab !== "avrop", defaultValue: false },
+                    { key: "produkttypVFL", label: "VFL", control: "checkbox-tri", disabled: saljstodTab !== "avrop", defaultValue: false },
                     { key: "_div2", control: "divider" },
-                    { key: "salesPlanned", label: "Sales planned", control: "checkbox", sectionLabel: "Avropsradstatus" },
-                    { key: "customerPlanned", label: "Customer planned", control: "checkbox" },
-                    { key: "loadPlanned", label: "Load planned", control: "checkbox" },
+                    { key: "salesPlanned", label: "Sales planned", control: "checkbox-tri", sectionLabel: "Avropsradstatus", disabled: saljstodTab !== "avrop", defaultValue: false },
+                    { key: "customerPlanned", label: "Customer planned", control: "checkbox-tri", disabled: saljstodTab !== "avrop", defaultValue: false },
+                    { key: "loadPlanned", label: "Load planned", control: "checkbox-tri", disabled: saljstodTab !== "avrop", defaultValue: false },
                   ],
                 },
                 {
@@ -3180,6 +3303,51 @@ export default function Home() {
                 </button>
               </div>
             </div>
+            <Dialog open={Boolean(saljstodColumnInfoLabel)} onClose={() => setSaljstodColumnInfoLabel(null)} maxWidth="xs" fullWidth slotProps={{ paper: { className: styles.freightDialogPaper } }}>
+              <DialogTitle className={styles.freightDialogTitle}>
+                <div className={styles.freightDialogTitleRow}>
+                  <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>
+                    {saljstodColumnInfoLabel ? COLUMN_INFO[saljstodColumnInfoLabel]?.title : ""}
+                  </Typography>
+                  <IconButton size="small" onClick={() => setSaljstodColumnInfoLabel(null)} style={{ color: "#6a7483" }}>
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </div>
+              </DialogTitle>
+              <DialogContent className={styles.columnInfoDialogContent}>
+                {saljstodColumnInfoLabel && COLUMN_INFO[saljstodColumnInfoLabel]?.kind === "text" ? (
+                  <Typography style={{ fontSize: 14, color: "#404753", paddingTop: 4 }}>
+                    {COLUMN_INFO[saljstodColumnInfoLabel].description}
+                  </Typography>
+                ) : null}
+                {saljstodColumnInfoLabel && COLUMN_INFO[saljstodColumnInfoLabel]?.kind === "legend" ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 4 }}>
+                    {COLUMN_INFO[saljstodColumnInfoLabel].items.map((item, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: 40,
+                            height: 24,
+                            borderRadius: 4,
+                            border: item.bgColor === "#ffffff" ? "1px solid #d7dbe3" : "none",
+                            backgroundColor: item.bgColor,
+                            color: item.textColor,
+                            fontWeight: 600,
+                            fontSize: 13,
+                          }}
+                        >
+                          120
+                        </span>
+                        <Typography className={styles.columnInfoLegendLabel} style={{ color: "#404753" }}>{item.label}</Typography>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </DialogContent>
+            </Dialog>
             {saljstodTab === "lager" && (
               <div className={styles.freightTabContent} style={{ gap: 8 }}>
                 <div className={styles.lagerFilterBar} style={{ paddingBottom: 0 }}>
@@ -3300,21 +3468,29 @@ export default function Home() {
                     onSave={lagerColumnsManager.save}
                     onReset={lagerColumnsManager.reset}
                     onTogglePin={(key) => lagerColumnsManager.togglePin(key as LagerColumnKey)}
+                    canAdjustWidth={() => true}
+                    getColumnWidth={(key) => lagerColumnsManager.getColumnWidth(key as LagerColumnKey)}
+                    onDecreaseWidth={(key) => lagerColumnsManager.decreaseWidth(key as LagerColumnKey)}
+                    onIncreaseWidth={(key) => lagerColumnsManager.increaseWidth(key as LagerColumnKey)}
                     iconOnly
                   />
                 </div>
                 <div className={styles.freightSection}>
-                  <div className={`${styles.lineItemsTableFrame} ${styles.lineItemsTableFrameBordered}`}>
+                  <div className={`${styles.lineItemsTableFrame} ${styles.lineItemsTableFrameBordered} ${styles.contractTableCompact}`}>
                     <div className={styles.freightTableWrap}>
                       <div className={styles.freightTable}>
                         <DataTable
                           variant="main"
                           fillRemainingSpace
                           columns={lagerColumnsManager.orderedVisibleColumns}
-                          rows={filteredLagerRows}
+                          rows={lagerDisplayRowEntries.map((entry) => entry.row)}
                           rowKey={(_row, index) => `lager-${index}`}
-                          selectedRowIndex={selectedLagerRow}
-                          onRowClick={(index) => setSelectedLagerRow((prev) => (prev === index ? null : index))}
+                          selectedRowIndex={selectedLagerDisplayRow}
+                          onRowClick={(displayIndex) => {
+                            const originalIndex = lagerDisplayRowEntries[displayIndex].originalIndex;
+                            setSelectedLagerRow((prev) => (prev === originalIndex ? null : originalIndex));
+                          }}
+                          renderHeaderCell={renderLagerHeaderCell}
                           getCellClassName={(row, column) => {
                             if (column.key === "tillgLager" && TILLG_LAGER_HIGHLIGHT_BY_ARTNR[row.artNr]) {
                               return styles.cellTillgLagerHighlight;
@@ -3533,23 +3709,31 @@ export default function Home() {
                         onSave={avropColumnsManager.save}
                         onReset={avropColumnsManager.reset}
                         onTogglePin={(key) => avropColumnsManager.togglePin(key as keyof AvropRow)}
+                        canAdjustWidth={() => true}
+                        getColumnWidth={(key) => avropColumnsManager.getColumnWidth(key as keyof AvropRow)}
+                        onDecreaseWidth={(key) => avropColumnsManager.decreaseWidth(key as keyof AvropRow)}
+                        onIncreaseWidth={(key) => avropColumnsManager.increaseWidth(key as keyof AvropRow)}
                         iconOnly
                       />
                     </>
                   }
                 />
                 <div className={styles.freightSection}>
-                  <div className={`${styles.lineItemsTableFrame} ${styles.lineItemsTableFrameBordered}`}>
+                  <div className={`${styles.lineItemsTableFrame} ${styles.lineItemsTableFrameBordered} ${styles.contractTableCompact}`}>
                     <div className={styles.freightTableWrap}>
                       <div className={styles.freightTable}>
                         <DataTable
                           variant="main"
                           fillRemainingSpace
                           columns={avropColumnsManager.orderedVisibleColumns}
-                          rows={filteredAvropRows}
+                          rows={avropDisplayRowEntries.map((entry) => entry.row)}
                           rowKey={(_row, index) => `avrop-${index}`}
-                          selectedRowIndex={selectedAvropRow}
-                          onRowClick={(index) => setSelectedAvropRow((prev) => (prev === index ? null : index))}
+                          selectedRowIndex={selectedAvropDisplayRow}
+                          onRowClick={(displayIndex) => {
+                            const originalIndex = avropDisplayRowEntries[displayIndex].originalIndex;
+                            setSelectedAvropRow((prev) => (prev === originalIndex ? null : originalIndex));
+                          }}
+                          renderHeaderCell={renderAvropHeaderCell}
                           renderCell={(row, column) => {
                             if (column.key === "kontraktsNr") {
                               return (
@@ -3726,17 +3910,29 @@ export default function Home() {
               <Typography className={styles.systemSettingsTitle}>Systeminställningar</Typography>
               <div className={styles.systemSettingRow}>
                 <div>
-                  <Typography className={styles.systemSettingLabel}>Dark mode</Typography>
+                  <Typography className={styles.systemSettingLabel}>Enhet</Typography>
                   <Typography className={styles.systemSettingDescription}>
-                    Växla mellan ljust och mörkt tema i hela applikationen.
+                    Välj vilken enhet du vill ha som förval.
                   </Typography>
                 </div>
-                <Switch
-                  checked={mode === "dark"}
-                  onChange={() => toggleMode()}
-                  color="primary"
-                  inputProps={{ "aria-label": "Aktivera dark mode" }}
-                />
+                <FormControl size="small" className={styles.systemSettingSelectControl}>
+                  <Select
+                    value={selectedCompany}
+                    onChange={(e) => setSelectedCompany(e.target.value)}
+                    MenuProps={{ disablePortal: true }}
+                  >
+                    {fakeCompanies.map((company) => (
+                      <MenuItem key={company} value={company}>
+                        {company}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </div>
+              <div className={styles.systemSettingsActions}>
+                <Button className={styles.contractSaveButton} size="small">
+                  Spara
+                </Button>
               </div>
             </div>
           </div>

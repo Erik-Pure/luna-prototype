@@ -30,6 +30,8 @@ type FieldSetField = {
   sectionLabel?: string;
   dividerLabel?: string;
   multi?: boolean;
+  disabled?: boolean;
+  defaultValue?: boolean | null;
 };
 
 type FieldSet = { label: string; fields: FieldSetField[] };
@@ -393,6 +395,7 @@ export function SearchFiltersPanel({
               );
             }
             // checkboxes
+            // Tri-state cycle: true = checked only, false = indeterminate ("both"), null = unchecked only.
             const triCycle = (cur: unknown) => cur === true ? false : cur === false ? null : true;
             return (
               <div key={`cb-${si}`}>
@@ -402,18 +405,26 @@ export function SearchFiltersPanel({
                 <div className={styles.advancedCheckboxWrap}>
                   {seg.fields.map((field) => {
                     if (field.control === "checkbox-tri") {
-                      const val = presetValues[presetIndex]?.[field.key];
+                      const rawVal = presetValues[presetIndex]?.[field.key];
+                      const val = rawVal !== undefined ? rawVal : (field.defaultValue ?? null);
                       const isChecked = val === true;
                       const isIndet = val === false;
+                      const isDisabled = Boolean(field.disabled);
                       return (
-                        <label key={field.key} className={styles.searchCheckboxItem} style={{ cursor: "pointer" }} onClick={() => setPresetValues((prev) => ({
-                          ...prev,
-                          [presetIndex]: { ...prev[presetIndex], [field.key]: triCycle(prev[presetIndex]?.[field.key]) },
-                        }))}>
+                        <label
+                          key={field.key}
+                          className={`${styles.searchCheckboxItem} ${isDisabled ? styles.searchCheckboxItemDisabled : ""}`}
+                          style={{ cursor: isDisabled ? "default" : "pointer" }}
+                          onClick={isDisabled ? undefined : () => setPresetValues((prev) => ({
+                            ...prev,
+                            [presetIndex]: { ...prev[presetIndex], [field.key]: triCycle(val) },
+                          }))}
+                        >
                           <Checkbox
                             size="small"
                             checked={isChecked}
                             indeterminate={isIndet}
+                            disabled={isDisabled}
                             readOnly
                           />
                           <Typography className={styles.searchCheckboxLabel}>{field.label}</Typography>

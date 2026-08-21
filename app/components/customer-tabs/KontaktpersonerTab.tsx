@@ -154,7 +154,7 @@ export function KontaktpersonerTab() {
   };
 
   return (
-    <div className={styles.lineItemsSection}>
+    <div className={`${styles.lineItemsSection} ${styles.lineItemsSectionFill}`}>
       <ActionRow
         items={[
           {
@@ -165,36 +165,40 @@ export function KontaktpersonerTab() {
           },
         ]}
       />
-      <DataTable
-        variant="main"
-        columns={COLUMNS}
-        rows={rows}
-        rowKey={(row) => row._id}
-        selectedRowIndex={selectedRowIndex}
-        onRowClick={(i) => setSelectedRowIndex(i === selectedRowIndex ? null : i)}
-        fillRemainingSpace
-        renderCell={(row, column) => {
-          if (column.key === "_actions") {
-            return (
-              <span className={styles.freightActionCell}>
-                <IconButton
-                  size="small"
-                  onClick={(e) => { e.stopPropagation(); setEditingRow(row); }}
-                >
-                  <EditOutlinedIcon className={styles.freightActionIcon} />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={(e) => { e.stopPropagation(); handleDelete(row._id); }}
-                >
-                  <DeleteOutlineIcon className={styles.freightActionIcon} />
-                </IconButton>
-              </span>
-            );
-          }
-          return row[column.key as keyof KontaktpersonRow] ?? "";
-        }}
-      />
+      <div className={styles.tableScrollWrap}>
+        <div className={styles.tableInner}>
+          <DataTable
+            variant="main"
+            columns={COLUMNS}
+            rows={rows}
+            rowKey={(row) => row._id}
+            selectedRowIndex={selectedRowIndex}
+            onRowClick={(i) => setSelectedRowIndex(i === selectedRowIndex ? null : i)}
+            fillRemainingSpace
+            renderCell={(row, column) => {
+              if (column.key === "_actions") {
+                return (
+                  <span className={styles.freightActionCell}>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { e.stopPropagation(); setEditingRow(row); }}
+                    >
+                      <EditOutlinedIcon className={styles.freightActionIcon} />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(row._id); }}
+                    >
+                      <DeleteOutlineIcon className={styles.freightActionIcon} />
+                    </IconButton>
+                  </span>
+                );
+              }
+              return row[column.key as keyof KontaktpersonRow] ?? "";
+            }}
+          />
+        </div>
+      </div>
 
       <NyKontaktpersonDialog
         open={createDialogOpen}

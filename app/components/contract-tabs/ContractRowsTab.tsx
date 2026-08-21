@@ -33,6 +33,9 @@ type ContractRowsTabProps = {
   onSaveColumnChanges: () => void;
   onResetColumnChanges: () => void;
   onToggleColumnPin: (key: string) => void;
+  getColumnWidth?: (key: string) => number | undefined;
+  onIncreaseColumnWidth?: (key: string) => void;
+  onDecreaseColumnWidth?: (key: string) => void;
   onOpenRowDetail: (rowId: string) => void;
   onCreateRow: () => void;
   onOpenContainer: () => void;
@@ -75,6 +78,9 @@ export function ContractRowsTab({
   onSaveColumnChanges,
   onResetColumnChanges,
   onToggleColumnPin,
+  getColumnWidth,
+  onIncreaseColumnWidth,
+  onDecreaseColumnWidth,
   onOpenRowDetail,
   onCreateRow,
   onOpenContainer
@@ -281,6 +287,10 @@ export function ContractRowsTab({
                 onSave={onSaveColumnChanges}
                 onReset={onResetColumnChanges}
                 onTogglePin={onToggleColumnPin}
+                canAdjustWidth={getColumnWidth ? () => true : undefined}
+                getColumnWidth={getColumnWidth}
+                onDecreaseWidth={onDecreaseColumnWidth}
+                onIncreaseWidth={onIncreaseColumnWidth}
                 iconOnly
               />
             </div>

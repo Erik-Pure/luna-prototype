@@ -28,12 +28,13 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState } from "react";
 import styles from "../page.module.scss";
 import { PriceListCreateView, type NewPriceListDraft } from "./PriceListCreateView";
 import { FraktTab } from "./price-list-tabs/FraktTab";
 import { PrislisteraderTab } from "./price-list-tabs/PrislisteraderTab";
 import { SectionQuickNav, scrollSectionIntoView, type QuickNavSection } from "./shared/SectionQuickNav";
+import { useMediaQuery, WIDE_LAYOUT_QUERY, EXTRA_WIDE_LAYOUT_QUERY } from "../hooks/useMediaQuery";
 
 const priceListTabs = ["Prislisterader", "Frakt"] as const;
 type PriceListTab = (typeof priceListTabs)[number];
@@ -132,25 +133,8 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
     });
   };
 
-  const isWide = useSyncExternalStore(
-    (cb) => {
-      const mq = window.matchMedia("(min-width: 1280px)");
-      mq.addEventListener("change", cb);
-      return () => mq.removeEventListener("change", cb);
-    },
-    () => window.matchMedia("(min-width: 1280px)").matches,
-    () => false
-  );
-
-  const isExtraWide = useSyncExternalStore(
-    (cb) => {
-      const mq = window.matchMedia("(min-width: 1700px)");
-      mq.addEventListener("change", cb);
-      return () => mq.removeEventListener("change", cb);
-    },
-    () => window.matchMedia("(min-width: 1700px)").matches,
-    () => false
-  );
+  const isWide = useMediaQuery(WIDE_LAYOUT_QUERY);
+  const isExtraWide = useMediaQuery(EXTRA_WIDE_LAYOUT_QUERY);
 
   const startResizeSections = (mouseDownEvent: React.MouseEvent) => {
     mouseDownEvent.preventDefault();
@@ -222,7 +206,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
 
         {/* ── Sections panel ── */}
         <div
-          className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : ""} ${isExtraWide && !sectionsPanelWidth && !isSectionsPanelCollapsed ? styles.contractBodySectionsColExtraWide : ""} ${isSectionsPanelCollapsed ? styles.contractBodySectionsColCollapsed : ""}`}
+          className={`${styles.contractBodySectionsCol} ${isWide ? styles.contractBodySectionsColWide : styles.contractBodySectionsColStacked} ${isExtraWide && !sectionsPanelWidth && !isSectionsPanelCollapsed ? styles.contractBodySectionsColExtraWide : ""} ${isSectionsPanelCollapsed ? (isWide ? styles.contractBodySectionsColCollapsed : styles.contractBodySectionsColCollapsedNarrow) : ""}`}
           style={isWide && sectionsPanelWidth && !isSectionsPanelCollapsed ? { width: sectionsPanelWidth, maxWidth: sectionsPanelWidth } : undefined}
         >
           {isWide && !isSectionsPanelCollapsed ? (
@@ -231,7 +215,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
 
           <div ref={sectionsHeaderRef} className={styles.contractSectionsPanelHeader}>
             <div className={styles.contractSectionsPanelTitleRow} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, minWidth: 0 }}>
-              {!isSectionsPanelCollapsed ? (
+              {!isSectionsPanelCollapsed || !isWide ? (
                 <Typography className={styles.contractSectionsPanelTitle}>Prislisteinformation</Typography>
               ) : null}
               <Tooltip title={isSectionsPanelCollapsed ? "Expandera prislistepanel" : "Minimera prislistepanel"}>
@@ -244,6 +228,9 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                 </IconButton>
               </Tooltip>
             </div>
+            {!isSectionsPanelCollapsed ? (
+              <SectionQuickNav sections={PRICE_LIST_SECTIONS} onSelect={jumpToSection} />
+            ) : null}
             {!isSectionsPanelCollapsed ? (
               <div className={styles.contractSectionsPanelHeaderActionsRow}>
                 {isEditingInfo ? (
@@ -312,8 +299,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
 
           {!isSectionsPanelCollapsed ? (
             <>
-              <SectionQuickNav sections={PRICE_LIST_SECTIONS} onSelect={jumpToSection} />
-
               {/* ── Allmänt ── */}
               <Accordion
                 expanded={expandedSections.has("allmant")}
@@ -589,7 +574,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
         {/* ── Tabs panel ── */}
         <div className={`${styles.contractBodyTabsCol} ${isWide ? styles.contractBodyTabsColWide : ""}`}>
           <div className={styles.contractModernAdditionsWrap}>
-            <div className={styles.contractMudTabBar}>
+            <div className={`${styles.contractMudTabBar} ${!isWide ? styles.contractMudTabBarStackedSticky : ""}`}>
               {priceListTabs.map((tab) => (
                 <button
                   key={tab}

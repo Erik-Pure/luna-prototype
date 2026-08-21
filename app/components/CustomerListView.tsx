@@ -4,17 +4,21 @@ import FileDownloadIcon from "@mui/icons-material/FileDownloadOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
-import { Button, Chip, IconButton, Tooltip } from "@mui/material";
+import { Button, IconButton, Tooltip } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 import { AndraKundgruppDialog } from "./customer-tabs/AndraKundgruppDialog";
 import { ExporteraExcelDialog } from "./customer-tabs/ExporteraExcelDialog";
 import { ActionRow } from "./shared/ActionRow";
+import { ColumnHeaderCell } from "./shared/ColumnHeaderCell";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
 import { DataTable } from "./shared/DataTable";
 import { SearchFiltersPanel } from "./shared/SearchFiltersPanel";
-import { getCustomerWarnings, getWarningTone } from "./shared/customerWarnings";
+import { useColumnHeaderMenu } from "./shared/useColumnHeaderMenu";
+import { useSortFilterTable } from "./shared/useSortFilterTable";
 import styles from "../page.module.scss";
+
+const getCellValue = (row: Record<string, string | undefined>, columnKey: string) => row[columnKey] ?? "-";
 
 type FieldDef = { key: string; label: string; control: "text" | "date" | "select" | "checkbox"; multi?: boolean };
 
@@ -58,6 +62,9 @@ type CustomerListViewProps = {
   onSaveColumnChanges: () => void;
   onResetColumnChanges: () => void;
   onToggleColumnPin: (key: string) => void;
+  getColumnWidth?: (key: string) => number | undefined;
+  onIncreaseColumnWidth?: (key: string) => void;
+  onDecreaseColumnWidth?: (key: string) => void;
   orderedVisibleColumns: Array<{ key: string; label: string; width?: number }>;
   tableRows: Array<Record<string, string | undefined>>;
   selectedRowId: number | null;
@@ -105,6 +112,9 @@ export function CustomerListView({
   onSaveColumnChanges,
   onResetColumnChanges,
   onToggleColumnPin,
+  getColumnWidth,
+  onIncreaseColumnWidth,
+  onDecreaseColumnWidth,
   orderedVisibleColumns,
   tableRows,
   selectedRowId,
@@ -116,6 +126,10 @@ export function CustomerListView({
   const [isExporteraExcelOpen, setIsExporteraExcelOpen] = useState(false);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const { openHeaderMenuKey, setOpenHeaderMenuKey, headerMenuWrapperRef } = useColumnHeaderMenu();
+  const { columnSort, columnFilters, toggleColumnSort, setColumnFilterOperator, setColumnFilterValue, displayRowEntries, getDisplayRowIndex } =
+    useSortFilterTable(tableRows, getCellValue);
 
   const selectedRow = selectedRowId !== null ? tableRows[selectedRowId] : null;
 
@@ -240,6 +254,10 @@ export function CustomerListView({
               onSave={onSaveColumnChanges}
               onReset={onResetColumnChanges}
               onTogglePin={onToggleColumnPin}
+              canAdjustWidth={getColumnWidth ? () => true : undefined}
+              getColumnWidth={getColumnWidth}
+              onDecreaseWidth={onDecreaseColumnWidth}
+              onIncreaseWidth={onIncreaseColumnWidth}
               iconOnly
             />
           </>
@@ -247,16 +265,30 @@ export function CustomerListView({
       />
 
       <div className={styles.tablesLayout}>
-        <div className={styles.tableContainer}>
+        <div className={`${styles.tableContainer} ${styles.contractTableCompact}`}>
           <div className={styles.tableScrollWrap}>
             <div className={styles.tableInner}>
               <DataTable
                 variant="main"
                 columns={orderedVisibleColumns}
-                rows={tableRows}
+                rows={displayRowEntries.map((entry) => entry.row)}
                 rowKey={(row, idx) => `${row.kundnr ?? idx}`}
-                selectedRowIndex={selectedRowId}
-                onRowClick={onSelectRow}
+                selectedRowIndex={getDisplayRowIndex(selectedRowId)}
+                onRowClick={(displayIndex) => onSelectRow(displayRowEntries[displayIndex].originalIndex)}
+                renderHeaderCell={(column) => (
+                  <ColumnHeaderCell
+                    columnKey={column.key}
+                    columnLabel={column.label}
+                    columnSort={columnSort}
+                    onToggleSort={toggleColumnSort}
+                    columnFilter={columnFilters[column.key]}
+                    onSetFilterOperator={setColumnFilterOperator}
+                    onSetFilterValue={setColumnFilterValue}
+                    isMenuOpen={openHeaderMenuKey === column.key}
+                    onToggleMenu={() => setOpenHeaderMenuKey((prev) => (prev === column.key ? null : column.key))}
+                    headerMenuWrapperRef={headerMenuWrapperRef}
+                  />
+                )}
                 renderCell={(row, column) => {
                   if (column.key === "kundnr") {
                     return (
@@ -273,27 +305,35 @@ export function CustomerListView({
                     );
                   }
 
-                  if (column.key === "kortnamn") {
-                    const kortnamn = row[column.key] ?? "-";
-                    const tone = getWarningTone(row);
-                    if (tone === "none") return kortnamn;
-                    const tooltipText = getCustomerWarnings(row).map((w) => w.label).join(" · ");
-                    const badgeClass = tone === "red" ? styles.kortnamnBadgeHigh : styles.kortnamnBadgeMedium;
-                    return (
-                      <Tooltip title={tooltipText} placement="top">
-                        <span className={`${styles.kortnamnBadge} ${badgeClass}`}>
-                          <WarningAmberOutlinedIcon className={styles.kortnamnBadgeIcon} />
-                          {kortnamn}
-                        </span>
-                      </Tooltip>
-                    );
+                  if (column.key === "fordran") {
+                    const fordranValue = row[column.key] ?? "-";
+                    if (row["varningsnivaFordran"] === "Hög") {
+                      return (
+                        <Tooltip title={`Förfallen fordran — ${fordranValue}`} placement="top">
+                          <span className={`${styles.warningCellContent} ${styles.warningCellContentMedium}`}>
+                            <WarningAmberOutlinedIcon className={styles.warningCellIcon} />
+                            <span className={styles.warningCellText}>{fordranValue}</span>
+                          </span>
+                        </Tooltip>
+                      );
+                    }
+                    return fordranValue;
                   }
 
                   if (column.key === "limit") {
                     const limitValue = row[column.key] ?? "-";
-                    if (row["varningsnivaLimit"] === "Hög") {
-                      const label = row["limitChipDisplay"] === "belopp" ? limitValue : "Överskriden";
-                      return <Chip label={label} size="small" className={styles.limitErrorChip} />;
+                    const varningsnivaLimit = row["varningsnivaLimit"];
+                    if (varningsnivaLimit === "Hög" || varningsnivaLimit === "Medium") {
+                      return (
+                        <Tooltip title={`Överskriden limit — ${limitValue}`} placement="top">
+                          <span
+                            className={`${styles.warningCellContent} ${varningsnivaLimit === "Hög" ? styles.warningCellContentHigh : styles.warningCellContentOrange}`}
+                          >
+                            <WarningAmberOutlinedIcon className={styles.warningCellIcon} />
+                            <span className={styles.warningCellText}>{limitValue}</span>
+                          </span>
+                        </Tooltip>
+                      );
                     }
                     return limitValue;
                   }

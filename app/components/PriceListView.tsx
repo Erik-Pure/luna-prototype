@@ -1,17 +1,21 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import FileDownloadIcon from "@mui/icons-material/FileDownloadOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import SearchIcon from "@mui/icons-material/Search";
-import { Button, IconButton, Tooltip } from "@mui/material";
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Tooltip, Typography } from "@mui/material";
 import { useMemo, useRef, useState } from "react";
 import { ActionRow } from "./shared/ActionRow";
+import { ColumnHeaderCell } from "./shared/ColumnHeaderCell";
 import { ColumnManagerDropdown } from "./shared/ColumnManagerDropdown";
 import { DataTable } from "./shared/DataTable";
 import { SearchFiltersPanel } from "./shared/SearchFiltersPanel";
+import { useColumnHeaderMenu } from "./shared/useColumnHeaderMenu";
+import { useSortFilterTable } from "./shared/useSortFilterTable";
 import { useColumnManager } from "../hooks/useColumnManager";
 import { useRowSelection } from "../hooks/useRowSelection";
 import styles from "../page.module.scss";
@@ -90,17 +94,17 @@ const initialSearchValues: Record<PriceListSearchFieldKey, string | boolean> = {
 };
 
 const defaultColumns = [
-  { key: "prislistenr" as PriceListColumnKey, label: "Prislistenr", visible: true, pinned: true },
-  { key: "externPrislistenr" as PriceListColumnKey, label: "Externt prislistenr", visible: true, pinned: false },
-  { key: "kund" as PriceListColumnKey, label: "Kund", visible: true, pinned: false },
-  { key: "land" as PriceListColumnKey, label: "Land", visible: true, pinned: false },
-  { key: "prisdatum" as PriceListColumnKey, label: "Prisdatum", visible: true, pinned: false },
-  { key: "giltigFrom" as PriceListColumnKey, label: "Giltig från", visible: true, pinned: false },
-  { key: "giltigTom" as PriceListColumnKey, label: "Giltig till", visible: true, pinned: false },
-  { key: "egenAnmarkning" as PriceListColumnKey, label: "Egen anmärkning", visible: true, pinned: false },
-  { key: "status" as PriceListColumnKey, label: "Status", visible: true, pinned: false },
-  { key: "upprattatAv" as PriceListColumnKey, label: "Upprättat av", visible: true, pinned: false },
-  { key: "tillhor" as PriceListColumnKey, label: "Tillhör", visible: true, pinned: false },
+  { key: "prislistenr" as PriceListColumnKey, label: "Prislistenr", visible: true, pinned: true, width: 100 },
+  { key: "externPrislistenr" as PriceListColumnKey, label: "Externt prislistenr", visible: true, pinned: false, width: 148 },
+  { key: "kund" as PriceListColumnKey, label: "Kund", visible: true, pinned: false, width: 118 },
+  { key: "land" as PriceListColumnKey, label: "Land", visible: true, pinned: false, width: 66 },
+  { key: "prisdatum" as PriceListColumnKey, label: "Prisdatum", visible: true, pinned: false, width: 112 },
+  { key: "giltigFrom" as PriceListColumnKey, label: "Giltig från", visible: true, pinned: false, width: 104 },
+  { key: "giltigTom" as PriceListColumnKey, label: "Giltig till", visible: true, pinned: false, width: 104 },
+  { key: "egenAnmarkning" as PriceListColumnKey, label: "Egen anmärkning", visible: true, pinned: false, width: 164 },
+  { key: "status" as PriceListColumnKey, label: "Status", visible: true, pinned: false, width: 94 },
+  { key: "upprattatAv" as PriceListColumnKey, label: "Upprättat av", visible: true, pinned: false, width: 142 },
+  { key: "tillhor" as PriceListColumnKey, label: "Tillhör", visible: true, pinned: false, width: 132 },
 ];
 
 const tableRows: PriceListRow[] = Array.from({ length: 26 }).map((_, idx) => ({
@@ -117,11 +121,14 @@ const tableRows: PriceListRow[] = Array.from({ length: 26 }).map((_, idx) => ({
   tillhor: ["Norr TräHus", "Hus/Ind Ovriga", "Bygg Region 3", "Byggmaker HK"][idx % 4],
 }));
 
+const getCellValue = (row: PriceListRow, columnKey: string) => row[columnKey as PriceListColumnKey] ?? "-";
+
 export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: PriceListViewProps) {
   const [searchValues, setSearchValues] = useState<Record<PriceListSearchFieldKey, string | boolean>>(initialSearchValues);
   const [draftFields, setDraftFields] = useState<PriceListSearchField[]>(defaultSearchFields);
   const [isTableSearchOpen, setIsTableSearchOpen] = useState(false);
   const [tableSearchValue, setTableSearchValue] = useState("");
+  const [avregistreraOpen, setAvregistreraOpen] = useState(false);
   const tableSearchWrapperRef = useRef<HTMLDivElement>(null);
   const tableSearchInputRef = useRef<HTMLInputElement>(null);
   const columnsMenuRef = useRef<HTMLDivElement | null>(null);
@@ -131,6 +138,9 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
 
   const columnsManager = useColumnManager(defaultColumns);
   const rowSelection = useRowSelection();
+  const { openHeaderMenuKey, setOpenHeaderMenuKey, headerMenuWrapperRef } = useColumnHeaderMenu();
+  const { columnSort, columnFilters, toggleColumnSort, setColumnFilterOperator, setColumnFilterValue, displayRowEntries, getDisplayRowIndex } =
+    useSortFilterTable(tableRows, getCellValue);
 
   const allTextFields = useMemo(
     () => defaultSearchFields.filter((f) => f.control === "text" || f.control === "date"),
@@ -222,6 +232,7 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
             label: "Avregistrera",
             icon: <RemoveCircleOutlineIcon fontSize="small" />,
             enabled: rowSelection.hasSelectedRow,
+            onClick: () => setAvregistreraOpen(true),
           },
         ]}
         rightSlot={
@@ -271,6 +282,10 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
               onSave={columnsManager.save}
               onReset={columnsManager.reset}
               onTogglePin={(key) => columnsManager.togglePin(key as PriceListColumnKey)}
+              canAdjustWidth={() => true}
+              getColumnWidth={(key) => columnsManager.getColumnWidth(key as PriceListColumnKey)}
+              onDecreaseWidth={(key) => columnsManager.decreaseWidth(key as PriceListColumnKey)}
+              onIncreaseWidth={(key) => columnsManager.increaseWidth(key as PriceListColumnKey)}
               iconOnly
             />
           </>
@@ -278,16 +293,33 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
       />
 
       <div className={styles.tablesLayout}>
-        <div className={styles.tableContainer}>
+        <div className={`${styles.tableContainer} ${styles.contractTableCompact}`}>
           <div className={styles.tableScrollWrap}>
             <div className={styles.tableInner}>
               <DataTable
                 variant="main"
                 columns={columnsManager.orderedVisibleColumns}
-                rows={tableRows}
+                rows={displayRowEntries.map((entry) => entry.row)}
                 rowKey={(row, index) => `${row.prislistenr}-${index}`}
-                selectedRowIndex={rowSelection.selectedRowIndex}
-                onRowClick={rowSelection.toggleRowSelection}
+                selectedRowIndex={getDisplayRowIndex(rowSelection.selectedRowIndex)}
+                onRowClick={(displayIndex) =>
+                  rowSelection.toggleRowSelection(displayRowEntries[displayIndex].originalIndex)
+                }
+                fillRemainingSpace
+                renderHeaderCell={(column) => (
+                  <ColumnHeaderCell
+                    columnKey={column.key}
+                    columnLabel={column.label}
+                    columnSort={columnSort}
+                    onToggleSort={toggleColumnSort}
+                    columnFilter={columnFilters[column.key]}
+                    onSetFilterOperator={setColumnFilterOperator}
+                    onSetFilterValue={setColumnFilterValue}
+                    isMenuOpen={openHeaderMenuKey === column.key}
+                    onToggleMenu={() => setOpenHeaderMenuKey((prev) => (prev === column.key ? null : column.key))}
+                    headerMenuWrapperRef={headerMenuWrapperRef}
+                  />
+                )}
                 renderCell={(row, column) =>
                   column.key === "prislistenr" ? (
                     <button
@@ -310,6 +342,30 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
           <div className={styles.tableFiller} />
         </div>
       </div>
+
+      <Dialog open={avregistreraOpen} onClose={() => setAvregistreraOpen(false)} maxWidth="xs" fullWidth slotProps={{ paper: { className: styles.freightDialogPaper } }}>
+        <DialogTitle className={styles.freightDialogTitle}>
+          <div className={styles.freightDialogTitleRow}>
+            <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Avregistrera prislista</Typography>
+            <IconButton size="small" onClick={() => setAvregistreraOpen(false)} style={{ color: "#6a7483" }}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </div>
+        </DialogTitle>
+        <DialogContent className={styles.freightDialogContent}>
+          <Typography style={{ fontSize: 14, color: "#404753", paddingTop: 4 }}>
+            Är du säker att du vill avregistrera den valda prislistan?
+          </Typography>
+        </DialogContent>
+        <DialogActions className={styles.freightDialogActions}>
+          <Button variant="contained" size="small" className={styles.bytPrislistaOkButton} onClick={() => setAvregistreraOpen(false)}>
+            Ja
+          </Button>
+          <Button variant="outlined" size="small" className={styles.bytPrislistaAvbrytButton} onClick={() => setAvregistreraOpen(false)}>
+            Avbryt
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

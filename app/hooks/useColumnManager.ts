@@ -7,7 +7,17 @@ export type ManagedColumn<TColumnKey extends string> = {
   label: string;
   visible: boolean;
   pinned?: boolean;
+  width?: number;
 };
+
+export const DEFAULT_COLUMN_WIDTH = 120;
+export const MIN_COLUMN_WIDTH = 60;
+export const MAX_COLUMN_WIDTH = 420;
+export const COLUMN_WIDTH_STEP = 20;
+
+export function clampColumnWidth(width: number): number {
+  return Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, width));
+}
 
 export function useColumnManager<TColumnKey extends string>(
   initialColumns: Array<ManagedColumn<TColumnKey>>
@@ -81,6 +91,21 @@ export function useColumnManager<TColumnKey extends string>(
     });
   };
 
+  const getColumnWidth = (key: TColumnKey) =>
+    draftColumns.find((column) => column.key === key)?.width ?? DEFAULT_COLUMN_WIDTH;
+
+  const setWidth = (key: TColumnKey, width: number) => {
+    setDraftColumns((previous) =>
+      previous.map((column) =>
+        column.key === key ? { ...column, width: clampColumnWidth(width) } : column
+      )
+    );
+  };
+
+  const increaseWidth = (key: TColumnKey) => setWidth(key, getColumnWidth(key) + COLUMN_WIDTH_STEP);
+
+  const decreaseWidth = (key: TColumnKey) => setWidth(key, getColumnWidth(key) - COLUMN_WIDTH_STEP);
+
   return {
     isOpen,
     setIsOpen,
@@ -94,6 +119,9 @@ export function useColumnManager<TColumnKey extends string>(
     reset,
     toggleVisibility,
     togglePin,
-    move
+    move,
+    getColumnWidth,
+    increaseWidth,
+    decreaseWidth
   };
 }

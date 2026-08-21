@@ -2,20 +2,18 @@
 
 import Link from "next/link";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import {
   Avatar,
-  Badge,
   Button,
   IconButton,
   Menu,
   MenuItem,
   Typography
 } from "@mui/material";
-import type { MouseEvent as ReactMouseEvent, ReactNode, RefObject } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import styles from "../../page.module.scss";
 
 type SectionNavItem = {
@@ -38,32 +36,10 @@ type TopMenuOption = {
   endIcon?: "open_in_new";
 };
 
-const companyAbbreviations: Record<string, string> = {
-  "BP Hammerdal Byggprodukter": "HA",
-  "BP Hissmofors Byggprodukter": "HB",
-  "BP Kåge Byggprodukter": "KB",
-  "Huvudkontor": "H",
-  "NT Hissmofors Såg": "HS",
-  "NT Kåge Såg": "KS",
-  "NT Stolfabrik Agnäs": "AG",
-  "NT Sävar Såg": "SS"
-};
-
-function getCompanyAbbreviation(companyName: string): string {
-  return companyAbbreviations[companyName] ?? companyName.slice(0, 2).toUpperCase();
-}
-
 type AppShellLayoutProps = {
   isSidebarCollapsed: boolean;
-  selectedCompany: string;
-  isCompanyMenuOpen: boolean;
-  fakeCompanies: string[];
   sectionSlug: string;
   sectionDefinitions: SectionNavItem[];
-  companyButtonRef: RefObject<HTMLButtonElement | null>;
-  companyMenuRef: RefObject<HTMLDivElement | null>;
-  onToggleCompanyMenu: () => void;
-  onCompanySelect: (company: string) => void;
   onNavigateSection: (section: string, defaultMenuSlug: string) => void;
   onToggleSidebar: () => void;
   leftTopMenuItems: TopNavItem[];
@@ -111,15 +87,8 @@ type AppShellLayoutProps = {
 
 export function AppShellLayout({
   isSidebarCollapsed,
-  selectedCompany,
-  isCompanyMenuOpen,
-  fakeCompanies,
   sectionSlug,
   sectionDefinitions,
-  companyButtonRef,
-  companyMenuRef,
-  onToggleCompanyMenu,
-  onCompanySelect,
   onNavigateSection,
   onToggleSidebar,
   leftTopMenuItems,
@@ -167,57 +136,6 @@ export function AppShellLayout({
   return (
     <div className={styles.appShell}>
       <aside className={`${styles.sidebar} ${isSidebarCollapsed ? styles.sidebarCollapsed : ""}`}>
-        <div className={styles.sidebarHeader}>
-          <button
-            type="button"
-            ref={companyButtonRef}
-            className={styles.companySelectorButton}
-            aria-label={selectedCompany}
-            onClick={onToggleCompanyMenu}
-            aria-expanded={isCompanyMenuOpen}
-          >
-            {isSidebarCollapsed ? (
-              <>
-                <Badge
-                  badgeContent={getCompanyAbbreviation(selectedCompany)}
-                  classes={{
-                    root: styles.companySelectorBadgeRoot,
-                    badge: styles.companySelectorBadge
-                  }}
-                >
-                  <BusinessOutlinedIcon className={styles.companySelectorHomeIcon} />
-                </Badge>
-                <span className={styles.companySelectorTooltip}>{selectedCompany}</span>
-              </>
-            ) : (
-              <>
-                <span className={styles.companySelectorText}>{selectedCompany}</span>
-                <KeyboardArrowDownIcon className={styles.companySelectorArrow} />
-              </>
-            )}
-          </button>
-          {isCompanyMenuOpen ? (
-            <div
-              className={`${styles.companyDropdown} ${isSidebarCollapsed ? styles.companyDropdownCollapsed : ""
-                }`}
-              ref={companyMenuRef}
-            >
-              {fakeCompanies.map((company) => (
-                <button
-                  key={company}
-                  type="button"
-                  className={`${styles.companyDropdownItem} ${selectedCompany === company ? styles.companyDropdownItemActive : ""
-                    }`}
-                  onClick={() => onCompanySelect(company)}
-                >
-                  <span className={styles.companyDropdownItemLabel}>{company}</span>
-                  <span className={styles.companyDropdownItemCode}>{getCompanyAbbreviation(company)}</span>
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
         <div className={styles.sidebarMenu}>
           {sectionDefinitions
             .filter((section) => section.slug !== "system")
@@ -333,9 +251,15 @@ export function AppShellLayout({
 
         <div className={styles.contentArea}>
           <div className={styles.breadcrumbs}>
-            <Typography className={styles.breadcrumbMuted}>{currentSectionLabel}</Typography>
-            <ChevronRightIcon className={styles.breadcrumbArrow} />
-            {!isContractDetailOpen && !isPriceListDetailOpen && !isCustomerDetailOpen && !isCreatingCustomer && !isCreatingPriceList ? (
+            {sectionSlug === "system" ? (
+              <Typography className={styles.breadcrumbActive}>{currentSectionLabel}</Typography>
+            ) : (
+              <>
+                <Typography className={styles.breadcrumbMuted}>{currentSectionLabel}</Typography>
+                <ChevronRightIcon className={styles.breadcrumbArrow} />
+              </>
+            )}
+            {sectionSlug === "system" ? null : !isContractDetailOpen && !isPriceListDetailOpen && !isCustomerDetailOpen && !isCreatingCustomer && !isCreatingPriceList ? (
               menuSlug === "edi-lista" ? (
                 <>
                   <Typography className={styles.breadcrumbMuted}>{currentMenuLabel}</Typography>

@@ -4,6 +4,7 @@ export type ContractSummary = {
   createdBy: string;
   status: string;
   warning?: string;
+  warningTone?: "orange" | "red";
 };
 
 export type FieldValue = {
