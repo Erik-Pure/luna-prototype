@@ -183,6 +183,7 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [uppdateraDialogOpen, setUppdateraDialogOpen] = useState(false);
   const [kplConfirmValue, setKplConfirmValue] = useState<boolean | null>(null);
+  const [nollstallVinstConfirmOpen, setNollstallVinstConfirmOpen] = useState(false);
   const [rowEdits, setRowEdits] = useState<Record<string, Partial<KalkylRow>>>({});
   const [headerEdit, setHeaderEdit] = useState<null | { el: HTMLElement; field: HeaderEditField }>(null);
 
@@ -302,6 +303,16 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
     });
   };
 
+  const nollstallVinst = () => {
+    setRowEdits((prev) => {
+      const next = { ...prev };
+      KALKYL_ROWS.forEach((row) => {
+        next[row.id] = { ...next[row.id], vinst: "0", vinstPct: "0,0" };
+      });
+      return next;
+    });
+  };
+
   const selectedRow = KALKYL_ROWS.find((r) => r.id === selectedRowId) ?? null;
   const editInitial: RedigeraPrislisteradInitial | null = selectedRow
     ? {
@@ -341,7 +352,7 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
             </Button>
           )}
           <Divider orientation="vertical" flexItem style={{ margin: "4px 0" }} />
-          <Button className={styles.contractQuickActionButton} size="small" disabled={!isEditing}>
+          <Button className={styles.contractQuickActionButton} size="small" disabled={!isEditing} onClick={() => setNollstallVinstConfirmOpen(true)}>
             Nollställ vinst
           </Button>
           <Tooltip title="Skriv ut">
@@ -632,8 +643,8 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
                     </td>
                     <td style={td(true, "right")}>{row.prisPm}</td>
                     <td style={td(false, "right")}>{row.prism3}</td>
-                    <td style={{ ...td(false, "right"), ...(parseSwedishNumber(row.vinst) < 0 ? { color: "#c0392b", fontWeight: 700 } : {}) }}>{row.vinst}</td>
-                    <td style={{ ...td(false, "right"), ...(parseSwedishNumber(row.vinstPct) < 0 ? { color: "#c0392b", fontWeight: 700 } : {}) }}>{row.vinstPct}</td>
+                    <td style={{ ...td(false, "right"), ...(parseSwedishNumber(getRowVal(row.id, "vinst", row.vinst)) < 0 ? { color: "#c0392b", fontWeight: 700 } : {}) }}>{getRowVal(row.id, "vinst", row.vinst)}</td>
+                    <td style={{ ...td(false, "right"), ...(parseSwedishNumber(getRowVal(row.id, "vinstPct", row.vinstPct)) < 0 ? { color: "#c0392b", fontWeight: 700 } : {}) }}>{getRowVal(row.id, "vinstPct", row.vinstPct)}</td>
                     <td style={{ ...td(false, "right"), background: isSelected ? undefined : COL_ORANGE, ...(isEditing ? { padding: "4px 6px" } : {}) }}>
                       {isEditing ? (
                         <input
@@ -844,6 +855,38 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
             Ja
           </Button>
           <Button variant="outlined" size="small" onClick={() => setKplConfirmValue(null)} className={styles.bytPrislistaAvbrytButton}>Avbryt</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={nollstallVinstConfirmOpen} onClose={() => setNollstallVinstConfirmOpen(false)} maxWidth="xs" fullWidth PaperProps={{ className: styles.freightDialogPaper }}>
+        <DialogTitle className={styles.freightDialogTitle}>
+          <div className={styles.freightDialogTitleRow}>
+            <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Nollställ vinst</Typography>
+            <IconButton size="small" onClick={() => setNollstallVinstConfirmOpen(false)} style={{ color: "#6a7483" }}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </div>
+        </DialogTitle>
+
+        <DialogContent className={styles.freightDialogContent}>
+          <Typography style={{ fontSize: 13, color: "#404753" }}>
+            Ska vinsten nollställas för urvalet?
+          </Typography>
+        </DialogContent>
+
+        <DialogActions className={styles.freightDialogActions}>
+          <Button
+            variant="contained"
+            size="small"
+            className={styles.contractSaveButton}
+            onClick={() => {
+              nollstallVinst();
+              setNollstallVinstConfirmOpen(false);
+            }}
+          >
+            Ja
+          </Button>
+          <Button variant="outlined" size="small" onClick={() => setNollstallVinstConfirmOpen(false)} className={styles.bytPrislistaAvbrytButton}>Avbryt</Button>
         </DialogActions>
       </Dialog>
     </>
