@@ -66,10 +66,10 @@ const defaultSearchFields: PriceListSearchField[] = [
   { key: "kund", label: "Kund", control: "select", visible: true, favorite: true },
   { key: "upprattatAv", label: "Upprättat av", control: "select", visible: true, favorite: true },
   { key: "status", label: "Status", control: "select", visible: true, favorite: true },
-  { key: "externPrislistenr", label: "Externt prislistenr", control: "text", visible: true, favorite: false },
+  { key: "externPrislistenr", label: "Externt prislistenr", control: "text", visible: true, favorite: true },
   { key: "prisdatumFran", label: "Prisdatum från", control: "date", visible: true, favorite: false },
   { key: "prisdatumTill", label: "Prisdatum till", control: "date", visible: true, favorite: false },
-  { key: "land", label: "Land", control: "select", visible: true, favorite: false },
+  { key: "land", label: "Land", control: "select", visible: true, favorite: true },
   { key: "tillhor", label: "Tillhör", control: "text", visible: true, favorite: false },
 ];
 
@@ -201,6 +201,8 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
         searchMenuRef={searchPanelRef}
         getSelectOptions={(key) => searchSelectOptions[key as PriceListSearchFieldKey] ?? []}
         useAdvancedFilterLayout
+        fieldsGridColumns={6}
+        containerMaxWidth={1280}
         hideGlobalSearch
         onOpenMenu={() => { }}
         onCancelMenu={() => { }}

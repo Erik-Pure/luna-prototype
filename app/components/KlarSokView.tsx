@@ -241,7 +241,7 @@ export function KlarSokView() {
 
   return (
     <div className={styles.klarSokViewLayout}>
-      <div className={styles.advancedSearchPanel}>
+      <div className={styles.advancedSearchPanel} style={{ maxWidth: 1280 }}>
         <KlarSokPanel />
       </div>
       <div className={styles.klarSokTablesLayout}>

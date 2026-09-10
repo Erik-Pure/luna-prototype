@@ -188,7 +188,12 @@ export function DataTable<TRow extends Record<string, string | boolean | undefin
               </div>
             </Fragment>
           ))}
-          {shouldRenderFiller && firstPinnedRightIndex < 0 ? <div className={fillerCellClass} aria-hidden="true" /> : null}
+          {shouldRenderFiller && firstPinnedRightIndex < 0 ? (
+            <div
+              className={`${fillerCellClass} ${getCellClassName?.(row, columns[columns.length - 1]!, rowIndex, columns.length - 1) ?? ""}`}
+              aria-hidden="true"
+            />
+          ) : null}
         </div>
       ))}
     </>

@@ -53,6 +53,8 @@ type SearchFiltersPanelProps = {
   searchMenuRef: RefObject<HTMLDivElement | null>;
   getSelectOptions: (key: string) => string[];
   useAdvancedFilterLayout?: boolean;
+  fieldsGridColumns?: number;
+  containerMaxWidth?: number;
   fieldSets?: FieldSet[];
   defaultActivePresetIndex?: number;
   onOpenMenu: () => void;
@@ -86,6 +88,8 @@ export function SearchFiltersPanel({
   searchMenuRef,
   getSelectOptions,
   useAdvancedFilterLayout = false,
+  fieldsGridColumns,
+  containerMaxWidth,
   fieldSets,
   defaultActivePresetIndex,
   onOpenMenu,
@@ -101,6 +105,7 @@ export function SearchFiltersPanel({
   onCheckboxChange,
   sidePanel
 }: SearchFiltersPanelProps) {
+  const fieldsGridColumnsClass = fieldsGridColumns === 6 ? styles.advancedFiltersGridCols6 : "";
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [isEditingFavorites, setIsEditingFavorites] = useState(false);
   const [activePresetIndex, setActivePresetIndex] = useState<number | null>(defaultActivePresetIndex ?? null);
@@ -168,6 +173,7 @@ export function SearchFiltersPanel({
     const favoriteFieldKeys = new Set(draftFields.filter((field) => field.favorite).map((field) => field.key));
 
     const activePreset = activePresetIndex !== null && fieldSets ? fieldSets[activePresetIndex] : null;
+    const defaultPresetFieldCount = fieldsGridColumns ?? 4;
 
     const favoriteTextFields = advancedTextFields.filter((field) => favoriteFieldKeys.has(field.key));
     const favoriteSelectFields = advancedSelectFields.filter((field) => favoriteFieldKeys.has(field.key));
@@ -179,7 +185,7 @@ export function SearchFiltersPanel({
     const sortedMoreCheckboxFields = [...moreCheckboxFields].sort(compareByLabel);
 
     const hasMoreFilters = activePreset
-      ? activePreset.fields.length > 4
+      ? activePreset.fields.length > defaultPresetFieldCount
       : (moreTextFields.length > 0 || moreSelectFields.length > 0 || moreCheckboxFields.length > 0);
     const hasFavorites = !activePreset && (favoriteTextFields.length > 0 || favoriteSelectFields.length > 0 || favoriteCheckboxFields.length > 0);
     const allFields = [...advancedTextFields, ...advancedSelectFields, ...advancedCheckboxFields];
@@ -292,7 +298,7 @@ export function SearchFiltersPanel({
             }
             if (seg.type === "grid") {
               return (
-                <div key={`grid-${si}`} className={styles.advancedFiltersGrid}>
+                <div key={`grid-${si}`} className={`${styles.advancedFiltersGrid} ${fieldsGridColumnsClass}`}>
                   {seg.fields.map((field) => {
                     const nomKey = `${field.nomGroup ?? field.key}_nom`;
                     const isNom = field.nomToggle && Boolean(presetValues[presetIndex]?.[nomKey]);
@@ -402,7 +408,7 @@ export function SearchFiltersPanel({
                 {seg.sectionLabel ? (
                   <Typography style={{ fontSize: 11, fontWeight: 600, color: "#6a7585", marginBottom: 4 }}>{seg.sectionLabel}</Typography>
                 ) : null}
-                <div className={styles.advancedCheckboxWrap}>
+                <div className={`${styles.advancedCheckboxWrap} ${fieldsGridColumnsClass}`}>
                   {seg.fields.map((field) => {
                     if (field.control === "checkbox-tri") {
                       const rawVal = presetValues[presetIndex]?.[field.key];
@@ -455,7 +461,7 @@ export function SearchFiltersPanel({
 
     return (
       <div className={styles.filterRow}>
-        <div className={styles.advancedSearchPanel}>
+        <div className={styles.advancedSearchPanel} style={containerMaxWidth ? { maxWidth: containerMaxWidth } : undefined}>
           <div className={styles.advancedFiltersContainer} ref={searchMenuRef}>
             <div className={`${styles.advancedFiltersHeader} ${hideGlobalSearch && !isEditingFavorites && !(fieldSets && fieldSets.length > 0) ? styles.advancedFiltersHeaderCompact : ""}`}>
 
@@ -610,11 +616,11 @@ export function SearchFiltersPanel({
               </>
             ) : activePreset && activePresetIndex !== null ? (
               <div className={styles.advancedFiltersBody}>
-                {renderPresetFields(activePreset.fields.slice(0, 4), activePresetIndex)}
-                {showMoreFilters && activePreset.fields.length > 4 ? (
+                {renderPresetFields(activePreset.fields.slice(0, defaultPresetFieldCount), activePresetIndex)}
+                {showMoreFilters && activePreset.fields.length > defaultPresetFieldCount ? (
                   <>
                     <hr className={styles.advancedFiltersDivider} />
-                    {renderPresetFields(activePreset.fields.slice(4), activePresetIndex)}
+                    {renderPresetFields(activePreset.fields.slice(defaultPresetFieldCount), activePresetIndex)}
                   </>
                 ) : null}
               </div>
@@ -627,7 +633,7 @@ export function SearchFiltersPanel({
                     </Typography>
                   ) : null}
 
-                  <div className={styles.advancedFiltersGrid}>
+                  <div className={`${styles.advancedFiltersGrid} ${fieldsGridColumnsClass}`}>
                     {favoriteTextFields.map((field) => (
                       <TextField
                         key={field.key}
@@ -644,7 +650,7 @@ export function SearchFiltersPanel({
                   </div>
 
                   {favoriteCheckboxFields.length > 0 ? (
-                    <div className={styles.advancedCheckboxWrap}>
+                    <div className={`${styles.advancedCheckboxWrap} ${fieldsGridColumnsClass}`}>
                       {favoriteCheckboxFields.map((field) => (
                         <label key={field.key} className={styles.searchCheckboxItem}>
                           <Checkbox
@@ -661,7 +667,7 @@ export function SearchFiltersPanel({
                   {hasMoreFilters && showMoreFilters ? (
                     <>
                       <hr className={styles.advancedFiltersDivider} />
-                      <div className={styles.advancedFiltersGrid}>
+                      <div className={`${styles.advancedFiltersGrid} ${fieldsGridColumnsClass}`}>
                         {sortedMoreNonCheckboxFields.map((field) =>
                           field.control === "text" || field.control === "date" ? (
                             <TextField
@@ -678,7 +684,7 @@ export function SearchFiltersPanel({
                         )}
                       </div>
                       {sortedMoreCheckboxFields.length > 0 ? (
-                        <div className={styles.advancedCheckboxWrap}>
+                        <div className={`${styles.advancedCheckboxWrap} ${fieldsGridColumnsClass}`}>
                           {sortedMoreCheckboxFields.map((field) => (
                             <label key={field.key} className={styles.searchCheckboxItem}>
                               <Checkbox

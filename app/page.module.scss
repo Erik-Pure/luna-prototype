@@ -811,6 +811,41 @@
   gap: 8px;
 }
 
+.advancedFiltersGridCols6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.advancedCheckboxWrap.advancedFiltersGridCols6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+// Step the search-fields grid down at MudBlazor's breakpoints (Lg 1280 / Md 960 / Sm 600)
+// so it doesn't cram fields into unusable widths on narrower viewports.
+@media (max-width: 1279px) {
+  .advancedFiltersGridCols6,
+  .advancedCheckboxWrap.advancedFiltersGridCols6 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 959px) {
+  .advancedFiltersGrid,
+  .advancedFiltersGridCols6,
+  .advancedCheckboxWrap,
+  .advancedCheckboxWrap.advancedFiltersGridCols6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 599px) {
+  .advancedFiltersGrid,
+  .advancedFiltersGridCols6,
+  .advancedCheckboxWrap,
+  .advancedCheckboxWrap.advancedFiltersGridCols6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .advancedSearchPanel .searchFieldLabel {
   color: #424a57;
   font-size: 11px;
@@ -885,21 +920,9 @@
     align-items: stretch;
   }
 
-  .advancedFiltersGrid,
-  .advancedCheckboxWrap {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .advancedFiltersHeader {
     align-items: flex-start;
     flex-direction: column;
-  }
-}
-
-@media (max-width: 640px) {
-  .advancedFiltersGrid,
-  .advancedCheckboxWrap {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -1372,10 +1395,14 @@
   position: relative;
 }
 
-.tableSearchButtonActive {
+.lineItemsToggleButton.tableSearchButtonActive {
   border-color: #c47900 !important;
   background-color: #fff3df !important;
   color: #c47900 !important;
+}
+
+.lineItemsToggleButton.tableSearchButtonActive:hover {
+  border-color: #c47900 !important;
 }
 
 .tableSearchDropdown {
@@ -1824,6 +1851,7 @@
 }
 
 .tableContainerShrink {
+  flex: 0 1 auto;
   min-height: 0;
 }
 
@@ -1843,6 +1871,7 @@
   width: max-content;
   min-width: 100%;
   table-layout: auto;
+  border-collapse: collapse;
 }
 
 .tableHeader,
@@ -2143,6 +2172,8 @@
   right: 0;
   z-index: 4;
   background-color: #f9fafb;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .stickyRightCell {
@@ -2150,6 +2181,8 @@
   right: 0;
   z-index: 3;
   background-color: #ffffff;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .tableRow:hover .tableCell,
@@ -3745,6 +3778,7 @@
   min-width: 1200px;
   width: max-content;
   table-layout: auto;
+  border-collapse: collapse;
 }
 
 .lineItemsHeaderRow,
@@ -7629,6 +7663,7 @@ body button {
   width: max-content;
   min-width: 100%;
   table-layout: auto;
+  border-collapse: collapse;
 }
 
 .freightActionCell {
@@ -8174,14 +8209,27 @@ body button {
 }
 
 .paketbokningTableWrap {
-  // flex: 1;
+  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  height: fit-content !important;
+  overflow: auto;
   border: 1px solid #e2e7f0;
   border-radius: 8px;
+}
+
+// Container page only: size to content instead of stretching to fill the layout when there
+// are few rows, but still shrink and scroll internally when content exceeds the available space.
+.containerTableWrapFit {
+  flex: 0 1 auto;
+}
+
+// Shared width cap for the container wizard's action row, table and total row, so all three
+// line up at the same width and sit centered in the panel instead of stretching edge-to-edge.
+.containerWizardWidth {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
 /* ── Container table (MudBlazor-style) ─────────────────────────────────────── */
@@ -8191,7 +8239,10 @@ body button {
   align-items: center;
   background: #f4f6fb;
   border-bottom: 1px solid #e3e7f0;
-  padding: 10px 16px;
+  padding: 6px 16px 6px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .ctHeaderCell {
@@ -8204,14 +8255,14 @@ body button {
 .ctCategoryRow {
   display: flex;
   align-items: center;
-  background: white;
+  background: #f4f4f5;
   border-bottom: 1px solid #e3e7f0;
-  padding: 9px 16px;
+  padding: 6px 16px;
   cursor: pointer;
   user-select: none;
 
   &:hover {
-    background: #f3f3f3;
+    background: #ebebed;
   }
 }
 
@@ -8227,43 +8278,39 @@ body button {
   color: #5b6478;
 }
 
-.ctGroupRow {
-  display: flex;
-  align-items: center;
-  background: #f4f6fb;
-  border-top: 1px solid #e3e7f0;
-  border-bottom: 1px solid #e3e7f0;
-  padding: 6px 16px;
-  min-height: 32px;
-}
-
-.ctGroupRowTitle {
-  display: flex;
-  align-items: center;
-  margin-right: auto;
-  font-size: 13px;
-  font-weight: 700;
-  color: #2f3743;
-}
-
-.ctGroupRowVolym {
-  font-size: 13px;
-  font-weight: 700;
-  color: #8a93a6;
-  margin-left: 10px;
-}
-
 .ctItemRow {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
+  padding: 3px 16px 3px 32px;
   border-bottom: 1px solid #f0f2f7;
-  min-height: 44px;
+  min-height: 28px;
   cursor: pointer;
 
   &:hover {
     background: #fafbfd;
   }
+}
+
+// Alternates per container group (not per row) so all rows belonging to the same
+// container share a shade, making group boundaries easy to scan in "Hel container".
+.ctItemRowGroupAlt {
+  background: #eef1f6;
+
+  &:hover {
+    background: #e3e8ee;
+  }
+}
+
+// Marks the first row of a new enhet within "Hel container", so the section reads as
+// grouped by enhet even without a dedicated group-header row.
+.ctItemRowEnhetBoundary {
+  border-top: 2px solid #c7cedb;
+}
+
+// Same enhet-transition divider as .ctItemRowEnhetBoundary, but applied per table-cell
+// since the Volym step's rows are real table-cells (border on a table-row isn't reliable).
+.ctColEnhetBoundaryCell {
+  border-top: 2px solid #c7cedb;
 }
 
 .ctItemRowSelected {
@@ -8275,18 +8322,23 @@ body button {
 }
 
 .ctEmptyState {
-  padding: 10px 16px 14px 48px;
+  padding: 6px 16px 8px 48px;
   border-bottom: 1px solid #e3e7f0;
   font-size: 13px;
   color: #8a93a6;
 }
 
-.ctColCheck { width: 48px; flex-shrink: 0; }
-.ctColEnhet { width: 90px; flex-shrink: 0; font-size: 13px; color: #3f4754; }
-.ctColArtNr { width: 90px; flex-shrink: 0; font-size: 13px; color: #3f4754; }
-.ctColText  { flex: 1 1 auto; min-width: 160px; font-size: 13px; color: #3f4754; }
-.ctColPaket { width: 110px; flex-shrink: 0; font-size: 13px; color: #3f4754; }
-.ctColVolym { width: 90px; flex-shrink: 0; font-size: 13px; color: #3f4754; }
+.ctColCheck { width: 40px; flex-shrink: 0; }
+.ctColEnhet { width: 60px; flex-shrink: 0; font-size: 13px; color: #3f4754; }
+.ctColArtNr { width: 78px; flex-shrink: 0; font-size: 13px; color: #3f4754; text-align: right; padding-right: 24px; }
+.ctColText  { width: 175px; flex-shrink: 0; min-width: 130px; font-size: 13px; color: #3f4754; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctColPaket { width: 72px; flex-shrink: 0; font-size: 13px; color: #3f4754; }
+.ctColVolym { width: 56px; flex-shrink: 0; font-size: 13px; color: #3f4754; text-align: right; }
+.ctColContainer { width: 78px; flex-shrink: 0; font-size: 13px; color: #3f4754; text-align: right; }
+.ctColVolymTotal { width: 150px; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-size: 13px; color: #3f4754; }
+// Absorbs any leftover row width after the last fixed column, so Pakettyp/Volym sit right next
+// to Fakturatext instead of being pushed to the far right edge of a wider row.
+.ctColFiller { flex: 1 1 auto; min-width: 0; }
 
 .paketbokningSelCount {
   margin-left: auto;
@@ -8392,6 +8444,24 @@ body button {
   text-align: center;
 }
 
+.containerVolymTotalRow {
+  display: flex;
+  align-items: center;
+  background: #f8f8f8;
+  border-radius: 0 0 6px 6px;
+  margin-top: -1px;
+}
+
+.containerVolymTotalCell {
+  padding: 8px 12px;
+  color: #1a2233;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── Leveransbokade paket tab ── */
 .bokadePaketLayout {
   display: flex;
@@ -8477,7 +8547,7 @@ body button {
 
 .containerViewEnhetSelect {
   min-height: 30px;
-  min-width: 140px;
+  min-width: 190px;
 
   :global(.MuiOutlinedInput-notchedOutline) {
     border-color: #d1d5db;
@@ -8492,7 +8562,35 @@ body button {
     display: flex;
     align-items: center;
     background: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
+}
+
+// "Alla enheter" dropdown: each option shows the full unit name with its short
+// code as a muted pill on the right, so codes stay scannable next to the name.
+.enhetOptionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.enhetOptionName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.enhetOptionBadge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef1f6;
+  color: #6a7483;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .containerViewCellInput {

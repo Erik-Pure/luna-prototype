@@ -19,6 +19,7 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
+import WarningIcon from "@mui/icons-material/WarningAmberOutlined";
 import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, TextField, Tooltip, Typography } from "@mui/material";
 import { getContractDetails, type ContractDocument } from "./contractDetails";
@@ -1669,9 +1670,10 @@ export function LineItemDetailView({
             {isNewLineItem ? (savedDraftNr ? `Kontraktsrad ${savedDraftNr}` : "Ny kontraktsrad") : `Kontraktsrad ${lineItemId}`}
           </Typography>
           <Chip
+            icon={<WarningIcon />}
             label="Kunden har överskriden limit"
-            size="small"
-            color="error"
+            size="medium"
+            className={`${styles.limitErrorChip} ${styles.customerHeaderWarningChip}`}
             style={{ marginLeft: 8, fontWeight: 500, padding: "0 4px" }}
           />
         </div>

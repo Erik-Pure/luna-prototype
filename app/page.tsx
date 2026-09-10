@@ -18,6 +18,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import ClearIcon from "@mui/icons-material/Clear";
 import {
+  Alert,
   Button,
   Checkbox,
   CircularProgress,
@@ -36,6 +37,7 @@ import {
   MenuItem,
   Popover,
   Select,
+  Snackbar,
   TextField,
   Typography
 } from "@mui/material";
@@ -83,6 +85,8 @@ let _savedReturnLineItemId: string | null = null;
 let _savedAvropsradEditData: Record<string, string> | null = null;
 // Remembers whether a prislisterad detail view was opened from the Prislistekalkyl view, so the breadcrumb can chain through it and "close" can return there.
 let _savedReturnToKalkyl = false;
+// Toast message to show right after a navigateWithLoading() call remounts the page (useState-based toast state doesn't survive that remount).
+let _pendingToastMessage: string | null = null;
 
 type TopMenuItemDef = {
   slug: string;
@@ -320,13 +324,13 @@ const defaultSearchFields: SearchFieldConfig[] = [
   { key: "artNr", label: "ArtNr", control: "select", visible: false, favorite: false },
   { key: "certifiering", label: "Certifiering", control: "select", visible: false, favorite: false },
   { key: "bolag", label: "Enhet", control: "select", visible: false, favorite: false },
-  { key: "externtKontraktsnr", label: "Externt kontraktsnr", control: "text", visible: true, favorite: false },
+  { key: "externtKontraktsnr", label: "Externt kontraktsnr", control: "text", visible: true, favorite: true },
   { key: "kategori", label: "Kategori", control: "select", visible: false, favorite: false },
   { key: "kontraktsNr", label: "KontraktsNr", control: "text", visible: true, favorite: true },
   { key: "kontraktsdatumFran", label: "Kontraktsdatum från", control: "text", visible: false, favorite: false },
   { key: "kontraktsdatumTill", label: "Kontraktsdatum till", control: "text", visible: false, favorite: false },
   { key: "kund", label: "Kund", control: "select", visible: false, favorite: true },
-  { key: "land", label: "Land", control: "select", visible: false, favorite: false },
+  { key: "land", label: "Land", control: "select", visible: false, favorite: true },
   { key: "mottagarland", label: "Mottagarland", control: "select", visible: false, favorite: false },
   { key: "prislistaNr", label: "Prislista nr", control: "text", visible: false, favorite: false },
   { key: "tillhor", label: "Tillhör", control: "text", visible: false, favorite: false },
@@ -1123,8 +1127,8 @@ const defaultCustomerSearchFields: CustomerSearchFieldConfig[] = [
   { key: "saljare", label: "Säljare/innesäljare", control: "select", visible: true, favorite: true, multi: true },
   { key: "fakturanamn", label: "Fakturanamn", control: "text", visible: false, favorite: false },
   { key: "postadress", label: "Postadress", control: "text", visible: false, favorite: false },
-  { key: "land", label: "Land", control: "select", visible: false, favorite: false },
-  { key: "kategori", label: "Kategori", control: "select", visible: false, favorite: false, multi: true },
+  { key: "land", label: "Land", control: "select", visible: false, favorite: true },
+  { key: "kategori", label: "Kategori", control: "select", visible: false, favorite: true, multi: true },
   { key: "tillhor", label: "Tillhör", control: "text", visible: false, favorite: false },
   { key: "orgNr", label: "OrgNr", control: "text", visible: false, favorite: false },
   { key: "vatNr", label: "VatNr", control: "text", visible: false, favorite: false },
@@ -1753,6 +1757,7 @@ export default function Home() {
   const [keepLineItemOpenAfterSave, setKeepLineItemOpenAfterSave] = useState(true);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
   const [isViewLoading, setIsViewLoading] = useState(false);
+  const [globalToast, setGlobalToast] = useState<{ open: boolean; message: string; key: number }>({ open: false, message: "", key: 0 });
   const routeLoadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const viewLoadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchMenuRef = useRef<HTMLDivElement | null>(null);
@@ -2834,6 +2839,15 @@ export default function Home() {
     document.title = `${deepestBreadcrumb} (${selectedCompany})`;
   }, [deepestBreadcrumb, selectedCompany]);
 
+  // Picks up a toast queued right before navigateWithLoading() remounted the page
+  // (useState-based toast state doesn't survive that remount, so it's stashed on a module-level var instead).
+  useEffect(() => {
+    if (_pendingToastMessage) {
+      setGlobalToast({ open: true, message: _pendingToastMessage, key: Date.now() });
+      _pendingToastMessage = null;
+    }
+  }, []);
+
   // Clean up the navigation hash after tabs have been initialised from it.
   // State is read in the useState initialisers above (not here) to avoid setState-in-effect.
   // The cleanup cancels the timer so the hash survives StrictMode's unmount/remount cycle.
@@ -3153,6 +3167,10 @@ export default function Home() {
             <div className={styles.contractDetailPanel}>
               <ContainerView
                 onBack={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`)}
+                onSaved={(message) => {
+                  _pendingToastMessage = message;
+                  navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`);
+                }}
               />
             </div>
           ) : isAvropDetailOpen && selectedAvropsradId ? (
@@ -3225,6 +3243,8 @@ export default function Home() {
               defaultActivePresetIndex={0}
               getSelectOptions={(key) => getCustomerSelectOptions(key as CustomerSearchFieldKey)}
               useAdvancedFilterLayout
+              fieldsGridColumns={6}
+              containerMaxWidth={1280}
               hideGlobalSearch
               fieldSets={[
                 {
@@ -3946,6 +3966,21 @@ export default function Home() {
           </div>
         )}
       </AppShellLayout>
+      <Snackbar
+        key={globalToast.key}
+        open={globalToast.open}
+        autoHideDuration={2200}
+        onClose={() => setGlobalToast((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity="success"
+          variant="filled"
+          onClose={() => setGlobalToast((prev) => ({ ...prev, open: false }))}
+        >
+          {globalToast.message}
+        </Alert>
+      </Snackbar>
     </main>
   );
 }

@@ -205,6 +205,8 @@ export function ContractListView({
         searchMenuRef={searchMenuRef}
         getSelectOptions={getSelectOptions}
         useAdvancedFilterLayout
+        fieldsGridColumns={6}
+        containerMaxWidth={1280}
         onOpenMenu={onOpenSearchMenu}
         onCancelMenu={onCancelSearchMenu}
         onToggleFieldVisibility={onToggleSearchFieldVisibility}

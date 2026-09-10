@@ -24,7 +24,7 @@ const defaultVisa = () =>
 
 export function KlarSokPanel() {
   const [activeTab, setActiveTab] = useState<"allmant" | "visa">("allmant");
-  const [showAllFields, setShowAllFields] = useState(true);
+  const [showAllFields, setShowAllFields] = useState(false);
   const [enhet, setEnhet] = useState("");
   const [kundNr, setKundNr] = useState("");
   const [prislisteNr, setPrislisteNr] = useState("");
@@ -95,7 +95,7 @@ export function KlarSokPanel() {
 
       {activeTab === "allmant" && (
         <div className={styles.advancedFiltersBody}>
-          <div className={styles.advancedFiltersGrid}>
+          <div className={`${styles.advancedFiltersGrid} ${styles.advancedFiltersGridCols6}`}>
             <FormControl size="small" className={styles.searchFieldControl}>
               <InputLabel>Enhet</InputLabel>
               <Select
@@ -118,14 +118,14 @@ export function KlarSokPanel() {
             <TextField size="small" label="KontraktsNr" className={styles.searchFieldControl}
               value={kontraktsNr} onChange={(e) => setKontraktsNr(e.target.value)} />
 
+            <TextField size="small" label="LastorderNr" className={styles.searchFieldControl}
+              value={lastorderNr} onChange={(e) => setLastorderNr(e.target.value)} />
+
+            <TextField size="small" label="TransportNr" className={styles.searchFieldControl}
+              value={transportNr} onChange={(e) => setTransportNr(e.target.value)} />
+
             {showAllFields && (
               <>
-                <TextField size="small" label="LastorderNr" className={styles.searchFieldControl}
-                  value={lastorderNr} onChange={(e) => setLastorderNr(e.target.value)} />
-
-                <TextField size="small" label="TransportNr" className={styles.searchFieldControl}
-                  value={transportNr} onChange={(e) => setTransportNr(e.target.value)} />
-
                 <TextField size="small" label="FakturaNr" className={styles.searchFieldControl}
                   value={fakturaNr} onChange={(e) => setFakturaNr(e.target.value)} />
 

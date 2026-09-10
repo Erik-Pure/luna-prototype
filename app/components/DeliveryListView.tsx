@@ -358,6 +358,8 @@ export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) 
         searchMenuRef={{ current: null }}
         getSelectOptions={(key) => deliverySelectOptions[key] ?? []}
         useAdvancedFilterLayout
+        fieldsGridColumns={6}
+        containerMaxWidth={1280}
         hideGlobalSearch
         defaultActivePresetIndex={0}
         fieldSets={FIELD_SETS}
