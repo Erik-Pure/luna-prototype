@@ -1,6 +1,7 @@
 "use client";
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CloseIcon from "@mui/icons-material/Close";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -38,6 +39,7 @@ type ContainerTableRow = {
   fakturatext: string;
   pakettyp: string;
   volym: string;
+  volymIContainer: string;
   nummer: string;
   delAvContainer: string;
 };
@@ -80,26 +82,26 @@ const INITIAL_VOLYM_ROWS: ContainerVolymRow[] = [
 ];
 
 const INITIAL_CONTAINER_ROWS: ContainerTableRow[] = [
-  { enhet: "HS", artNr: "22120", fakturatext: "Gran flisad spån", pakettyp: "Lp", volym: "48", nummer: "1", delAvContainer: "false" },
-  { enhet: "HS", artNr: "22121", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "144", nummer: "2", delAvContainer: "false" },
-  { enhet: "KS", artNr: "22125", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "18", nummer: "3", delAvContainer: "false" },
-  { enhet: "KS", artNr: "22126", fakturatext: "22x95 Gran Ytterpanel", pakettyp: "Lp", volym: "8", nummer: "3", delAvContainer: "false" },
-  { enhet: "KS", artNr: "22127", fakturatext: "45x145 Konstruktionsvirke", pakettyp: "Paket", volym: "45", nummer: "4", delAvContainer: "false" },
-  { enhet: "SS", artNr: "22129", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "30", nummer: "5", delAvContainer: "false" },
-  { enhet: "SS", artNr: "22133", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "16", nummer: "5", delAvContainer: "false" },
-  { enhet: "SS", artNr: "22130", fakturatext: "Gran flisad spån", pakettyp: "Lp", volym: "50", nummer: "6", delAvContainer: "false" },
-  { enhet: "HS", artNr: "22138", fakturatext: "22x95 Gran Ytterpanel", pakettyp: "Lp", volym: "20", nummer: "7", delAvContainer: "false" },
-  { enhet: "HS", artNr: "22139", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "28", nummer: "7", delAvContainer: "false" },
-  { enhet: "KS", artNr: "22140", fakturatext: "45x145 Konstruktionsvirke", pakettyp: "Paket", volym: "60", nummer: "8", delAvContainer: "false" },
-  { enhet: "HS", artNr: "22122", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "14", nummer: "0", delAvContainer: "true" },
-  { enhet: "HS", artNr: "22124", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "12", nummer: "0", delAvContainer: "true" },
-  { enhet: "KS", artNr: "22131", fakturatext: "22x95 Gran Ytterpanel", pakettyp: "Lp", volym: "30", nummer: "0", delAvContainer: "true" },
-  { enhet: "KS", artNr: "22132", fakturatext: "45x145 Konstruktionsvirke", pakettyp: "Paket", volym: "20", nummer: "0", delAvContainer: "true" },
-  { enhet: "SS", artNr: "22134", fakturatext: "Gran flisad spån", pakettyp: "Lp", volym: "16", nummer: "0", delAvContainer: "true" },
-  { enhet: "SS", artNr: "22135", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "22", nummer: "0", delAvContainer: "true" },
-  { enhet: "HS", artNr: "22141", fakturatext: "22x95 Gran Ytterpanel", pakettyp: "Lp", volym: "18", nummer: "0", delAvContainer: "true" },
-  { enhet: "KS", artNr: "22142", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "10", nummer: "0", delAvContainer: "true" },
-  { enhet: "SS", artNr: "22143", fakturatext: "45x145 Konstruktionsvirke", pakettyp: "Paket", volym: "24", nummer: "0", delAvContainer: "true" },
+  { enhet: "HS", artNr: "22120", fakturatext: "Gran flisad spån", pakettyp: "Lp", volym: "48", volymIContainer: "48", nummer: "1", delAvContainer: "false" },
+  { enhet: "HS", artNr: "22121", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "144", volymIContainer: "48", nummer: "2", delAvContainer: "false" },
+  { enhet: "KS", artNr: "22125", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "18", volymIContainer: "48", nummer: "3", delAvContainer: "false" },
+  { enhet: "KS", artNr: "22126", fakturatext: "22x95 Gran Ytterpanel", pakettyp: "Lp", volym: "8", volymIContainer: "48", nummer: "3", delAvContainer: "false" },
+  { enhet: "KS", artNr: "22127", fakturatext: "45x145 Konstruktionsvirke", pakettyp: "Paket", volym: "45", volymIContainer: "48", nummer: "4", delAvContainer: "false" },
+  { enhet: "SS", artNr: "22129", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "30", volymIContainer: "48", nummer: "5", delAvContainer: "false" },
+  { enhet: "SS", artNr: "22133", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "16", volymIContainer: "48", nummer: "5", delAvContainer: "false" },
+  { enhet: "SS", artNr: "22130", fakturatext: "Gran flisad spån", pakettyp: "Lp", volym: "50", volymIContainer: "48", nummer: "6", delAvContainer: "false" },
+  { enhet: "HS", artNr: "22138", fakturatext: "22x95 Gran Ytterpanel", pakettyp: "Lp", volym: "20", volymIContainer: "48", nummer: "7", delAvContainer: "false" },
+  { enhet: "HS", artNr: "22139", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "28", volymIContainer: "48", nummer: "7", delAvContainer: "false" },
+  { enhet: "KS", artNr: "22140", fakturatext: "45x145 Konstruktionsvirke", pakettyp: "Paket", volym: "60", volymIContainer: "48", nummer: "8", delAvContainer: "false" },
+  { enhet: "HS", artNr: "22122", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "14", volymIContainer: "48", nummer: "0", delAvContainer: "true" },
+  { enhet: "HS", artNr: "22124", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "12", volymIContainer: "48", nummer: "0", delAvContainer: "true" },
+  { enhet: "KS", artNr: "22131", fakturatext: "22x95 Gran Ytterpanel", pakettyp: "Lp", volym: "30", volymIContainer: "48", nummer: "0", delAvContainer: "true" },
+  { enhet: "KS", artNr: "22132", fakturatext: "45x145 Konstruktionsvirke", pakettyp: "Paket", volym: "20", volymIContainer: "48", nummer: "0", delAvContainer: "true" },
+  { enhet: "SS", artNr: "22134", fakturatext: "Gran flisad spån", pakettyp: "Lp", volym: "16", volymIContainer: "48", nummer: "0", delAvContainer: "true" },
+  { enhet: "SS", artNr: "22135", fakturatext: "Furu hyvlad", pakettyp: "Lp", volym: "22", volymIContainer: "48", nummer: "0", delAvContainer: "true" },
+  { enhet: "HS", artNr: "22141", fakturatext: "22x95 Gran Ytterpanel", pakettyp: "Lp", volym: "18", volymIContainer: "48", nummer: "0", delAvContainer: "true" },
+  { enhet: "KS", artNr: "22142", fakturatext: "Gran v-styrp", pakettyp: "Lp", volym: "10", volymIContainer: "48", nummer: "0", delAvContainer: "true" },
+  { enhet: "SS", artNr: "22143", fakturatext: "45x145 Konstruktionsvirke", pakettyp: "Paket", volym: "24", volymIContainer: "48", nummer: "0", delAvContainer: "true" },
 ];
 
 type ContainerViewProps = {
@@ -252,7 +254,7 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
   const containerActionItems = [
     {
       key: "spara",
-      label: "Spara",
+      label: "Verkställ planering",
       // icon: <SaveOutlinedIcon fontSize="small" />,
       tone: "primary" as const,
       enabled: true,
@@ -276,14 +278,16 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
     { key: "divider2", kind: "divider" as const },
     {
       key: "flytta-till-hel",
-      label: "Flytta till Hel container",
+      label: "Hel container",
+      icon: <ArrowDownwardIcon fontSize="small" />,
       enabled: canFlyttaTillHel,
       title: flyttaTillHelEnhetMismatch ? "Enhet måste vara samma" : undefined,
       onClick: handleFlyttaTillHel,
     },
     {
       key: "flytta-till-del",
-      label: "Flytta till Del av container",
+      label: "Del av container",
+      icon: <ArrowUpwardIcon fontSize="small" />,
       enabled: canFlyttaTillDel,
       onClick: handleFlyttaTillDel,
     },
@@ -294,9 +298,6 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
       {/* Header */}
       <div className={styles.contractModernTopRow}>
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <IconButton size="small" onClick={onBack} title="Tillbaka">
-            <ArrowBackIcon fontSize="small" />
-          </IconButton>
           <Typography className={styles.contractModernTitle}>Container</Typography>
         </div>
         <div className={styles.contractModernTopActions} />
@@ -332,14 +333,14 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
                   key: "skapa-containrar",
                   label: "Skapa containrar",
                   tone: "primary" as const,
-                  enabled: true,
+                  enabled: !containrarUnlocked,
                   onClick: () => { setContainrarUnlocked(true); setActiveTab("containrar"); },
                 },
                 {
                   key: "kapacitet",
                   label: "Volym i container",
                   icon: <EditOutlinedIcon fontSize="small" />,
-                  enabled: true,
+                  enabled: !containrarUnlocked,
                   onClick: () => { setKapacitetDraft(""); setKapacitetOpen(true); },
                 },
                 { key: "divider1", kind: "divider" as const },
@@ -347,7 +348,7 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
                   key: "del-av-container-sammanfattning",
                   label: "Del av container",
                   icon: <InfoOutlinedIcon fontSize="small" />,
-                  enabled: true,
+                  enabled: !containrarUnlocked,
                   onClick: () => setDelAvSammanfattningOpen(true),
                 },
               ]}
@@ -356,6 +357,7 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
                   size="small"
                   value={visaEnhet}
                   displayEmpty
+                  disabled={containrarUnlocked}
                   className={styles.containerViewEnhetSelect}
                   onChange={(e) => setVisaEnhet(e.target.value)}
                   renderValue={(v) => (v ? ENHET_OPTIONS.find((opt) => opt.kod === v)?.namn ?? v : "Alla enheter")}
@@ -397,6 +399,7 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
                         onChange={(e) => updateVolymIContainer(rowIndex, e.target.value)}
                         onClick={(e) => e.stopPropagation()}
                         variant="outlined"
+                        disabled={containrarUnlocked}
                         className={styles.containerViewCellInput}
                       />
                     );
@@ -477,6 +480,8 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
                         <div className={styles.ctColText}>{r.fakturatext}</div>
                         <div className={styles.ctColPaket}>{r.pakettyp}</div>
                         <div className={styles.ctColVolym}>{r.volym}</div>
+                        <div className={styles.ctColVolymTotal}>{r.volymIContainer}</div>
+                        <div className={styles.ctColContainer} />
                         <div className={styles.ctColFiller} />
                       </div>
                     );
@@ -660,7 +665,7 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
       >
         <DialogTitle className={styles.freightDialogTitle}>
           <div className={styles.freightDialogTitleRow}>
-            <span>Spara containerplanering</span>
+            <span>Verkställ containerplanering</span>
           </div>
         </DialogTitle>
         <DialogContent className={styles.freightDialogContent}>
@@ -691,12 +696,12 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
       >
         <DialogTitle className={styles.freightDialogTitle}>
           <div className={styles.freightDialogTitleRow}>
-            <span>Spara containerplanering</span>
+            <span>Verkställ containerplanering</span>
           </div>
         </DialogTitle>
         <DialogContent className={styles.freightDialogContent}>
           <Typography style={{ fontSize: 13, color: "#4e5155", marginBottom: 10 }}>
-            Ange kundens märke innan containrarna sparas.
+            Ange kundens märke innan containrarna verkställs.
           </Typography>
           <TextField
             size="small"
@@ -716,10 +721,10 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
             onClick={() => {
               setKundmarke(kundmarkeDraft);
               setKundmarkeDialogOpen(false);
-              onSaved("Containerplanering sparad");
+              onSaved("Containerplanering verkställd");
             }}
           >
-            Spara
+            Verkställ
           </Button>
           <Button size="small" className={styles.freightCancelButton} onClick={() => setKundmarkeDialogOpen(false)}>
             Avbryt
@@ -746,7 +751,7 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Bolag</TableCell>
+                <TableCell>Enhet</TableCell>
                 <TableCell align="right">Volym 125</TableCell>
                 <TableCell align="right">Volym TP</TableCell>
                 <TableCell align="right">Volym övriga</TableCell>
