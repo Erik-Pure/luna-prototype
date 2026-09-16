@@ -60,8 +60,10 @@ import { CustomerCreateView } from "./components/CustomerCreateView";
 import { PriceListCreateView } from "./components/PriceListCreateView";
 import { AvropsradDetailView } from "./components/contract-tabs/AvropsradDetailView";
 import { ContainerView } from "./components/contract-tabs/ContainerView";
+import { StocknotaView, type StocknotaVersion, createSeedStocknotaVersions } from "./components/contract-tabs/StocknotaView";
 import { PrislistekalkylView } from "./components/price-list-tabs/PrislistekalkylView";
 import { SearchFiltersPanel } from "./components/shared/SearchFiltersPanel";
+import { getPriceListKund } from "./components/shared/priceListCustomers";
 import { KlarSokView } from "./components/KlarSokView";
 import { EdiListaView } from "./components/EdiListaView";
 import { AndraStatusView } from "./components/AndraStatusView";
@@ -87,6 +89,8 @@ let _savedAvropsradEditData: Record<string, string> | null = null;
 let _savedReturnToKalkyl = false;
 // Toast message to show right after a navigateWithLoading() call remounts the page (useState-based toast state doesn't survive that remount).
 let _pendingToastMessage: string | null = null;
+// Saved Stocknota versions, kept across the navigateWithLoading() remount between the contract and the Stocknota sub-route (in-memory only — reset on a real page reload).
+let _stocknotaVersions: StocknotaVersion[] = createSeedStocknotaVersions();
 
 type TopMenuItemDef = {
   slug: string;
@@ -1683,6 +1687,9 @@ export default function Home() {
   const rawSegment3 = pathParts[3] ?? null;
   const isAvropRoute = isContractDetailRoute && rawSegment3 === "avrop";
   const isContainerRoute = isContractDetailRoute && rawSegment3 === "container";
+  const isStocknotaRoute = isContractDetailRoute && rawSegment3 === "stocknota";
+  const stocknotaVersionSegment = isStocknotaRoute ? (pathParts[4] ?? null) : null;
+  const isStocknotaVersionOpen = isStocknotaRoute && Boolean(stocknotaVersionSegment);
   const selectedAvropsradId = isAvropRoute ? (pathParts[4] ?? null) : null;
   const lineItemId = isAvropRoute ? null : rawSegment3;
   const isAvropDetailOpen = isAvropRoute && Boolean(selectedAvropsradId);
@@ -2680,6 +2687,40 @@ export default function Home() {
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/container`);
   };
 
+  const [stocknotaVersions, setStocknotaVersions] = useState<StocknotaVersion[]>(_stocknotaVersions);
+
+  const saveStocknotaVersion = (version: StocknotaVersion) => {
+    _stocknotaVersions = [..._stocknotaVersions, version];
+    setStocknotaVersions(_stocknotaVersions);
+  };
+
+  const deleteStocknotaVersion = (id: number) => {
+    _stocknotaVersions = _stocknotaVersions.filter((v) => v.id !== id);
+    setStocknotaVersions(_stocknotaVersions);
+  };
+
+  const openStocknotaView = () => {
+    if (!selectedContractId) return;
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/stocknota`);
+  };
+
+  const openNewStocknotaVersion = () => {
+    if (!selectedContractId) return;
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/stocknota/new`);
+  };
+
+  const openStocknotaVersion = (versionId: number) => {
+    if (!selectedContractId) return;
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/stocknota/${versionId}`);
+  };
+
+  const activeStocknotaVersion =
+    stocknotaVersionSegment && stocknotaVersionSegment !== "new"
+      ? stocknotaVersions.find((v) => String(v.id) === stocknotaVersionSegment) ?? null
+      : null;
+  const stocknotaVersionLabel =
+    stocknotaVersionSegment === "new" ? "Ny version" : activeStocknotaVersion?.name ?? null;
+
   const openAvropsradDetail = (avropsradId: string, data?: Record<string, string>) => {
     if (!selectedContractId) return;
     _savedAvropsradEditData = data ?? null;
@@ -2796,8 +2837,8 @@ export default function Home() {
   const activeContractTabForView: ContractTab = isLineItemDetailOpen ? "Kontraktsrader" : activeContractTab;
 
   const deepestBreadcrumb = (() => {
-    if (isPrislistekalkylRoute) {
-      return "Prislistekalkyl";
+    if (isPrislistekalkylRoute && selectedPriceListId) {
+      return `Prislistekalkyl - ${getPriceListKund(selectedPriceListId)}`;
     }
 
     if (isPriceListRowDetailOpen && selectedPriceRowId) {
@@ -2814,6 +2855,10 @@ export default function Home() {
 
     if (isContainerRoute && selectedContractId) {
       return "Container";
+    }
+
+    if (isStocknotaRoute && selectedContractId) {
+      return stocknotaVersionLabel ? `Stocknota - ${stocknotaVersionLabel}` : "Stocknota";
     }
 
     if (isAvropDetailOpen && selectedAvropsradId) {
@@ -2974,6 +3019,10 @@ export default function Home() {
         returnLineItemId={_savedReturnLineItemId}
         lineItemDetailHref={_savedReturnLineItemId && selectedContractId ? `/${sectionSlug}/${menuSlug}/${selectedContractId}/${_savedReturnLineItemId}` : null}
         isContainerRoute={isContainerRoute}
+        isStocknotaRoute={isStocknotaRoute}
+        isStocknotaVersionOpen={isStocknotaVersionOpen}
+        stocknotaVersionLabel={stocknotaVersionLabel}
+        stocknotaHref={selectedContractId ? `/${sectionSlug}/${menuSlug}/${selectedContractId}/stocknota` : null}
         isPrislistekalkylRoute={isPrislistekalkylRoute}
         returnToPrislistekalkyl={_savedReturnToKalkyl}
         prislistekalkylHref={selectedPriceListId ? `/${sectionSlug}/${menuSlug}/${selectedPriceListId}/kalkyl` : null}
@@ -3173,6 +3222,23 @@ export default function Home() {
                 }}
               />
             </div>
+          ) : isStocknotaRoute && selectedContractId ? (
+            <div className={styles.contractDetailPanel}>
+              <StocknotaView
+                onBack={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`)}
+                onSaved={(message) => {
+                  _pendingToastMessage = message;
+                  navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`);
+                }}
+                versions={stocknotaVersions}
+                onSaveVersion={saveStocknotaVersion}
+                onDeleteVersion={deleteStocknotaVersion}
+                activeSegment={stocknotaVersionSegment}
+                onOpenLanding={openStocknotaView}
+                onOpenNew={openNewStocknotaVersion}
+                onOpenVersion={openStocknotaVersion}
+              />
+            </div>
           ) : isAvropDetailOpen && selectedAvropsradId ? (
             <AvropsradDetailView
               avropsradId={selectedAvropsradId}
@@ -3220,6 +3286,7 @@ export default function Home() {
               onOpenLineItemDetail={openLineItemDetail}
               onCreateLineItem={openNewLineItem}
               onOpenContainer={openContainerView}
+              onOpenStocknota={openStocknotaView}
               onCreateAvropsrad={openNewAvropsrad}
               onOpenAvropsrad={openAvropsradDetail}
               onCancelNewContract={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}`)}

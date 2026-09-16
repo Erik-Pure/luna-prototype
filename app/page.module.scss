@@ -1670,7 +1670,7 @@
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  z-index: 5;
+  z-index: 20;
   display: flex;
   width: 300px;
   max-height: 510px;
@@ -8462,6 +8462,151 @@ body button {
   text-overflow: ellipsis;
 }
 
+/* ── Stocknota view ── */
+.stocknotaFileRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.stocknotaFileName {
+  font-size: 13px;
+  color: #4e5155;
+}
+
+.stocknotaVersionSelect {
+  min-height: 30px;
+  min-width: 220px;
+  margin-left: auto;
+  font-size: 13px;
+
+  :global(.MuiSelect-select) {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+
+.stocknotaVersionMenuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.stocknotaVersionMenuLabel {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.stocknotaVersionMenuDate {
+  font-size: 11px;
+  color: #8a93a3;
+}
+
+.stocknotaFillInHeaderCell {
+  background-color: #fff7d6;
+}
+
+.stocknotaFillInCell {
+  background-color: #fff7d6;
+}
+
+.stocknotaSummaryCell {
+  background-color: #eef1f6;
+  border-top: 2px solid #cbd3df;
+}
+
+.stocknotaSummaryLabelCell {
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.stocknotaLanding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  max-width: 760px;
+  margin: 48px auto 0;
+  text-align: center;
+}
+
+.stocknotaLandingTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2f3743;
+}
+
+.stocknotaLandingSubtitle {
+  font-size: 13px;
+  color: #6a7483;
+  margin-bottom: 20px;
+}
+
+.stocknotaLanding .contractDropZone {
+  width: 100%;
+}
+
+.contractDropZoneDragging {
+  border-color: #c47900;
+  background: rgba(196, 121, 0, 0.04);
+}
+
+.stocknotaLandingVersions {
+  width: 100%;
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stocknotaLandingVersionsHeading {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6a7483;
+  text-align: left;
+  margin-bottom: 4px;
+}
+
+.stocknotaLandingVersionCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #e5e8ed;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    border-color: rgba(196, 121, 0, 0.4);
+    background: rgba(196, 121, 0, 0.02);
+  }
+}
+
+.stocknotaLandingVersionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stocknotaLandingVersionName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2f3743;
+}
+
+.stocknotaLandingVersionDate {
+  font-size: 11px;
+  color: #8a93a3;
+}
+
 /* ── Leveransbokade paket tab ── */
 .bokadePaketLayout {
   display: flex;
@@ -9894,7 +10039,7 @@ body button {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  z-index: 5;
+  z-index: 20;
   display: flex;
   width: 260px;
   flex-direction: column;
@@ -9966,12 +10111,104 @@ body button {
   }
 
   :global(.MuiOutlinedInput-input) {
-    padding: 5px 8px;
+    padding: 8px 8px;
     font-size: 13px;
 
     &::placeholder {
       color: #b0b8c4;
       opacity: 1;
     }
+  }
+}
+
+// ── Stocknota view ──────────────────────────────────────────────────────────
+
+.stocknotaFilterControl {
+  min-height: 30px;
+  min-width: 110px;
+
+  :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: #d1d5db;
+  }
+
+  :global(.MuiSelect-select),
+  :global(.MuiOutlinedInput-input) {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    padding: 4px 8px !important;
+    min-height: 0 !important;
+    background: #ffffff;
+  }
+
+  :global(.MuiSelect-select) {
+    padding-right: 28px !important;
+  }
+}
+
+.stocknotaEnhetFilterControl {
+  min-width: 210px;
+
+  :global(.MuiOutlinedInput-root) {
+    padding: 1px 8px !important;
+    background: #ffffff;
+  }
+
+  :global(.MuiOutlinedInput-notchedOutline) {
+    border-color: #d1d5db;
+  }
+
+  :global(.MuiAutocomplete-input) {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    padding: 3px 4px !important;
+  }
+}
+
+.stocknotaFooterBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: 1px solid #dfe3ea;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.stocknotaFooterStat {
+  font-size: 12px;
+  color: #4e5155;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  b {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2f3743;
+  }
+}
+
+:global(html[data-color-mode="dark"]) .stocknotaFilterControl :global(.MuiSelect-select),
+:global(html[data-color-mode="dark"]) .stocknotaFilterControl :global(.MuiOutlinedInput-input),
+:global(html[data-color-mode="dark"]) .stocknotaEnhetFilterControl :global(.MuiOutlinedInput-root),
+:global(html[data-color-mode="dark"]) .stocknotaEnhetFilterControl :global(.MuiAutocomplete-input) {
+  background: #1f2733;
+  color: #e5e9f0;
+}
+
+:global(html[data-color-mode="dark"]) .stocknotaFooterBar {
+  background: #1a212c;
+  border-color: #333d4d;
+}
+
+:global(html[data-color-mode="dark"]) .stocknotaFooterStat {
+  color: #c3c9d2;
+
+  b {
+    color: #e5e9f0;
   }
 }

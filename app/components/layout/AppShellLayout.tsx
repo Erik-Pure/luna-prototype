@@ -79,6 +79,10 @@ type AppShellLayoutProps = {
   returnLineItemId: string | null;
   lineItemDetailHref: string | null;
   isContainerRoute: boolean;
+  isStocknotaRoute: boolean;
+  isStocknotaVersionOpen: boolean;
+  stocknotaVersionLabel: string | null;
+  stocknotaHref: string | null;
   isPrislistekalkylRoute: boolean;
   returnToPrislistekalkyl: boolean;
   prislistekalkylHref: string | null;
@@ -128,6 +132,10 @@ export function AppShellLayout({
   returnLineItemId,
   lineItemDetailHref,
   isContainerRoute,
+  isStocknotaRoute,
+  isStocknotaVersionOpen,
+  stocknotaVersionLabel,
+  stocknotaHref,
   isPrislistekalkylRoute,
   returnToPrislistekalkyl,
   prislistekalkylHref,
@@ -338,6 +346,24 @@ export function AppShellLayout({
                     </Typography>
                     <ChevronRightIcon className={styles.breadcrumbArrow} />
                     <Typography className={styles.breadcrumbActive}>Container</Typography>
+                  </>
+                ) : isStocknotaRoute ? (
+                  <>
+                    <Typography component={Link} href={contractDetailHref ?? contractListHref} className={styles.breadcrumbLinkButton}>
+                      Kontrakt {selectedContractId}
+                    </Typography>
+                    <ChevronRightIcon className={styles.breadcrumbArrow} />
+                    {isStocknotaVersionOpen ? (
+                      <>
+                        <Typography component={Link} href={stocknotaHref ?? contractDetailHref ?? contractListHref} className={styles.breadcrumbLinkButton}>
+                          Stocknota
+                        </Typography>
+                        <ChevronRightIcon className={styles.breadcrumbArrow} />
+                        <Typography className={styles.breadcrumbActive}>{stocknotaVersionLabel}</Typography>
+                      </>
+                    ) : (
+                      <Typography className={styles.breadcrumbActive}>Stocknota</Typography>
+                    )}
                   </>
                 ) : isAvropDetailOpen ? (
                   <>

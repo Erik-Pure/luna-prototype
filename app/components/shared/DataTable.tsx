@@ -24,7 +24,8 @@ type DataTableProps<TRow extends Record<string, string | boolean | undefined>> =
   onRowClick?: (index: number, event?: React.MouseEvent) => void;
   renderCell?: (row: TRow, column: DataTableColumn, rowIndex: number, columnIndex: number) => ReactNode;
   renderHeaderCell?: (column: DataTableColumn, columnIndex: number) => ReactNode;
-  getCellClassName?: (row: TRow, column: DataTableColumn, rowIndex: number, columnIndex: number) => string | undefined;
+  getCellClassName?: (row: TRow, column: DataTableColumn, rowIndex: number, columnIndex: number, isFiller?: boolean) => string | undefined;
+  getHeaderCellClassName?: (column: DataTableColumn, columnIndex: number) => string | undefined;
   fillRemainingSpace?: boolean;
 };
 
@@ -39,6 +40,7 @@ export function DataTable<TRow extends Record<string, string | boolean | undefin
   renderCell,
   renderHeaderCell,
   getCellClassName,
+  getHeaderCellClassName,
   fillRemainingSpace = false
 }: DataTableProps<TRow>) {
   const headerClass = variant === "main" ? styles.tableHeader : styles.lineItemsHeaderRow;
@@ -109,7 +111,7 @@ export function DataTable<TRow extends Record<string, string | boolean | undefin
               <div className={fillerHeaderCellClass} aria-hidden="true" />
             ) : null}
             <div
-              className={`${headerCellClass} ${stickyMeta[columnIndex]?.isSticky ? stickyHeaderClass : ""} ${stickyRightMeta[columnIndex]?.isSticky ? stickyRightHeaderClass : ""}`}
+              className={`${headerCellClass} ${stickyMeta[columnIndex]?.isSticky ? stickyHeaderClass : ""} ${stickyRightMeta[columnIndex]?.isSticky ? stickyRightHeaderClass : ""} ${getHeaderCellClassName?.(column, columnIndex) ?? ""}`}
               style={
                 stickyMeta[columnIndex]?.isSticky || stickyRightMeta[columnIndex]?.isSticky || Boolean(column.width)
                   ? {
@@ -190,7 +192,7 @@ export function DataTable<TRow extends Record<string, string | boolean | undefin
           ))}
           {shouldRenderFiller && firstPinnedRightIndex < 0 ? (
             <div
-              className={`${fillerCellClass} ${getCellClassName?.(row, columns[columns.length - 1]!, rowIndex, columns.length - 1) ?? ""}`}
+              className={`${fillerCellClass} ${getCellClassName?.(row, columns[columns.length - 1]!, rowIndex, columns.length - 1, true) ?? ""}`}
               aria-hidden="true"
             />
           ) : null}

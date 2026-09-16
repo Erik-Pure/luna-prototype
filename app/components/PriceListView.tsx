@@ -18,6 +18,7 @@ import { useColumnHeaderMenu } from "./shared/useColumnHeaderMenu";
 import { useSortFilterTable } from "./shared/useSortFilterTable";
 import { useColumnManager } from "../hooks/useColumnManager";
 import { useRowSelection } from "../hooks/useRowSelection";
+import { getPriceListKund } from "./shared/priceListCustomers";
 import styles from "../page.module.scss";
 
 type PriceListSearchFieldKey =
@@ -110,7 +111,7 @@ const defaultColumns = [
 const tableRows: PriceListRow[] = Array.from({ length: 26 }).map((_, idx) => ({
   prislistenr: `${17611 - idx}`,
   externPrislistenr: idx % 3 === 0 ? `2025/10 Region ${idx % 7}` : "-",
-  kund: ["Martinsons", "Skogmo Bruk", "Hernes", "JäTre", "Moelv Tre"][idx % 5],
+  kund: getPriceListKund(`${17611 - idx}`),
   land: ["SE", "NO", "NO", "NO", "NO"][idx % 5],
   prisdatum: `2025-${String((idx % 12) + 1).padStart(2, "0")}-${String((idx % 25) + 1).padStart(2, "0")}`,
   giltigFrom: idx % 4 === 0 ? "2025-10-01" : "-",
