@@ -1,6 +1,5 @@
 "use client";
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ClearIcon from "@mui/icons-material/Clear";
 import EventAvailable from "@mui/icons-material/EventAvailableOutlined";
 import LabelImportantOutlinedIcon from "@mui/icons-material/LabelImportantOutlined";
@@ -17,6 +16,7 @@ import {
 } from "@mui/material";
 import React, { useState } from "react";
 import { DataTable } from "../shared/DataTable";
+import { DetailHeader } from "../shared/DetailHeader";
 import styles from "../../page.module.scss";
 
 export type BokadPaketRow = {
@@ -171,22 +171,17 @@ export function PaketbokningView({
 
   return (
     <>
-      <div className={styles.contractModernTopRow}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <IconButton size="small" onClick={onBack} title="Tillbaka">
-            <ArrowBackIcon fontSize="small" />
-          </IconButton>
-          <div className={styles.paketbokningTitleGroup}>
-            <Typography className={styles.contractModernTitle}>Paketbokning {"- " + filters.reservationstyp}</Typography>
-            {(produkt || volym) && (
-              <Typography className={styles.paketbokningTitleSubline}>
-                {[produkt, volym && `${volym}${enhet ? ` ${enhet}` : ""}`].filter(Boolean).join("  -  ")}
-              </Typography>
-            )}
-          </div>
-        </div>
-        <div className={styles.contractModernTopActions} />
-      </div>
+      <DetailHeader
+        entity="contract"
+        label="Paketbokning"
+        title={filters.reservationstyp}
+        subtitle={
+          (produkt || volym)
+            ? [produkt, volym && `${volym}${enhet ? ` ${enhet}` : ""}`].filter(Boolean).join("  -  ")
+            : undefined
+        }
+        onBack={onBack}
+      />
       <div className={styles.paketbokningLayout}>
         <div className={styles.paketbokningFilterStrip}>
           {/* <div className={`${styles.freightFormField} ${styles.paketbokningFieldWide}`}>

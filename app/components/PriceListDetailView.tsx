@@ -29,6 +29,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useRef, useState } from "react";
+import { DetailHeader } from "./shared/DetailHeader";
 import styles from "../page.module.scss";
 import { PriceListCreateView, type NewPriceListDraft } from "./PriceListCreateView";
 import { FraktTab } from "./price-list-tabs/FraktTab";
@@ -168,7 +169,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
       {expandedDialogOpen ? (
         <PriceListCreateView
           mode="edit"
-          title={`Prislista ${selectedPriceListId}`}
+          title={selectedPriceListId}
           initialDraft={draft}
           onSave={(saved) => { setDraft(saved); setExpandedDialogOpen(false); }}
           onCancel={() => setExpandedDialogOpen(false)}
@@ -176,11 +177,11 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
       ) : (
       <>
       {/* ── Header ── */}
-      <div className={styles.contractModernTopRow}>
-        <div className={styles.contractModernTitleWrap}>
-          <Typography className={styles.contractModernTitle}>Prislista {selectedPriceListId}</Typography>
-        </div>
-        <div className={styles.contractModernTopActions}>
+      <DetailHeader
+        entity="priceList"
+        title={selectedPriceListId}
+        actions={
+        <>
           {/* <Button className={styles.contractQuickActionButton} size="small" startIcon={<VisibilityOutlinedIcon fontSize="small" />}>
             Granska
           </Button> */}
@@ -198,8 +199,9 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
               <DeleteOutlineOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-        </div>
-      </div>
+        </>
+        }
+      />
 
       {/* ── Body layout ── */}
       <div className={`${styles.contractBodyLayout} ${isWide ? styles.contractBodyLayoutWide : ""}`}>

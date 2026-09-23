@@ -2,7 +2,6 @@
 
 import AddIcon from "@mui/icons-material/Add";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import CloseIcon from "@mui/icons-material/Close";
 import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
@@ -24,6 +23,7 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent }
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, TextField, Tooltip, Typography } from "@mui/material";
 import { getContractDetails, type ContractDocument } from "./contractDetails";
 import { DataTable } from "../shared/DataTable";
+import { DetailHeader } from "../shared/DetailHeader";
 import styles from "../../page.module.scss";
 import { PaketbokningView, type BokadPaketRow } from "./PaketbokningView";
 
@@ -1664,20 +1664,21 @@ export function LineItemDetailView({
 
   return (
     <div className={`${styles.lineItemDetailPanel} ${styles.lineItemCreatePanel}`}>
-      <div className={styles.contractModernTopRow}>
-        <div className={styles.contractModernTitleWrap}>
-          <Typography className={styles.contractModernTitle}>
-            {isNewLineItem ? (savedDraftNr ? `Kontraktsrad ${savedDraftNr}` : "Ny kontraktsrad") : `Kontraktsrad ${lineItemId}`}
-          </Typography>
+      <DetailHeader
+        entity="contract"
+        label="Kontraktsrad"
+        title={isNewLineItem ? (savedDraftNr ? `${savedDraftNr}` : "Ny kontraktsrad") : lineItemId}
+        chips={
           <Chip
             icon={<WarningIcon />}
             label="Kunden har överskriden limit"
             size="medium"
             className={`${styles.limitErrorChip} ${styles.customerHeaderWarningChip}`}
-            style={{ marginLeft: 8, fontWeight: 500, padding: "0 4px" }}
+            style={{ fontWeight: 500, padding: "0 4px" }}
           />
-        </div>
-        <div className={styles.contractModernTopActions}>
+        }
+        actions={
+        <>
           {!isNewLineItem ? (
             <>
               {/* <Button className={styles.lineItemBackButton} size="small" disabled>
@@ -1789,8 +1790,9 @@ export function LineItemDetailView({
               </>
             )
           ) : null}
-        </div>
-      </div>
+        </>
+        }
+      />
 
       <div className={styles.lineItemWizardBar}>
         <button
@@ -2702,30 +2704,22 @@ export function LineItemDetailView({
               {activeTab === "Avropsrader" ? (
                 leveransbokaForRow !== null ? (
                   <>
-                    <div className={styles.contractModernTopRow}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <IconButton size="small" onClick={() => setLeveransbokaForRow(null)} title="Tillbaka">
-                          <ArrowBackIcon fontSize="small" />
-                        </IconButton>
-                        {(() => {
-                          const rad = callOffRows[leveransbokaForRow];
-                          const subline = [
-                            rad?.fakturatext,
-                            rad?.volym && `${rad.volym}${rad.enhet ? ` ${rad.enhet}` : ""}`,
-                          ].filter(Boolean).join("  -  ");
-                          return (
-                            <div className={styles.paketbokningTitleGroup}>
-                              <Typography className={styles.contractModernTitle}>
-                                Leveransbokade paket - Avropsrad {leveransbokaForRow + 1}
-                              </Typography>
-                              {subline && (
-                                <Typography className={styles.paketbokningTitleSubline}>{subline}</Typography>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </div>
+                    {(() => {
+                      const rad = callOffRows[leveransbokaForRow];
+                      const subline = [
+                        rad?.fakturatext,
+                        rad?.volym && `${rad.volym}${rad.enhet ? ` ${rad.enhet}` : ""}`,
+                      ].filter(Boolean).join("  -  ");
+                      return (
+                        <DetailHeader
+                          entity="contract"
+                          label="Leveransbokade paket"
+                          title={`Avropsrad ${leveransbokaForRow + 1}`}
+                          subtitle={subline || undefined}
+                          onBack={() => setLeveransbokaForRow(null)}
+                        />
+                      );
+                    })()}
                     <div style={{ padding: 12 }}>
                       <div style={{ marginBottom: 8 }}>
                         <Button

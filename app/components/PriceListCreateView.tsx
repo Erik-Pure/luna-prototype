@@ -18,6 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useRef, useState } from "react";
+import { DetailHeader } from "./shared/DetailHeader";
 import styles from "../page.module.scss";
 
 export type NewPriceListDraft = {
@@ -185,13 +186,11 @@ export function PriceListCreateView({
 
   return (
     <>
-      <div className={styles.contractModernTopRow}>
-        <div className={styles.contractModernTitleWrap}>
-          <Typography className={styles.contractModernTitle} style={{ letterSpacing: "-0.5px" }}>
-            {title}
-          </Typography>
-        </div>
-        <div className={styles.contractModernTopActions}>
+      <DetailHeader
+        entity="priceList"
+        title={title}
+        actions={
+        <>
           {isEditing ? (
             <Button
               className={styles.contractSaveButton}
@@ -217,8 +216,9 @@ export function PriceListCreateView({
           >
             {isEditing && isEdit ? "Avbryt" : "Stäng"}
           </Button>
-        </div>
-      </div>
+        </>
+        }
+      />
 
       <div
         className={`${styles.detailTwoColumnLayout} ${styles.lineItemCreateStackLayout} ${styles.contractCreateLayout}`}

@@ -1,7 +1,6 @@
 "use client";
 
 import AddIcon from "@mui/icons-material/Add";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
@@ -35,11 +34,12 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { ActionRow } from "../shared/ActionRow";
 import { getPriceListKund } from "../shared/priceListCustomers";
+import { DetailHeader } from "../shared/DetailHeader";
 import styles from "../../page.module.scss";
 
 type PrislistekalkylViewProps = {
   priceListId: string;
-  onBack: () => void;
+  onBack?: () => void;
   onOpenPriceRowDetail: (priceRowId: string) => void;
 };
 
@@ -107,12 +107,15 @@ const KALKYL_ROWS: KalkylRow[] = [
 ];
 
 const parseSwedishNumber = (value: string): number => {
-  const n = parseFloat(value.replace(",", "."));
+  const n = parseFloat(value.replace(/[\s  ]/g, "").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
 };
 
 const formatSwedishNumber = (value: number): string =>
   value.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const formatSwedishInteger = (value: number): string =>
+  Math.round(value).toLocaleString("sv-SE", { maximumFractionDigits: 0 });
 
 // Default sort: Fakturatext first, then ascending Längd within each fakturatext (no user-facing sort controls).
 KALKYL_ROWS.sort((a, b) =>
@@ -177,7 +180,7 @@ const td = (borderLeft = false, align: CSSProperties["textAlign"] = "left"): CSS
   textAlign: align,
 });
 
-export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail }: PrislistekalkylViewProps) {
+export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: PrislistekalkylViewProps) {
   const [frakt, setFrakt] = useState("12,50");
   const [provision, setProvision] = useState("3,00");
   const [bonus, setBonus] = useState("1,50");
@@ -216,7 +219,6 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
   const [uppdateraDialogOpen, setUppdateraDialogOpen] = useState(false);
   const [kplConfirmValue, setKplConfirmValue] = useState<boolean | null>(null);
   const [nollstallVinstConfirmOpen, setNollstallVinstConfirmOpen] = useState(false);
-  const [applyHeaderConfirmOpen, setApplyHeaderConfirmOpen] = useState(false);
   const [showKostnadKolumner, setShowKostnadKolumner] = useState(false);
   const [rowEdits, setRowEdits] = useState<Record<string, Partial<KalkylRow>>>({});
   const [headerEdit, setHeaderEdit] = useState<null | { el: HTMLElement; field: HeaderEditField }>(null);
@@ -225,6 +227,15 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
     (rowEdits[rowId]?.[field] as string | undefined) ?? fallback;
   const setRowVal = (rowId: string, field: keyof KalkylRow, value: string) =>
     setRowEdits((prev) => ({ ...prev, [rowId]: { ...prev[rowId], [field]: value } }));
+
+  // Pris/m3 = Netto SEK × (1 + Nivå%/100) × (1 + Påsl%/100) + Påslag kr
+  const computePrisM3 = (row: KalkylRow): number => {
+    const netto = parseSwedishNumber(row.nettoSEK);
+    const nivaPct = parseSwedishNumber(getRowVal(row.id, "niva", row.niva));
+    const paslPctVal = parseSwedishNumber(getRowVal(row.id, "paslPct", row.paslPct));
+    const paslagKr = parseSwedishNumber(getRowVal(row.id, "paslag", row.paslag));
+    return netto * (1 + nivaPct / 100) * (1 + paslPctVal / 100) + paslagKr;
+  };
 
   const headerEditConfig: Record<HeaderEditField, { label: string; value: string; onChange: (v: string) => void; unit?: string }> = {
     korrKost: { label: "Korr kostnad", value: korrKostnad, onChange: setKorrKostnad },
@@ -243,6 +254,27 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
     setHeaderEdit({ el: e.currentTarget, field });
   };
 
+  const rowHeaderFields = ["korrKost", "niva", "paslPct", "paslag"] as const;
+  type RowHeaderField = (typeof rowHeaderFields)[number];
+  const isRowHeaderField = (field: HeaderEditField): field is RowHeaderField =>
+    (rowHeaderFields as readonly string[]).includes(field);
+
+  const applyFieldToFiltered = (field: RowHeaderField, value: string) => {
+    if (value.trim() === "") return;
+    setRowEdits((prev) => {
+      const next = { ...prev };
+      filteredRows.forEach((row) => {
+        next[row.id] = { ...next[row.id], [field]: value };
+      });
+      return next;
+    });
+  };
+
+  const setHeaderFieldValue = (field: HeaderEditField, value: string) => {
+    headerEditConfig[field].onChange(value);
+    if (isRowHeaderField(field)) applyFieldToFiltered(field, value);
+  };
+
   const headerStepConfig: Record<HeaderEditField, { step: number; decimals: number }> = {
     korrKost: { step: 10, decimals: 0 },
     niva: { step: 1, decimals: 1 },
@@ -259,7 +291,8 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
     const { step, decimals } = headerStepConfig[field];
     const current = parseSwedishNumber(headerEditConfig[field].value);
     const next = Math.max(0, current + direction * step);
-    headerEditConfig[field].onChange(
+    setHeaderFieldValue(
+      field,
       next.toLocaleString("sv-SE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
     );
   };
@@ -347,21 +380,12 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
     });
   };
 
-  const hasHeaderChanges = [korrKostnad, niva, paslagPct, paslagKr].some((v) => v.trim() !== "");
-
-  const applyHeaderChangesToFiltered = () => {
-    setRowEdits((prev) => {
-      const next = { ...prev };
-      filteredRows.forEach((row) => {
-        const edit: Partial<KalkylRow> = { ...next[row.id] };
-        if (korrKostnad.trim() !== "") edit.korrKost = korrKostnad;
-        if (niva.trim() !== "") edit.niva = niva;
-        if (paslagPct.trim() !== "") edit.paslPct = paslagPct;
-        if (paslagKr.trim() !== "") edit.paslag = paslagKr;
-        next[row.id] = edit;
-      });
-      return next;
-    });
+  const handleSpara = () => {
+    setKorrKostnad("");
+    setNiva("");
+    setPaslagPct("");
+    setPaslagKr("");
+    setIsEditing(false);
   };
 
   const activeFilterCount =
@@ -396,20 +420,29 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
 
   return (
     <>
-      <div className={styles.contractModernTopRow}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <IconButton size="small" onClick={onBack} title="Tillbaka">
-            <ArrowBackIcon fontSize="small" />
-          </IconButton>
-          <Typography className={styles.contractModernTitle}>Prislistekalkyl - {getPriceListKund(priceListId)}</Typography>
-        </div>
-        <div className={styles.contractModernTopActions}>
+      <DetailHeader
+        entity="priceList"
+        label="Prislistekalkyl"
+        title={`${priceListId} - ${getPriceListKund(priceListId)}`}
+        actions={
+        <>
           {isEditing ? (
             <>
-              <Button variant="contained" size="small" onClick={() => setIsEditing(false)}>
+              <Button variant="contained" size="small" onClick={handleSpara}>
                 Spara
               </Button>
-              <Button className={styles.contractQuickActionButton} size="small" onClick={() => { setIsEditing(false); setRowEdits({}); }}>
+              <Button
+                className={styles.contractQuickActionButton}
+                size="small"
+                onClick={() => {
+                  setIsEditing(false);
+                  setRowEdits({});
+                  setKorrKostnad("");
+                  setNiva("");
+                  setPaslagPct("");
+                  setPaslagKr("");
+                }}
+              >
                 Avbryt
               </Button>
             </>
@@ -419,18 +452,6 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
             </Button>
           )}
           <Divider orientation="vertical" flexItem style={{ margin: "4px 0" }} />
-          <Tooltip title="Applicerar Korr kostnad, Nivå, Påslag% och Påslag kr på de filtrerade raderna">
-            <span>
-              <Button
-                className={styles.contractQuickActionButton}
-                size="small"
-                disabled={!isEditing || !hasHeaderChanges}
-                onClick={() => setApplyHeaderConfirmOpen(true)}
-              >
-                Applicera ändringar
-              </Button>
-            </span>
-          </Tooltip>
           <Button className={styles.contractQuickActionButton} size="small" disabled={!isEditing} onClick={() => setNollstallVinstConfirmOpen(true)}>
             Nollställ vinst
           </Button>
@@ -439,12 +460,13 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
               <PrintOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-        </div>
-      </div>
+        </>
+        }
+      />
 
       <div className={styles.contractModernAdditionsWrap}>
         {/* ── Affärsparametrar (info) ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", padding: "0 14px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" }}>
           <span style={{ fontSize: 10, fontWeight: 600, color: "#696969", letterSpacing: "0.2px" }}>
             Prislistefaktorer
           </span>
@@ -754,7 +776,7 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
                       ) : row.paslag}
                     </td>
                     <td style={td(true, "right")}>{row.prisPm}</td>
-                    <td style={td(false, "right")}>{row.prism3}</td>
+                    <td style={td(false, "right")}>{formatSwedishInteger(computePrisM3(row))}</td>
                     <td style={{ ...td(false, "right"), ...(parseSwedishNumber(getRowVal(row.id, "vinst", row.vinst)) < 0 ? { color: "#c0392b", fontWeight: 700 } : {}) }}>{getRowVal(row.id, "vinst", row.vinst)}</td>
                     <td style={{ ...td(false, "right"), ...(parseSwedishNumber(getRowVal(row.id, "vinstPct", row.vinstPct)) < 0 ? { color: "#c0392b", fontWeight: 700 } : {}) }}>{getRowVal(row.id, "vinstPct", row.vinstPct)}</td>
                     <td style={{ ...td(false, "right"), background: isSelected ? undefined : COL_ORANGE, ...(isEditing ? { padding: "4px 6px" } : {}) }}>
@@ -819,7 +841,7 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
               fullWidth
               label={headerEditConfig[headerEdit.field].label}
               value={headerEditConfig[headerEdit.field].value}
-              onChange={(e) => headerEditConfig[headerEdit.field].onChange(e.target.value)}
+              onChange={(e) => setHeaderFieldValue(headerEdit.field, e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") setHeaderEdit(null); }}
               slotProps={
                 headerEditConfig[headerEdit.field].unit
@@ -999,38 +1021,6 @@ export function PrislistekalkylView({ priceListId, onBack, onOpenPriceRowDetail 
             Ja
           </Button>
           <Button variant="outlined" size="small" onClick={() => setNollstallVinstConfirmOpen(false)} className={styles.bytPrislistaAvbrytButton}>Avbryt</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={applyHeaderConfirmOpen} onClose={() => setApplyHeaderConfirmOpen(false)} maxWidth="xs" fullWidth PaperProps={{ className: styles.freightDialogPaper }}>
-        <DialogTitle className={styles.freightDialogTitle}>
-          <div className={styles.freightDialogTitleRow}>
-            <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Applicera ändringar</Typography>
-            <IconButton size="small" onClick={() => setApplyHeaderConfirmOpen(false)} style={{ color: "#6a7483" }}>
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </div>
-        </DialogTitle>
-
-        <DialogContent className={styles.freightDialogContent}>
-          <Typography style={{ fontSize: 13, color: "#404753" }}>
-            De angivna värdena för Korr kostnad, Nivå, Påslag% och Påslag kr kommer att appliceras på de {filteredRows.length} rader som matchar aktuellt filter. Övriga rader påverkas inte.
-          </Typography>
-        </DialogContent>
-
-        <DialogActions className={styles.freightDialogActions}>
-          <Button
-            variant="contained"
-            size="small"
-            className={styles.contractSaveButton}
-            onClick={() => {
-              applyHeaderChangesToFiltered();
-              setApplyHeaderConfirmOpen(false);
-            }}
-          >
-            Ja
-          </Button>
-          <Button variant="outlined" size="small" onClick={() => setApplyHeaderConfirmOpen(false)} className={styles.bytPrislistaAvbrytButton}>Avbryt</Button>
         </DialogActions>
       </Dialog>
     </>

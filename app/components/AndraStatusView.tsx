@@ -1,10 +1,10 @@
 "use client";
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormHelperText, IconButton, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormHelperText, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 import { ActionRow } from "./shared/ActionRow";
 import { DataTable } from "./shared/DataTable";
+import { DetailHeader } from "./shared/DetailHeader";
 import styles from "../page.module.scss";
 
 type AndraStatusRow = {
@@ -93,15 +93,7 @@ export function AndraStatusView({ onBack }: AndraStatusViewProps) {
 
   return (
     <>
-      <div className={styles.contractModernTopRow}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <IconButton size="small" onClick={onBack} title="Tillbaka">
-            <ArrowBackIcon fontSize="small" />
-          </IconButton>
-          <Typography className={styles.contractModernTitle}>Ändra status</Typography>
-        </div>
-        <div />
-      </div>
+      <DetailHeader entity="delivery" title="Ändra status" onBack={onBack} />
 
       <div className={styles.deliveryRowsTableSection} style={{ marginTop: 8 }}>
         <ActionRow

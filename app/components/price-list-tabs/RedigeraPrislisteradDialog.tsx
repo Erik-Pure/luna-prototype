@@ -3,14 +3,11 @@
 import CloseIcon from "@mui/icons-material/Close";
 import {
   Button,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   IconButton,
-  MenuItem,
   TextField,
   Typography,
 } from "@mui/material";
@@ -28,7 +25,6 @@ type RedigeraDraft = {
   produkt: string;
   pakettyp: string;
   kostnader: KostnadRad[];
-  uppdateraKalkylfaktorer: boolean;
 };
 
 export type RedigeraPrislisteradInitial = {
@@ -64,7 +60,6 @@ function buildDraft(initial: RedigeraPrislisteradInitial | null): RedigeraDraft 
       prislisterad: vals[i],
       kalkylfaktor: vals[i],
     })),
-    uppdateraKalkylfaktorer: false,
   };
 }
 
@@ -77,13 +72,10 @@ export function RedigeraPrislisteradDialog({ open, initial, onClose, onSave }: P
     if (open) setDraft(buildDraft(initial));
   }
 
-  const setField = <K extends keyof RedigeraDraft>(key: K, value: RedigeraDraft[K]) =>
-    setDraft((prev) => ({ ...prev, [key]: value }));
-
-  const setKostnad = (index: number, field: "prislisterad" | "kalkylfaktor", value: string) =>
+  const setPrislisterad = (index: number, value: string) =>
     setDraft((prev) => {
       const kostnader = prev.kostnader.map((r, i) =>
-        i === index ? { ...r, [field]: value } : r
+        i === index ? { ...r, prislisterad: value } : r
       );
       return { ...prev, kostnader };
     });
@@ -128,40 +120,26 @@ export function RedigeraPrislisteradDialog({ open, initial, onClose, onSave }: P
             <TextField
               size="small"
               label="ArtNr"
-              select
               fullWidth
               value={draft.artNr}
-              onChange={(e) => setField("artNr", e.target.value)}
+              InputProps={{ readOnly: true }}
               style={{ gridColumn: "1 / -1" }}
-            >
-              <MenuItem value="28045032100000">28045032100000</MenuItem>
-              <MenuItem value="45045032100000">45045032100000</MenuItem>
-              <MenuItem value="45045032108100">45045032108100</MenuItem>
-              <MenuItem value="45070032108100">45070032108100</MenuItem>
-              <MenuItem value="45070032100000">45070032100000</MenuItem>
-              <MenuItem value="45095032100000">45095032100000</MenuItem>
-              <MenuItem value="36098032108100">36098032108100</MenuItem>
-            </TextField>
+            />
             <TextField
               size="small"
               label="Produkt"
               fullWidth
               value={draft.produkt}
-              onChange={(e) => setField("produkt", e.target.value)}
+              InputProps={{ readOnly: true }}
               style={{ gridColumn: "1 / -1" }}
             />
             <TextField
               size="small"
               label="Pakettyp"
-              select
               fullWidth
-              value={draft.pakettyp}
-              onChange={(e) => setField("pakettyp", e.target.value)}
-            >
-              <MenuItem value="Lp">Lp</MenuItem>
-              <MenuItem value="Pk">Pk</MenuItem>
-              <MenuItem value="0">—</MenuItem>
-            </TextField>
+              value={draft.pakettyp === "0" ? "—" : draft.pakettyp}
+              InputProps={{ readOnly: true }}
+            />
           </div>
 
           <div style={{ border: "1px solid #dfe3ea", borderRadius: 8, overflow: "hidden" }}>
@@ -180,8 +158,10 @@ export function RedigeraPrislisteradDialog({ open, initial, onClose, onSave }: P
                     <td style={{ ...labelCellStyle, padding: "4px 8px" }}>
                       <TextField
                         size="small"
+                        required
+                        className={styles.requiredFieldControl}
                         value={rad.prislisterad}
-                        onChange={(e) => setKostnad(i, "prislisterad", e.target.value)}
+                        onChange={(e) => setPrislisterad(i, e.target.value)}
                         inputProps={{ style: { textAlign: "right", fontSize: 13 } }}
                         sx={{ "& .MuiOutlinedInput-root": { fontSize: 13 } }}
                       />
@@ -190,7 +170,7 @@ export function RedigeraPrislisteradDialog({ open, initial, onClose, onSave }: P
                       <TextField
                         size="small"
                         value={rad.kalkylfaktor}
-                        onChange={(e) => setKostnad(i, "kalkylfaktor", e.target.value)}
+                        InputProps={{ readOnly: true }}
                         inputProps={{ style: { textAlign: "right", fontSize: 13 } }}
                         sx={{ "& .MuiOutlinedInput-root": { fontSize: 13 } }}
                       />
@@ -200,19 +180,6 @@ export function RedigeraPrislisteradDialog({ open, initial, onClose, onSave }: P
               </tbody>
             </table>
           </div>
-
-          <FormControlLabel
-            control={
-              <Checkbox
-                size="small"
-                checked={draft.uppdateraKalkylfaktorer}
-                onChange={(e) => setField("uppdateraKalkylfaktorer", e.target.checked)}
-                sx={{ padding: "2px", mr: "6px" }}
-              />
-            }
-            label={<span style={{ fontSize: 13 }}>Uppdatera kalkylfaktorer</span>}
-            sx={{ margin: 0 }}
-          />
         </div>
       </DialogContent>
 

@@ -24,7 +24,7 @@ const defaultVisa = () =>
 
 export function KlarSokPanel() {
   const [activeTab, setActiveTab] = useState<"allmant" | "visa">("allmant");
-  const [showAllFields, setShowAllFields] = useState(false);
+  const [showAllFields, setShowAllFields] = useState(true);
   const [enhet, setEnhet] = useState("");
   const [kundNr, setKundNr] = useState("");
   const [prislisteNr, setPrislisteNr] = useState("");
@@ -171,7 +171,7 @@ export function KlarSokPanel() {
 
       {activeTab === "visa" && (
         <div className={styles.advancedFiltersBody}>
-          <div className={styles.advancedCheckboxWrap}>
+          <div className={`${styles.advancedCheckboxWrap} ${styles.advancedFiltersGridCols6}`}>
             {VISA_ITEMS.map((item) => (
               <label key={item} className={styles.searchCheckboxItem}>
                 <Checkbox

@@ -20,6 +20,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useRef, useState } from "react";
+import { DetailHeader } from "./shared/DetailHeader";
 import styles from "../page.module.scss";
 
 export type NewCustomerDraft = {
@@ -223,13 +224,11 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
 
   return (
     <>
-      <div className={styles.contractModernTopRow}>
-        <div className={styles.contractModernTitleWrap}>
-          <Typography className={styles.contractModernTitle} style={{ letterSpacing: "-0.5px" }}>
-            {title}
-          </Typography>
-        </div>
-        <div className={styles.contractModernTopActions}>
+      <DetailHeader
+        entity="customer"
+        title={title}
+        actions={
+        <>
           {isEditing ? (
             <Button
               className={styles.contractSaveButton}
@@ -255,8 +254,9 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
           >
             {isEditing && isEdit ? "Avbryt" : "Stäng"}
           </Button>
-        </div>
-      </div>
+        </>
+        }
+      />
 
       <div
         className={`${styles.detailTwoColumnLayout} ${styles.lineItemCreateStackLayout} ${styles.contractCreateLayout}`}

@@ -38,6 +38,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useRef, useState } from "react";
+import { DetailHeader } from "./shared/DetailHeader";
 import styles from "../page.module.scss";
 
 const ART_NR_OPTIONS = [
@@ -198,13 +199,12 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
 
   return (
     <>
-      <div className={styles.contractModernTopRow}>
-        <div className={styles.contractModernTitleWrap}>
-          <Typography className={styles.contractModernTitle}>
-            {isNewPriceRow ? "Ny prislisterad" : `Prislisterad ${priceRowId}`}
-          </Typography>
-        </div>
-        <div className={styles.contractModernTopActions}>
+      <DetailHeader
+        entity="priceList"
+        label="Prislisterad"
+        title={isNewPriceRow ? "Ny prislisterad" : priceRowId}
+        actions={
+        <>
           {isEditing ? (
             <>
               <Button
@@ -254,8 +254,9 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
               )}
             </>
           )}
-        </div>
-      </div>
+        </>
+        }
+      />
 
       <div
         className={`${styles.detailTwoColumnLayout} ${styles.lineItemCreateStackLayout} ${styles.contractCreateLayout}`}

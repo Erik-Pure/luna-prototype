@@ -32,6 +32,7 @@ import {
     Stack
 } from "@mui/material";
 import { useRef, useState } from "react";
+import { DetailHeader } from "./shared/DetailHeader";
 import styles from "../page.module.scss";
 
 export type NewContractDraft = {
@@ -352,11 +353,11 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
 
     return (
         <>
-            <div className={styles.contractModernTopRow}>
-                <div className={styles.contractModernTitleWrap}>
-                    <Typography className={styles.contractModernTitle} style={{ letterSpacing: "-0.5px" }}>{title ?? "Nytt kontrakt"}</Typography>
-                </div>
-                <div className={styles.contractModernTopActions}>
+            <DetailHeader
+                entity="contract"
+                title={title ?? "Nytt kontrakt"}
+                actions={
+                <>
                     {isEditing ? (
                         <Button className={styles.contractSaveButton} size="small" onClick={handleSave}>
                             {isEdit ? "Spara" : "Skapa kontrakt"}
@@ -373,8 +374,9 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                     >
                         {isEdit ? (isEditing ? "Avbryt" : "Stäng") : "Avbryt"}
                     </Button>
-                </div>
-            </div>
+                </>
+                }
+            />
 
             <div className={`${styles.detailTwoColumnLayout} ${styles.lineItemCreateStackLayout} ${styles.contractCreateLayout}`} style={{ flex: 1, overflowY: "auto" }}>
                 <div className={styles.detailFormColumn}>

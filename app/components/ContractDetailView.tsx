@@ -37,6 +37,7 @@ import { BytPrislistaDialog } from "./contract-tabs/BytPrislistaDialog";
 import { ContractCreateView, mockCustomers, mockDeliveryLocations, mockDeliveryAddresses, type NewContractDraft } from "./ContractCreateView";
 import { SectionQuickNav, scrollSectionIntoView, type QuickNavSection } from "./shared/SectionQuickNav";
 import { useMediaQuery, WIDE_LAYOUT_QUERY, EXTRA_WIDE_LAYOUT_QUERY } from "../hooks/useMediaQuery";
+import { DetailHeader } from "./shared/DetailHeader";
 import styles from "../page.module.scss";
 
 const stripDiacritics = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -297,7 +298,7 @@ export function ContractDetailView({
       {expandedDialogOpen ? (
         <ContractCreateView
           mode="edit"
-          title={`Kontrakt ${selectedContractId} - ${contractDetails.summary.customer}`}
+          title={`${selectedContractId} - ${contractDetails.summary.customer}`}
           initialDraft={buildContractDraftFromDetails(contractDetails)}
           onSave={() => setExpandedDialogOpen(false)}
           onCancel={() => setExpandedDialogOpen(false)}
@@ -327,20 +328,20 @@ export function ContractDetailView({
         />
       ) : (
         <>
-          <div className={styles.contractModernTopRow}>
-            <div className={styles.contractModernTitleWrap}>
-              <Typography className={styles.contractModernTitle}>Kontrakt {selectedContractId} - {contractDetails.summary.customer}</Typography>
-              {contractDetails.summary.warning ? (
-                <Chip
-                  icon={<WarningIcon />}
-                  label={contractDetails.summary.warning}
-                  size="medium"
-                  className={`${contractDetails.summary.warningTone === "orange" ? styles.limitModerateChip : styles.limitErrorChip} ${styles.customerHeaderWarningChip}`}
-                  style={{ marginLeft: 8, fontWeight: 500, padding: "0 4px" }}
-                />
-              ) : null}
-            </div>
-            <div className={styles.contractModernTopActions}>
+          <DetailHeader
+            entity="contract"
+            title={`${selectedContractId} - ${contractDetails.summary.customer}`}
+            chips={contractDetails.summary.warning ? (
+              <Chip
+                icon={<WarningIcon />}
+                label={contractDetails.summary.warning}
+                size="medium"
+                className={`${contractDetails.summary.warningTone === "orange" ? styles.limitModerateChip : styles.limitErrorChip} ${styles.customerHeaderWarningChip}`}
+                style={{ fontWeight: 500, padding: "0 4px" }}
+              />
+            ) : null}
+            actions={
+            <>
               <Button className={styles.contractQuickActionButton} size="small" startIcon={<ReceiptLongOutlinedIcon fontSize="small" />}>
                 Orderbekräftelse
               </Button>
@@ -386,8 +387,9 @@ export function ContractDetailView({
                   Ta bort
                 </MenuItem>
               </Menu>
-            </div>
-          </div>
+            </>
+            }
+          />
 
           <div className={`${styles.contractBodyLayout} ${isWide ? styles.contractBodyLayoutWide : ""}`}>
             {/* Right on large / top on small: accordion detail sections */}

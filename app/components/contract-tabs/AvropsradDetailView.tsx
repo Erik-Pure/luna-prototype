@@ -30,6 +30,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { DataTable } from "../shared/DataTable";
+import { DetailHeader } from "../shared/DetailHeader";
 import styles from "../../page.module.scss";
 
 // ── Types ───────────────────────────────────────────────────────────────────────
@@ -130,7 +131,7 @@ export function AvropsradDetailView({ avropsradId, onClose, onSave, initialData 
     setExpandedSections((prev) => prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]);
 
   const displayId = isNew ? generatedId : avropsradId;
-  const title = isNew ? "Ny avropsrad" : `Redigera avropsrad ${displayId}`;
+  const title = isNew ? "Ny avropsrad" : displayId;
 
   const f = (label: string, node: React.ReactNode) => (
     <div className={styles.freightFormField}>
@@ -215,19 +216,21 @@ export function AvropsradDetailView({ avropsradId, onClose, onSave, initialData 
   return (
     <div className={`${styles.contractDetailPanel} ${styles.lineItemCreatePanel}`}>
       {/* Top bar */}
-      <div className={styles.contractModernTopRow}>
-        <div className={styles.contractModernTitleWrap}>
-          <Typography className={styles.contractModernTitle}>{title}</Typography>
-        </div>
-        <div className={styles.contractModernTopActions}>
+      <DetailHeader
+        entity="contract"
+        label="Avropsrad"
+        title={title}
+        actions={
+        <>
           <Button size="small" className={styles.freightSaveButton} onClick={onSave}>
             Spara
           </Button>
           <Button size="small" className={styles.freightCancelButton} onClick={onClose}>
             Avbryt
           </Button>
-        </div>
-      </div>
+        </>
+        }
+      />
 
       <div className={styles.avropsradFormWrap}>
 

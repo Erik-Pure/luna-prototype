@@ -31,6 +31,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useRef, useState } from "react";
+import { DetailHeader } from "./shared/DetailHeader";
 import styles from "../page.module.scss";
 import { CustomerCreateView, type NewCustomerDraft } from "./CustomerCreateView";
 import { DokumentTab } from "./customer-tabs/DokumentTab";
@@ -341,10 +342,10 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
       ) : (
         <>
           {/* ── Header ── */}
-          <div className={styles.contractModernTopRow}>
-            <div className={styles.contractModernTitleWrap}>
-              <Typography style={{ marginRight: 8 }} className={styles.contractModernTitle}>{customerName}</Typography>
-              {warnings.map((warning) => (
+          <DetailHeader
+            entity="customer"
+            title={customerName}
+            chips={warnings.map((warning) => (
                 <Chip
                   key={warning.type}
                   icon={<WarningIcon />}
@@ -354,8 +355,8 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
                   style={{ fontWeight: 500, padding: "0 4px", gap: 2 }}
                 />
               ))}
-            </div>
-            <div className={styles.contractModernTopActions}>
+            actions={
+            <>
               <Button className={styles.contractQuickActionButton} size="small" startIcon={<AccountBoxOutlinedIcon fontSize="small" />}>
                 Kundkort
               </Button>
@@ -365,8 +366,9 @@ export function CustomerDetailView({ customerName, detail }: CustomerDetailViewP
               <Button className={styles.contractQuickActionButton} size="small" startIcon={<SyncAltOutlinedIcon fontSize="small" />}>
                 Överför till Visma
               </Button>
-            </div>
-          </div>
+            </>
+            }
+          />
 
           {/* ── Body layout ── */}
           <div className={`${styles.contractBodyLayout} ${isWide ? styles.contractBodyLayoutWide : ""}`}>

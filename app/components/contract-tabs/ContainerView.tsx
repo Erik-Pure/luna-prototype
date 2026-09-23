@@ -16,6 +16,7 @@ import { Alert, Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTi
 import { useMemo, useState } from "react";
 import { ActionRow } from "../shared/ActionRow";
 import { DataTable } from "../shared/DataTable";
+import { DetailHeader } from "../shared/DetailHeader";
 import styles from "../../page.module.scss";
 const ENHET_OPTIONS = [
   { kod: "HS", namn: "NT Hissmofors Såg" },
@@ -296,12 +297,7 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
   return (
     <>
       {/* Header */}
-      <div className={styles.contractModernTopRow}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <Typography className={styles.contractModernTitle}>Container</Typography>
-        </div>
-        <div className={styles.contractModernTopActions} />
-      </div>
+      <DetailHeader entity="contract" label="Container" title="Container" onBack={onBack} />
 
       {/* Wizard bar */}
       <div className={styles.lineItemWizardBar} style={{ top: "40px" }}>

@@ -1,6 +1,5 @@
 "use client";
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import {
@@ -26,6 +25,7 @@ import type React from "react";
 import { ActionRow } from "../shared/ActionRow";
 import { ColumnManagerDropdown } from "../shared/ColumnManagerDropdown";
 import { DataTable } from "../shared/DataTable";
+import { DetailHeader } from "../shared/DetailHeader";
 import styles from "../../page.module.scss";
 
 const KVALITET_OPTIONS = ["A", "B", "C"] as const;
@@ -367,9 +367,8 @@ export function StocknotaView({
 
   const activeVersion = versions.find((v) => v.id === activeVersionId) ?? null;
   const sortedVersions = [...versions].sort((a, b) => b.name.localeCompare(a.name));
-  const viewTitle = activeVersion
-    ? `Stocknota ${activeVersion.name}${activeVersion.leveransvecka ? ` - Leveransvecka ${activeVersion.leveransvecka}` : ""}`
-    : "Stocknota";
+  const viewTitle = activeVersion ? activeVersion.name : "Stocknota";
+  const viewSubtitle = activeVersion?.leveransvecka ? `Leveransvecka ${activeVersion.leveransvecka}` : undefined;
 
   const actionItems = [
     {
@@ -395,17 +394,18 @@ export function StocknotaView({
 
   return (
     <>
-      <div className={styles.contractModernTopRow}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {rows.length > 0 ? (
-            <IconButton size="small" onClick={onOpenLanding} title="Tillbaka">
-              <ArrowBackIcon fontSize="small" />
-            </IconButton>
-          ) : null}
-          <Typography className={styles.contractModernTitle}>{viewTitle}</Typography>
-        </div>
-        <div className={styles.contractModernTopActions} />
-      </div>
+      <DetailHeader
+        entity="contract"
+        label="Stocknota"
+        title={
+          <>
+            {viewTitle}
+            {viewSubtitle ? (
+              <span className={styles.detailHeaderTitleMeta}>{viewSubtitle}</span>
+            ) : null}
+          </>
+        }
+      />
 
       <input
         ref={fileInputRef}
