@@ -575,6 +575,17 @@ export function StocknotaView({
                         />
                         <Typography className={styles.searchCheckboxLabel}>Endast köpta volymer</Typography>
                       </div>
+                      <div className={styles.lagerFilterDropdownDivider} />
+                      <div className={styles.lagerFilterDropdownFooter}>
+                        <Button
+                          size="small"
+                          variant="text"
+                          disabled={activeFilterCount === 0}
+                          onClick={() => setFilters(INITIAL_FILTERS)}
+                        >
+                          Rensa filter
+                        </Button>
+                      </div>
                     </div>
                   ) : null}
                 </div>

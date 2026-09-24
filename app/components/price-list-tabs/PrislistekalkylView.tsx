@@ -8,13 +8,13 @@ import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import MoreVertOutlinedIcon from "@mui/icons-material/MoreVertOutlined";
 import RemoveIcon from "@mui/icons-material/Remove";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import { RedigeraPrislisteradDialog } from "./RedigeraPrislisteradDialog";
 import type { RedigeraPrislisteradInitial } from "./RedigeraPrislisteradDialog";
 import {
   Autocomplete,
   Button,
   Checkbox,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -41,6 +41,7 @@ type PrislistekalkylViewProps = {
   priceListId: string;
   onBack?: () => void;
   onOpenPriceRowDetail: (priceRowId: string) => void;
+  onCreatePriceRow: () => void;
 };
 
 type HeaderEditField =
@@ -53,6 +54,13 @@ type HeaderEditField =
   | "bonus"
   | "kassarabatt"
   | "kalkylkurs";
+
+// Kolumner vars huvud justerar alla filtrerade rader relativt (+/− från radens eget värde).
+const ROW_HEADER_FIELDS = ["korrKost", "niva", "paslPct", "paslag"] as const;
+type RowHeaderField = (typeof ROW_HEADER_FIELDS)[number];
+const isRowHeaderField = (field: HeaderEditField): field is RowHeaderField =>
+  (ROW_HEADER_FIELDS as readonly string[]).includes(field);
+const EMPTY_HEADER_DELTAS: Record<RowHeaderField, string> = { korrKost: "", niva: "", paslPct: "", paslag: "" };
 
 type KalkylRow = {
   id: string;
@@ -107,7 +115,7 @@ const KALKYL_ROWS: KalkylRow[] = [
 ];
 
 const parseSwedishNumber = (value: string): number => {
-  const n = parseFloat(value.replace(/[\s  ]/g, "").replace(",", "."));
+  const n = parseFloat(value.replace(/[\s  ]/g, "").replace("\u2212", "-").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
 };
 
@@ -180,16 +188,14 @@ const td = (borderLeft = false, align: CSSProperties["textAlign"] = "left"): CSS
   textAlign: align,
 });
 
-export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: PrislistekalkylViewProps) {
+export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreatePriceRow }: PrislistekalkylViewProps) {
   const [frakt, setFrakt] = useState("12,50");
   const [provision, setProvision] = useState("3,00");
   const [bonus, setBonus] = useState("1,50");
   const [kassarabatt, setKassarabatt] = useState("0,50");
   const [kalkylkurs, setKalkylkurs] = useState("1");
-  const [korrKostnad, setKorrKostnad] = useState("");
-  const [niva, setNiva] = useState("");
-  const [paslagPct, setPaslagPct] = useState("");
-  const [paslagKr, setPaslagKr] = useState("");
+  // Ackumulerad justering sedan senaste Spara/Avbryt, per huvudkolumn.
+  const [headerDeltas, setHeaderDeltas] = useState<Record<RowHeaderField, string>>(EMPTY_HEADER_DELTAS);
   const [rawara, setRawara] = useState(false);
   const [produktion, setProduktion] = useState(false);
   const [impregnering, setImpregnering] = useState(false);
@@ -238,10 +244,10 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
   };
 
   const headerEditConfig: Record<HeaderEditField, { label: string; value: string; onChange: (v: string) => void; unit?: string }> = {
-    korrKost: { label: "Korr kostnad", value: korrKostnad, onChange: setKorrKostnad },
-    niva: { label: "Nivå %", value: niva, onChange: setNiva },
-    paslPct: { label: "Påslag %", value: paslagPct, onChange: setPaslagPct },
-    paslag: { label: "Påslag kr", value: paslagKr, onChange: setPaslagKr },
+    korrKost: { label: "Justera Korr kostnad", value: headerDeltas.korrKost, onChange: (v) => applyHeaderDelta("korrKost", v) },
+    niva: { label: "Justera Nivå %", value: headerDeltas.niva, onChange: (v) => applyHeaderDelta("niva", v) },
+    paslPct: { label: "Justera Påslag %", value: headerDeltas.paslPct, onChange: (v) => applyHeaderDelta("paslPct", v) },
+    paslag: { label: "Justera Påslag kr", value: headerDeltas.paslag, onChange: (v) => applyHeaderDelta("paslag", v) },
     frakt: { label: "Frakt, netto", value: frakt, onChange: setFrakt, unit: "kr" },
     provision: { label: "Provision", value: provision, onChange: setProvision, unit: "%" },
     bonus: { label: "Bonus", value: bonus, onChange: setBonus, unit: "%" },
@@ -254,25 +260,33 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
     setHeaderEdit({ el: e.currentTarget, field });
   };
 
-  const rowHeaderFields = ["korrKost", "niva", "paslPct", "paslag"] as const;
-  type RowHeaderField = (typeof rowHeaderFields)[number];
-  const isRowHeaderField = (field: HeaderEditField): field is RowHeaderField =>
-    (rowHeaderFields as readonly string[]).includes(field);
+  const formatFixed = (value: number, decimals: number) =>
+    value.toLocaleString("sv-SE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
-  const applyFieldToFiltered = (field: RowHeaderField, value: string) => {
-    if (value.trim() === "") return;
+  // Ny justering i huvudet: flytta varje filtrerad rad med skillnaden mot föregående justering.
+  function applyHeaderDelta(field: RowHeaderField, raw: string) {
+    const diff = parseSwedishNumber(raw) - parseSwedishNumber(headerDeltas[field]);
+    setHeaderDeltas((prev) => ({ ...prev, [field]: raw }));
+    if (diff === 0) return;
+    const { decimals } = headerStepConfig[field];
     setRowEdits((prev) => {
       const next = { ...prev };
       filteredRows.forEach((row) => {
-        next[row.id] = { ...next[row.id], [field]: value };
+        const current = parseSwedishNumber((prev[row.id]?.[field] as string | undefined) ?? row[field]);
+        next[row.id] = { ...next[row.id], [field]: formatFixed(current + diff, decimals) };
       });
       return next;
     });
+  }
+
+  const formatHeaderDelta = (field: RowHeaderField): string => {
+    const n = parseSwedishNumber(headerDeltas[field]);
+    if (n === 0) return "±0";
+    return `${n > 0 ? "+" : "−"}${formatFixed(Math.abs(n), headerStepConfig[field].decimals)}`;
   };
 
   const setHeaderFieldValue = (field: HeaderEditField, value: string) => {
     headerEditConfig[field].onChange(value);
-    if (isRowHeaderField(field)) applyFieldToFiltered(field, value);
   };
 
   const headerStepConfig: Record<HeaderEditField, { step: number; decimals: number }> = {
@@ -290,11 +304,9 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
   const adjustHeaderValue = (field: HeaderEditField, direction: 1 | -1) => {
     const { step, decimals } = headerStepConfig[field];
     const current = parseSwedishNumber(headerEditConfig[field].value);
-    const next = Math.max(0, current + direction * step);
-    setHeaderFieldValue(
-      field,
-      next.toLocaleString("sv-SE", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-    );
+    // Justeringar får bli negativa, absoluta faktorer inte.
+    const next = isRowHeaderField(field) ? current + direction * step : Math.max(0, current + direction * step);
+    setHeaderFieldValue(field, formatFixed(next, decimals));
   };
 
   const renderEditableHeaderCell = (field: HeaderEditField, shortLabel: string, cellStyle: CSSProperties) => (
@@ -323,7 +335,7 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
             textAlign: "center",
           }}
         >
-          {headerEditConfig[field].value || "0"}
+          {isRowHeaderField(field) ? formatHeaderDelta(field) : headerEditConfig[field].value || "0"}
         </div>
         {isEditing && (
           <IconButton
@@ -374,19 +386,55 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
     setRowEdits((prev) => {
       const next = { ...prev };
       filteredRows.forEach((row) => {
-        next[row.id] = { ...next[row.id], vinst: "0", vinstPct: "0,0" };
+        const zeroed: Partial<KalkylRow> = { vinst: "0", vinstPct: "0,0" };
+        ROW_HEADER_FIELDS.forEach((field) => {
+          zeroed[field] = formatFixed(0, headerStepConfig[field].decimals);
+        });
+        next[row.id] = { ...next[row.id], ...zeroed };
       });
       return next;
     });
+    setHeaderDeltas(EMPTY_HEADER_DELTAS);
   };
 
+  // Ögonblicksbild av sparade värden så att Avbryt kan återställa dem.
+  const [savedRowEdits, setSavedRowEdits] = useState<Record<string, Partial<KalkylRow>>>({});
+
+  const handleRedigera = () => {
+    setSavedRowEdits(rowEdits);
+    setHeaderDeltas(EMPTY_HEADER_DELTAS);
+    setIsFilterMenuOpen(false);
+    setIsEditing(true);
+  };
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Simulerar en databassparning med en kort fördröjning.
   const handleSpara = () => {
-    setKorrKostnad("");
-    setNiva("");
-    setPaslagPct("");
-    setPaslagKr("");
+    setIsSaving(true);
+    window.setTimeout(() => {
+      setIsSaving(false);
+      setHeaderDeltas(EMPTY_HEADER_DELTAS);
+      setIsEditing(false);
+    }, 1000);
+  };
+
+  const handleAvbryt = () => {
+    setRowEdits(savedRowEdits);
+    setHeaderDeltas(EMPTY_HEADER_DELTAS);
     setIsEditing(false);
   };
+
+  // Markerar celler som ändrats sedan redigeringen startade.
+  type EditableRowField = RowHeaderField | "volym";
+  const getSavedVal = (row: KalkylRow, field: EditableRowField): string =>
+    (savedRowEdits[row.id]?.[field] as string | undefined) ?? row[field];
+  const isCellChanged = (row: KalkylRow, field: EditableRowField): boolean =>
+    isEditing && parseSwedishNumber(getRowVal(row.id, field, row[field])) !== parseSwedishNumber(getSavedVal(row, field));
+  const changedCellProps = (row: KalkylRow, field: EditableRowField) =>
+    isCellChanged(row, field)
+      ? { title: `Tidigare: ${getSavedVal(row, field)}`, style: { fontWeight: 700, color: "#002d72" } }
+      : { title: undefined, style: {} };
 
   const activeFilterCount =
     (filterTradslag ? 1 : 0) +
@@ -428,26 +476,26 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
         <>
           {isEditing ? (
             <>
-              <Button variant="contained" size="small" onClick={handleSpara}>
-                Spara
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleSpara}
+                disabled={isSaving}
+                startIcon={isSaving ? <CircularProgress size={14} color="inherit" /> : undefined}
+              >
+                {isSaving ? "Sparar…" : "Spara"}
               </Button>
               <Button
                 className={styles.contractQuickActionButton}
                 size="small"
-                onClick={() => {
-                  setIsEditing(false);
-                  setRowEdits({});
-                  setKorrKostnad("");
-                  setNiva("");
-                  setPaslagPct("");
-                  setPaslagKr("");
-                }}
+                onClick={handleAvbryt}
+                disabled={isSaving}
               >
                 Avbryt
               </Button>
             </>
           ) : (
-            <Button variant="contained" size="small" startIcon={<EditOutlinedIcon fontSize="small" />} onClick={() => setIsEditing(true)}>
+            <Button variant="contained" size="small" startIcon={<EditOutlinedIcon fontSize="small" />} onClick={handleRedigera}>
               Redigera
             </Button>
           )}
@@ -492,16 +540,19 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
                 label: "Prislisterad",
                 icon: <AddIcon fontSize="small" />,
                 tone: "primary",
+                enabled: !isEditing,
+                onClick: onCreatePriceRow,
               },
               {
                 label: "Redigera rad",
                 icon: <EditOutlinedIcon fontSize="small" />,
-                enabled: selectedRowId !== null,
+                enabled: !isEditing && selectedRowId !== null,
                 onClick: () => setEditDialogOpen(true),
               },
               {
                 label: "Uppdatera",
                 icon: <MoreVertOutlinedIcon fontSize="small" />,
+                enabled: !isEditing,
                 onClick: () => setUppdateraDialogOpen(true),
               },
               // {
@@ -519,17 +570,22 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
             rightSlot={
               <>
                 <div className={styles.lagerFilterMenuWrapper}>
-                  <Button
-                    ref={filterButtonRef}
-                    size="small"
-                    variant="outlined"
-                    color="inherit"
-                    startIcon={<FilterAltOutlinedIcon fontSize="small" />}
-                    className={`${styles.lineItemsToggleButton} ${activeFilterCount > 0 ? styles.columnsIconButtonActive : ""}`}
-                    onClick={() => setIsFilterMenuOpen((prev) => !prev)}
-                  >
-                    Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-                  </Button>
+                  <Tooltip title={isEditing ? "Filtret är låst under redigering" : ""}>
+                    <span style={isEditing ? { cursor: "not-allowed" } : undefined}>
+                      <Button
+                        ref={filterButtonRef}
+                        size="small"
+                        variant="outlined"
+                        color="inherit"
+                        disabled={isEditing}
+                        startIcon={<FilterAltOutlinedIcon fontSize="small" />}
+                        className={`${styles.lineItemsToggleButton} ${activeFilterCount > 0 ? styles.columnsIconButtonActive : ""}`}
+                        onClick={() => setIsFilterMenuOpen((prev) => !prev)}
+                      >
+                        Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+                      </Button>
+                    </span>
+                  </Tooltip>
                   {isFilterMenuOpen ? (
                     <div className={styles.lagerFilterDropdown} ref={filterMenuRef}>
                       <div className={styles.lagerFilterDropdownRow}>
@@ -601,6 +657,21 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
                         }}
                         renderInput={(params) => <TextField {...params} label="Pakettyp" />}
                       />
+                      <div className={styles.lagerFilterDropdownDivider} />
+                      <div className={styles.lagerFilterDropdownFooter}>
+                        <Button
+                          size="small"
+                          variant="text"
+                          disabled={activeFilterCount === 0}
+                          onClick={() => {
+                            setFilterTradslag("");
+                            setFilterUnderproduktgrupp([]);
+                            setFilterPakettyp([]);
+                          }}
+                        >
+                          Rensa filter
+                        </Button>
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -608,11 +679,11 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
                   size="small"
                   variant="outlined"
                   color="inherit"
-                  className={styles.lineItemsToggleButton}
-                  startIcon={showKostnadKolumner ? <VisibilityOffOutlinedIcon fontSize="small" /> : <VisibilityOutlinedIcon fontSize="small" />}
+                  className={`${styles.lineItemsToggleButton} ${showKostnadKolumner ? styles.columnsIconButtonActive : ""}`}
+                  startIcon={<VisibilityOutlinedIcon fontSize="small" />}
                   onClick={() => setShowKostnadKolumner((prev) => !prev)}
                 >
-                  {showKostnadKolumner ? "Dölj kostnadskolumner" : "Visa kostnadskolumner"}
+                  Kostnadskolumner
                 </Button>
               </>
             }
@@ -737,9 +808,10 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
                               value={getRowVal(row.id, "korrKost", row.korrKost)}
                               onChange={(e) => setRowVal(row.id, "korrKost", e.target.value)}
                               onClick={(e) => e.stopPropagation()}
-                              style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box" }}
+                              title={changedCellProps(row, "korrKost").title}
+                              style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box", ...changedCellProps(row, "korrKost").style }}
                             />
-                          ) : row.korrKost}
+                          ) : getRowVal(row.id, "korrKost", row.korrKost)}
                         </td>
                       </>
                     )}
@@ -751,9 +823,10 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
                           value={getRowVal(row.id, "niva", row.niva)}
                           onChange={(e) => setRowVal(row.id, "niva", e.target.value)}
                           onClick={(e) => e.stopPropagation()}
-                          style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box" }}
+                          title={changedCellProps(row, "niva").title}
+                          style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box", ...changedCellProps(row, "niva").style }}
                         />
-                      ) : row.niva}
+                      ) : getRowVal(row.id, "niva", row.niva)}
                     </td>
                     <td style={{ ...td(false, "right"), background: isSelected ? undefined : COL_ORANGE, ...(isEditing ? { padding: "4px 6px" } : {}) }}>
                       {isEditing ? (
@@ -761,9 +834,10 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
                           value={getRowVal(row.id, "paslPct", row.paslPct)}
                           onChange={(e) => setRowVal(row.id, "paslPct", e.target.value)}
                           onClick={(e) => e.stopPropagation()}
-                          style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box" }}
+                          title={changedCellProps(row, "paslPct").title}
+                          style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box", ...changedCellProps(row, "paslPct").style }}
                         />
-                      ) : row.paslPct}
+                      ) : getRowVal(row.id, "paslPct", row.paslPct)}
                     </td>
                     <td style={{ ...td(false, "right"), background: isSelected ? undefined : COL_ORANGE, ...(isEditing ? { padding: "4px 6px" } : {}) }}>
                       {isEditing ? (
@@ -771,9 +845,10 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
                           value={getRowVal(row.id, "paslag", row.paslag)}
                           onChange={(e) => setRowVal(row.id, "paslag", e.target.value)}
                           onClick={(e) => e.stopPropagation()}
-                          style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box" }}
+                          title={changedCellProps(row, "paslag").title}
+                          style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box", ...changedCellProps(row, "paslag").style }}
                         />
-                      ) : row.paslag}
+                      ) : getRowVal(row.id, "paslag", row.paslag)}
                     </td>
                     <td style={td(true, "right")}>{row.prisPm}</td>
                     <td style={td(false, "right")}>{formatSwedishInteger(computePrisM3(row))}</td>
@@ -785,9 +860,10 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
                           value={getRowVal(row.id, "volym", row.volym)}
                           onChange={(e) => setRowVal(row.id, "volym", e.target.value)}
                           onClick={(e) => e.stopPropagation()}
-                          style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box" }}
+                          title={changedCellProps(row, "volym").title}
+                          style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box", ...changedCellProps(row, "volym").style }}
                         />
-                      ) : row.volym}
+                      ) : getRowVal(row.id, "volym", row.volym)}
                     </td>
                     <td style={td(true, "right")}>{row.fPris}</td>
                     <td style={td(false, "right")}>{row.balans}</td>
@@ -1004,7 +1080,7 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail }: Prisl
 
         <DialogContent className={styles.freightDialogContent}>
           <Typography style={{ fontSize: 13, color: "#404753" }}>
-            Ska vinsten nollställas för urvalet?
+            Korr kostnad, Nivå, Påslag % och Påslag kr sätts till 0 för urvalet, och vinsten nollställs. Ska vinsten nollställas?
           </Typography>
         </DialogContent>
 

@@ -30,6 +30,7 @@ import {
 } from "@mui/material";
 import { useRef, useState } from "react";
 import { DetailHeader } from "./shared/DetailHeader";
+import { getPriceListKund } from "./shared/priceListCustomers";
 import styles from "../page.module.scss";
 import { PriceListCreateView, type NewPriceListDraft } from "./PriceListCreateView";
 import { FraktTab } from "./price-list-tabs/FraktTab";
@@ -169,7 +170,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
       {expandedDialogOpen ? (
         <PriceListCreateView
           mode="edit"
-          title={selectedPriceListId}
+          title={`${selectedPriceListId} - ${getPriceListKund(selectedPriceListId)}`}
           initialDraft={draft}
           onSave={(saved) => { setDraft(saved); setExpandedDialogOpen(false); }}
           onCancel={() => setExpandedDialogOpen(false)}
@@ -179,7 +180,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
       {/* ── Header ── */}
       <DetailHeader
         entity="priceList"
-        title={selectedPriceListId}
+        title={`${selectedPriceListId} - ${getPriceListKund(selectedPriceListId)}`}
         actions={
         <>
           {/* <Button className={styles.contractQuickActionButton} size="small" startIcon={<VisibilityOutlinedIcon fontSize="small" />}>

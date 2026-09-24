@@ -147,6 +147,25 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const accordionWrapRef = useRef<HTMLDivElement | null>(null);
 
+  // En ny prislisterad kan bara skapas eller avbrytas – båda stänger vyn.
+  const handleSave = () => {
+    if (isNewPriceRow) {
+      onClose?.();
+      return;
+    }
+    setSavedDraft(draft);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    if (isNewPriceRow) {
+      onClose?.();
+      return;
+    }
+    setDraft(savedDraft);
+    setIsEditing(false);
+  };
+
   const handleDeleteConfirm = () => {
     setIsDeleteDialogOpen(false);
     onClose?.();
@@ -210,14 +229,14 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
               <Button
                 className={styles.contractSaveButton}
                 size="small"
-                onClick={() => { setSavedDraft(draft); setIsEditing(false); }}
+                onClick={handleSave}
               >
                 {isNewPriceRow ? "Skapa prislisterad" : "Spara"}
               </Button>
               <Button
                 className={styles.contractQuickActionButton}
                 size="small"
-                onClick={() => { setDraft(savedDraft); setIsEditing(false); }}
+                onClick={handleCancel}
               >
                 Avbryt
               </Button>

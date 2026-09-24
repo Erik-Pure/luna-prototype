@@ -2652,6 +2652,7 @@ export default function Home() {
     if (!selectedPriceListId) {
       return;
     }
+    _savedReturnToKalkyl = isPrislistekalkylRoute;
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}/new`);
   };
 
@@ -3197,6 +3198,7 @@ export default function Home() {
                 priceListId={selectedPriceListId}
                 onBack={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}`)}
                 onOpenPriceRowDetail={openPriceRowDetail}
+                onCreatePriceRow={openNewPriceRow}
               />
             </div>
           ) : isPriceListRowDetailOpen && selectedPriceRowId ? (
@@ -3540,6 +3542,25 @@ export default function Home() {
                             />
                           </div>
                         </div>
+                        <div className={styles.lagerFilterDropdownDivider} />
+                        <div className={styles.lagerFilterDropdownFooter}>
+                          <Button
+                            size="small"
+                            variant="text"
+                            disabled={lagerActiveFilterCount === 0}
+                            onClick={() => {
+                              setLagerFritext("");
+                              setLagerKontraktsvolymFran("");
+                              setLagerKontraktsvolymTill("");
+                              setLagerAvropsvolymFran("");
+                              setLagerAvropsvolymTill("");
+                              setLagerFardiglagervolymFran("");
+                              setLagerFardiglagervolymTill("");
+                            }}
+                          >
+                            Rensa filter
+                          </Button>
+                        </div>
                       </div>
                     ) : null}
                   </div>
@@ -3780,6 +3801,21 @@ export default function Home() {
                                 <MenuItem value="cecilia">Cecilia Ström</MenuItem>
                                 <MenuItem value="david">David Eriksson</MenuItem>
                               </Select>
+                            </div>
+                            <div className={styles.lagerFilterDropdownDivider} />
+                            <div className={styles.lagerFilterDropdownFooter}>
+                              <Button
+                                size="small"
+                                variant="text"
+                                disabled={avropActiveFilterCount === 0}
+                                onClick={() => {
+                                  setAvropFritext("");
+                                  setAvropLand("");
+                                  setAvropRegistreradAv("");
+                                }}
+                              >
+                                Rensa filter
+                              </Button>
                             </div>
                           </div>
                         ) : null}

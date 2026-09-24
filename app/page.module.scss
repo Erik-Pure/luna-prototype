@@ -10096,6 +10096,12 @@ body button {
   background: #ebeff4;
 }
 
+.lagerFilterDropdownFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -4px;
+}
+
 .lagerFilterDropdownRow {
   display: flex;
   flex-direction: column;
