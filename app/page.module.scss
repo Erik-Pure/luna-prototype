@@ -8550,16 +8550,118 @@ body button {
   background-color: #fff7d6;
 }
 
+// Kompakt tabell: tätare celler och radhöjd än övriga line-tabeller.
+.stocknotaTable .lineItemsCell {
+  padding: 2px 6px;
+  line-height: 22px;
+}
+
+// Tvåradigt tabellhuvud: grupprubrik (t.ex. HISSMOFORS) över korta kolumnrubriker (NL, Vald).
+// DataTable är en CSS-tabell utan colspan, så gruppnamnet visas i gruppens första cell och
+// flödar över grannarna; bandets underkant bildar en sammanhängande linje för gruppen.
+.stocknotaGroupedHeaderCell.stocknotaGroupedHeaderCell {
+  padding: 0;
+  vertical-align: bottom;
+  border-bottom: 1px solid #cbd3df;
+}
+
+// Tydliga lodräta avgränsningar mellan grupperna, genom huvud, rader och summarad.
+.stocknotaGroupStartHeaderCell {
+  z-index: 16;
+  border-left: 1px solid #9aa5b5;
+}
+
+.stocknotaTable .lineItemsCell.stocknotaGroupStartCell:not(:first-child) {
+  border-left: 1px solid #9aa5b5;
+}
+
+// Avslutande linje till höger om sista sektionen (sista synliga kolumnen). Ritas som inre skugga,
+// eftersom en 1px border mot den tomma utfyllnadscellen inte ritas ut i kollapsad tabell.
+.stocknotaTable .stocknotaLastCell {
+  box-shadow: inset -1px 0 0 #9aa5b5;
+}
+
+// Grupprubrikens band har egen bakgrund och behöver linjen själv.
+.stocknotaLastCell .stocknotaHeaderGroup {
+  box-shadow: inset -1px 0 0 #9aa5b5;
+}
+
+.stocknotaTable .stocknotaLastCell.stocknotaSummaryCell {
+  box-shadow: inset 0 2px 0 #cbd3df, inset -1px 0 0 #9aa5b5;
+}
+
+// Ljusa linjer mellan alla kolumner; grupplinjerna ovan är mörkare.
+.stocknotaTable .lineItemsCell:not(:first-child) {
+  border-left: 1px solid #e8ecf2;
+}
+
+// I huvudet ritas kolumnlinjen bara under grupprubriken, så att gruppnamnet inte korsas av linjer.
+.stocknotaGroupedHeaderCell:not(:first-child):not(.stocknotaGroupStartHeaderCell) .stocknotaHeaderLabel {
+  border-left: 1px solid #e8ecf2;
+}
+
+.stocknotaHeaderGroup {
+  height: 22px;
+  padding: 5px 6px 0;
+  box-sizing: border-box;
+  background-color: #f4f6f9;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.stocknotaHeaderGroupFilled {
+  border-bottom: 1px solid #dfe3ea;
+}
+
+.stocknotaHeaderLabel {
+  padding: 5px 6px;
+}
+
+.stocknotaNumeric {
+  text-align: right;
+}
+
+.stocknotaCellInput {
+  width: 100%;
+
+  :global(.MuiOutlinedInput-root) {
+    border-radius: 4px;
+    background-color: #ffffff;
+  }
+
+  :global(.MuiInputBase-input) {
+    font-size: 12px;
+    padding: 2px 4px;
+  }
+}
+
+.stocknotaCellInputNumeric :global(.MuiInputBase-input) {
+  text-align: right;
+}
+
 .stocknotaFillInCell {
   background-color: #fff7d6;
 }
 
+// Summaraden ligger fast i tabellens nederkant (motsvarar MudTable FixedFooter).
+// Övre kanten ritas med box-shadow eftersom kantlinjer i border-collapse inte följer med sticky-celler.
 .stocknotaSummaryCell {
+  position: sticky;
+  // Negativt värde trycker ned raden mot containerns underkant så att inget glapp syns under den.
+  bottom: -3px;
+  z-index: 12 !important;
   background-color: #eef1f6;
-  border-top: 2px solid #cbd3df;
+  border-bottom: none !important;
+  box-shadow: inset 0 2px 0 #cbd3df;
 }
 
+// Summa-cellen är även fast åt vänster och ska ligga över övriga summaceller vid scroll i sidled.
 .stocknotaSummaryLabelCell {
+  z-index: 13 !important;
   overflow: visible;
   text-overflow: unset;
 }

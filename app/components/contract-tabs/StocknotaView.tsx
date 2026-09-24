@@ -56,23 +56,47 @@ type StocknotaRow = {
 type StocknotaColumn = { key: string; label: string; width: number; visible: boolean };
 
 const DEFAULT_COLUMNS: StocknotaColumn[] = [
-  { key: "artNr", label: "ArtNr", width: 70, visible: true },
-  { key: "fakturatext", label: "Fakturatext", width: 170, visible: true },
-  { key: "pakettyp", label: "Pakettyp", width: 84, visible: true },
-  { key: "offererat", label: "Offererat", width: 90, visible: true },
-  { key: "kopt", label: "Köpt", width: 64, visible: true },
-  { key: "nlTotalt", label: "NL totalt", width: 90, visible: true },
-  { key: "nlHissmofors", label: "NL Hissmofors", width: 120, visible: true },
-  { key: "hissmoforsVald", label: "Hissmofors vald", width: 140, visible: true },
-  { key: "nlKage", label: "NL Kåge", width: 76, visible: true },
-  { key: "kageVald", label: "Kåge vald", width: 130, visible: true },
-  { key: "nlSavar", label: "NL Sävar", width: 84, visible: true },
-  { key: "savarVald", label: "Sävar vald", width: 130, visible: true },
-  { key: "totVald", label: "Tot vald", width: 84, visible: true },
-  { key: "diff", label: "Diff", width: 64, visible: true },
-  { key: "pris", label: "Pris", width: 126, visible: true },
-  { key: "kundmarke", label: "Kundmärke", width: 130, visible: true },
+  { key: "artNr", label: "ArtNr", width: 56, visible: true },
+  { key: "fakturatext", label: "Fakturatext", width: 150, visible: true },
+  { key: "pakettyp", label: "Pakettyp", width: 68, visible: true },
+  { key: "offererat", label: "Offererat", width: 68, visible: true },
+  { key: "kopt", label: "Köpt", width: 44, visible: true },
+  { key: "nlTotalt", label: "NL totalt", width: 64, visible: true },
+  { key: "nlHissmofors", label: "NL Hissmofors", width: 52, visible: true },
+  { key: "hissmoforsVald", label: "Hissmofors vald", width: 68, visible: true },
+  { key: "nlKage", label: "NL Kåge", width: 52, visible: true },
+  { key: "kageVald", label: "Kåge vald", width: 68, visible: true },
+  { key: "nlSavar", label: "NL Sävar", width: 52, visible: true },
+  { key: "savarVald", label: "Sävar vald", width: 68, visible: true },
+  { key: "totVald", label: "Tot vald", width: 60, visible: true },
+  { key: "diff", label: "Diff", width: 48, visible: true },
+  { key: "pris", label: "Pris", width: 60, visible: true },
+  { key: "kundmarke", label: "Kundmärke", width: 112, visible: true },
 ];
+
+// Grupprubrik (övre raden) och kort kolumnrubrik (undre raden) i tabellhuvudet.
+// Kolumnhanteraren visar fortfarande de fullständiga namnen i DEFAULT_COLUMNS.
+const COLUMN_GROUPS: Record<string, string> = {
+  artNr: "Artikel", fakturatext: "Artikel", pakettyp: "Artikel",
+  offererat: "Volym", kopt: "Volym", nlTotalt: "Volym",
+  nlHissmofors: "Hissmofors", hissmoforsVald: "Hissmofors",
+  nlKage: "Kåge", kageVald: "Kåge",
+  nlSavar: "Sävar", savarVald: "Sävar",
+  totVald: "Resultat", diff: "Resultat",
+  pris: "Kontraktsrad", kundmarke: "Kontraktsrad",
+};
+
+// Sifferkolumner högerställs (rubrik, cell och inmatningsfält).
+const NUMERIC_KEYS = new Set([
+  "offererat", "kopt", "nlTotalt", "nlHissmofors", "hissmoforsVald", "nlKage", "kageVald",
+  "nlSavar", "savarVald", "totVald", "diff", "pris",
+]);
+
+const SHORT_HEADER_LABELS: Record<string, string> = {
+  nlHissmofors: "NL", hissmoforsVald: "Vald",
+  nlKage: "NL", kageVald: "Vald",
+  nlSavar: "NL", savarVald: "Vald",
+};
 
 const FAKTURATEXTER = [
   "Gran flisad spån", "Furu hyvlad", "45x145 Konstruktionsvirke", "22x95 Gran Ytterpanel", "Gran v-styrp",
@@ -342,6 +366,12 @@ export function StocknotaView({
     if (current === null) return true;
     if (current === true) return false;
     return null;
+  };
+
+  // En grupp börjar där gruppen skiljer sig från föregående synliga kolumn (följer dold/flyttad kolumn).
+  const isGroupStart = (columnIndex: number) => {
+    const group = COLUMN_GROUPS[visibleColumns[columnIndex]?.key ?? ""];
+    return Boolean(group) && (columnIndex === 0 || COLUMN_GROUPS[visibleColumns[columnIndex - 1]!.key] !== group);
   };
 
   const columnsMenuItems = draftColumns.map((c) => ({ key: c.key, label: c.label, visible: c.visible }));
@@ -618,7 +648,7 @@ export function StocknotaView({
             )}
           />
 
-          <div className={`${styles.paketbokningTableWrap} ${styles.contractTableCompact}`}>
+          <div className={`${styles.paketbokningTableWrap} ${styles.contractTableCompact} ${styles.stocknotaTable}`}>
             <div className={styles.freightTable}>
               <DataTable
                 variant="line"
@@ -628,19 +658,34 @@ export function StocknotaView({
                 rowKey={(row, index) => `stocknota-${(row as StocknotaRow).artNr}-${index}`}
                 selectedRowIndex={null}
                 onRowClick={() => { }}
-                getHeaderCellClassName={(column) => {
-                  if (EDITABLE_TEXT_KEYS.has(column.key)) return styles.stocknotaFillInHeaderCell;
-                  return undefined;
+                getHeaderCellClassName={(column, columnIndex) => {
+                  const classes = [styles.stocknotaGroupedHeaderCell];
+                  if (columnIndex > 0 && isGroupStart(columnIndex)) classes.push(styles.stocknotaGroupStartHeaderCell);
+                  if (EDITABLE_TEXT_KEYS.has(column.key)) classes.push(styles.stocknotaFillInHeaderCell);
+                  if (columnIndex === visibleColumns.length - 1) classes.push(styles.stocknotaLastCell);
+                  return classes.join(" ");
                 }}
-                getCellClassName={(row, column, _rowIndex, _columnIndex, isFiller) => {
-                  if (isFiller) return undefined;
+                renderHeaderCell={(column, columnIndex) => (
+                  <>
+                    <div className={`${styles.stocknotaHeaderGroup} ${COLUMN_GROUPS[column.key] ? styles.stocknotaHeaderGroupFilled : ""}`}>
+                      {isGroupStart(columnIndex) ? COLUMN_GROUPS[column.key] : null}
+                    </div>
+                    <div className={`${styles.stocknotaHeaderLabel} ${NUMERIC_KEYS.has(column.key) ? styles.stocknotaNumeric : ""}`}>{SHORT_HEADER_LABELS[column.key] ?? column.label}</div>
+                  </>
+                )}
+                getCellClassName={(row, column, _rowIndex, columnIndex, isFiller) => {
+                  if (isFiller) return (row as StocknotaRow).isSummary ? styles.stocknotaSummaryCell : undefined;
+                  const classes: string[] = [];
+                  if (columnIndex > 0 && isGroupStart(columnIndex)) classes.push(styles.stocknotaGroupStartCell);
+                  if (NUMERIC_KEYS.has(column.key)) classes.push(styles.stocknotaNumeric);
+                  if (columnIndex === visibleColumns.length - 1) classes.push(styles.stocknotaLastCell);
                   if ((row as StocknotaRow).isSummary) {
-                    return column.key === "artNr"
-                      ? `${styles.stocknotaSummaryCell} ${styles.stocknotaSummaryLabelCell}`
-                      : styles.stocknotaSummaryCell;
+                    classes.push(styles.stocknotaSummaryCell);
+                    if (column.key === "artNr") classes.push(styles.stocknotaSummaryLabelCell);
+                  } else if (EDITABLE_TEXT_KEYS.has(column.key)) {
+                    classes.push(styles.stocknotaFillInCell);
                   }
-                  if (EDITABLE_TEXT_KEYS.has(column.key)) return styles.stocknotaFillInCell;
-                  return undefined;
+                  return classes.join(" ");
                 }}
                 renderCell={(row, column, rowIndex) => {
                   const r = row as StocknotaRow;
@@ -673,7 +718,7 @@ export function StocknotaView({
                         onChange={(e) => updateCell(originalIdx, column.key as keyof StocknotaRow, e.target.value)}
                         onClick={(e) => e.stopPropagation()}
                         variant="outlined"
-                        className={styles.containerViewCellInput}
+                        className={`${styles.stocknotaCellInput} ${NUMERIC_KEYS.has(column.key) ? styles.stocknotaCellInputNumeric : ""}`}
                       />
                     );
                   }
