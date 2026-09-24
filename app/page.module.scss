@@ -8701,52 +8701,25 @@ body button {
 .stocknotaLandingVersions {
   width: 100%;
   margin-top: 28px;
+  text-align: left;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
+// Endast versionsnamnet (länk) och radera-knappen är klickbara, inte hela raden.
+.stocknotaVersionTable .lineItemsRow {
+  cursor: default;
+}
+
+.stocknotaVersionTable .lineItemLinkButton {
+  line-height: inherit;
+  vertical-align: middle;
+}
+
+// Typografin kommer från contractSectionTitle (samma som sektionsrubriker i detaljvyerna).
 .stocknotaLandingVersionsHeading {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6a7483;
   text-align: left;
-  margin-bottom: 4px;
-}
-
-.stocknotaLandingVersionCard {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
-  border: 1px solid #e5e8ed;
-  border-radius: 8px;
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.15s ease, background 0.15s ease;
-
-  &:hover {
-    border-color: rgba(196, 121, 0, 0.4);
-    background: rgba(196, 121, 0, 0.02);
-  }
-}
-
-.stocknotaLandingVersionInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.stocknotaLandingVersionName {
-  font-size: 13px;
-  font-weight: 600;
-  color: #2f3743;
-}
-
-.stocknotaLandingVersionDate {
-  font-size: 11px;
-  color: #8a93a3;
 }
 
 /* ── Leveransbokade paket tab ── */

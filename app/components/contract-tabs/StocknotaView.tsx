@@ -18,6 +18,7 @@ import {
   Select,
   Snackbar,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -97,6 +98,13 @@ const SHORT_HEADER_LABELS: Record<string, string> = {
   nlKage: "NL", kageVald: "Vald",
   nlSavar: "NL", savarVald: "Vald",
 };
+
+const VERSION_COLUMNS = [
+  { key: "name", label: "Version", width: 160 },
+  { key: "leveransvecka", label: "Leveransvecka", width: 140 },
+  { key: "savedBy", label: "Sparad av" },
+  { key: "_actions", label: "", pinnedRight: true, width: 56 },
+];
 
 const FAKTURATEXTER = [
   "Gran flisad spån", "Furu hyvlad", "45x145 Konstruktionsvirke", "22x95 Gran Ytterpanel", "Gran v-styrp",
@@ -214,7 +222,8 @@ type StocknotaViewProps = {
   activeSegment: string | null;
   onOpenLanding: () => void;
   onOpenNew: () => void;
-  onOpenVersion: (id: number) => void;
+  /** toastMessage visas efter navigeringen (vyn monteras om, så en lokal toast skulle försvinna direkt). */
+  onOpenVersion: (id: number, toastMessage?: string) => void;
 };
 
 export function StocknotaView({
@@ -435,6 +444,18 @@ export function StocknotaView({
             ) : null}
           </>
         }
+        actions={activeVersion ? (
+          <Tooltip title="Ta bort">
+            <IconButton
+              size="small"
+              className={styles.contractHeaderDotsButton}
+              aria-label="Ta bort version"
+              onClick={() => setDeleteVersionId(activeVersion.id)}
+            >
+              <DeleteOutlineOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ) : undefined}
       />
 
       <input
@@ -468,33 +489,57 @@ export function StocknotaView({
 
           {versions.length > 0 ? (
             <div className={styles.stocknotaLandingVersions}>
-              <Typography className={styles.stocknotaLandingVersionsHeading}>
-                Eller välj en sparad version
+              <Typography component="h2" className={`${styles.contractSectionTitle} ${styles.stocknotaLandingVersionsHeading}`}>
+                Sparade versioner
               </Typography>
-              {sortedVersions.map((version) => (
-                <div
-                  key={version.id}
-                  className={styles.stocknotaLandingVersionCard}
-                  onClick={() => onOpenVersion(version.id)}
-                >
-                  <div className={styles.stocknotaLandingVersionInfo}>
-                    <span className={styles.stocknotaLandingVersionName}>{version.name}</span>
-                    <span className={styles.stocknotaLandingVersionDate}>
-                      Sparad av {version.savedBy}
-                      {version.leveransvecka ? ` · Leveransvecka ${version.leveransvecka}` : ""}
-                    </span>
-                  </div>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteVersionId(version.id);
+              <div className={`${styles.lineItemsSection} ${styles.stocknotaVersionTable}`}>
+                <div className={styles.freightTable}>
+                  <DataTable
+                    variant="line"
+                    fillRemainingSpace
+                    columns={VERSION_COLUMNS}
+                    rows={sortedVersions.map((version) => ({
+                      _id: String(version.id),
+                      name: version.name,
+                      leveransvecka: version.leveransvecka ?? "-",
+                      savedBy: version.savedBy,
+                    }))}
+                    rowKey={(row) => row._id}
+                    selectedRowIndex={null}
+                    renderCell={(row, column) => {
+                      if (column.key === "_actions") {
+                        return (
+                          <span className={styles.freightActionCell}>
+                            <Tooltip title="Ta bort" placement="top">
+                              <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteVersionId(Number(row._id));
+                                }}
+                              >
+                                <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                              </IconButton>
+                            </Tooltip>
+                          </span>
+                        );
+                      }
+                      if (column.key === "name") {
+                        return (
+                          <button
+                            type="button"
+                            className={styles.lineItemLinkButton}
+                            onClick={() => onOpenVersion(Number(row._id))}
+                          >
+                            {row.name}
+                          </button>
+                        );
+                      }
+                      return row[column.key as keyof typeof row] ?? "";
                     }}
-                  >
-                    <DeleteOutlineOutlinedIcon fontSize="inherit" />
-                  </IconButton>
+                  />
                 </div>
-              ))}
+              </div>
             </div>
           ) : null}
         </div>
@@ -747,6 +792,8 @@ export function StocknotaView({
             className={styles.freightDeleteButton}
             onClick={() => {
               if (deleteVersionId !== null) onDeleteVersion(deleteVersionId);
+              // Tar man bort den öppna versionen går man tillbaka till startsidan.
+              if (deleteVersionId === activeVersionId) onOpenLanding();
               setDeleteVersionId(null);
             }}
           >
@@ -823,9 +870,8 @@ export function StocknotaView({
                 ...(saveVersionLeveransvecka.trim() ? { leveransvecka: saveVersionLeveransvecka.trim() } : {}),
               };
               onSaveVersion(newVersion);
-              onOpenVersion(newVersion.id);
               setSaveVersionDialogOpen(false);
-              setToast((prev) => ({ open: true, message: `Stocknota sparad som ${newVersion.name}`, key: prev.key + 1 }));
+              onOpenVersion(newVersion.id, `Stocknota sparad som ${newVersion.name}`);
             }}
           >
             Spara

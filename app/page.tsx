@@ -2710,8 +2710,9 @@ export default function Home() {
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/stocknota/new`);
   };
 
-  const openStocknotaVersion = (versionId: number) => {
+  const openStocknotaVersion = (versionId: number, toastMessage?: string) => {
     if (!selectedContractId) return;
+    if (toastMessage) _pendingToastMessage = toastMessage;
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/stocknota/${versionId}`);
   };
 
