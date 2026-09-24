@@ -487,61 +487,62 @@ export function StocknotaView({
             <p className={styles.contractDropZoneHint}>Excel-fil med stocknota</p>
           </div>
 
-          {versions.length > 0 ? (
-            <div className={styles.stocknotaLandingVersions}>
-              <Typography component="h2" className={`${styles.contractSectionTitle} ${styles.stocknotaLandingVersionsHeading}`}>
-                Sparade versioner
-              </Typography>
-              <div className={`${styles.lineItemsSection} ${styles.stocknotaVersionTable}`}>
-                <div className={styles.freightTable}>
-                  <DataTable
-                    variant="line"
-                    fillRemainingSpace
-                    columns={VERSION_COLUMNS}
-                    rows={sortedVersions.map((version) => ({
-                      _id: String(version.id),
-                      name: version.name,
-                      leveransvecka: version.leveransvecka ?? "-",
-                      savedBy: version.savedBy,
-                    }))}
-                    rowKey={(row) => row._id}
-                    selectedRowIndex={null}
-                    renderCell={(row, column) => {
-                      if (column.key === "_actions") {
-                        return (
-                          <span className={styles.freightActionCell}>
-                            <Tooltip title="Ta bort" placement="top">
-                              <IconButton
-                                size="small"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleteVersionId(Number(row._id));
-                                }}
-                              >
-                                <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
-                              </IconButton>
-                            </Tooltip>
-                          </span>
-                        );
-                      }
-                      if (column.key === "name") {
-                        return (
-                          <button
-                            type="button"
-                            className={styles.lineItemLinkButton}
-                            onClick={() => onOpenVersion(Number(row._id))}
-                          >
-                            {row.name}
-                          </button>
-                        );
-                      }
-                      return row[column.key as keyof typeof row] ?? "";
-                    }}
-                  />
-                </div>
+          <div className={styles.stocknotaLandingVersions}>
+            <Typography component="h2" className={`${styles.contractSectionTitle} ${styles.stocknotaLandingVersionsHeading}`}>
+              Sparade versioner
+            </Typography>
+            <div className={`${styles.lineItemsSection} ${styles.stocknotaVersionTable}`}>
+              <div className={styles.freightTable}>
+                <DataTable
+                  variant="line"
+                  fillRemainingSpace
+                  columns={VERSION_COLUMNS}
+                  rows={sortedVersions.map((version) => ({
+                    _id: String(version.id),
+                    name: version.name,
+                    leveransvecka: version.leveransvecka ?? "-",
+                    savedBy: version.savedBy,
+                  }))}
+                  rowKey={(row) => row._id}
+                  selectedRowIndex={null}
+                  renderCell={(row, column) => {
+                    if (column.key === "_actions") {
+                      return (
+                        <span className={styles.freightActionCell}>
+                          <Tooltip title="Ta bort" placement="top">
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteVersionId(Number(row._id));
+                              }}
+                            >
+                              <DeleteOutlineOutlinedIcon className={styles.freightActionIcon} />
+                            </IconButton>
+                          </Tooltip>
+                        </span>
+                      );
+                    }
+                    if (column.key === "name") {
+                      return (
+                        <button
+                          type="button"
+                          className={styles.lineItemLinkButton}
+                          onClick={() => onOpenVersion(Number(row._id))}
+                        >
+                          {row.name}
+                        </button>
+                      );
+                    }
+                    return row[column.key as keyof typeof row] ?? "";
+                  }}
+                />
               </div>
+              {sortedVersions.length === 0 ? (
+                <div className={styles.stocknotaVersionsEmpty}>Det finns inga sparade versioner</div>
+              ) : null}
             </div>
-          ) : null}
+          </div>
         </div>
       ) : (
         <div className={styles.paketbokningLayout}>

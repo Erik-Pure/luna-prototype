@@ -8717,6 +8717,13 @@ body button {
   vertical-align: middle;
 }
 
+.stocknotaVersionsEmpty {
+  padding: 16px 12px;
+  font-size: 13px;
+  color: #8a93a6;
+  text-align: center;
+}
+
 // Typografin kommer från contractSectionTitle (samma som sektionsrubriker i detaljvyerna).
 .stocknotaLandingVersionsHeading {
   text-align: left;
