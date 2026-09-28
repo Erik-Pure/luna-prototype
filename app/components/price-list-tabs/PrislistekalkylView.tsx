@@ -5,12 +5,13 @@ import CloseIcon from "@mui/icons-material/Close";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
-import MoreVertOutlinedIcon from "@mui/icons-material/MoreVertOutlined";
+import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import RemoveIcon from "@mui/icons-material/Remove";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import ViewColumnOutlinedIcon from "@mui/icons-material/ViewColumnOutlined";
 import { RedigeraPrislisteradDialog } from "./RedigeraPrislisteradDialog";
 import type { RedigeraPrislisteradInitial } from "./RedigeraPrislisteradDialog";
 import {
+  Alert,
   Autocomplete,
   Button,
   Checkbox,
@@ -26,6 +27,7 @@ import {
   MenuItem,
   Popover,
   Select,
+  Snackbar,
   TextField,
   Tooltip,
   Typography,
@@ -46,7 +48,6 @@ type PrislistekalkylViewProps = {
 
 type HeaderEditField =
   | "korrKost"
-  | "niva"
   | "paslPct"
   | "paslag"
   | "frakt"
@@ -56,11 +57,11 @@ type HeaderEditField =
   | "kalkylkurs";
 
 // Kolumner vars huvud justerar alla filtrerade rader relativt (+/− från radens eget värde).
-const ROW_HEADER_FIELDS = ["korrKost", "niva", "paslPct", "paslag"] as const;
+const ROW_HEADER_FIELDS = ["korrKost", "paslPct", "paslag"] as const;
 type RowHeaderField = (typeof ROW_HEADER_FIELDS)[number];
 const isRowHeaderField = (field: HeaderEditField): field is RowHeaderField =>
   (ROW_HEADER_FIELDS as readonly string[]).includes(field);
-const EMPTY_HEADER_DELTAS: Record<RowHeaderField, string> = { korrKost: "", niva: "", paslPct: "", paslag: "" };
+const EMPTY_HEADER_DELTAS: Record<RowHeaderField, string> = { korrKost: "", paslPct: "", paslag: "" };
 
 type KalkylRow = {
   id: string;
@@ -76,16 +77,13 @@ type KalkylRow = {
   malning: string;
   pakettyp: string;
   korrKost: string;
-  sumSEK: string;
   nettoSEK: string;
-  niva: string;
   paslPct: string;
   paslag: string;
   prisPm: string;
   prism3: string;
   vinst: string;
   vinstPct: string;
-  volym: string;
   fPris: string;
   balans: string;
   balPct: string;
@@ -93,25 +91,129 @@ type KalkylRow = {
 };
 
 const KALKYL_ROWS: KalkylRow[] = [
-  { id: "4840940", artNr: "28045032100000", grupp: "2100", kpl: true, nom: "32*50", langd: "4,2", fakturatext: "28x45 Gran Dim G4-3 Lp", rawara: "2 300", prodkost: "819", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 119", nettoSEK: "3 119", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "5,05", prism3: "3 159", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 409", balans: "-250", balPct: "-7", nettom3: "3 119" },
-  { id: "4840941", artNr: "45045032100000", grupp: "2125", kpl: true, nom: "47*50", langd: "2,4", fakturatext: "45x45 Gran Vilmaregel G4-2 Kortlängd", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", sumSEK: "3 811", nettoSEK: "3 811", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "9,05", prism3: "3 851", vinst: "-45", vinstPct: "-1,2", volym: "0", fPris: "3 926", balans: "-75", balPct: "-2", nettom3: "3 811" },
-  { id: "4840942", artNr: "45045032108100", grupp: "2125", kpl: true, nom: "47*50", langd: "4,8", fakturatext: "45x45 Gran Vilmaregel G4-2 Lp", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 511", nettoSEK: "3 511", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "8,34", prism3: "3 551", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 626", balans: "-75", balPct: "-2", nettom3: "3 511" },
-  { id: "4840943", artNr: "45070032108100", grupp: "2125", kpl: true, nom: "47*75", langd: "5,4", fakturatext: "45x70 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 465", nettoSEK: "3 465", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "12,36", prism3: "3 505", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 580", balans: "-75", balPct: "-2", nettom3: "3 465" },
-  { id: "4840944", artNr: "45070032100000", grupp: "2125", kpl: true, nom: "47*75", langd: "2,7", fakturatext: "45x70 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", sumSEK: "3 765", nettoSEK: "3 765", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "13,41", prism3: "3 805", vinst: "-120", vinstPct: "-3,1", volym: "0", fPris: "3 880", balans: "-75", balPct: "-2", nettom3: "3 765" },
-  { id: "4840945", artNr: "45095032100000", grupp: "2125", kpl: true, nom: "47*100", langd: "3,0", fakturatext: "45x95 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "322", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", sumSEK: "3 622", nettoSEK: "3 622", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "17,21", prism3: "3 662", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 737", balans: "-75", balPct: "-2", nettom3: "3 622" },
-  { id: "4840946", artNr: "36098032108100", grupp: "2330", kpl: true, nom: "38*100", langd: "4,5", fakturatext: "36x98 Gran C24 Lp", rawara: "3 000", prodkost: "476", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 476", nettoSEK: "3 476", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "13,36", prism3: "3 516", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 591", balans: "-75", balPct: "-2", nettom3: "3 476" },
-  { id: "4840947", artNr: "45145032108100", grupp: "2330", kpl: true, nom: "47*145", langd: "5,1", fakturatext: "45x145 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "298", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 298", nettoSEK: "3 298", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "20,15", prism3: "3 338", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 413", balans: "-75", balPct: "-2", nettom3: "3 298" },
-  { id: "4840948", artNr: "45195032108100", grupp: "2330", kpl: true, nom: "47*195", langd: "6,0", fakturatext: "45x195 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "279", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 279", nettoSEK: "3 279", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "27,08", prism3: "3 319", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 394", balans: "-75", balPct: "-2", nettom3: "3 279" },
-  { id: "4840949", artNr: "22095032108100", grupp: "2410", kpl: false, nom: "22*95", langd: "3,6", fakturatext: "22x95 Furu Panel Lock", rawara: "2 700", prodkost: "612", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 312", nettoSEK: "3 312", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "6,28", prism3: "3 352", vinst: "-8", vinstPct: "-0,2", volym: "0", fPris: "3 452", balans: "-100", balPct: "-3", nettom3: "3 312" },
-  { id: "4840950", artNr: "22120032108100", grupp: "2410", kpl: false, nom: "22*120", langd: "3,9", fakturatext: "22x120 Furu Panel Lock", rawara: "2 700", prodkost: "588", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 288", nettoSEK: "3 288", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "7,94", prism3: "3 328", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 428", balans: "-100", balPct: "-3", nettom3: "3 288" },
-  { id: "4840951", artNr: "28070032108100", grupp: "2410", kpl: false, nom: "28*70", langd: "3,3", fakturatext: "28x70 Furu Ribb Målad", rawara: "2 850", prodkost: "701", impregn: "45", malning: "112,50", pakettyp: "0", korrKost: "0", sumSEK: "3 708", nettoSEK: "3 708", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "11,90", prism3: "3 748", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 848", balans: "-140", balPct: "-4", nettom3: "3 708" },
-  { id: "4840952", artNr: "45145032300000", grupp: "2520", kpl: true, nom: "47*145", langd: "2,4", fakturatext: "45x145 Gran C24 Kortlängd", rawara: "3 200", prodkost: "315", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", sumSEK: "3 815", nettoSEK: "3 815", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "19,05", prism3: "3 855", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 930", balans: "-75", balPct: "-2", nettom3: "3 815" },
-  { id: "4840953", artNr: "45195032300000", grupp: "2520", kpl: true, nom: "47*195", langd: "2,7", fakturatext: "45x195 Gran C24 Kortlängd", rawara: "3 200", prodkost: "290", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", sumSEK: "3 790", nettoSEK: "3 790", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "25,72", prism3: "3 830", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 905", balans: "-75", balPct: "-2", nettom3: "3 790" },
-  { id: "4840954", artNr: "34095032108100", grupp: "2620", kpl: true, nom: "34*95", langd: "4,2", fakturatext: "34x95 Gran Trall Slät", rawara: "2 950", prodkost: "544", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 552", nettoSEK: "3 552", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "10,52", prism3: "3 592", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 692", balans: "-100", balPct: "-3", nettom3: "3 552" },
-  { id: "4840955", artNr: "28120032108100", grupp: "2620", kpl: true, nom: "28*120", langd: "4,8", fakturatext: "28x120 Gran Trall Räfflad", rawara: "2 950", prodkost: "512", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 520", nettoSEK: "3 520", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "8,54", prism3: "3 560", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 660", balans: "-100", balPct: "-3", nettom3: "3 520" },
-  { id: "4840956", artNr: "45220032108100", grupp: "2125", kpl: true, nom: "47*220", langd: "6,3", fakturatext: "45x220 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "251", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 251", nettoSEK: "3 251", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "31,88", prism3: "3 291", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 366", balans: "-75", balPct: "-2", nettom3: "3 251" },
-  { id: "4840957", artNr: "19100032108100", grupp: "2410", kpl: false, nom: "19*100", langd: "3,6", fakturatext: "19x100 Furu Panel Fasspont", rawara: "2 650", prodkost: "639", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", sumSEK: "3 289", nettoSEK: "3 289", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "6,72", prism3: "3 329", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 429", balans: "-100", balPct: "-3", nettom3: "3 289" },
-  { id: "4840958", artNr: "45145032100000", grupp: "2330", kpl: true, nom: "47*145", langd: "2,4", fakturatext: "45x145 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "300", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", sumSEK: "3 600", nettoSEK: "3 600", niva: "0,0", paslPct: "0,0", paslag: "0", prisPm: "18,62", prism3: "3 640", vinst: "0", vinstPct: "0,0", volym: "0", fPris: "3 715", balans: "-75", balPct: "-2", nettom3: "3 600" },
+  { id: "4840940", artNr: "28045032100000", grupp: "2100", kpl: true, nom: "32*50", langd: "4,2", fakturatext: "28x45 Gran Dim G4-3 Lp", rawara: "2 300", prodkost: "819", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 119", paslPct: "0,0", paslag: "0", prisPm: "5,05", prism3: "3 159", vinst: "0", vinstPct: "0,0", fPris: "3 409", balans: "-250", balPct: "-7", nettom3: "3 119" },
+  { id: "4840941", artNr: "45045032100000", grupp: "2125", kpl: true, nom: "47*50", langd: "2,4", fakturatext: "45x45 Gran Vilmaregel G4-2 Kortlängd", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 811", paslPct: "0,0", paslag: "0", prisPm: "9,05", prism3: "3 851", vinst: "-45", vinstPct: "-1,2", fPris: "3 926", balans: "-75", balPct: "-2", nettom3: "3 811" },
+  { id: "4840942", artNr: "45045032108100", grupp: "2125", kpl: true, nom: "47*50", langd: "4,8", fakturatext: "45x45 Gran Vilmaregel G4-2 Lp", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 511", paslPct: "0,0", paslag: "0", prisPm: "8,34", prism3: "3 551", vinst: "0", vinstPct: "0,0", fPris: "3 626", balans: "-75", balPct: "-2", nettom3: "3 511" },
+  { id: "4840943", artNr: "45070032108100", grupp: "2125", kpl: true, nom: "47*75", langd: "5,4", fakturatext: "45x70 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 465", paslPct: "0,0", paslag: "0", prisPm: "12,36", prism3: "3 505", vinst: "0", vinstPct: "0,0", fPris: "3 580", balans: "-75", balPct: "-2", nettom3: "3 465" },
+  { id: "4840944", artNr: "45070032100000", grupp: "2125", kpl: true, nom: "47*75", langd: "2,7", fakturatext: "45x70 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 765", paslPct: "0,0", paslag: "0", prisPm: "13,41", prism3: "3 805", vinst: "-120", vinstPct: "-3,1", fPris: "3 880", balans: "-75", balPct: "-2", nettom3: "3 765" },
+  { id: "4840945", artNr: "45095032100000", grupp: "2125", kpl: true, nom: "47*100", langd: "3,0", fakturatext: "45x95 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "322", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 622", paslPct: "0,0", paslag: "0", prisPm: "17,21", prism3: "3 662", vinst: "0", vinstPct: "0,0", fPris: "3 737", balans: "-75", balPct: "-2", nettom3: "3 622" },
+  { id: "4840946", artNr: "36098032108100", grupp: "2330", kpl: true, nom: "38*100", langd: "4,5", fakturatext: "36x98 Gran C24 Lp", rawara: "3 000", prodkost: "476", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 476", paslPct: "0,0", paslag: "0", prisPm: "13,36", prism3: "3 516", vinst: "0", vinstPct: "0,0", fPris: "3 591", balans: "-75", balPct: "-2", nettom3: "3 476" },
+  { id: "4840947", artNr: "45145032108100", grupp: "2330", kpl: true, nom: "47*145", langd: "5,1", fakturatext: "45x145 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "298", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 298", paslPct: "0,0", paslag: "0", prisPm: "20,15", prism3: "3 338", vinst: "0", vinstPct: "0,0", fPris: "3 413", balans: "-75", balPct: "-2", nettom3: "3 298" },
+  { id: "4840948", artNr: "45195032108100", grupp: "2330", kpl: true, nom: "47*195", langd: "6,0", fakturatext: "45x195 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "279", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 279", paslPct: "0,0", paslag: "0", prisPm: "27,08", prism3: "3 319", vinst: "0", vinstPct: "0,0", fPris: "3 394", balans: "-75", balPct: "-2", nettom3: "3 279" },
+  { id: "4840949", artNr: "22095032108100", grupp: "2410", kpl: false, nom: "22*95", langd: "3,6", fakturatext: "22x95 Furu Panel Lock", rawara: "2 700", prodkost: "612", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 312", paslPct: "0,0", paslag: "0", prisPm: "6,28", prism3: "3 352", vinst: "-8", vinstPct: "-0,2", fPris: "3 452", balans: "-100", balPct: "-3", nettom3: "3 312" },
+  { id: "4840950", artNr: "22120032108100", grupp: "2410", kpl: false, nom: "22*120", langd: "3,9", fakturatext: "22x120 Furu Panel Lock", rawara: "2 700", prodkost: "588", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 288", paslPct: "0,0", paslag: "0", prisPm: "7,94", prism3: "3 328", vinst: "0", vinstPct: "0,0", fPris: "3 428", balans: "-100", balPct: "-3", nettom3: "3 288" },
+  { id: "4840951", artNr: "28070032108100", grupp: "2410", kpl: false, nom: "28*70", langd: "3,3", fakturatext: "28x70 Furu Ribb Målad", rawara: "2 850", prodkost: "701", impregn: "45", malning: "112,50", pakettyp: "0", korrKost: "0", nettoSEK: "3 708", paslPct: "0,0", paslag: "0", prisPm: "11,90", prism3: "3 748", vinst: "0", vinstPct: "0,0", fPris: "3 848", balans: "-140", balPct: "-4", nettom3: "3 708" },
+  { id: "4840952", artNr: "45145032300000", grupp: "2520", kpl: true, nom: "47*145", langd: "2,4", fakturatext: "45x145 Gran C24 Kortlängd", rawara: "3 200", prodkost: "315", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 815", paslPct: "0,0", paslag: "0", prisPm: "19,05", prism3: "3 855", vinst: "0", vinstPct: "0,0", fPris: "3 930", balans: "-75", balPct: "-2", nettom3: "3 815" },
+  { id: "4840953", artNr: "45195032300000", grupp: "2520", kpl: true, nom: "47*195", langd: "2,7", fakturatext: "45x195 Gran C24 Kortlängd", rawara: "3 200", prodkost: "290", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 790", paslPct: "0,0", paslag: "0", prisPm: "25,72", prism3: "3 830", vinst: "0", vinstPct: "0,0", fPris: "3 905", balans: "-75", balPct: "-2", nettom3: "3 790" },
+  { id: "4840954", artNr: "34095032108100", grupp: "2620", kpl: true, nom: "34*95", langd: "4,2", fakturatext: "34x95 Gran Trall Slät", rawara: "2 950", prodkost: "544", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 552", paslPct: "0,0", paslag: "0", prisPm: "10,52", prism3: "3 592", vinst: "0", vinstPct: "0,0", fPris: "3 692", balans: "-100", balPct: "-3", nettom3: "3 552" },
+  { id: "4840955", artNr: "28120032108100", grupp: "2620", kpl: true, nom: "28*120", langd: "4,8", fakturatext: "28x120 Gran Trall Räfflad", rawara: "2 950", prodkost: "512", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 520", paslPct: "0,0", paslag: "0", prisPm: "8,54", prism3: "3 560", vinst: "0", vinstPct: "0,0", fPris: "3 660", balans: "-100", balPct: "-3", nettom3: "3 520" },
+  { id: "4840956", artNr: "45220032108100", grupp: "2125", kpl: true, nom: "47*220", langd: "6,3", fakturatext: "45x220 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "251", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 251", paslPct: "0,0", paslag: "0", prisPm: "31,88", prism3: "3 291", vinst: "0", vinstPct: "0,0", fPris: "3 366", balans: "-75", balPct: "-2", nettom3: "3 251" },
+  { id: "4840957", artNr: "19100032108100", grupp: "2410", kpl: false, nom: "19*100", langd: "3,6", fakturatext: "19x100 Furu Panel Fasspont", rawara: "2 650", prodkost: "639", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 289", paslPct: "0,0", paslag: "0", prisPm: "6,72", prism3: "3 329", vinst: "0", vinstPct: "0,0", fPris: "3 429", balans: "-100", balPct: "-3", nettom3: "3 289" },
+  { id: "4840958", artNr: "45145032100000", grupp: "2330", kpl: true, nom: "47*145", langd: "2,4", fakturatext: "45x145 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "300", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 600", paslPct: "0,0", paslag: "0", prisPm: "18,62", prism3: "3 640", vinst: "0", vinstPct: "0,0", fPris: "3 715", balans: "-75", balPct: "-2", nettom3: "3 600" },
+  { id: "4840959", artNr: "28045032100000", grupp: "2100", kpl: true, nom: "32*50", langd: "3,6", fakturatext: "28x45 Gran Dim G4-3 Lp", rawara: "2 300", prodkost: "819", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 119", paslPct: "0,0", paslag: "0", prisPm: "5,05", prism3: "3 159", vinst: "0", vinstPct: "0,0", fPris: "3 409", balans: "-250", balPct: "-7", nettom3: "3 119" },
+  { id: "4840960", artNr: "28045032100000", grupp: "2100", kpl: true, nom: "32*50", langd: "4,5", fakturatext: "28x45 Gran Dim G4-3 Lp", rawara: "2 300", prodkost: "819", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 119", paslPct: "0,0", paslag: "0", prisPm: "5,05", prism3: "3 159", vinst: "0", vinstPct: "0,0", fPris: "3 409", balans: "-250", balPct: "-7", nettom3: "3 119" },
+  { id: "4840961", artNr: "28045032100000", grupp: "2100", kpl: true, nom: "32*50", langd: "4,8", fakturatext: "28x45 Gran Dim G4-3 Lp", rawara: "2 300", prodkost: "819", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 119", paslPct: "0,0", paslag: "0", prisPm: "5,05", prism3: "3 159", vinst: "0", vinstPct: "0,0", fPris: "3 409", balans: "-250", balPct: "-7", nettom3: "3 119" },
+  { id: "4840962", artNr: "28045032100000", grupp: "2100", kpl: true, nom: "32*50", langd: "5,1", fakturatext: "28x45 Gran Dim G4-3 Lp", rawara: "2 300", prodkost: "819", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 119", paslPct: "0,0", paslag: "0", prisPm: "5,05", prism3: "3 159", vinst: "0", vinstPct: "0,0", fPris: "3 409", balans: "-250", balPct: "-7", nettom3: "3 119" },
+  { id: "4840963", artNr: "28045032100000", grupp: "2100", kpl: true, nom: "32*50", langd: "5,4", fakturatext: "28x45 Gran Dim G4-3 Lp", rawara: "2 300", prodkost: "819", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 119", paslPct: "0,0", paslag: "0", prisPm: "5,05", prism3: "3 159", vinst: "0", vinstPct: "0,0", fPris: "3 409", balans: "-250", balPct: "-7", nettom3: "3 119" },
+  { id: "4840964", artNr: "28045032100000", grupp: "2100", kpl: true, nom: "32*50", langd: "6,0", fakturatext: "28x45 Gran Dim G4-3 Lp", rawara: "2 300", prodkost: "819", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 119", paslPct: "0,0", paslag: "0", prisPm: "5,05", prism3: "3 159", vinst: "0", vinstPct: "0,0", fPris: "3 409", balans: "-250", balPct: "-7", nettom3: "3 119" },
+  { id: "4840965", artNr: "45045032100000", grupp: "2125", kpl: true, nom: "47*50", langd: "1,8", fakturatext: "45x45 Gran Vilmaregel G4-2 Kortlängd", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 811", paslPct: "0,0", paslag: "0", prisPm: "9,05", prism3: "3 851", vinst: "-45", vinstPct: "-1,2", fPris: "3 926", balans: "-75", balPct: "-2", nettom3: "3 811" },
+  { id: "4840966", artNr: "45045032100000", grupp: "2125", kpl: true, nom: "47*50", langd: "2,1", fakturatext: "45x45 Gran Vilmaregel G4-2 Kortlängd", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 811", paslPct: "0,0", paslag: "0", prisPm: "9,05", prism3: "3 851", vinst: "-45", vinstPct: "-1,2", fPris: "3 926", balans: "-75", balPct: "-2", nettom3: "3 811" },
+  { id: "4840967", artNr: "45045032100000", grupp: "2125", kpl: true, nom: "47*50", langd: "2,7", fakturatext: "45x45 Gran Vilmaregel G4-2 Kortlängd", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 811", paslPct: "0,0", paslag: "0", prisPm: "9,05", prism3: "3 851", vinst: "-45", vinstPct: "-1,2", fPris: "3 926", balans: "-75", balPct: "-2", nettom3: "3 811" },
+  { id: "4840968", artNr: "45045032100000", grupp: "2125", kpl: true, nom: "47*50", langd: "3,0", fakturatext: "45x45 Gran Vilmaregel G4-2 Kortlängd", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 811", paslPct: "0,0", paslag: "0", prisPm: "9,05", prism3: "3 851", vinst: "-45", vinstPct: "-1,2", fPris: "3 926", balans: "-75", balPct: "-2", nettom3: "3 811" },
+  { id: "4840969", artNr: "45045032108100", grupp: "2125", kpl: true, nom: "47*50", langd: "3,6", fakturatext: "45x45 Gran Vilmaregel G4-2 Lp", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 511", paslPct: "0,0", paslag: "0", prisPm: "8,34", prism3: "3 551", vinst: "0", vinstPct: "0,0", fPris: "3 626", balans: "-75", balPct: "-2", nettom3: "3 511" },
+  { id: "4840970", artNr: "45045032108100", grupp: "2125", kpl: true, nom: "47*50", langd: "4,2", fakturatext: "45x45 Gran Vilmaregel G4-2 Lp", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 511", paslPct: "0,0", paslag: "0", prisPm: "8,34", prism3: "3 551", vinst: "0", vinstPct: "0,0", fPris: "3 626", balans: "-75", balPct: "-2", nettom3: "3 511" },
+  { id: "4840971", artNr: "45045032108100", grupp: "2125", kpl: true, nom: "47*50", langd: "4,5", fakturatext: "45x45 Gran Vilmaregel G4-2 Lp", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 511", paslPct: "0,0", paslag: "0", prisPm: "8,34", prism3: "3 551", vinst: "0", vinstPct: "0,0", fPris: "3 626", balans: "-75", balPct: "-2", nettom3: "3 511" },
+  { id: "4840972", artNr: "45045032108100", grupp: "2125", kpl: true, nom: "47*50", langd: "5,1", fakturatext: "45x45 Gran Vilmaregel G4-2 Lp", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 511", paslPct: "0,0", paslag: "0", prisPm: "8,34", prism3: "3 551", vinst: "0", vinstPct: "0,0", fPris: "3 626", balans: "-75", balPct: "-2", nettom3: "3 511" },
+  { id: "4840973", artNr: "45045032108100", grupp: "2125", kpl: true, nom: "47*50", langd: "5,4", fakturatext: "45x45 Gran Vilmaregel G4-2 Lp", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 511", paslPct: "0,0", paslag: "0", prisPm: "8,34", prism3: "3 551", vinst: "0", vinstPct: "0,0", fPris: "3 626", balans: "-75", balPct: "-2", nettom3: "3 511" },
+  { id: "4840974", artNr: "45045032108100", grupp: "2125", kpl: true, nom: "47*50", langd: "6,0", fakturatext: "45x45 Gran Vilmaregel G4-2 Lp", rawara: "3 000", prodkost: "511", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 511", paslPct: "0,0", paslag: "0", prisPm: "8,34", prism3: "3 551", vinst: "0", vinstPct: "0,0", fPris: "3 626", balans: "-75", balPct: "-2", nettom3: "3 511" },
+  { id: "4840975", artNr: "45070032108100", grupp: "2125", kpl: true, nom: "47*75", langd: "3,6", fakturatext: "45x70 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 465", paslPct: "0,0", paslag: "0", prisPm: "12,36", prism3: "3 505", vinst: "0", vinstPct: "0,0", fPris: "3 580", balans: "-75", balPct: "-2", nettom3: "3 465" },
+  { id: "4840976", artNr: "45070032108100", grupp: "2125", kpl: true, nom: "47*75", langd: "4,2", fakturatext: "45x70 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 465", paslPct: "0,0", paslag: "0", prisPm: "12,36", prism3: "3 505", vinst: "0", vinstPct: "0,0", fPris: "3 580", balans: "-75", balPct: "-2", nettom3: "3 465" },
+  { id: "4840977", artNr: "45070032108100", grupp: "2125", kpl: true, nom: "47*75", langd: "4,5", fakturatext: "45x70 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 465", paslPct: "0,0", paslag: "0", prisPm: "12,36", prism3: "3 505", vinst: "0", vinstPct: "0,0", fPris: "3 580", balans: "-75", balPct: "-2", nettom3: "3 465" },
+  { id: "4840978", artNr: "45070032108100", grupp: "2125", kpl: true, nom: "47*75", langd: "4,8", fakturatext: "45x70 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 465", paslPct: "0,0", paslag: "0", prisPm: "12,36", prism3: "3 505", vinst: "0", vinstPct: "0,0", fPris: "3 580", balans: "-75", balPct: "-2", nettom3: "3 465" },
+  { id: "4840979", artNr: "45070032108100", grupp: "2125", kpl: true, nom: "47*75", langd: "5,1", fakturatext: "45x70 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 465", paslPct: "0,0", paslag: "0", prisPm: "12,36", prism3: "3 505", vinst: "0", vinstPct: "0,0", fPris: "3 580", balans: "-75", balPct: "-2", nettom3: "3 465" },
+  { id: "4840980", artNr: "45070032108100", grupp: "2125", kpl: true, nom: "47*75", langd: "6,0", fakturatext: "45x70 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 465", paslPct: "0,0", paslag: "0", prisPm: "12,36", prism3: "3 505", vinst: "0", vinstPct: "0,0", fPris: "3 580", balans: "-75", balPct: "-2", nettom3: "3 465" },
+  { id: "4840981", artNr: "45070032100000", grupp: "2125", kpl: true, nom: "47*75", langd: "1,8", fakturatext: "45x70 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 765", paslPct: "0,0", paslag: "0", prisPm: "13,41", prism3: "3 805", vinst: "-120", vinstPct: "-3,1", fPris: "3 880", balans: "-75", balPct: "-2", nettom3: "3 765" },
+  { id: "4840982", artNr: "45070032100000", grupp: "2125", kpl: true, nom: "47*75", langd: "2,1", fakturatext: "45x70 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 765", paslPct: "0,0", paslag: "0", prisPm: "13,41", prism3: "3 805", vinst: "-120", vinstPct: "-3,1", fPris: "3 880", balans: "-75", balPct: "-2", nettom3: "3 765" },
+  { id: "4840983", artNr: "45070032100000", grupp: "2125", kpl: true, nom: "47*75", langd: "2,4", fakturatext: "45x70 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 765", paslPct: "0,0", paslag: "0", prisPm: "13,41", prism3: "3 805", vinst: "-120", vinstPct: "-3,1", fPris: "3 880", balans: "-75", balPct: "-2", nettom3: "3 765" },
+  { id: "4840984", artNr: "45070032100000", grupp: "2125", kpl: true, nom: "47*75", langd: "3,0", fakturatext: "45x70 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "465", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 765", paslPct: "0,0", paslag: "0", prisPm: "13,41", prism3: "3 805", vinst: "-120", vinstPct: "-3,1", fPris: "3 880", balans: "-75", balPct: "-2", nettom3: "3 765" },
+  { id: "4840985", artNr: "45095032100000", grupp: "2125", kpl: true, nom: "47*100", langd: "1,8", fakturatext: "45x95 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "322", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 622", paslPct: "0,0", paslag: "0", prisPm: "17,21", prism3: "3 662", vinst: "0", vinstPct: "0,0", fPris: "3 737", balans: "-75", balPct: "-2", nettom3: "3 622" },
+  { id: "4840986", artNr: "45095032100000", grupp: "2125", kpl: true, nom: "47*100", langd: "2,1", fakturatext: "45x95 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "322", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 622", paslPct: "0,0", paslag: "0", prisPm: "17,21", prism3: "3 662", vinst: "0", vinstPct: "0,0", fPris: "3 737", balans: "-75", balPct: "-2", nettom3: "3 622" },
+  { id: "4840987", artNr: "45095032100000", grupp: "2125", kpl: true, nom: "47*100", langd: "2,4", fakturatext: "45x95 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "322", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 622", paslPct: "0,0", paslag: "0", prisPm: "17,21", prism3: "3 662", vinst: "0", vinstPct: "0,0", fPris: "3 737", balans: "-75", balPct: "-2", nettom3: "3 622" },
+  { id: "4840988", artNr: "45095032100000", grupp: "2125", kpl: true, nom: "47*100", langd: "2,7", fakturatext: "45x95 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "322", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 622", paslPct: "0,0", paslag: "0", prisPm: "17,21", prism3: "3 662", vinst: "0", vinstPct: "0,0", fPris: "3 737", balans: "-75", balPct: "-2", nettom3: "3 622" },
+  { id: "4840989", artNr: "36098032108100", grupp: "2330", kpl: true, nom: "38*100", langd: "3,6", fakturatext: "36x98 Gran C24 Lp", rawara: "3 000", prodkost: "476", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 476", paslPct: "0,0", paslag: "0", prisPm: "13,36", prism3: "3 516", vinst: "0", vinstPct: "0,0", fPris: "3 591", balans: "-75", balPct: "-2", nettom3: "3 476" },
+  { id: "4840990", artNr: "36098032108100", grupp: "2330", kpl: true, nom: "38*100", langd: "4,2", fakturatext: "36x98 Gran C24 Lp", rawara: "3 000", prodkost: "476", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 476", paslPct: "0,0", paslag: "0", prisPm: "13,36", prism3: "3 516", vinst: "0", vinstPct: "0,0", fPris: "3 591", balans: "-75", balPct: "-2", nettom3: "3 476" },
+  { id: "4840991", artNr: "36098032108100", grupp: "2330", kpl: true, nom: "38*100", langd: "4,8", fakturatext: "36x98 Gran C24 Lp", rawara: "3 000", prodkost: "476", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 476", paslPct: "0,0", paslag: "0", prisPm: "13,36", prism3: "3 516", vinst: "0", vinstPct: "0,0", fPris: "3 591", balans: "-75", balPct: "-2", nettom3: "3 476" },
+  { id: "4840992", artNr: "36098032108100", grupp: "2330", kpl: true, nom: "38*100", langd: "5,1", fakturatext: "36x98 Gran C24 Lp", rawara: "3 000", prodkost: "476", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 476", paslPct: "0,0", paslag: "0", prisPm: "13,36", prism3: "3 516", vinst: "0", vinstPct: "0,0", fPris: "3 591", balans: "-75", balPct: "-2", nettom3: "3 476" },
+  { id: "4840993", artNr: "36098032108100", grupp: "2330", kpl: true, nom: "38*100", langd: "5,4", fakturatext: "36x98 Gran C24 Lp", rawara: "3 000", prodkost: "476", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 476", paslPct: "0,0", paslag: "0", prisPm: "13,36", prism3: "3 516", vinst: "0", vinstPct: "0,0", fPris: "3 591", balans: "-75", balPct: "-2", nettom3: "3 476" },
+  { id: "4840994", artNr: "36098032108100", grupp: "2330", kpl: true, nom: "38*100", langd: "6,0", fakturatext: "36x98 Gran C24 Lp", rawara: "3 000", prodkost: "476", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 476", paslPct: "0,0", paslag: "0", prisPm: "13,36", prism3: "3 516", vinst: "0", vinstPct: "0,0", fPris: "3 591", balans: "-75", balPct: "-2", nettom3: "3 476" },
+  { id: "4840995", artNr: "45145032108100", grupp: "2330", kpl: true, nom: "47*145", langd: "3,6", fakturatext: "45x145 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "298", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 298", paslPct: "0,0", paslag: "0", prisPm: "20,15", prism3: "3 338", vinst: "0", vinstPct: "0,0", fPris: "3 413", balans: "-75", balPct: "-2", nettom3: "3 298" },
+  { id: "4840996", artNr: "45145032108100", grupp: "2330", kpl: true, nom: "47*145", langd: "4,2", fakturatext: "45x145 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "298", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 298", paslPct: "0,0", paslag: "0", prisPm: "20,15", prism3: "3 338", vinst: "0", vinstPct: "0,0", fPris: "3 413", balans: "-75", balPct: "-2", nettom3: "3 298" },
+  { id: "4840997", artNr: "45145032108100", grupp: "2330", kpl: true, nom: "47*145", langd: "4,5", fakturatext: "45x145 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "298", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 298", paslPct: "0,0", paslag: "0", prisPm: "20,15", prism3: "3 338", vinst: "0", vinstPct: "0,0", fPris: "3 413", balans: "-75", balPct: "-2", nettom3: "3 298" },
+  { id: "4840998", artNr: "45145032108100", grupp: "2330", kpl: true, nom: "47*145", langd: "4,8", fakturatext: "45x145 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "298", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 298", paslPct: "0,0", paslag: "0", prisPm: "20,15", prism3: "3 338", vinst: "0", vinstPct: "0,0", fPris: "3 413", balans: "-75", balPct: "-2", nettom3: "3 298" },
+  { id: "4840999", artNr: "45145032108100", grupp: "2330", kpl: true, nom: "47*145", langd: "5,4", fakturatext: "45x145 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "298", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 298", paslPct: "0,0", paslag: "0", prisPm: "20,15", prism3: "3 338", vinst: "0", vinstPct: "0,0", fPris: "3 413", balans: "-75", balPct: "-2", nettom3: "3 298" },
+  { id: "4841000", artNr: "45145032108100", grupp: "2330", kpl: true, nom: "47*145", langd: "6,0", fakturatext: "45x145 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "298", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 298", paslPct: "0,0", paslag: "0", prisPm: "20,15", prism3: "3 338", vinst: "0", vinstPct: "0,0", fPris: "3 413", balans: "-75", balPct: "-2", nettom3: "3 298" },
+  { id: "4841001", artNr: "45195032108100", grupp: "2330", kpl: true, nom: "47*195", langd: "3,6", fakturatext: "45x195 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "279", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 279", paslPct: "0,0", paslag: "0", prisPm: "27,08", prism3: "3 319", vinst: "0", vinstPct: "0,0", fPris: "3 394", balans: "-75", balPct: "-2", nettom3: "3 279" },
+  { id: "4841002", artNr: "45195032108100", grupp: "2330", kpl: true, nom: "47*195", langd: "4,2", fakturatext: "45x195 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "279", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 279", paslPct: "0,0", paslag: "0", prisPm: "27,08", prism3: "3 319", vinst: "0", vinstPct: "0,0", fPris: "3 394", balans: "-75", balPct: "-2", nettom3: "3 279" },
+  { id: "4841003", artNr: "45195032108100", grupp: "2330", kpl: true, nom: "47*195", langd: "4,5", fakturatext: "45x195 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "279", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 279", paslPct: "0,0", paslag: "0", prisPm: "27,08", prism3: "3 319", vinst: "0", vinstPct: "0,0", fPris: "3 394", balans: "-75", balPct: "-2", nettom3: "3 279" },
+  { id: "4841004", artNr: "45195032108100", grupp: "2330", kpl: true, nom: "47*195", langd: "4,8", fakturatext: "45x195 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "279", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 279", paslPct: "0,0", paslag: "0", prisPm: "27,08", prism3: "3 319", vinst: "0", vinstPct: "0,0", fPris: "3 394", balans: "-75", balPct: "-2", nettom3: "3 279" },
+  { id: "4841005", artNr: "45195032108100", grupp: "2330", kpl: true, nom: "47*195", langd: "5,1", fakturatext: "45x195 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "279", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 279", paslPct: "0,0", paslag: "0", prisPm: "27,08", prism3: "3 319", vinst: "0", vinstPct: "0,0", fPris: "3 394", balans: "-75", balPct: "-2", nettom3: "3 279" },
+  { id: "4841006", artNr: "45195032108100", grupp: "2330", kpl: true, nom: "47*195", langd: "5,4", fakturatext: "45x195 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "279", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 279", paslPct: "0,0", paslag: "0", prisPm: "27,08", prism3: "3 319", vinst: "0", vinstPct: "0,0", fPris: "3 394", balans: "-75", balPct: "-2", nettom3: "3 279" },
+  { id: "4841007", artNr: "22095032108100", grupp: "2410", kpl: false, nom: "22*95", langd: "3,0", fakturatext: "22x95 Furu Panel Lock", rawara: "2 700", prodkost: "612", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 312", paslPct: "0,0", paslag: "0", prisPm: "6,28", prism3: "3 352", vinst: "-8", vinstPct: "-0,2", fPris: "3 452", balans: "-100", balPct: "-3", nettom3: "3 312" },
+  { id: "4841008", artNr: "22095032108100", grupp: "2410", kpl: false, nom: "22*95", langd: "3,9", fakturatext: "22x95 Furu Panel Lock", rawara: "2 700", prodkost: "612", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 312", paslPct: "0,0", paslag: "0", prisPm: "6,28", prism3: "3 352", vinst: "-8", vinstPct: "-0,2", fPris: "3 452", balans: "-100", balPct: "-3", nettom3: "3 312" },
+  { id: "4841009", artNr: "22095032108100", grupp: "2410", kpl: false, nom: "22*95", langd: "4,2", fakturatext: "22x95 Furu Panel Lock", rawara: "2 700", prodkost: "612", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 312", paslPct: "0,0", paslag: "0", prisPm: "6,28", prism3: "3 352", vinst: "-8", vinstPct: "-0,2", fPris: "3 452", balans: "-100", balPct: "-3", nettom3: "3 312" },
+  { id: "4841010", artNr: "22095032108100", grupp: "2410", kpl: false, nom: "22*95", langd: "4,5", fakturatext: "22x95 Furu Panel Lock", rawara: "2 700", prodkost: "612", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 312", paslPct: "0,0", paslag: "0", prisPm: "6,28", prism3: "3 352", vinst: "-8", vinstPct: "-0,2", fPris: "3 452", balans: "-100", balPct: "-3", nettom3: "3 312" },
+  { id: "4841011", artNr: "22095032108100", grupp: "2410", kpl: false, nom: "22*95", langd: "4,8", fakturatext: "22x95 Furu Panel Lock", rawara: "2 700", prodkost: "612", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 312", paslPct: "0,0", paslag: "0", prisPm: "6,28", prism3: "3 352", vinst: "-8", vinstPct: "-0,2", fPris: "3 452", balans: "-100", balPct: "-3", nettom3: "3 312" },
+  { id: "4841012", artNr: "22095032108100", grupp: "2410", kpl: false, nom: "22*95", langd: "5,4", fakturatext: "22x95 Furu Panel Lock", rawara: "2 700", prodkost: "612", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 312", paslPct: "0,0", paslag: "0", prisPm: "6,28", prism3: "3 352", vinst: "-8", vinstPct: "-0,2", fPris: "3 452", balans: "-100", balPct: "-3", nettom3: "3 312" },
+  { id: "4841013", artNr: "22120032108100", grupp: "2410", kpl: false, nom: "22*120", langd: "3,0", fakturatext: "22x120 Furu Panel Lock", rawara: "2 700", prodkost: "588", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 288", paslPct: "0,0", paslag: "0", prisPm: "7,94", prism3: "3 328", vinst: "0", vinstPct: "0,0", fPris: "3 428", balans: "-100", balPct: "-3", nettom3: "3 288" },
+  { id: "4841014", artNr: "22120032108100", grupp: "2410", kpl: false, nom: "22*120", langd: "3,6", fakturatext: "22x120 Furu Panel Lock", rawara: "2 700", prodkost: "588", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 288", paslPct: "0,0", paslag: "0", prisPm: "7,94", prism3: "3 328", vinst: "0", vinstPct: "0,0", fPris: "3 428", balans: "-100", balPct: "-3", nettom3: "3 288" },
+  { id: "4841015", artNr: "22120032108100", grupp: "2410", kpl: false, nom: "22*120", langd: "4,2", fakturatext: "22x120 Furu Panel Lock", rawara: "2 700", prodkost: "588", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 288", paslPct: "0,0", paslag: "0", prisPm: "7,94", prism3: "3 328", vinst: "0", vinstPct: "0,0", fPris: "3 428", balans: "-100", balPct: "-3", nettom3: "3 288" },
+  { id: "4841016", artNr: "22120032108100", grupp: "2410", kpl: false, nom: "22*120", langd: "4,5", fakturatext: "22x120 Furu Panel Lock", rawara: "2 700", prodkost: "588", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 288", paslPct: "0,0", paslag: "0", prisPm: "7,94", prism3: "3 328", vinst: "0", vinstPct: "0,0", fPris: "3 428", balans: "-100", balPct: "-3", nettom3: "3 288" },
+  { id: "4841017", artNr: "22120032108100", grupp: "2410", kpl: false, nom: "22*120", langd: "4,8", fakturatext: "22x120 Furu Panel Lock", rawara: "2 700", prodkost: "588", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 288", paslPct: "0,0", paslag: "0", prisPm: "7,94", prism3: "3 328", vinst: "0", vinstPct: "0,0", fPris: "3 428", balans: "-100", balPct: "-3", nettom3: "3 288" },
+  { id: "4841018", artNr: "22120032108100", grupp: "2410", kpl: false, nom: "22*120", langd: "5,4", fakturatext: "22x120 Furu Panel Lock", rawara: "2 700", prodkost: "588", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 288", paslPct: "0,0", paslag: "0", prisPm: "7,94", prism3: "3 328", vinst: "0", vinstPct: "0,0", fPris: "3 428", balans: "-100", balPct: "-3", nettom3: "3 288" },
+  { id: "4841019", artNr: "28070032108100", grupp: "2410", kpl: false, nom: "28*70", langd: "3,0", fakturatext: "28x70 Furu Ribb Målad", rawara: "2 850", prodkost: "701", impregn: "45", malning: "112,50", pakettyp: "0", korrKost: "0", nettoSEK: "3 708", paslPct: "0,0", paslag: "0", prisPm: "11,90", prism3: "3 748", vinst: "0", vinstPct: "0,0", fPris: "3 848", balans: "-140", balPct: "-4", nettom3: "3 708" },
+  { id: "4841020", artNr: "28070032108100", grupp: "2410", kpl: false, nom: "28*70", langd: "3,6", fakturatext: "28x70 Furu Ribb Målad", rawara: "2 850", prodkost: "701", impregn: "45", malning: "112,50", pakettyp: "0", korrKost: "0", nettoSEK: "3 708", paslPct: "0,0", paslag: "0", prisPm: "11,90", prism3: "3 748", vinst: "0", vinstPct: "0,0", fPris: "3 848", balans: "-140", balPct: "-4", nettom3: "3 708" },
+  { id: "4841021", artNr: "28070032108100", grupp: "2410", kpl: false, nom: "28*70", langd: "3,9", fakturatext: "28x70 Furu Ribb Målad", rawara: "2 850", prodkost: "701", impregn: "45", malning: "112,50", pakettyp: "0", korrKost: "0", nettoSEK: "3 708", paslPct: "0,0", paslag: "0", prisPm: "11,90", prism3: "3 748", vinst: "0", vinstPct: "0,0", fPris: "3 848", balans: "-140", balPct: "-4", nettom3: "3 708" },
+  { id: "4841022", artNr: "28070032108100", grupp: "2410", kpl: false, nom: "28*70", langd: "4,2", fakturatext: "28x70 Furu Ribb Målad", rawara: "2 850", prodkost: "701", impregn: "45", malning: "112,50", pakettyp: "0", korrKost: "0", nettoSEK: "3 708", paslPct: "0,0", paslag: "0", prisPm: "11,90", prism3: "3 748", vinst: "0", vinstPct: "0,0", fPris: "3 848", balans: "-140", balPct: "-4", nettom3: "3 708" },
+  { id: "4841023", artNr: "28070032108100", grupp: "2410", kpl: false, nom: "28*70", langd: "4,5", fakturatext: "28x70 Furu Ribb Målad", rawara: "2 850", prodkost: "701", impregn: "45", malning: "112,50", pakettyp: "0", korrKost: "0", nettoSEK: "3 708", paslPct: "0,0", paslag: "0", prisPm: "11,90", prism3: "3 748", vinst: "0", vinstPct: "0,0", fPris: "3 848", balans: "-140", balPct: "-4", nettom3: "3 708" },
+  { id: "4841024", artNr: "28070032108100", grupp: "2410", kpl: false, nom: "28*70", langd: "4,8", fakturatext: "28x70 Furu Ribb Målad", rawara: "2 850", prodkost: "701", impregn: "45", malning: "112,50", pakettyp: "0", korrKost: "0", nettoSEK: "3 708", paslPct: "0,0", paslag: "0", prisPm: "11,90", prism3: "3 748", vinst: "0", vinstPct: "0,0", fPris: "3 848", balans: "-140", balPct: "-4", nettom3: "3 708" },
+  { id: "4841025", artNr: "28070032108100", grupp: "2410", kpl: false, nom: "28*70", langd: "5,4", fakturatext: "28x70 Furu Ribb Målad", rawara: "2 850", prodkost: "701", impregn: "45", malning: "112,50", pakettyp: "0", korrKost: "0", nettoSEK: "3 708", paslPct: "0,0", paslag: "0", prisPm: "11,90", prism3: "3 748", vinst: "0", vinstPct: "0,0", fPris: "3 848", balans: "-140", balPct: "-4", nettom3: "3 708" },
+  { id: "4841026", artNr: "45145032300000", grupp: "2520", kpl: true, nom: "47*145", langd: "1,8", fakturatext: "45x145 Gran C24 Kortlängd", rawara: "3 200", prodkost: "315", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 815", paslPct: "0,0", paslag: "0", prisPm: "19,05", prism3: "3 855", vinst: "0", vinstPct: "0,0", fPris: "3 930", balans: "-75", balPct: "-2", nettom3: "3 815" },
+  { id: "4841027", artNr: "45145032300000", grupp: "2520", kpl: true, nom: "47*145", langd: "2,1", fakturatext: "45x145 Gran C24 Kortlängd", rawara: "3 200", prodkost: "315", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 815", paslPct: "0,0", paslag: "0", prisPm: "19,05", prism3: "3 855", vinst: "0", vinstPct: "0,0", fPris: "3 930", balans: "-75", balPct: "-2", nettom3: "3 815" },
+  { id: "4841028", artNr: "45145032300000", grupp: "2520", kpl: true, nom: "47*145", langd: "2,7", fakturatext: "45x145 Gran C24 Kortlängd", rawara: "3 200", prodkost: "315", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 815", paslPct: "0,0", paslag: "0", prisPm: "19,05", prism3: "3 855", vinst: "0", vinstPct: "0,0", fPris: "3 930", balans: "-75", balPct: "-2", nettom3: "3 815" },
+  { id: "4841029", artNr: "45145032300000", grupp: "2520", kpl: true, nom: "47*145", langd: "3,0", fakturatext: "45x145 Gran C24 Kortlängd", rawara: "3 200", prodkost: "315", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 815", paslPct: "0,0", paslag: "0", prisPm: "19,05", prism3: "3 855", vinst: "0", vinstPct: "0,0", fPris: "3 930", balans: "-75", balPct: "-2", nettom3: "3 815" },
+  { id: "4841030", artNr: "45195032300000", grupp: "2520", kpl: true, nom: "47*195", langd: "1,8", fakturatext: "45x195 Gran C24 Kortlängd", rawara: "3 200", prodkost: "290", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 790", paslPct: "0,0", paslag: "0", prisPm: "25,72", prism3: "3 830", vinst: "0", vinstPct: "0,0", fPris: "3 905", balans: "-75", balPct: "-2", nettom3: "3 790" },
+  { id: "4841031", artNr: "45195032300000", grupp: "2520", kpl: true, nom: "47*195", langd: "2,1", fakturatext: "45x195 Gran C24 Kortlängd", rawara: "3 200", prodkost: "290", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 790", paslPct: "0,0", paslag: "0", prisPm: "25,72", prism3: "3 830", vinst: "0", vinstPct: "0,0", fPris: "3 905", balans: "-75", balPct: "-2", nettom3: "3 790" },
+  { id: "4841032", artNr: "45195032300000", grupp: "2520", kpl: true, nom: "47*195", langd: "2,4", fakturatext: "45x195 Gran C24 Kortlängd", rawara: "3 200", prodkost: "290", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 790", paslPct: "0,0", paslag: "0", prisPm: "25,72", prism3: "3 830", vinst: "0", vinstPct: "0,0", fPris: "3 905", balans: "-75", balPct: "-2", nettom3: "3 790" },
+  { id: "4841033", artNr: "45195032300000", grupp: "2520", kpl: true, nom: "47*195", langd: "3,0", fakturatext: "45x195 Gran C24 Kortlängd", rawara: "3 200", prodkost: "290", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 790", paslPct: "0,0", paslag: "0", prisPm: "25,72", prism3: "3 830", vinst: "0", vinstPct: "0,0", fPris: "3 905", balans: "-75", balPct: "-2", nettom3: "3 790" },
+  { id: "4841034", artNr: "34095032108100", grupp: "2620", kpl: true, nom: "34*95", langd: "3,0", fakturatext: "34x95 Gran Trall Slät", rawara: "2 950", prodkost: "544", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 552", paslPct: "0,0", paslag: "0", prisPm: "10,52", prism3: "3 592", vinst: "0", vinstPct: "0,0", fPris: "3 692", balans: "-100", balPct: "-3", nettom3: "3 552" },
+  { id: "4841035", artNr: "34095032108100", grupp: "2620", kpl: true, nom: "34*95", langd: "3,6", fakturatext: "34x95 Gran Trall Slät", rawara: "2 950", prodkost: "544", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 552", paslPct: "0,0", paslag: "0", prisPm: "10,52", prism3: "3 592", vinst: "0", vinstPct: "0,0", fPris: "3 692", balans: "-100", balPct: "-3", nettom3: "3 552" },
+  { id: "4841036", artNr: "34095032108100", grupp: "2620", kpl: true, nom: "34*95", langd: "3,9", fakturatext: "34x95 Gran Trall Slät", rawara: "2 950", prodkost: "544", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 552", paslPct: "0,0", paslag: "0", prisPm: "10,52", prism3: "3 592", vinst: "0", vinstPct: "0,0", fPris: "3 692", balans: "-100", balPct: "-3", nettom3: "3 552" },
+  { id: "4841037", artNr: "34095032108100", grupp: "2620", kpl: true, nom: "34*95", langd: "4,5", fakturatext: "34x95 Gran Trall Slät", rawara: "2 950", prodkost: "544", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 552", paslPct: "0,0", paslag: "0", prisPm: "10,52", prism3: "3 592", vinst: "0", vinstPct: "0,0", fPris: "3 692", balans: "-100", balPct: "-3", nettom3: "3 552" },
+  { id: "4841038", artNr: "34095032108100", grupp: "2620", kpl: true, nom: "34*95", langd: "4,8", fakturatext: "34x95 Gran Trall Slät", rawara: "2 950", prodkost: "544", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 552", paslPct: "0,0", paslag: "0", prisPm: "10,52", prism3: "3 592", vinst: "0", vinstPct: "0,0", fPris: "3 692", balans: "-100", balPct: "-3", nettom3: "3 552" },
+  { id: "4841039", artNr: "34095032108100", grupp: "2620", kpl: true, nom: "34*95", langd: "5,4", fakturatext: "34x95 Gran Trall Slät", rawara: "2 950", prodkost: "544", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 552", paslPct: "0,0", paslag: "0", prisPm: "10,52", prism3: "3 592", vinst: "0", vinstPct: "0,0", fPris: "3 692", balans: "-100", balPct: "-3", nettom3: "3 552" },
+  { id: "4841040", artNr: "28120032108100", grupp: "2620", kpl: true, nom: "28*120", langd: "3,0", fakturatext: "28x120 Gran Trall Räfflad", rawara: "2 950", prodkost: "512", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 520", paslPct: "0,0", paslag: "0", prisPm: "8,54", prism3: "3 560", vinst: "0", vinstPct: "0,0", fPris: "3 660", balans: "-100", balPct: "-3", nettom3: "3 520" },
+  { id: "4841041", artNr: "28120032108100", grupp: "2620", kpl: true, nom: "28*120", langd: "3,6", fakturatext: "28x120 Gran Trall Räfflad", rawara: "2 950", prodkost: "512", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 520", paslPct: "0,0", paslag: "0", prisPm: "8,54", prism3: "3 560", vinst: "0", vinstPct: "0,0", fPris: "3 660", balans: "-100", balPct: "-3", nettom3: "3 520" },
+  { id: "4841042", artNr: "28120032108100", grupp: "2620", kpl: true, nom: "28*120", langd: "3,9", fakturatext: "28x120 Gran Trall Räfflad", rawara: "2 950", prodkost: "512", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 520", paslPct: "0,0", paslag: "0", prisPm: "8,54", prism3: "3 560", vinst: "0", vinstPct: "0,0", fPris: "3 660", balans: "-100", balPct: "-3", nettom3: "3 520" },
+  { id: "4841043", artNr: "28120032108100", grupp: "2620", kpl: true, nom: "28*120", langd: "4,2", fakturatext: "28x120 Gran Trall Räfflad", rawara: "2 950", prodkost: "512", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 520", paslPct: "0,0", paslag: "0", prisPm: "8,54", prism3: "3 560", vinst: "0", vinstPct: "0,0", fPris: "3 660", balans: "-100", balPct: "-3", nettom3: "3 520" },
+  { id: "4841044", artNr: "28120032108100", grupp: "2620", kpl: true, nom: "28*120", langd: "4,5", fakturatext: "28x120 Gran Trall Räfflad", rawara: "2 950", prodkost: "512", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 520", paslPct: "0,0", paslag: "0", prisPm: "8,54", prism3: "3 560", vinst: "0", vinstPct: "0,0", fPris: "3 660", balans: "-100", balPct: "-3", nettom3: "3 520" },
+  { id: "4841045", artNr: "28120032108100", grupp: "2620", kpl: true, nom: "28*120", langd: "5,4", fakturatext: "28x120 Gran Trall Räfflad", rawara: "2 950", prodkost: "512", impregn: "58", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 520", paslPct: "0,0", paslag: "0", prisPm: "8,54", prism3: "3 560", vinst: "0", vinstPct: "0,0", fPris: "3 660", balans: "-100", balPct: "-3", nettom3: "3 520" },
+  { id: "4841046", artNr: "45220032108100", grupp: "2125", kpl: true, nom: "47*220", langd: "3,6", fakturatext: "45x220 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "251", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 251", paslPct: "0,0", paslag: "0", prisPm: "31,88", prism3: "3 291", vinst: "0", vinstPct: "0,0", fPris: "3 366", balans: "-75", balPct: "-2", nettom3: "3 251" },
+  { id: "4841047", artNr: "45220032108100", grupp: "2125", kpl: true, nom: "47*220", langd: "4,2", fakturatext: "45x220 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "251", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 251", paslPct: "0,0", paslag: "0", prisPm: "31,88", prism3: "3 291", vinst: "0", vinstPct: "0,0", fPris: "3 366", balans: "-75", balPct: "-2", nettom3: "3 251" },
+  { id: "4841048", artNr: "45220032108100", grupp: "2125", kpl: true, nom: "47*220", langd: "4,5", fakturatext: "45x220 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "251", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 251", paslPct: "0,0", paslag: "0", prisPm: "31,88", prism3: "3 291", vinst: "0", vinstPct: "0,0", fPris: "3 366", balans: "-75", balPct: "-2", nettom3: "3 251" },
+  { id: "4841049", artNr: "45220032108100", grupp: "2125", kpl: true, nom: "47*220", langd: "4,8", fakturatext: "45x220 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "251", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 251", paslPct: "0,0", paslag: "0", prisPm: "31,88", prism3: "3 291", vinst: "0", vinstPct: "0,0", fPris: "3 366", balans: "-75", balPct: "-2", nettom3: "3 251" },
+  { id: "4841050", artNr: "45220032108100", grupp: "2125", kpl: true, nom: "47*220", langd: "5,1", fakturatext: "45x220 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "251", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 251", paslPct: "0,0", paslag: "0", prisPm: "31,88", prism3: "3 291", vinst: "0", vinstPct: "0,0", fPris: "3 366", balans: "-75", balPct: "-2", nettom3: "3 251" },
+  { id: "4841051", artNr: "45220032108100", grupp: "2125", kpl: true, nom: "47*220", langd: "5,4", fakturatext: "45x220 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "251", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 251", paslPct: "0,0", paslag: "0", prisPm: "31,88", prism3: "3 291", vinst: "0", vinstPct: "0,0", fPris: "3 366", balans: "-75", balPct: "-2", nettom3: "3 251" },
+  { id: "4841052", artNr: "45220032108100", grupp: "2125", kpl: true, nom: "47*220", langd: "6,0", fakturatext: "45x220 Gran Regel G4-2 Lp", rawara: "3 000", prodkost: "251", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 251", paslPct: "0,0", paslag: "0", prisPm: "31,88", prism3: "3 291", vinst: "0", vinstPct: "0,0", fPris: "3 366", balans: "-75", balPct: "-2", nettom3: "3 251" },
+  { id: "4841053", artNr: "19100032108100", grupp: "2410", kpl: false, nom: "19*100", langd: "3,0", fakturatext: "19x100 Furu Panel Fasspont", rawara: "2 650", prodkost: "639", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 289", paslPct: "0,0", paslag: "0", prisPm: "6,72", prism3: "3 329", vinst: "0", vinstPct: "0,0", fPris: "3 429", balans: "-100", balPct: "-3", nettom3: "3 289" },
+  { id: "4841054", artNr: "19100032108100", grupp: "2410", kpl: false, nom: "19*100", langd: "3,9", fakturatext: "19x100 Furu Panel Fasspont", rawara: "2 650", prodkost: "639", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 289", paslPct: "0,0", paslag: "0", prisPm: "6,72", prism3: "3 329", vinst: "0", vinstPct: "0,0", fPris: "3 429", balans: "-100", balPct: "-3", nettom3: "3 289" },
+  { id: "4841055", artNr: "19100032108100", grupp: "2410", kpl: false, nom: "19*100", langd: "4,2", fakturatext: "19x100 Furu Panel Fasspont", rawara: "2 650", prodkost: "639", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 289", paslPct: "0,0", paslag: "0", prisPm: "6,72", prism3: "3 329", vinst: "0", vinstPct: "0,0", fPris: "3 429", balans: "-100", balPct: "-3", nettom3: "3 289" },
+  { id: "4841056", artNr: "19100032108100", grupp: "2410", kpl: false, nom: "19*100", langd: "4,5", fakturatext: "19x100 Furu Panel Fasspont", rawara: "2 650", prodkost: "639", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 289", paslPct: "0,0", paslag: "0", prisPm: "6,72", prism3: "3 329", vinst: "0", vinstPct: "0,0", fPris: "3 429", balans: "-100", balPct: "-3", nettom3: "3 289" },
+  { id: "4841057", artNr: "19100032108100", grupp: "2410", kpl: false, nom: "19*100", langd: "4,8", fakturatext: "19x100 Furu Panel Fasspont", rawara: "2 650", prodkost: "639", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 289", paslPct: "0,0", paslag: "0", prisPm: "6,72", prism3: "3 329", vinst: "0", vinstPct: "0,0", fPris: "3 429", balans: "-100", balPct: "-3", nettom3: "3 289" },
+  { id: "4841058", artNr: "19100032108100", grupp: "2410", kpl: false, nom: "19*100", langd: "5,4", fakturatext: "19x100 Furu Panel Fasspont", rawara: "2 650", prodkost: "639", impregn: "0", malning: "0,00", pakettyp: "0", korrKost: "0", nettoSEK: "3 289", paslPct: "0,0", paslag: "0", prisPm: "6,72", prism3: "3 329", vinst: "0", vinstPct: "0,0", fPris: "3 429", balans: "-100", balPct: "-3", nettom3: "3 289" },
+  { id: "4841059", artNr: "45145032100000", grupp: "2330", kpl: true, nom: "47*145", langd: "1,8", fakturatext: "45x145 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "300", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 600", paslPct: "0,0", paslag: "0", prisPm: "18,62", prism3: "3 640", vinst: "0", vinstPct: "0,0", fPris: "3 715", balans: "-75", balPct: "-2", nettom3: "3 600" },
+  { id: "4841060", artNr: "45145032100000", grupp: "2330", kpl: true, nom: "47*145", langd: "2,1", fakturatext: "45x145 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "300", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 600", paslPct: "0,0", paslag: "0", prisPm: "18,62", prism3: "3 640", vinst: "0", vinstPct: "0,0", fPris: "3 715", balans: "-75", balPct: "-2", nettom3: "3 600" },
+  { id: "4841061", artNr: "45145032100000", grupp: "2330", kpl: true, nom: "47*145", langd: "2,7", fakturatext: "45x145 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "300", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 600", paslPct: "0,0", paslag: "0", prisPm: "18,62", prism3: "3 640", vinst: "0", vinstPct: "0,0", fPris: "3 715", balans: "-75", balPct: "-2", nettom3: "3 600" },
+  { id: "4841062", artNr: "45145032100000", grupp: "2330", kpl: true, nom: "47*145", langd: "3,0", fakturatext: "45x145 Gran Regel G4-2 Kortlängd", rawara: "3 000", prodkost: "300", impregn: "0", malning: "0,00", pakettyp: "300", korrKost: "0", nettoSEK: "3 600", paslPct: "0,0", paslag: "0", prisPm: "18,62", prism3: "3 640", vinst: "0", vinstPct: "0,0", fPris: "3 715", balans: "-75", balPct: "-2", nettom3: "3 600" },
 ];
 
 const parseSwedishNumber = (value: string): number => {
@@ -123,11 +225,11 @@ const formatSwedishNumber = (value: number): string =>
   value.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const formatSwedishInteger = (value: number): string =>
-  Math.round(value).toLocaleString("sv-SE", { maximumFractionDigits: 0 });
+  (Math.round(value) + 0).toLocaleString("sv-SE", { maximumFractionDigits: 0 }); // + 0 undviker "−0"
 
 // Default sort: Fakturatext first, then ascending Längd within each fakturatext (no user-facing sort controls).
 KALKYL_ROWS.sort((a, b) =>
-  a.fakturatext.localeCompare(b.fakturatext, "sv") || parseSwedishNumber(a.langd) - parseSwedishNumber(b.langd)
+  a.fakturatext.localeCompare(b.fakturatext, "sv", { numeric: true }) || parseSwedishNumber(a.langd) - parseSwedishNumber(b.langd)
 );
 
 const getUnderproduktgrupp = (row: KalkylRow): "Konstruktion" | "Panel" | "Trall" => {
@@ -145,9 +247,6 @@ const getPakettypLabel = (row: KalkylRow): string => {
 const GB = "1px solid #d6dce8";
 const COL_ORANGE = "#fff7d6";
 const COL_ORANGE_BORDER = "#e5cd8c";
-const STICKY_SHADOW = "2px 0 4px -2px rgba(0,0,0,0.15)";
-const STICKY_TH: CSSProperties = { position: "sticky", left: 0, zIndex: 2, boxShadow: STICKY_SHADOW };
-const STICKY_TD: CSSProperties = { position: "sticky", left: 0, zIndex: 1, boxShadow: STICKY_SHADOW };
 
 const thGroup = (align: CSSProperties["textAlign"], opts: { borderLeft?: boolean; isValue?: boolean } = {}): CSSProperties => ({
   textAlign: align,
@@ -162,6 +261,9 @@ const thGroup = (align: CSSProperties["textAlign"], opts: { borderLeft?: boolean
   letterSpacing: "0.2px",
   // textTransform: opts.isValue ? undefined : "uppercase",
 });
+
+// Extra luft till vänster i huvudet för redigerbara kolumner utanför redigeringsläget.
+const HEADER_VIEW_SPACER_WIDTH = 16;
 
 const thCol = (borderLeft = false, align: CSSProperties["textAlign"] = "left", clickable = false): CSSProperties => ({
   padding: "9px 12px",
@@ -188,7 +290,7 @@ const td = (borderLeft = false, align: CSSProperties["textAlign"] = "left"): CSS
   textAlign: align,
 });
 
-export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreatePriceRow }: PrislistekalkylViewProps) {
+export function PrislistekalkylView({ priceListId, onCreatePriceRow }: PrislistekalkylViewProps) {
   const [frakt, setFrakt] = useState("12,50");
   const [provision, setProvision] = useState("3,00");
   const [bonus, setBonus] = useState("1,50");
@@ -201,13 +303,12 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
   const [impregnering, setImpregnering] = useState(false);
   const [malning, setMalning] = useState(false);
   const [pakettyp, setPakettyp] = useState(false);
-  const [datumFran, setDatumFran] = useState("");
-  const [datumTill, setDatumTill] = useState("");
-  const [kund, setKund] = useState("");
   const losRad = "";
   const [filterTradslag, setFilterTradslag] = useState("");
   const [filterUnderproduktgrupp, setFilterUnderproduktgrupp] = useState<string[]>([]);
   const [filterPakettyp, setFilterPakettyp] = useState<string[]>([]);
+  const [filterLangdMin, setFilterLangdMin] = useState("");
+  const [filterLangdMax, setFilterLangdMax] = useState("");
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const filterMenuRef = useRef<HTMLDivElement>(null);
   const filterButtonRef = useRef<HTMLButtonElement>(null);
@@ -216,6 +317,9 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
     if (filterTradslag && !row.fakturatext.toLowerCase().includes(filterTradslag)) return false;
     if (filterUnderproduktgrupp.length > 0 && !filterUnderproduktgrupp.includes(getUnderproduktgrupp(row))) return false;
     if (filterPakettyp.length > 0 && !filterPakettyp.includes(getPakettypLabel(row))) return false;
+    const langd = parseSwedishNumber(row.langd);
+    if (filterLangdMin.trim() && langd < parseSwedishNumber(filterLangdMin)) return false;
+    if (filterLangdMax.trim() && langd > parseSwedishNumber(filterLangdMax)) return false;
     return true;
   };
   const filteredRows = KALKYL_ROWS.filter(rowMatchesFilters);
@@ -226,6 +330,7 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
   const [kplConfirmValue, setKplConfirmValue] = useState<boolean | null>(null);
   const [nollstallVinstConfirmOpen, setNollstallVinstConfirmOpen] = useState(false);
   const [showKostnadKolumner, setShowKostnadKolumner] = useState(false);
+  const [showGruppKplKolumner, setShowGruppKplKolumner] = useState(false);
   const [rowEdits, setRowEdits] = useState<Record<string, Partial<KalkylRow>>>({});
   const [headerEdit, setHeaderEdit] = useState<null | { el: HTMLElement; field: HeaderEditField }>(null);
 
@@ -234,18 +339,41 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
   const setRowVal = (rowId: string, field: keyof KalkylRow, value: string) =>
     setRowEdits((prev) => ({ ...prev, [rowId]: { ...prev[rowId], [field]: value } }));
 
-  // Pris/m3 = Netto SEK × (1 + Nivå%/100) × (1 + Påsl%/100) + Påslag kr
-  const computePrisM3 = (row: KalkylRow): number => {
-    const netto = parseSwedishNumber(row.nettoSEK);
-    const nivaPct = parseSwedishNumber(getRowVal(row.id, "niva", row.niva));
-    const paslPctVal = parseSwedishNumber(getRowVal(row.id, "paslPct", row.paslPct));
-    const paslagKr = parseSwedishNumber(getRowVal(row.id, "paslag", row.paslag));
-    return netto * (1 + nivaPct / 100) * (1 + paslPctVal / 100) + paslagKr;
+  // Pris/m3 = Baspris × (1 + Påsl%/100) + Påslag kr. Baspris är senast sparade Pris/m3, annars Netto SEK.
+  const computePrisM3 = (row: KalkylRow, edits: Record<string, Partial<KalkylRow>> = rowEdits): number => {
+    const base = parseSwedishNumber(edits[row.id]?.prism3 ?? row.nettoSEK);
+    const paslPctVal = parseSwedishNumber(edits[row.id]?.paslPct ?? row.paslPct);
+    const paslagKr = parseSwedishNumber(edits[row.id]?.paslag ?? row.paslag);
+    return base * (1 + paslPctVal / 100) + paslagKr;
+  };
+  // Redigerat Pris/m3: skillnaden mot priset före Påslag kr läggs i Påslag kr.
+  const [prisM3Drafts, setPrisM3Drafts] = useState<Record<string, string>>({});
+  const setPrisM3Target = (row: KalkylRow, raw: string) => {
+    setPrisM3Drafts((prev) => ({ ...prev, [row.id]: raw }));
+    if (!raw.trim()) return;
+    const prisUtanPaslagKr = computePrisM3(row) - parseSwedishNumber(getRowVal(row.id, "paslag", row.paslag));
+    setRowVal(row.id, "paslag", formatFixed(parseSwedishNumber(raw) - prisUtanPaslagKr, 0));
+  };
+  const clearPrisM3Draft = (rowId: string) =>
+    setPrisM3Drafts((prev) => {
+      const next = { ...prev };
+      delete next[rowId];
+      return next;
+    });
+
+  // Pris/pm = Pris/m3 × tvärsnittsarean (nom.dim i mm).
+  const computePrisPm = (row: KalkylRow, prisM3: number): number => {
+    const [tjocklek, bredd] = row.nom.split("*").map(parseSwedishNumber);
+    return prisM3 * (tjocklek / 1000) * (bredd / 1000);
+  };
+  // Vinst = sparad vinst + påslagets ökning av Pris/m3 sedan senaste sparning.
+  const computeVinst = (row: KalkylRow, prisM3: number, edits: Record<string, Partial<KalkylRow>> = rowEdits): number => {
+    const base = parseSwedishNumber(edits[row.id]?.prism3 ?? row.nettoSEK);
+    return parseSwedishNumber(edits[row.id]?.vinst ?? row.vinst) + (prisM3 - base);
   };
 
   const headerEditConfig: Record<HeaderEditField, { label: string; value: string; onChange: (v: string) => void; unit?: string }> = {
     korrKost: { label: "Justera Korr kostnad", value: headerDeltas.korrKost, onChange: (v) => applyHeaderDelta("korrKost", v) },
-    niva: { label: "Justera Nivå %", value: headerDeltas.niva, onChange: (v) => applyHeaderDelta("niva", v) },
     paslPct: { label: "Justera Påslag %", value: headerDeltas.paslPct, onChange: (v) => applyHeaderDelta("paslPct", v) },
     paslag: { label: "Justera Påslag kr", value: headerDeltas.paslag, onChange: (v) => applyHeaderDelta("paslag", v) },
     frakt: { label: "Frakt, netto", value: frakt, onChange: setFrakt, unit: "kr" },
@@ -291,7 +419,6 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
 
   const headerStepConfig: Record<HeaderEditField, { step: number; decimals: number }> = {
     korrKost: { step: 10, decimals: 0 },
-    niva: { step: 1, decimals: 1 },
     paslPct: { step: 1, decimals: 1 },
     paslag: { step: 10, decimals: 0 },
     frakt: { step: 0.25, decimals: 2 },
@@ -310,42 +437,47 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
   };
 
   const renderEditableHeaderCell = (field: HeaderEditField, shortLabel: string, cellStyle: CSSProperties) => (
-    <th style={cellStyle}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6 }}>
+    // Huvudet hålls så smalt som möjligt, men på en rad. width: 1 hindrar tabellen från att
+    // fördela överbliven bredd till kolumnen när fönstret är brett.
+    <th style={{ ...cellStyle, width: 1, paddingLeft: 10, paddingRight: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+        {!isEditing && <span style={{ width: HEADER_VIEW_SPACER_WIDTH, flexShrink: 0 }} />}
         <div style={{ fontSize: 12, fontWeight: 800, color: "#2f343b" }}>{shortLabel}</div>
-        {isEditing && (
-          <IconButton
-            size="small"
-            onClick={() => adjustHeaderValue(field, -1)}
-            sx={{ padding: 0, width: 16, height: 16, border: "1px solid #d5dbe4", borderRadius: "50%", color: "#4a5565", background: "#ffffff" }}
+        <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {isEditing && (
+            <IconButton
+              size="small"
+              onClick={() => adjustHeaderValue(field, -1)}
+              sx={{ padding: 0, width: 16, height: 16, border: "1px solid #d5dbe4", borderRadius: "50%", color: "#4a5565", background: "#ffffff" }}
+            >
+              <RemoveIcon sx={{ fontSize: 11 }} />
+            </IconButton>
+          )}
+          <div
+            onClick={openHeaderEdit(field)}
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: "#2f343b",
+              cursor: isEditing ? "pointer" : undefined,
+              textDecoration: isEditing ? "underline dotted" : undefined,
+              textUnderlineOffset: isEditing ? 3 : undefined,
+              minWidth: 16,
+              textAlign: "center",
+            }}
           >
-            <RemoveIcon sx={{ fontSize: 11 }} />
-          </IconButton>
-        )}
-        <div
-          onClick={openHeaderEdit(field)}
-          style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: "#2f343b",
-            cursor: isEditing ? "pointer" : undefined,
-            textDecoration: isEditing ? "underline dotted" : undefined,
-            textUnderlineOffset: isEditing ? 3 : undefined,
-            minWidth: 22,
-            textAlign: "center",
-          }}
-        >
-          {isRowHeaderField(field) ? formatHeaderDelta(field) : headerEditConfig[field].value || "0"}
+            {isRowHeaderField(field) ? formatHeaderDelta(field) : headerEditConfig[field].value || "0"}
+          </div>
+          {isEditing && (
+            <IconButton
+              size="small"
+              onClick={() => adjustHeaderValue(field, 1)}
+              sx={{ padding: 0, width: 16, height: 16, border: "1px solid #d5dbe4", borderRadius: "50%", color: "#4a5565", background: "#ffffff" }}
+            >
+              <AddIcon sx={{ fontSize: 11 }} />
+            </IconButton>
+          )}
         </div>
-        {isEditing && (
-          <IconButton
-            size="small"
-            onClick={() => adjustHeaderValue(field, 1)}
-            sx={{ padding: 0, width: 16, height: 16, border: "1px solid #d5dbe4", borderRadius: "50%", color: "#4a5565", background: "#ffffff" }}
-          >
-            <AddIcon sx={{ fontSize: 11 }} />
-          </IconButton>
-        )}
       </div>
     </th>
   );
@@ -402,20 +534,38 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
 
   const handleRedigera = () => {
     setSavedRowEdits(rowEdits);
+    setPrisM3Drafts({});
     setHeaderDeltas(EMPTY_HEADER_DELTAS);
     setIsFilterMenuOpen(false);
     setIsEditing(true);
   };
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavedToastOpen, setIsSavedToastOpen] = useState(false);
 
   // Simulerar en databassparning med en kort fördröjning.
+  // Påslagen bakas in i Pris/m3 och affärsparametrarna nollställs.
   const handleSpara = () => {
     setIsSaving(true);
     window.setTimeout(() => {
       setIsSaving(false);
+      setRowEdits((prev) => {
+        const next = { ...prev };
+        KALKYL_ROWS.forEach((row) => {
+          const prisM3 = computePrisM3(row, prev);
+          next[row.id] = {
+            ...next[row.id],
+            prism3: formatSwedishInteger(prisM3),
+            vinst: formatSwedishInteger(computeVinst(row, prisM3, prev)),
+            paslPct: formatFixed(0, headerStepConfig.paslPct.decimals),
+            paslag: formatFixed(0, headerStepConfig.paslag.decimals),
+          };
+        });
+        return next;
+      });
       setHeaderDeltas(EMPTY_HEADER_DELTAS);
       setIsEditing(false);
+      setIsSavedToastOpen(true);
     }, 1000);
   };
 
@@ -426,7 +576,7 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
   };
 
   // Markerar celler som ändrats sedan redigeringen startade.
-  type EditableRowField = RowHeaderField | "volym";
+  type EditableRowField = RowHeaderField;
   const getSavedVal = (row: KalkylRow, field: EditableRowField): string =>
     (savedRowEdits[row.id]?.[field] as string | undefined) ?? row[field];
   const isCellChanged = (row: KalkylRow, field: EditableRowField): boolean =>
@@ -439,7 +589,8 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
   const activeFilterCount =
     (filterTradslag ? 1 : 0) +
     (filterUnderproduktgrupp.length > 0 ? 1 : 0) +
-    (filterPakettyp.length > 0 ? 1 : 0);
+    (filterPakettyp.length > 0 ? 1 : 0) +
+    (filterLangdMin.trim() || filterLangdMax.trim() ? 1 : 0);
 
   useEffect(() => {
     if (!isFilterMenuOpen) return;
@@ -550,8 +701,8 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
                 onClick: () => setEditDialogOpen(true),
               },
               {
-                label: "Uppdatera",
-                icon: <MoreVertOutlinedIcon fontSize="small" />,
+                label: "Uppdatera kostnader",
+                icon: <RefreshOutlinedIcon fontSize="small" />,
                 enabled: !isEditing,
                 onClick: () => setUppdateraDialogOpen(true),
               },
@@ -657,6 +808,29 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
                         }}
                         renderInput={(params) => <TextField {...params} label="Pakettyp" />}
                       />
+
+                      <div className={styles.lagerFilterDropdownRow}>
+                        <span className={styles.lagerFilterLabel}>Längd (m)</span>
+                        <div className={styles.lagerFilterRangeGroup}>
+                          <TextField
+                            size="small"
+                            placeholder="Min"
+                            value={filterLangdMin}
+                            onChange={(e) => setFilterLangdMin(e.target.value)}
+                            className={styles.lagerFilterRangeInput}
+                            slotProps={{ htmlInput: { inputMode: "decimal" } }}
+                          />
+                          <span className={styles.lagerFilterSeparator}>–</span>
+                          <TextField
+                            size="small"
+                            placeholder="Max"
+                            value={filterLangdMax}
+                            onChange={(e) => setFilterLangdMax(e.target.value)}
+                            className={styles.lagerFilterRangeInput}
+                            slotProps={{ htmlInput: { inputMode: "decimal" } }}
+                          />
+                        </div>
+                      </div>
                       <div className={styles.lagerFilterDropdownDivider} />
                       <div className={styles.lagerFilterDropdownFooter}>
                         <Button
@@ -667,6 +841,8 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
                             setFilterTradslag("");
                             setFilterUnderproduktgrupp([]);
                             setFilterPakettyp([]);
+                            setFilterLangdMin("");
+                            setFilterLangdMax("");
                           }}
                         >
                           Rensa filter
@@ -680,46 +856,58 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
                   variant="outlined"
                   color="inherit"
                   className={`${styles.lineItemsToggleButton} ${showKostnadKolumner ? styles.columnsIconButtonActive : ""}`}
-                  startIcon={<VisibilityOutlinedIcon fontSize="small" />}
+                  startIcon={<ViewColumnOutlinedIcon fontSize="small" />}
                   onClick={() => setShowKostnadKolumner((prev) => !prev)}
                 >
-                  Kostnadskolumner
+                  Kostnader
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="inherit"
+                  className={`${styles.lineItemsToggleButton} ${showGruppKplKolumner ? styles.columnsIconButtonActive : ""}`}
+                  startIcon={<ViewColumnOutlinedIcon fontSize="small" />}
+                  onClick={() => setShowGruppKplKolumner((prev) => !prev)}
+                >
+                  Grupp / KPL
                 </Button>
               </>
             }
           />
         </div>
         <div style={{ marginTop: -10, flex: 1, minHeight: 0, overflow: "auto", border: "1px solid #dfe3ea", borderRadius: 10, background: "#ffffff" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, tableLayout: "auto" }}>
             <thead style={{ position: "sticky", top: 0, zIndex: 6 }}>
               {/* Group header row */}
               <tr>
-                <th style={{ ...thGroup("left"), ...STICKY_TH, zIndex: 3 }} />
-                <th colSpan={5} style={thGroup("left")}>Produkt</th>
-                <th colSpan={showKostnadKolumner ? 8 : 3} style={thGroup("center", { borderLeft: true })}>Kostnad tillverkning</th>
-                <th colSpan={3} style={thGroup("center", { borderLeft: true })}>Affärsparametrar</th>
-                <th colSpan={5} style={thGroup("center", { borderLeft: true })}>Aktuell prislista</th>
+                <th colSpan={showGruppKplKolumner ? 5 : 3} style={thGroup("left")}>Produkt</th>
+                <th colSpan={showKostnadKolumner ? 7 : 2} style={thGroup("center", { borderLeft: true })}>Kostnad tillverkning</th>
+                <th colSpan={2} style={thGroup("center", { borderLeft: true })}>Affärsparametrar</th>
+                <th colSpan={4} style={thGroup("center", { borderLeft: true })}>Aktuell prislista</th>
                 <th colSpan={3} style={thGroup("center", { borderLeft: true })}>Föregående prislista</th>
                 <th colSpan={1} style={thGroup("right", { borderLeft: true, isValue: true })}>3 706</th>
               </tr>
               {/* Column header row */}
               <tr>
-                <th style={{ ...thCol(), ...STICKY_TH }}>Prislisterad ID</th>
-                <th style={thCol()}>Grupp</th>
-                <th style={{ ...thCol(), background: COL_ORANGE }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    {isEditing && (
-                      <Checkbox
-                        size="small"
-                        checked={allKplChecked}
-                        indeterminate={!allKplChecked && someKplChecked}
-                        onChange={(e) => setKplConfirmValue(e.target.checked)}
-                        sx={{ padding: "0px" }}
-                      />
-                    )}
-                    KPL
-                  </div>
-                </th>
+                {showGruppKplKolumner && (
+                  <>
+                    <th style={thCol()}>Grupp</th>
+                    <th style={{ ...thCol(), background: COL_ORANGE }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        {isEditing && (
+                          <Checkbox
+                            size="small"
+                            checked={allKplChecked}
+                            indeterminate={!allKplChecked && someKplChecked}
+                            onChange={(e) => setKplConfirmValue(e.target.checked)}
+                            sx={{ padding: "0px" }}
+                          />
+                        )}
+                        KPL
+                      </div>
+                    </th>
+                  </>
+                )}
                 <th style={thCol()}>Nom.dim</th>
                 <th style={thCol()}>Längd</th>
                 <th style={{ ...thCol(), minWidth: 200 }}>Fakturatext</th>
@@ -733,16 +921,13 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
                     {renderEditableHeaderCell("korrKost", "Korr kost:", { ...thCol(false, "right"), background: COL_ORANGE })}
                   </>
                 )}
-                <th style={thCol(false, "right")}>Sum SEK</th>
                 <th style={thCol(false, "right")}>Netto SEK</th>
-                {renderEditableHeaderCell("niva", "Nivå:", { ...thCol(true, "right"), background: COL_ORANGE })}
-                {renderEditableHeaderCell("paslPct", "Påsl%:", { ...thCol(false, "right"), background: COL_ORANGE })}
+                {renderEditableHeaderCell("paslPct", "Påsl%:", { ...thCol(true, "right"), background: COL_ORANGE })}
                 {renderEditableHeaderCell("paslag", "Påslag kr:", { ...thCol(false, "right"), background: COL_ORANGE })}
                 <th style={thCol(true, "right")}>Pris/pm</th>
-                <th style={thCol(false, "right")}>Pris/m3</th>
+                <th style={{ ...thCol(false, "right"), background: COL_ORANGE }}>Pris/m3</th>
                 <th style={thCol(false, "right")}>Vinst</th>
                 <th style={thCol(false, "right")}>% vinst</th>
-                <th style={{ ...thCol(false, "right"), background: COL_ORANGE }}>Volym</th>
                 <th style={thCol(true, "right")}>Pris</th>
                 <th style={thCol(false, "right")}>Balans</th>
                 <th style={thCol(false, "right")}>Bal%</th>
@@ -752,6 +937,11 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
             <tbody>
               {filteredRows.map((row, i) => {
                 const isSelected = row.id === selectedRowId;
+                const prisM3 = computePrisM3(row);
+                const savedPrisM3 = computePrisM3(row, savedRowEdits);
+                const isPrisM3Changed = isEditing && Math.round(prisM3) !== Math.round(savedPrisM3);
+                const vinst = computeVinst(row, prisM3);
+                const vinstPct = prisM3 !== 0 ? Math.round((vinst / prisM3) * 1000) / 10 + 0 : 0;
                 return (
                   <tr
                     key={i}
@@ -760,38 +950,31 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
                     onMouseEnter={(e) => {
                       if (isSelected) return;
                       e.currentTarget.style.background = "#fdf8ee";
-                      (e.currentTarget.firstElementChild as HTMLElement).style.background = "#fdf8ee";
                     }}
                     onMouseLeave={(e) => {
                       if (isSelected) return;
                       e.currentTarget.style.background = "#ffffff";
-                      (e.currentTarget.firstElementChild as HTMLElement).style.background = "#ffffff";
                     }}
                   >
-                    <td style={{ ...td(), ...STICKY_TD, background: isSelected ? "#f5e5cc" : "#ffffff" }}>
-                      <button
-                        type="button"
-                        className={styles.contractLinkButton}
-                        onClick={(e) => { e.stopPropagation(); onOpenPriceRowDetail(row.id); }}
-                      >
-                        {row.id}
-                      </button>
-                    </td>
-                    <td style={td()}>{row.grupp}</td>
-                    <td style={{ ...td(), background: isSelected ? undefined : COL_ORANGE }}>
-                      <Checkbox
-                        size="small"
-                        checked={getKplVal(row)}
-                        onChange={
-                          isEditing
-                            ? (e) => setRowEdits((prev) => ({ ...prev, [row.id]: { ...prev[row.id], kpl: e.target.checked } }))
-                            : undefined
-                        }
-                        onClick={(e) => { if (isEditing) e.stopPropagation(); }}
-                        disabled={!isEditing}
-                        sx={{ padding: "0px" }}
-                      />
-                    </td>
+                    {showGruppKplKolumner && (
+                      <>
+                        <td style={td()}>{row.grupp}</td>
+                        <td style={{ ...td(), background: isSelected ? undefined : COL_ORANGE }}>
+                          <Checkbox
+                            size="small"
+                            checked={getKplVal(row)}
+                            onChange={
+                              isEditing
+                                ? (e) => setRowEdits((prev) => ({ ...prev, [row.id]: { ...prev[row.id], kpl: e.target.checked } }))
+                                : undefined
+                            }
+                            onClick={(e) => { if (isEditing) e.stopPropagation(); }}
+                            disabled={!isEditing}
+                            sx={{ padding: "0px" }}
+                          />
+                        </td>
+                      </>
+                    )}
                     <td style={td()}>{row.nom}</td>
                     <td style={td()}>{row.langd || "–"}</td>
                     <td style={{ ...td(), minWidth: 200 }}>{row.fakturatext}</td>
@@ -815,20 +998,8 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
                         </td>
                       </>
                     )}
-                    <td style={td(false, "right")}>{row.sumSEK}</td>
                     <td style={td(false, "right")}>{row.nettoSEK}</td>
                     <td style={{ ...td(true, "right"), background: isSelected ? undefined : COL_ORANGE, ...(isEditing ? { padding: "4px 6px" } : {}) }}>
-                      {isEditing ? (
-                        <input
-                          value={getRowVal(row.id, "niva", row.niva)}
-                          onChange={(e) => setRowVal(row.id, "niva", e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          title={changedCellProps(row, "niva").title}
-                          style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box", ...changedCellProps(row, "niva").style }}
-                        />
-                      ) : getRowVal(row.id, "niva", row.niva)}
-                    </td>
-                    <td style={{ ...td(false, "right"), background: isSelected ? undefined : COL_ORANGE, ...(isEditing ? { padding: "4px 6px" } : {}) }}>
                       {isEditing ? (
                         <input
                           value={getRowVal(row.id, "paslPct", row.paslPct)}
@@ -850,21 +1021,22 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
                         />
                       ) : getRowVal(row.id, "paslag", row.paslag)}
                     </td>
-                    <td style={td(true, "right")}>{row.prisPm}</td>
-                    <td style={td(false, "right")}>{formatSwedishInteger(computePrisM3(row))}</td>
-                    <td style={{ ...td(false, "right"), ...(parseSwedishNumber(getRowVal(row.id, "vinst", row.vinst)) < 0 ? { color: "#c0392b", fontWeight: 700 } : {}) }}>{getRowVal(row.id, "vinst", row.vinst)}</td>
-                    <td style={{ ...td(false, "right"), ...(parseSwedishNumber(getRowVal(row.id, "vinstPct", row.vinstPct)) < 0 ? { color: "#c0392b", fontWeight: 700 } : {}) }}>{getRowVal(row.id, "vinstPct", row.vinstPct)}</td>
+                    <td style={td(true, "right")}>{formatSwedishNumber(computePrisPm(row, prisM3))}</td>
                     <td style={{ ...td(false, "right"), background: isSelected ? undefined : COL_ORANGE, ...(isEditing ? { padding: "4px 6px" } : {}) }}>
                       {isEditing ? (
                         <input
-                          value={getRowVal(row.id, "volym", row.volym)}
-                          onChange={(e) => setRowVal(row.id, "volym", e.target.value)}
+                          value={prisM3Drafts[row.id] ?? formatSwedishInteger(prisM3)}
+                          onChange={(e) => setPrisM3Target(row, e.target.value)}
+                          onBlur={() => clearPrisM3Draft(row.id)}
                           onClick={(e) => e.stopPropagation()}
-                          title={changedCellProps(row, "volym").title}
-                          style={{ width: "100%", border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box", ...changedCellProps(row, "volym").style }}
+                          inputMode="decimal"
+                          title={isPrisM3Changed ? `Tidigare: ${formatSwedishInteger(savedPrisM3)}` : undefined}
+                          style={{ width: 64, border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box", ...(isPrisM3Changed ? { fontWeight: 700, color: "#002d72" } : {}) }}
                         />
-                      ) : getRowVal(row.id, "volym", row.volym)}
+                      ) : formatSwedishInteger(prisM3)}
                     </td>
+                    <td style={{ ...td(false, "right"), ...(Math.round(vinst) < 0 ? { color: "#c0392b", fontWeight: 700 } : {}) }}>{formatSwedishInteger(vinst)}</td>
+                    <td style={{ ...td(false, "right"), ...(vinstPct < 0 ? { color: "#c0392b", fontWeight: 700 } : {}) }}>{formatFixed(vinstPct, 1)}</td>
                     <td style={td(true, "right")}>{row.fPris}</td>
                     <td style={td(false, "right")}>{row.balans}</td>
                     <td style={td(false, "right")}>{row.balPct}</td>
@@ -939,7 +1111,7 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
       <Dialog open={uppdateraDialogOpen} onClose={() => setUppdateraDialogOpen(false)} maxWidth="md" fullWidth PaperProps={{ className: styles.freightDialogPaper }}>
         <DialogTitle className={styles.freightDialogTitle}>
           <div className={styles.freightDialogTitleRow}>
-            <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Uppdatera</Typography>
+            <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Uppdatera kostnader</Typography>
             <IconButton size="small" onClick={() => setUppdateraDialogOpen(false)} style={{ color: "#6a7483" }}>
               <CloseIcon fontSize="small" />
             </IconButton>
@@ -950,7 +1122,6 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
           <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 4 }}>
 
             <div>
-              <Typography className={styles.contractDataSectionTitle} style={{ marginBottom: 8 }}>Uppdatera kostnader</Typography>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(140px, 1fr))", gap: "8px" }}>
                 {([
                   ["rawara", rawara, setRawara, "Råvara"],
@@ -986,42 +1157,6 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
                     />
                   </div>
                 ))}
-              </div>
-            </div>
-
-            <div>
-              <Typography className={styles.contractDataSectionTitle} style={{ marginBottom: 8 }}>Volymberäkning</Typography>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(160px, 1fr))", gap: "10px" }}>
-                <TextField
-                  size="small"
-                  label="Datum från"
-                  type="date"
-                  value={datumFran}
-                  onChange={(e) => setDatumFran(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  fullWidth
-                />
-                <TextField
-                  size="small"
-                  label="Datum till"
-                  type="date"
-                  value={datumTill}
-                  onChange={(e) => setDatumTill(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  fullWidth
-                />
-                <TextField
-                  size="small"
-                  label="Kund"
-                  select
-                  value={kund}
-                  onChange={(e) => setKund(e.target.value)}
-                  fullWidth
-                >
-                  <MenuItem value="">Alla</MenuItem>
-                  <MenuItem value="kund1">Kund 1</MenuItem>
-                  <MenuItem value="kund2">Kund 2</MenuItem>
-                </TextField>
               </div>
             </div>
 
@@ -1080,7 +1215,7 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
 
         <DialogContent className={styles.freightDialogContent}>
           <Typography style={{ fontSize: 13, color: "#404753" }}>
-            Korr kostnad, Nivå, Påslag % och Påslag kr sätts till 0 för urvalet, och vinsten nollställs. Ska vinsten nollställas?
+            Korr kostnad, Påslag % och Påslag kr sätts till 0 för urvalet, och vinsten nollställs. Ska vinsten nollställas?
           </Typography>
         </DialogContent>
 
@@ -1099,6 +1234,17 @@ export function PrislistekalkylView({ priceListId, onOpenPriceRowDetail, onCreat
           <Button variant="outlined" size="small" onClick={() => setNollstallVinstConfirmOpen(false)} className={styles.bytPrislistaAvbrytButton}>Avbryt</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={isSavedToastOpen}
+        autoHideDuration={2200}
+        onClose={() => setIsSavedToastOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert severity="success" variant="filled" onClose={() => setIsSavedToastOpen(false)}>
+          Aktuell prislista sparad
+        </Alert>
+      </Snackbar>
     </>
   );
 }
