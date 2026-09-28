@@ -244,13 +244,16 @@ const getPakettypLabel = (row: KalkylRow): string => {
   return "Lp";
 };
 
-const GB = "1px solid #d6dce8";
+const GB = "1px solid #aab4c5";
+// Tunn kantlinje mellan alla celler; GB (ovan) markerar tydligare var en kolumnsektion börjar.
+const CELL_BORDER = "1px solid #eef1f6";
+const AKTUELL_PRISLISTA_MIN_WIDTH = 64;
 const COL_ORANGE = "#fff7d6";
 const COL_ORANGE_BORDER = "#e5cd8c";
 
 const thGroup = (align: CSSProperties["textAlign"], opts: { borderLeft?: boolean; isValue?: boolean } = {}): CSSProperties => ({
   textAlign: align,
-  padding: "5px 12px",
+  padding: "5px 8px",
   fontSize: opts.isValue ? 13 : 11,
   fontWeight: opts.isValue ? 800 : 700,
   color: opts.isValue ? "#2f3743" : "#6a7483",
@@ -266,13 +269,13 @@ const thGroup = (align: CSSProperties["textAlign"], opts: { borderLeft?: boolean
 const HEADER_VIEW_SPACER_WIDTH = 16;
 
 const thCol = (borderLeft = false, align: CSSProperties["textAlign"] = "left", clickable = false): CSSProperties => ({
-  padding: "9px 12px",
+  padding: "9px 8px",
   fontSize: 12,
   fontWeight: 800,
   color: "#2f343b",
   background: "#f9fafb",
   borderBottom: "1px solid #e8ecf2",
-  borderLeft: borderLeft ? GB : undefined,
+  borderLeft: borderLeft ? GB : CELL_BORDER,
   whiteSpace: "nowrap",
   textAlign: align,
   cursor: clickable ? "pointer" : undefined,
@@ -281,11 +284,11 @@ const thCol = (borderLeft = false, align: CSSProperties["textAlign"] = "left", c
 });
 
 const td = (borderLeft = false, align: CSSProperties["textAlign"] = "left"): CSSProperties => ({
-  padding: "4px 12px",
+  padding: "4px 8px",
   fontSize: 13,
   color: "#404753",
   borderBottom: "1px solid #eef1f6",
-  borderLeft: borderLeft ? GB : undefined,
+  borderLeft: borderLeft ? GB : CELL_BORDER,
   whiteSpace: "nowrap",
   textAlign: align,
 });
@@ -462,7 +465,7 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
               cursor: isEditing ? "pointer" : undefined,
               textDecoration: isEditing ? "underline dotted" : undefined,
               textUnderlineOffset: isEditing ? 3 : undefined,
-              minWidth: 16,
+              minWidth: 40, // Rymmer t.ex. "+10,0" och "+1 000" så att huvudet inte breddas när värdet ändras.
               textAlign: "center",
             }}
           >
@@ -876,16 +879,18 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
           />
         </div>
         <div style={{ marginTop: -10, flex: 1, minHeight: 0, overflow: "auto", border: "1px solid #dfe3ea", borderRadius: 10, background: "#ffffff" }}>
-          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, tableLayout: "auto" }}>
+          <table className={styles.prislistekalkylTable} style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0, tableLayout: "auto" }}>
             <thead style={{ position: "sticky", top: 0, zIndex: 6 }}>
               {/* Group header row */}
               <tr>
                 <th colSpan={showGruppKplKolumner ? 5 : 3} style={thGroup("left")}>Produkt</th>
-                <th colSpan={showKostnadKolumner ? 7 : 2} style={thGroup("center", { borderLeft: true })}>Kostnad tillverkning</th>
-                <th colSpan={2} style={thGroup("center", { borderLeft: true })}>Affärsparametrar</th>
-                <th colSpan={4} style={thGroup("center", { borderLeft: true })}>Aktuell prislista</th>
-                <th colSpan={3} style={thGroup("center", { borderLeft: true })}>Föregående prislista</th>
+                <th colSpan={showKostnadKolumner ? 7 : 2} style={thGroup("left", { borderLeft: true })}>Kostnad tillverkning</th>
+                <th colSpan={2} style={thGroup("left", { borderLeft: true })}>Affärsparametrar</th>
+                <th colSpan={4} style={thGroup("left", { borderLeft: true })}>Aktuell prislista</th>
+                <th colSpan={3} style={thGroup("left", { borderLeft: true })}>Föregående prislista</th>
                 <th colSpan={1} style={thGroup("right", { borderLeft: true, isValue: true })}>3 706</th>
+                {/* Utfyllnadskolumn: tar överbliven bredd så att datakolumnerna förblir kompakta. */}
+                <th style={{ ...thGroup("left", { borderLeft: true }), width: "100%", padding: 0 }} />
               </tr>
               {/* Column header row */}
               <tr>
@@ -924,14 +929,16 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
                 <th style={thCol(false, "right")}>Netto SEK</th>
                 {renderEditableHeaderCell("paslPct", "Påsl%:", { ...thCol(true, "right"), background: COL_ORANGE })}
                 {renderEditableHeaderCell("paslag", "Påslag kr:", { ...thCol(false, "right"), background: COL_ORANGE })}
-                <th style={thCol(true, "right")}>Pris/pm</th>
-                <th style={{ ...thCol(false, "right"), background: COL_ORANGE }}>Pris/m3</th>
-                <th style={thCol(false, "right")}>Vinst</th>
-                <th style={thCol(false, "right")}>% vinst</th>
+                {/* Aktuell prislista: gemensam minbredd (på inre element, min-width på tabellceller ignoreras). */}
+                <th style={thCol(true, "right")}><div style={{ minWidth: AKTUELL_PRISLISTA_MIN_WIDTH }}>Pris/pm</div></th>
+                <th style={{ ...thCol(false, "right"), background: COL_ORANGE }}><div style={{ minWidth: AKTUELL_PRISLISTA_MIN_WIDTH }}>Pris/m3</div></th>
+                <th style={thCol(false, "right")}><div style={{ minWidth: AKTUELL_PRISLISTA_MIN_WIDTH }}>Vinst</div></th>
+                <th style={thCol(false, "right")}><div style={{ minWidth: AKTUELL_PRISLISTA_MIN_WIDTH }}>% vinst</div></th>
                 <th style={thCol(true, "right")}>Pris</th>
                 <th style={thCol(false, "right")}>Balans</th>
                 <th style={thCol(false, "right")}>Bal%</th>
                 <th style={thCol(true, "right")}>Nettopris/m3</th>
+                <th style={{ ...thCol(true), padding: 0 }} />
               </tr>
             </thead>
             <tbody>
@@ -1041,6 +1048,7 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
                     <td style={td(false, "right")}>{row.balans}</td>
                     <td style={td(false, "right")}>{row.balPct}</td>
                     <td style={td(true, "right")}>{row.nettom3}</td>
+                    <td style={{ ...td(true), padding: 0 }} />
                   </tr>
                 );
               })}

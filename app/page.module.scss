@@ -3298,6 +3298,11 @@
   min-height: 32px;
 }
 
+/* Prislistekalkyl: första cellen i varje rad ligger mot containerns kant och ska inte ha egen vänsterkant */
+.prislistekalkylTable tr > :first-child {
+  border-left: none !important;
+}
+
 .prislistekalkylActionRow {
   margin-top: -6px;
 }
