@@ -106,11 +106,13 @@ const INITIAL_CONTAINER_ROWS: ContainerTableRow[] = [
 ];
 
 type ContainerViewProps = {
+  /** Kontraktets kund, visas som subtitle i huvudet. */
+  customerName?: string;
   onBack: () => void;
   onSaved: (message: string) => void;
 };
 
-export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
+export function ContainerView({ customerName, onSaved }: ContainerViewProps) {
   const [activeTab, setActiveTab] = useState<"volym" | "containrar">("volym");
   const [visaEnhet, setVisaEnhet] = useState("");
   const [containerVolym, setContainerVolym] = useState("48");
@@ -297,7 +299,7 @@ export function ContainerView({ onBack, onSaved }: ContainerViewProps) {
   return (
     <>
       {/* Header */}
-      <DetailHeader entity="contract" label="Container" title="Container" onBack={onBack} />
+      <DetailHeader entity="contract" label="Container" title="Container" subtitle={customerName} />
 
       {/* Wizard bar */}
       <div className={styles.lineItemWizardBar} style={{ top: "40px" }}>

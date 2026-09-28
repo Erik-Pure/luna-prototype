@@ -60,6 +60,7 @@ import { CustomerCreateView } from "./components/CustomerCreateView";
 import { PriceListCreateView } from "./components/PriceListCreateView";
 import { AvropsradDetailView } from "./components/contract-tabs/AvropsradDetailView";
 import { ContainerView } from "./components/contract-tabs/ContainerView";
+import { getContractDetails } from "./components/contract-tabs/contractDetails";
 import { StocknotaView, type StocknotaVersion, createSeedStocknotaVersions } from "./components/contract-tabs/StocknotaView";
 import { PrislistekalkylView } from "./components/price-list-tabs/PrislistekalkylView";
 import { SearchFiltersPanel } from "./components/shared/SearchFiltersPanel";
@@ -3218,6 +3219,7 @@ export default function Home() {
           isContainerRoute && selectedContractId ? (
             <div className={styles.contractDetailPanel}>
               <ContainerView
+                customerName={getContractDetails(selectedContractId).summary.customer}
                 onBack={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`)}
                 onSaved={(message) => {
                   _pendingToastMessage = message;
