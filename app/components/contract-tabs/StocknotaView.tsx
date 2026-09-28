@@ -436,14 +436,8 @@ export function StocknotaView({
       <DetailHeader
         entity="contract"
         label="Stocknota"
-        title={
-          <>
-            {viewTitle}
-            {viewSubtitle ? (
-              <span className={styles.detailHeaderTitleMeta}>{viewSubtitle}</span>
-            ) : null}
-          </>
-        }
+        title={viewTitle}
+        subtitle={viewSubtitle}
         actions={activeVersion ? (
           <Tooltip title="Ta bort">
             <IconButton

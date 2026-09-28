@@ -298,7 +298,8 @@ export function ContractDetailView({
       {expandedDialogOpen ? (
         <ContractCreateView
           mode="edit"
-          title={`${selectedContractId} - ${contractDetails.summary.customer}`}
+          title={selectedContractId ?? undefined}
+          subtitle={contractDetails.summary.customer}
           initialDraft={buildContractDraftFromDetails(contractDetails)}
           onSave={() => setExpandedDialogOpen(false)}
           onCancel={() => setExpandedDialogOpen(false)}
@@ -314,6 +315,7 @@ export function ContractDetailView({
         <LineItemDetailView
           key={`line-item-detail-${selectedLineItemId ?? "new"}-${newLineItemDraftVersion}`}
           lineItemId={selectedLineItemId ?? "new"}
+          customerName={contractDetails.summary.customer}
           activeTab={activeLineItemTab}
           onChangeTab={onChangeLineItemTab}
           newDraftSeed={newLineItemDraftSeed}
@@ -330,7 +332,8 @@ export function ContractDetailView({
         <>
           <DetailHeader
             entity="contract"
-            title={`${selectedContractId} - ${contractDetails.summary.customer}`}
+            title={selectedContractId}
+            subtitle={contractDetails.summary.customer}
             chips={contractDetails.summary.warning ? (
               <Chip
                 icon={<WarningIcon />}

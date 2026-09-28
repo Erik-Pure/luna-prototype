@@ -625,7 +625,8 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
       <DetailHeader
         entity="priceList"
         label="Prislistekalkyl"
-        title={`${priceListId} - ${getPriceListKund(priceListId)}`}
+        title={priceListId}
+        subtitle={getPriceListKund(priceListId)}
         actions={
         <>
           {isEditing ? (

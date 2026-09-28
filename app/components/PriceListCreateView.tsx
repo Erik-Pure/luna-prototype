@@ -119,6 +119,7 @@ type PriceListCreateViewProps = {
   onCancel?: () => void;
   initialDraft?: NewPriceListDraft;
   title?: string;
+  subtitle?: string;
   mode?: "create" | "edit";
 };
 
@@ -127,6 +128,7 @@ export function PriceListCreateView({
   onCancel,
   initialDraft,
   title = "Ny prislista",
+  subtitle,
   mode = "create",
 }: PriceListCreateViewProps) {
   const [draft, setDraft] = useState<NewPriceListDraft>(initialDraft ?? emptyDraft);
@@ -189,6 +191,7 @@ export function PriceListCreateView({
       <DetailHeader
         entity="priceList"
         title={title}
+        subtitle={subtitle}
         actions={
         <>
           {isEditing ? (

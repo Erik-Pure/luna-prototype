@@ -205,10 +205,11 @@ export type ContractCreateViewProps = {
     initialDraft?: NewContractDraft;
     initialFiles?: UploadedFileItem[];
     title?: string;
+    subtitle?: string;
     mode?: "create" | "edit";
 };
 
-export function ContractCreateView({ onSave, onCancel, initialDraft, initialFiles, title, mode = "create" }: ContractCreateViewProps) {
+export function ContractCreateView({ onSave, onCancel, initialDraft, initialFiles, title, subtitle, mode = "create" }: ContractCreateViewProps) {
     const [draft, setDraft] = useState<NewContractDraft>(initialDraft ?? emptyNewContractDraft);
     const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant", "villkor", "leverans", "dokument"]);
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFileItem[]>(initialFiles ?? []);
@@ -356,6 +357,7 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
             <DetailHeader
                 entity="contract"
                 title={title ?? "Nytt kontrakt"}
+                subtitle={subtitle}
                 actions={
                 <>
                     {isEditing ? (

@@ -6,6 +6,7 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import PersonIcon from "@mui/icons-material/Person";
 import RequestQuoteIcon from "@mui/icons-material/RequestQuote";
 import { IconButton, Typography } from "@mui/material";
+import { Fragment } from "react";
 import type { ReactNode } from "react";
 import styles from "../../page.module.scss";
 
@@ -23,8 +24,8 @@ type DetailHeaderProps = {
   /** Override av överskriftstexten, t.ex. "Kontraktsrad" för en vy som ärver kontraktets ikon. */
   label?: string;
   title: ReactNode;
-  /** En andra, mindre textrad under titeln. */
-  subtitle?: ReactNode;
+  /** Kompletterande text på samma rad som titeln. Flera delar (array) separeras med en punkt. */
+  subtitle?: ReactNode | ReactNode[];
   chips?: ReactNode;
   actions?: ReactNode;
   onBack?: () => void;
@@ -32,6 +33,7 @@ type DetailHeaderProps = {
 
 export function DetailHeader({ entity, label, title, subtitle, chips, actions, onBack }: DetailHeaderProps) {
   const config = ENTITY_CONFIG[entity];
+  const subtitleParts = (Array.isArray(subtitle) ? subtitle : [subtitle]).filter(Boolean);
 
   return (
     <div className={styles.detailHeader}>
@@ -52,8 +54,19 @@ export function DetailHeader({ entity, label, title, subtitle, chips, actions, o
         </span>
         <div className={styles.detailHeaderText}>
           <Typography className={styles.detailHeaderOverline}>{label ?? config.label}</Typography>
-          <Typography component="h1" className={styles.detailHeaderTitle}>{title}</Typography>
-          {subtitle ? <Typography className={styles.detailHeaderSubtitle}>{subtitle}</Typography> : null}
+          <div className={styles.detailHeaderTitleRow}>
+            <Typography component="h1" className={styles.detailHeaderTitle}>{title}</Typography>
+            {subtitleParts.length > 0 ? (
+              <span className={styles.detailHeaderSubtitle}>
+                {subtitleParts.map((part, i) => (
+                  <Fragment key={i}>
+                    {i > 0 ? <span className={styles.detailHeaderSubtitleSeparator} aria-hidden>·</span> : null}
+                    <span>{part}</span>
+                  </Fragment>
+                ))}
+              </span>
+            ) : null}
+          </div>
         </div>
         {chips ? <div className={styles.detailHeaderChips}>{chips}</div> : null}
       </div>

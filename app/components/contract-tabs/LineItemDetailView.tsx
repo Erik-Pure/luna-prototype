@@ -570,6 +570,8 @@ type LengthDistributionFormState =
 
 type LineItemDetailViewProps = {
   lineItemId: string;
+  /** Kontraktets kund, visas som subtitle i huvudet. */
+  customerName?: string;
   activeTab: LineItemDetailTab;
   onChangeTab: (tab: LineItemDetailTab) => void;
   newDraftSeed?: Partial<NewLineItemDraft>;
@@ -759,6 +761,7 @@ function ReviewFieldItem({
 
 export function LineItemDetailView({
   lineItemId,
+  customerName,
   activeTab,
   onChangeTab,
   newDraftSeed = {},
@@ -1668,6 +1671,7 @@ export function LineItemDetailView({
         entity="contract"
         label="Kontraktsrad"
         title={isNewLineItem ? (savedDraftNr ? `${savedDraftNr}` : "Ny kontraktsrad") : lineItemId}
+        subtitle={customerName}
         chips={
           <Chip
             icon={<WarningIcon />}
@@ -2709,13 +2713,13 @@ export function LineItemDetailView({
                       const subline = [
                         rad?.fakturatext,
                         rad?.volym && `${rad.volym}${rad.enhet ? ` ${rad.enhet}` : ""}`,
-                      ].filter(Boolean).join("  -  ");
+                      ];
                       return (
                         <DetailHeader
                           entity="contract"
                           label="Leveransbokade paket"
                           title={`Avropsrad ${leveransbokaForRow + 1}`}
-                          subtitle={subline || undefined}
+                          subtitle={subline}
                           onBack={() => setLeveransbokaForRow(null)}
                         />
                       );

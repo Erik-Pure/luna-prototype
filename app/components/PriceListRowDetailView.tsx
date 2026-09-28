@@ -39,6 +39,7 @@ import {
 } from "@mui/material";
 import { useRef, useState } from "react";
 import { DetailHeader } from "./shared/DetailHeader";
+import { getPriceListKund } from "./shared/priceListCustomers";
 import styles from "../page.module.scss";
 
 const ART_NR_OPTIONS = [
@@ -136,7 +137,7 @@ function getFileIcon(fileName: string) {
   }
 }
 
-export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDetailViewProps) {
+export function PriceListRowDetailView({ priceListId, priceRowId, onClose }: PriceListRowDetailViewProps) {
   const isNewPriceRow = priceRowId === "new";
   const [draft, setDraft] = useState<PriceRowDraft>(isNewPriceRow ? emptyDraft : existingDraft);
   const [savedDraft, setSavedDraft] = useState<PriceRowDraft>(isNewPriceRow ? emptyDraft : existingDraft);
@@ -222,6 +223,7 @@ export function PriceListRowDetailView({ priceRowId, onClose }: PriceListRowDeta
         entity="priceList"
         label="Prislisterad"
         title={isNewPriceRow ? "Ny prislisterad" : priceRowId}
+        subtitle={getPriceListKund(priceListId)}
         actions={
         <>
           {isEditing ? (

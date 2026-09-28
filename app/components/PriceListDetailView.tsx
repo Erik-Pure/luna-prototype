@@ -170,7 +170,8 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
       {expandedDialogOpen ? (
         <PriceListCreateView
           mode="edit"
-          title={`${selectedPriceListId} - ${getPriceListKund(selectedPriceListId)}`}
+          title={selectedPriceListId}
+          subtitle={getPriceListKund(selectedPriceListId)}
           initialDraft={draft}
           onSave={(saved) => { setDraft(saved); setExpandedDialogOpen(false); }}
           onCancel={() => setExpandedDialogOpen(false)}
@@ -180,7 +181,8 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
       {/* ── Header ── */}
       <DetailHeader
         entity="priceList"
-        title={`${selectedPriceListId} - ${getPriceListKund(selectedPriceListId)}`}
+        title={selectedPriceListId}
+        subtitle={getPriceListKund(selectedPriceListId)}
         actions={
         <>
           {/* <Button className={styles.contractQuickActionButton} size="small" startIcon={<VisibilityOutlinedIcon fontSize="small" />}>

@@ -175,11 +175,7 @@ export function PaketbokningView({
         entity="contract"
         label="Paketbokning"
         title={filters.reservationstyp}
-        subtitle={
-          (produkt || volym)
-            ? [produkt, volym && `${volym}${enhet ? ` ${enhet}` : ""}`].filter(Boolean).join("  -  ")
-            : undefined
-        }
+        subtitle={[produkt, volym && `${volym}${enhet ? ` ${enhet}` : ""}`]}
         onBack={onBack}
       />
       <div className={styles.paketbokningLayout}>

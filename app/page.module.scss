@@ -2508,19 +2508,43 @@
   color: #14181f;
 }
 
-.detailHeaderSubtitle {
-  font-size: 11px !important;
-  color: #8a96b0 !important;
-  font-weight: 400 !important;
-  line-height: 1.3;
+.detailHeaderTitleRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
 }
 
-// Kompletterande text på samma rad som titeln, t.ex. leveransvecka i Stocknota.
-.detailHeaderTitleMeta {
-  margin-left: 8px;
+// Subtitle: kompletterande text på samma rad som titeln, avskild med en tunn vertikal linje.
+.detailHeaderSubtitle {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  padding-left: 8px;
   font-size: 13px;
-  font-weight: 400;
-  color: #8a96b0;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #5b6576;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 1px;
+    height: 14px;
+    transform: translateY(-50%);
+    background-color: #cfd5df;
+  }
+}
+
+.detailHeaderSubtitleSeparator {
+  color: #a3adbd;
 }
 
 .contractModernTopActions {
