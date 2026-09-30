@@ -3230,6 +3230,8 @@ export default function Home() {
           ) : isStocknotaRoute && selectedContractId ? (
             <div className={styles.contractDetailPanel}>
               <StocknotaView
+                contractId={selectedContractId}
+                customerName={getContractDetails(selectedContractId).summary.customer}
                 onBack={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`)}
                 onSaved={(message) => {
                   _pendingToastMessage = message;

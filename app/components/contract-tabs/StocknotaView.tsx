@@ -199,6 +199,8 @@ function toNumber(value: string): number {
 }
 
 type StocknotaViewProps = {
+  contractId: string;
+  customerName: string;
   onBack: () => void;
   onSaved: (message: string) => void;
   versions: StocknotaVersion[];
@@ -212,6 +214,8 @@ type StocknotaViewProps = {
 };
 
 export function StocknotaView({
+  contractId,
+  customerName,
   onBack,
   onSaved,
   versions,
@@ -365,8 +369,11 @@ export function StocknotaView({
 
   const activeVersion = versions.find((v) => v.id === activeVersionId) ?? null;
   const sortedVersions = [...versions].sort((a, b) => b.name.localeCompare(a.name));
-  const viewTitle = activeVersion ? activeVersion.name : "Stocknota";
-  const viewSubtitle = activeVersion?.leveransvecka ? `Leveransvecka ${activeVersion.leveransvecka}` : undefined;
+  // Utan öppnad version visas kontraktet (som Prislistekalkyl), annars versionen.
+  const viewTitle = activeVersion ? activeVersion.name : contractId;
+  const viewSubtitle = activeVersion
+    ? activeVersion.leveransvecka ? `Leveransvecka ${activeVersion.leveransvecka}` : undefined
+    : customerName;
 
   const actionItems = [
     {
