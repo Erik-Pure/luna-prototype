@@ -1,21 +1,14 @@
 "use client";
 
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import {
   Alert,
-  Autocomplete,
   Button,
-  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
   Snackbar,
   TextField,
   Tooltip,
@@ -24,14 +17,13 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
 import { ActionRow } from "../shared/ActionRow";
-import { ColumnManagerDropdown } from "../shared/ColumnManagerDropdown";
 import { DataTable } from "../shared/DataTable";
 import { DetailHeader } from "../shared/DetailHeader";
+import { ColumnFilterButton, isColumnFilterActive, matchesColumnFilter, type ColumnFilterConfig, type ColumnFilterValue } from "./StocknotaColumnFilter";
 import styles from "../../page.module.scss";
 
 const KVALITET_OPTIONS = ["A", "B", "C"] as const;
 const PAKETTYP_OPTIONS = ["Lp", "Paket"] as const;
-const ENHET_FILTER_OPTIONS = ["Hissmofors", "Kåge", "Sävar"] as const;
 
 const EDITABLE_TEXT_KEYS = new Set(["hissmoforsVald", "kageVald", "savarVald", "pris", "kundmarke"]);
 
@@ -57,28 +49,28 @@ type StocknotaRow = {
 type StocknotaColumn = { key: string; label: string; width: number; visible: boolean };
 
 const DEFAULT_COLUMNS: StocknotaColumn[] = [
-  { key: "artNr", label: "ArtNr", width: 56, visible: true },
+  { key: "artNr", label: "ArtNr", width: 72, visible: true },
   { key: "fakturatext", label: "Fakturatext", width: 150, visible: true },
-  { key: "pakettyp", label: "Pakettyp", width: 68, visible: true },
-  { key: "offererat", label: "Offererat", width: 68, visible: true },
-  { key: "kopt", label: "Köpt", width: 44, visible: true },
-  { key: "nlTotalt", label: "NL totalt", width: 64, visible: true },
-  { key: "nlHissmofors", label: "NL Hissmofors", width: 52, visible: true },
-  { key: "hissmoforsVald", label: "Hissmofors vald", width: 68, visible: true },
-  { key: "nlKage", label: "NL Kåge", width: 52, visible: true },
-  { key: "kageVald", label: "Kåge vald", width: 68, visible: true },
-  { key: "nlSavar", label: "NL Sävar", width: 52, visible: true },
-  { key: "savarVald", label: "Sävar vald", width: 68, visible: true },
-  { key: "totVald", label: "Tot vald", width: 60, visible: true },
+  { key: "kvalitet", label: "Kvalitet", width: 96, visible: true },
+  { key: "pakettyp", label: "Pakettyp", width: 100, visible: true },
+  { key: "offererat", label: "Offererat", width: 80, visible: true },
+  { key: "kopt", label: "Köpt", width: 74, visible: true },
+  { key: "nlTotalt", label: "Nettolager totalt", width: 148, visible: true },
+  { key: "nlHissmofors", label: "Nettolager Hissmofors", width: 92, visible: true },
+  { key: "hissmoforsVald", label: "Hissmofors vald", width: 76, visible: true },
+  { key: "nlKage", label: "Nettolager Kåge", width: 92, visible: true },
+  { key: "kageVald", label: "Kåge vald", width: 76, visible: true },
+  { key: "nlSavar", label: "Nettolager Sävar", width: 92, visible: true },
+  { key: "savarVald", label: "Sävar vald", width: 76, visible: true },
+  { key: "totVald", label: "Tot vald", width: 72, visible: true },
   { key: "diff", label: "Diff", width: 48, visible: true },
   { key: "pris", label: "Pris", width: 60, visible: true },
   { key: "kundmarke", label: "Kundmärke", width: 112, visible: true },
 ];
 
 // Grupprubrik (övre raden) och kort kolumnrubrik (undre raden) i tabellhuvudet.
-// Kolumnhanteraren visar fortfarande de fullständiga namnen i DEFAULT_COLUMNS.
 const COLUMN_GROUPS: Record<string, string> = {
-  artNr: "Artikel", fakturatext: "Artikel", pakettyp: "Artikel",
+  artNr: "Artikel", fakturatext: "Artikel", kvalitet: "Artikel", pakettyp: "Artikel",
   offererat: "Volym", kopt: "Volym", nlTotalt: "Volym",
   nlHissmofors: "Hissmofors", hissmoforsVald: "Hissmofors",
   nlKage: "Kåge", kageVald: "Kåge",
@@ -94,9 +86,9 @@ const NUMERIC_KEYS = new Set([
 ]);
 
 const SHORT_HEADER_LABELS: Record<string, string> = {
-  nlHissmofors: "NL", hissmoforsVald: "Vald",
-  nlKage: "NL", kageVald: "Vald",
-  nlSavar: "NL", savarVald: "Vald",
+  nlHissmofors: "Nettolager", hissmoforsVald: "Vald",
+  nlKage: "Nettolager", kageVald: "Vald",
+  nlSavar: "Nettolager", savarVald: "Vald",
 };
 
 const VERSION_COLUMNS = [
@@ -144,9 +136,13 @@ function generateMockRows(): StocknotaRow[] {
     const nlSavar = randomInt(0, 40);
     const nlTotalt = nlHissmofors + nlKage + nlSavar;
     const enhet = enheter[i % enheter.length]!;
-    const hissmoforsVald = enhet.hissmoforsShare ? String(Math.min(nlHissmofors, randomInt(0, nlHissmofors))) : "0";
-    const kageVald = enhet.kageShare ? String(Math.min(nlKage, randomInt(0, nlKage))) : "0";
-    const savarVald = enhet.savarShare ? String(Math.min(nlSavar, randomInt(0, nlSavar))) : "0";
+    const valdOrEmpty = (share: number, nl: number) => {
+      const value = share ? Math.min(nl, randomInt(0, nl)) : 0;
+      return value > 0 ? String(value) : "";
+    };
+    const hissmoforsVald = valdOrEmpty(enhet.hissmoforsShare, nlHissmofors);
+    const kageVald = valdOrEmpty(enhet.kageShare, nlKage);
+    const savarVald = valdOrEmpty(enhet.savarShare, nlSavar);
     const pris = String(randomInt(150, 450));
 
     rows.push({
@@ -185,32 +181,21 @@ export function createSeedStocknotaVersions(): StocknotaVersion[] {
   ];
 }
 
-type FilterState = {
-  artNr: string;
-  kvalitet: string;
-  pakettyp: string;
-  endastKopta: boolean | null;
-  enheter: string[];
-};
-
-const INITIAL_FILTERS: FilterState = {
-  artNr: "",
-  kvalitet: "",
-  pakettyp: "",
-  endastKopta: null,
-  enheter: [],
+// Kolumner med filter i kolumnhuvudet. Köpt och Vald-kolumnerna filtrerar som default
+// på rader som har ett värde.
+const COLUMN_FILTERS: Record<string, ColumnFilterConfig> = {
+  artNr: { kind: "text" },
+  kvalitet: { kind: "enum", options: KVALITET_OPTIONS },
+  pakettyp: { kind: "enum", options: PAKETTYP_OPTIONS },
+  kopt: { kind: "number", defaultOperator: "isNotEmpty", operators: ["isEmpty", "isNotEmpty"] },
+  hissmoforsVald: { kind: "number", defaultOperator: "isNotEmpty" },
+  kageVald: { kind: "number", defaultOperator: "isNotEmpty" },
+  savarVald: { kind: "number", defaultOperator: "isNotEmpty" },
 };
 
 function toNumber(value: string): number {
   const n = parseFloat(value);
   return Number.isNaN(n) ? 0 : n;
-}
-
-function rowMatchesEnhet(row: StocknotaRow, enhet: string): boolean {
-  if (enhet === "Hissmofors") return toNumber(row.nlHissmofors) > 0;
-  if (enhet === "Kåge") return toNumber(row.nlKage) > 0;
-  if (enhet === "Sävar") return toNumber(row.nlSavar) > 0;
-  return false;
 }
 
 type StocknotaViewProps = {
@@ -259,16 +244,16 @@ export function StocknotaView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSegment]);
 
-  const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
-  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
-  const filterMenuRef = useRef<HTMLDivElement>(null);
-  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({});
+  const setColumnFilter = (key: string, filter: ColumnFilterValue | null) => {
+    setColumnFilters((prev) => {
+      const next = { ...prev };
+      if (filter) next[key] = filter;
+      else delete next[key];
+      return next;
+    });
+  };
 
-  const [appliedColumns, setAppliedColumns] = useState<StocknotaColumn[]>(DEFAULT_COLUMNS);
-  const [draftColumns, setDraftColumns] = useState<StocknotaColumn[]>(DEFAULT_COLUMNS);
-  const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
-  const columnsMenuRef = useRef<HTMLDivElement>(null);
-  const columnsButtonRef = useRef<HTMLButtonElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -309,16 +294,15 @@ export function StocknotaView({
   const filteredIndices = useMemo(
     () =>
       rows.reduce<number[]>((acc, row, index) => {
-        if (filters.artNr && !row.artNr.toLowerCase().includes(filters.artNr.toLowerCase())) return acc;
-        if (filters.kvalitet && row.kvalitet !== filters.kvalitet) return acc;
-        if (filters.pakettyp && row.pakettyp !== filters.pakettyp) return acc;
-        if (filters.endastKopta === true && toNumber(row.kopt) <= 0) return acc;
-        if (filters.endastKopta === false && toNumber(row.kopt) > 0) return acc;
-        if (filters.enheter.length > 0 && !filters.enheter.some((enhet) => rowMatchesEnhet(row, enhet))) return acc;
+        const matches = Object.entries(columnFilters).every(([key, filter]) =>
+          !isColumnFilterActive(filter) ||
+          matchesColumnFilter(String(row[key as keyof StocknotaRow] ?? ""), filter, COLUMN_FILTERS[key]!.kind)
+        );
+        if (!matches) return acc;
         acc.push(index);
         return acc;
       }, []),
-    [rows, filters]
+    [rows, columnFilters]
   );
 
   const filteredRows = filteredIndices.map((i) => rows[i]!);
@@ -371,38 +355,13 @@ export function StocknotaView({
     isSummary: true,
   };
 
-  const triCycle = (current: boolean | null): boolean | null => {
-    if (current === null) return true;
-    if (current === true) return false;
-    return null;
-  };
-
   // En grupp börjar där gruppen skiljer sig från föregående synliga kolumn (följer dold/flyttad kolumn).
   const isGroupStart = (columnIndex: number) => {
     const group = COLUMN_GROUPS[visibleColumns[columnIndex]?.key ?? ""];
     return Boolean(group) && (columnIndex === 0 || COLUMN_GROUPS[visibleColumns[columnIndex - 1]!.key] !== group);
   };
 
-  const columnsMenuItems = draftColumns.map((c) => ({ key: c.key, label: c.label, visible: c.visible }));
-  const visibleColumns = appliedColumns.filter((c) => c.visible);
-
-  const activeFilterCount =
-    (filters.artNr ? 1 : 0) +
-    (filters.kvalitet ? 1 : 0) +
-    (filters.pakettyp ? 1 : 0) +
-    (filters.endastKopta !== null ? 1 : 0) +
-    (filters.enheter.length > 0 ? 1 : 0);
-
-  useEffect(() => {
-    if (!isFilterMenuOpen) return;
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (filterMenuRef.current?.contains(target) || filterButtonRef.current?.contains(target)) return;
-      setIsFilterMenuOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isFilterMenuOpen]);
+  const visibleColumns = DEFAULT_COLUMNS.filter((c) => c.visible);
 
   const activeVersion = versions.find((v) => v.id === activeVersionId) ?? null;
   const sortedVersions = [...versions].sort((a, b) => b.name.localeCompare(a.name));
@@ -542,150 +501,6 @@ export function StocknotaView({
         <div className={styles.paketbokningLayout}>
           <ActionRow
             items={actionItems}
-            rightSlot={(
-              <>
-                <div className={styles.lagerFilterMenuWrapper}>
-                  <Button
-                    ref={filterButtonRef}
-                    size="small"
-                    variant="outlined"
-                    color="inherit"
-                    startIcon={<FilterAltOutlinedIcon fontSize="small" />}
-                    className={`${styles.lineItemsToggleButton} ${activeFilterCount > 0 ? styles.columnsIconButtonActive : ""}`}
-                    onClick={() => setIsFilterMenuOpen((prev) => !prev)}
-                  >
-                    Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-                  </Button>
-                  {isFilterMenuOpen ? (
-                    <div className={styles.lagerFilterDropdown} ref={filterMenuRef}>
-                      <TextField
-                        size="small"
-                        label="ArtNr"
-                        value={filters.artNr}
-                        onChange={(e) => setFilters((prev) => ({ ...prev, artNr: e.target.value }))}
-                        className={styles.lagerFilterRangeInput}
-                      />
-
-                      <FormControl size="small" className={styles.lagerFilterRangeInput}>
-                        <InputLabel>Kvalitet</InputLabel>
-                        <Select
-                          value={filters.kvalitet}
-                          label="Kvalitet"
-                          onChange={(e) => setFilters((prev) => ({ ...prev, kvalitet: e.target.value }))}
-                          MenuProps={{ disablePortal: true }}
-                        >
-                          <MenuItem value=""><em>Alla</em></MenuItem>
-                          {KVALITET_OPTIONS.map((opt) => (
-                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-
-                      <FormControl size="small" className={styles.lagerFilterRangeInput}>
-                        <InputLabel>Pakettyp</InputLabel>
-                        <Select
-                          value={filters.pakettyp}
-                          label="Pakettyp"
-                          onChange={(e) => setFilters((prev) => ({ ...prev, pakettyp: e.target.value }))}
-                          MenuProps={{ disablePortal: true }}
-                        >
-                          <MenuItem value=""><em>Alla</em></MenuItem>
-                          {PAKETTYP_OPTIONS.map((opt) => (
-                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-
-                      <Autocomplete
-                        multiple
-                        size="small"
-                        disablePortal
-                        className={styles.lagerFilterRangeInput}
-                        options={[...ENHET_FILTER_OPTIONS]}
-                        value={filters.enheter}
-                        onChange={(_e, newValue) => setFilters((prev) => ({ ...prev, enheter: newValue }))}
-                        disableCloseOnSelect
-                        sx={{ "& .MuiAutocomplete-inputRoot": { flexWrap: "nowrap" } }}
-                        renderValue={(selectedOptions) => (
-                          <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {(selectedOptions as string[]).join(", ")}
-                          </span>
-                        )}
-                        renderOption={(props, option, { selected }) => {
-                          const { key, ...optionProps } = props;
-                          return (
-                            <li key={key} {...optionProps}>
-                              <Checkbox size="small" checked={selected} style={{ marginRight: 8 }} />
-                              {option}
-                            </li>
-                          );
-                        }}
-                        renderInput={(params) => <TextField {...params} label="Enhet" />}
-                      />
-
-                      <div
-                        role="checkbox"
-                        aria-checked={filters.endastKopta === null ? "mixed" : filters.endastKopta}
-                        tabIndex={0}
-                        className={styles.searchCheckboxItem}
-                        style={{ cursor: "pointer" }}
-                        onClick={() => setFilters((prev) => ({ ...prev, endastKopta: triCycle(prev.endastKopta) }))}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setFilters((prev) => ({ ...prev, endastKopta: triCycle(prev.endastKopta) }));
-                          }
-                        }}
-                      >
-                        <Checkbox
-                          size="small"
-                          checked={filters.endastKopta === true}
-                          indeterminate={filters.endastKopta === null}
-                          readOnly
-                        />
-                        <Typography className={styles.searchCheckboxLabel}>Endast köpta volymer</Typography>
-                      </div>
-                      <div className={styles.lagerFilterDropdownDivider} />
-                      <div className={styles.lagerFilterDropdownFooter}>
-                        <Button
-                          size="small"
-                          variant="text"
-                          disabled={activeFilterCount === 0}
-                          onClick={() => setFilters(INITIAL_FILTERS)}
-                        >
-                          Rensa filter
-                        </Button>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-
-                <ColumnManagerDropdown
-                  isOpen={columnsMenuOpen}
-                  columns={columnsMenuItems}
-                  menuRef={columnsMenuRef}
-                  buttonRef={columnsButtonRef}
-                  iconOnly
-                  onOpen={() => { setDraftColumns(appliedColumns); setColumnsMenuOpen(true); }}
-                  onCancel={() => setColumnsMenuOpen(false)}
-                  onToggleVisibility={(key) => {
-                    setDraftColumns((prev) => prev.map((c) => (c.key === key ? { ...c, visible: !c.visible } : c)));
-                  }}
-                  onMove={(key, direction) => {
-                    setDraftColumns((prev) => {
-                      const index = prev.findIndex((c) => c.key === key);
-                      const swapWith = direction === "up" ? index - 1 : index + 1;
-                      if (index < 0 || swapWith < 0 || swapWith >= prev.length) return prev;
-                      const next = [...prev];
-                      [next[index], next[swapWith]] = [next[swapWith]!, next[index]!];
-                      return next;
-                    });
-                  }}
-                  onSave={() => { setAppliedColumns(draftColumns); setColumnsMenuOpen(false); }}
-                  onReset={() => { setDraftColumns(DEFAULT_COLUMNS); setAppliedColumns(DEFAULT_COLUMNS); }}
-                />
-              </>
-            )}
           />
 
           <div className={`${styles.paketbokningTableWrap} ${styles.contractTableCompact} ${styles.stocknotaTable}`}>
@@ -710,7 +525,16 @@ export function StocknotaView({
                     <div className={`${styles.stocknotaHeaderGroup} ${COLUMN_GROUPS[column.key] ? styles.stocknotaHeaderGroupFilled : ""}`}>
                       {isGroupStart(columnIndex) ? COLUMN_GROUPS[column.key] : null}
                     </div>
-                    <div className={`${styles.stocknotaHeaderLabel} ${NUMERIC_KEYS.has(column.key) ? styles.stocknotaNumeric : ""}`}>{SHORT_HEADER_LABELS[column.key] ?? column.label}</div>
+                    <div className={`${styles.stocknotaHeaderLabel} ${NUMERIC_KEYS.has(column.key) ? styles.stocknotaHeaderLabelNumeric : ""}`}>
+                      <span className={styles.stocknotaHeaderLabelText}>{SHORT_HEADER_LABELS[column.key] ?? column.label}</span>
+                      {COLUMN_FILTERS[column.key] ? (
+                        <ColumnFilterButton
+                          config={COLUMN_FILTERS[column.key]!}
+                          filter={columnFilters[column.key]}
+                          onApply={(filter) => setColumnFilter(column.key, filter)}
+                        />
+                      ) : null}
+                    </div>
                   </>
                 )}
                 getCellClassName={(row, column, _rowIndex, columnIndex, isFiller) => {

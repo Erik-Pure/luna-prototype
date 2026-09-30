@@ -8647,7 +8647,73 @@ body button {
 }
 
 .stocknotaHeaderLabel {
-  padding: 5px 6px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 30px;
+  padding: 3px 4px 3px 6px;
+  box-sizing: border-box;
+}
+
+.stocknotaHeaderLabelNumeric {
+  justify-content: flex-end;
+}
+
+.stocknotaHeaderLabelText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Filterikon i kolumnhuvudet (motsvarar MudBlazor DataGrid ColumnFilterMenu).
+.stocknotaFilterButton.stocknotaFilterButton {
+  flex: 0 0 auto;
+  padding: 2px;
+  font-size: 15px;
+  color: #9aa5b5;
+  opacity: 0;
+  transition: opacity 0.15s;
+
+  &:hover {
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+// Ikonen visas vid hover på kolumnhuvudet, och alltid när filtret är aktivt eller öppet.
+.stocknotaGroupedHeaderCell:hover .stocknotaFilterButton,
+.stocknotaFilterButtonActive.stocknotaFilterButtonActive {
+  opacity: 1;
+}
+
+.stocknotaFilterButtonActive.stocknotaFilterButtonActive {
+  color: #c47900;
+}
+
+.stocknotaFilterPopover {
+  width: 260px;
+  padding: 16px 16px 8px;
+}
+
+.stocknotaFilterFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stocknotaFilterCheckbox :global(.MuiFormControlLabel-label) {
+  font-size: 14px;
+}
+
+.stocknotaFilterActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 12px;
 }
 
 .stocknotaNumeric {
