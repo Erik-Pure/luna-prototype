@@ -252,7 +252,20 @@ const getTradslag = (row: KalkylRow): string => {
 };
 
 // Kolumnfilter i kolumnhuvudena (MudBlazor DataGrid ColumnFilterMenu).
-const LANGD_FILTER: ColumnFilterConfig = { kind: "number", defaultOperator: "gte" };
+const LANGD_FILTER: ColumnFilterConfig = {
+  kind: "number",
+  defaultOperator: "gte",
+  operatorLabels: {
+    eq: "Lika med",
+    neq: "Inte lika med",
+    gt: "Större än",
+    gte: "Större än eller lika med",
+    lt: "Mindre än",
+    lte: "Mindre än eller lika med",
+    isEmpty: "Är tom",
+    isNotEmpty: "Är inte tom",
+  },
+};
 const GRUPP_FILTER: ColumnFilterConfig = { kind: "enum", multiple: true, options: ["Konstruktion", "Panel", "Trall"] };
 const TRADSLAG_FILTER: ColumnFilterConfig = { kind: "enum", options: ["Gran", "Furu"] };
 const PAKETTYP_EMPTY_LABEL = "(Tom)";

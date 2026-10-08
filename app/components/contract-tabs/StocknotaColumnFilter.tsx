@@ -20,6 +20,8 @@ export type ColumnFilterConfig = {
   operators?: readonly string[];
   /** Enum-kolumn där flera värden kan väljas (matchar om cellen är något av dem). */
   multiple?: boolean;
+  /** Ersätter operatorernas visningsnamn, t.ex. "Större än" i stället för ">". */
+  operatorLabels?: Readonly<Record<string, string>>;
 };
 
 export type ColumnFilterValue = { operator: string; value: string; values?: string[] };
@@ -60,7 +62,8 @@ const MULTIPLE_ENUM_OPERATORS = [
 
 function operatorsFor(config: ColumnFilterConfig) {
   const all = config.kind === "enum" && config.multiple ? MULTIPLE_ENUM_OPERATORS : OPERATORS[config.kind];
-  return config.operators ? all.filter((op) => config.operators!.includes(op.value)) : all;
+  const ops = config.operators ? all.filter((op) => config.operators!.includes(op.value)) : all;
+  return config.operatorLabels ? ops.map((op) => ({ ...op, label: config.operatorLabels![op.value] ?? op.label })) : ops;
 }
 
 function defaultFilter(config: ColumnFilterConfig): ColumnFilterValue {
