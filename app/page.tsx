@@ -43,7 +43,7 @@ import {
 } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
 import { type NewContractDraft } from "./components/ContractCreateView";
-import { type LineItemDetailTab, type NewLineItemDraft } from "./components/contract-tabs/LineItemDetailView";
+import { type NewLineItemDraft } from "./components/contract-tabs/LineItemDetailView";
 import {
   AppShellLayout,
   ContractDetailView,
@@ -1017,7 +1017,7 @@ const defaultLineItemColumns: LineItemColumnConfig[] = [
 ];
 
 const lineItemRows: LineItemRow[] = Array.from({ length: 12 }).map((_, idx) => ({
-  idRad: `RAD-${1001 + idx}`,
+  idRad: `${idx + 1}`,
   status: "Aktiv",
   underkonto: `BP Hissmofors Byg ${220200000 + idx}`,
   artikelNr: `22${120 + idx}`,
@@ -1744,7 +1744,6 @@ export default function Home() {
   const [activeContractTab, setActiveContractTab] = useState<ContractTab>(() =>
     typeof window !== "undefined" && window.location.hash === "#avrop" ? "Avrop" : "Kontraktsrader"
   );
-  const [activeLineItemTab, setActiveLineItemTab] = useState<LineItemDetailTab>("Avropsrader");
   const [selectedCompany, setSelectedCompany] = useState(fakeCompanies[0]);
   const [searchValues, setSearchValues] = useState<SearchValueMap>(initialSearchValues);
   const [globalSearchValue, setGlobalSearchValue] = useState("");
@@ -1762,7 +1761,6 @@ export default function Home() {
   const [newLineItemDraftSeed, setNewLineItemDraftSeed] = useState<Partial<NewLineItemDraft>>({});
   const [newLineItemDraftVersion, setNewLineItemDraftVersion] = useState(0);
   const [pinnedLineItemFields, setPinnedLineItemFields] = useState<Set<keyof NewLineItemDraft>>(new Set());
-  const [keepLineItemOpenAfterSave, setKeepLineItemOpenAfterSave] = useState(true);
   const [isRouteLoading, setIsRouteLoading] = useState(false);
   const [isViewLoading, setIsViewLoading] = useState(false);
   const [globalToast, setGlobalToast] = useState<{ open: boolean; message: string; key: number }>({ open: false, message: "", key: 0 });
@@ -2603,13 +2601,11 @@ export default function Home() {
 
   const openContractDetail = (contractId: string) => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Nettolager");
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${contractId}`);
   };
 
   const openNewContract = () => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Nettolager");
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/new`);
   };
 
@@ -2666,7 +2662,6 @@ export default function Home() {
 
   const openLineItemDetail = (lineItemId: string) => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Nettolager");
     if (!selectedContractId) {
       return;
     }
@@ -2675,7 +2670,6 @@ export default function Home() {
 
   const openNewLineItem = () => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Nettolager");
     setNewLineItemDraftSeed({});
     setNewLineItemDraftVersion((previous) => previous + 1);
     if (!selectedContractId) {
@@ -2773,7 +2767,6 @@ export default function Home() {
 
   const saveAndCreateNewLineItem = (draft: NewLineItemDraft) => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Avropsrader");
     setNewLineItemDraftSeed(draft);
     setNewLineItemDraftVersion((previous) => previous + 1);
     if (!selectedContractId) {
@@ -2784,7 +2777,6 @@ export default function Home() {
 
   const closeLineItemDetail = () => {
     setActiveContractTab("Kontraktsrader");
-    setActiveLineItemTab("Nettolager");
     if (!selectedContractId) {
       return;
     }
@@ -2795,7 +2787,6 @@ export default function Home() {
     setActiveContractTab(tab);
     triggerViewLoading();
     if (tab !== "Kontraktsrader" && isLineItemDetailOpen && selectedContractId) {
-      setActiveLineItemTab("Nettolager");
       navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}`);
     }
   };
@@ -3200,7 +3191,6 @@ export default function Home() {
                 priceListId={selectedPriceListId}
                 onBack={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedPriceListId}`)}
                 onOpenPriceRowDetail={openPriceRowDetail}
-                onCreatePriceRow={openNewPriceRow}
               />
             </div>
           ) : isPriceListRowDetailOpen && selectedPriceRowId ? (
@@ -3259,13 +3249,9 @@ export default function Home() {
               isLineItemDetailOpen={isLineItemDetailOpen}
               selectedLineItemId={selectedLineItemId}
               newLineItemDraftVersion={newLineItemDraftVersion}
-              activeLineItemTab={activeLineItemTab}
-              onChangeLineItemTab={setActiveLineItemTab}
               newLineItemDraftSeed={newLineItemDraftSeed}
               pinnedLineItemFields={pinnedLineItemFields}
               onTogglePinnedLineItemField={togglePinnedLineItemField}
-              keepLineItemOpenAfterSave={keepLineItemOpenAfterSave}
-              onToggleKeepLineItemOpenAfterSave={setKeepLineItemOpenAfterSave}
               onSaveAndCreateNewLineItem={saveAndCreateNewLineItem}
               onSaveAndCloseLineItem={closeLineItemDetail}
               contractTabs={contractTabs}

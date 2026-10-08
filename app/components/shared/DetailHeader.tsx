@@ -21,8 +21,12 @@ const ENTITY_CONFIG: Record<DetailEntity, { label: string; icon: ReactNode }> = 
 
 type DetailHeaderProps = {
   entity: DetailEntity;
-  /** Override av överskriftstexten, t.ex. "Kontraktsrad" för en vy som ärver kontraktets ikon. */
-  label?: string;
+  /** Override av överskriftstexten, t.ex. "Kontraktsrad" för en vy som ärver kontraktets ikon. `null` döljer överskriften. */
+  label?: string | null;
+  /** Döljer entitetsikonen, t.ex. för undervyer inuti en flik. */
+  hideIcon?: boolean;
+  /** Mindre titel, t.ex. för undervyer inuti en flik. */
+  compact?: boolean;
   title: ReactNode;
   /** Kompletterande text på samma rad som titeln. Flera delar (array) separeras med en punkt. */
   subtitle?: ReactNode | ReactNode[];
@@ -31,12 +35,12 @@ type DetailHeaderProps = {
   onBack?: () => void;
 };
 
-export function DetailHeader({ entity, label, title, subtitle, chips, actions, onBack }: DetailHeaderProps) {
+export function DetailHeader({ entity, label, hideIcon = false, compact = false, title, subtitle, chips, actions, onBack }: DetailHeaderProps) {
   const config = ENTITY_CONFIG[entity];
   const subtitleParts = (Array.isArray(subtitle) ? subtitle : [subtitle]).filter(Boolean);
 
   return (
-    <div className={styles.detailHeader}>
+    <div className={`${styles.detailHeader} ${compact ? styles.detailHeaderCompact : ""}`}>
       <div className={styles.detailHeaderMain}>
         {onBack ? (
           <IconButton
@@ -49,11 +53,15 @@ export function DetailHeader({ entity, label, title, subtitle, chips, actions, o
             <ArrowBackIcon fontSize="small" />
           </IconButton>
         ) : null}
-        <span className={styles.detailHeaderIcon} aria-hidden>
-          {config.icon}
-        </span>
+        {!hideIcon ? (
+          <span className={styles.detailHeaderIcon} aria-hidden>
+            {config.icon}
+          </span>
+        ) : null}
         <div className={styles.detailHeaderText}>
-          <Typography className={styles.detailHeaderOverline}>{label ?? config.label}</Typography>
+          {label !== null ? (
+            <Typography className={styles.detailHeaderOverline}>{label ?? config.label}</Typography>
+          ) : null}
           <div className={styles.detailHeaderTitleRow}>
             <Typography component="h1" className={styles.detailHeaderTitle}>{title}</Typography>
             {subtitleParts.length > 0 ? (

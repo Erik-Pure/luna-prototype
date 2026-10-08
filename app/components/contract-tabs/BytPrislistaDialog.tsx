@@ -31,30 +31,30 @@ const AVAILABLE_PRICE_LISTS: PriceListOption[] = [
 ];
 
 const PRODUCTS_IN_PRICE_LIST: Record<string, Set<string>> = {
-  "17537": new Set(["RAD-1001", "RAD-1002", "RAD-1004", "RAD-1005", "RAD-1007", "RAD-1009", "RAD-1010", "RAD-1011"]),
-  "17538": new Set(["RAD-1001", "RAD-1003", "RAD-1005", "RAD-1006", "RAD-1008", "RAD-1010", "RAD-1012"]),
-  "17539": new Set(["RAD-1002", "RAD-1003", "RAD-1004", "RAD-1007", "RAD-1008", "RAD-1009"]),
+  "17537": new Set(["1", "2", "4", "5", "7", "9", "10", "11"]),
+  "17538": new Set(["1", "3", "5", "6", "8", "10", "12"]),
+  "17539": new Set(["2", "3", "4", "7", "8", "9"]),
 };
 
 const PRICE_LIST_PRICES: Record<string, Record<string, string>> = {
   "17537": {
-    "RAD-1001": "820 SEK/m³", "RAD-1002": "875 SEK/m³", "RAD-1004": "950 SEK/m³",
-    "RAD-1005": "1 020 SEK/m³", "RAD-1007": "1 115 SEK/m³", "RAD-1009": "1 240 SEK/m³",
-    "RAD-1010": "1 300 SEK/m³", "RAD-1011": "1 380 SEK/m³",
+    "1": "820 SEK/m³", "2": "875 SEK/m³", "4": "950 SEK/m³",
+    "5": "1 020 SEK/m³", "7": "1 115 SEK/m³", "9": "1 240 SEK/m³",
+    "10": "1 300 SEK/m³", "11": "1 380 SEK/m³",
   },
   "17538": {
-    "RAD-1001": "830 SEK/m³", "RAD-1003": "900 SEK/m³", "RAD-1005": "1 030 SEK/m³",
-    "RAD-1006": "1 075 SEK/m³", "RAD-1008": "1 170 SEK/m³", "RAD-1010": "1 310 SEK/m³",
-    "RAD-1012": "1 460 SEK/m³",
+    "1": "830 SEK/m³", "3": "900 SEK/m³", "5": "1 030 SEK/m³",
+    "6": "1 075 SEK/m³", "8": "1 170 SEK/m³", "10": "1 310 SEK/m³",
+    "12": "1 460 SEK/m³",
   },
   "17539": {
-    "RAD-1002": "885 SEK/m³", "RAD-1003": "910 SEK/m³", "RAD-1004": "960 SEK/m³",
-    "RAD-1007": "1 125 SEK/m³", "RAD-1008": "1 180 SEK/m³", "RAD-1009": "1 255 SEK/m³",
+    "2": "885 SEK/m³", "3": "910 SEK/m³", "4": "960 SEK/m³",
+    "7": "1 125 SEK/m³", "8": "1 180 SEK/m³", "9": "1 255 SEK/m³",
   },
 };
 
 const ALL_CONTRACT_ROWS = Array.from({ length: 12 }).map((_, idx) => ({
-  rowId: `RAD-${1001 + idx}`,
+  rowId: `${idx + 1}`,
   produkt: ["Gran flisad spå", "Furu hyvlad", "Gran v-styrp"][idx % 3],
   currentPris: `${800 + idx * 70} SEK/m³`,
 }));

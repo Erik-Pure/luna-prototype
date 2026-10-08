@@ -26,7 +26,6 @@ import { DocumentsTab } from "./contract-tabs/DocumentsTab";
 import { FreightTab } from "./contract-tabs/FreightTab";
 import {
   LineItemDetailView,
-  type LineItemDetailTab,
   type NewLineItemDraft
 } from "./contract-tabs/LineItemDetailView";
 import { PrintOptionsTab } from "./contract-tabs/PrintOptionsTab";
@@ -109,13 +108,9 @@ type ContractDetailViewProps = {
   isLineItemDetailOpen: boolean;
   selectedLineItemId: string | null;
   newLineItemDraftVersion: number;
-  activeLineItemTab: LineItemDetailTab;
-  onChangeLineItemTab: (tab: LineItemDetailTab) => void;
   newLineItemDraftSeed: Partial<NewLineItemDraft>;
   pinnedLineItemFields: Set<keyof NewLineItemDraft>;
   onTogglePinnedLineItemField: (key: keyof NewLineItemDraft) => void;
-  keepLineItemOpenAfterSave: boolean;
-  onToggleKeepLineItemOpenAfterSave: (checked: boolean) => void;
   onSaveAndCreateNewLineItem: (draft: NewLineItemDraft) => void;
   onSaveAndCloseLineItem: () => void;
   contractTabs: readonly string[];
@@ -161,13 +156,9 @@ export function ContractDetailView({
   isLineItemDetailOpen,
   selectedLineItemId,
   newLineItemDraftVersion,
-  activeLineItemTab,
-  onChangeLineItemTab,
   newLineItemDraftSeed,
   pinnedLineItemFields,
   onTogglePinnedLineItemField,
-  keepLineItemOpenAfterSave,
-  onToggleKeepLineItemOpenAfterSave,
   onSaveAndCreateNewLineItem,
   onSaveAndCloseLineItem,
   contractTabs,
@@ -316,13 +307,9 @@ export function ContractDetailView({
           key={`line-item-detail-${selectedLineItemId ?? "new"}-${newLineItemDraftVersion}`}
           lineItemId={selectedLineItemId ?? "new"}
           customerName={contractDetails.summary.customer}
-          activeTab={activeLineItemTab}
-          onChangeTab={onChangeLineItemTab}
           newDraftSeed={newLineItemDraftSeed}
           pinnedFields={pinnedLineItemFields}
           onTogglePinnedField={onTogglePinnedLineItemField}
-          keepOpenAfterSave={keepLineItemOpenAfterSave}
-          onToggleKeepOpenAfterSave={onToggleKeepLineItemOpenAfterSave}
           onSaveAndCreateNew={onSaveAndCreateNewLineItem}
           onSaveAndClose={onSaveAndCloseLineItem}
           onCreateAvropsrad={onCreateAvropsrad}

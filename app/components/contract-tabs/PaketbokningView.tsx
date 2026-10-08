@@ -97,6 +97,8 @@ type PaketbokningViewProps = {
   onBack: () => void;
   onReservera: (rows: BokadPaketRow[]) => void;
   onSkaLastasUt: (rows: BokadPaketRow[]) => void;
+  /** Döljer vyns eget huvud när den visas i en dialog med egen titel. */
+  hideHeader?: boolean;
 };
 
 export function PaketbokningView({
@@ -107,6 +109,7 @@ export function PaketbokningView({
   onBack,
   onReservera,
   onSkaLastasUt,
+  hideHeader = false,
 }: PaketbokningViewProps) {
   const [filters, setFilters] = useState({
     reservationstyp: initialReservationstyp,
@@ -171,13 +174,15 @@ export function PaketbokningView({
 
   return (
     <>
-      <DetailHeader
-        entity="contract"
-        label="Paketbokning"
-        title={filters.reservationstyp}
-        subtitle={[produkt, volym && `${volym}${enhet ? ` ${enhet}` : ""}`]}
-        onBack={onBack}
-      />
+      {!hideHeader ? (
+        <DetailHeader
+          entity="contract"
+          label="Paketbokning"
+          title={filters.reservationstyp}
+          subtitle={[produkt, volym && `${volym}${enhet ? ` ${enhet}` : ""}`]}
+          onBack={onBack}
+        />
+      ) : null}
       <div className={styles.paketbokningLayout}>
         <div className={styles.paketbokningFilterStrip}>
           {/* <div className={`${styles.freightFormField} ${styles.paketbokningFieldWide}`}>

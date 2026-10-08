@@ -41,7 +41,7 @@ type AvropSummary = {
   enhet: string;
 };
 
-type AvropsradRow = {
+export type AvropsradRow = {
   avropsradNr: string;
   avropsradsstatus: string;
   enhet: string;
@@ -78,7 +78,7 @@ const SUMMARY: AvropSummary = {
   enhet: "m³",
 };
 
-const INITIAL_AVROPSRADER: AvropsradRow[] = [
+export const INITIAL_AVROPSRADER: AvropsradRow[] = [
   {
     avropsradNr: "1",
     avropsradsstatus: "Aktiv",
@@ -144,7 +144,7 @@ const LANGDFORDELNING_COLUMNS = [
 
 // ── Column definitions ─────────────────────────────────────────────────────────
 
-const AVROPSRAD_COLUMNS = [
+export const AVROPSRAD_COLUMNS = [
   { key: "avropsradNr", label: "Avropsrad nr" },
   { key: "avropsradsstatus", label: "Avropsradsstatus" },
   { key: "enhet", label: "Enhet" },

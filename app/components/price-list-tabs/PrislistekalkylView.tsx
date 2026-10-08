@@ -3,8 +3,6 @@
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
-import PrintOutlinedIcon from "@mui/icons-material/PrintOutlined";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import RemoveIcon from "@mui/icons-material/Remove";
 import ViewColumnOutlinedIcon from "@mui/icons-material/ViewColumnOutlined";
@@ -12,7 +10,6 @@ import { RedigeraPrislisteradDialog } from "./RedigeraPrislisteradDialog";
 import type { RedigeraPrislisteradInitial } from "./RedigeraPrislisteradDialog";
 import {
   Alert,
-  Autocomplete,
   Button,
   Checkbox,
   CircularProgress,
@@ -24,16 +21,20 @@ import {
   FormControlLabel,
   IconButton,
   InputAdornment,
-  MenuItem,
   Popover,
-  Select,
   Snackbar,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { CSSProperties } from "react";
+import {
+  ColumnFilterButton,
+  isColumnFilterActive,
+  matchesColumnFilter,
+  type ColumnFilterConfig,
+  type ColumnFilterValue,
+} from "../contract-tabs/StocknotaColumnFilter";
 import { ActionRow } from "../shared/ActionRow";
 import { getPriceListKund } from "../shared/priceListCustomers";
 import { DetailHeader } from "../shared/DetailHeader";
@@ -43,7 +44,6 @@ type PrislistekalkylViewProps = {
   priceListId: string;
   onBack?: () => void;
   onOpenPriceRowDetail: (priceRowId: string) => void;
-  onCreatePriceRow: () => void;
 };
 
 type HeaderEditField =
@@ -244,6 +244,22 @@ const getPakettypLabel = (row: KalkylRow): string => {
   return "Lp";
 };
 
+const getTradslag = (row: KalkylRow): string => {
+  const text = row.fakturatext.toLowerCase();
+  if (text.includes("gran")) return "Gran";
+  if (text.includes("furu")) return "Furu";
+  return "";
+};
+
+// Kolumnfilter i kolumnhuvudena (MudBlazor DataGrid ColumnFilterMenu).
+const LANGD_FILTER: ColumnFilterConfig = { kind: "number", defaultOperator: "gte" };
+const GRUPP_FILTER: ColumnFilterConfig = { kind: "enum", multiple: true, options: ["Konstruktion", "Panel", "Trall"] };
+const TRADSLAG_FILTER: ColumnFilterConfig = { kind: "enum", options: ["Gran", "Furu"] };
+const PAKETTYP_EMPTY_LABEL = "(Tom)";
+const PAKETTYP_FILTER: ColumnFilterConfig = { kind: "enum", multiple: true, options: ["Lp", "Pk", PAKETTYP_EMPTY_LABEL] };
+
+const toDecimalString = (value: string): string => value.replace(/\s/g, "").replace(",", ".");
+
 const GB = "1px solid #aab4c5";
 // Tunn kantlinje mellan alla celler; GB (ovan) markerar tydligare var en kolumnsektion börjar.
 const CELL_BORDER = "1px solid #eef1f6";
@@ -262,7 +278,7 @@ const thGroup = (align: CSSProperties["textAlign"], opts: { borderLeft?: boolean
   borderLeft: opts.borderLeft ? GB : undefined,
   whiteSpace: "nowrap",
   letterSpacing: "0.2px",
-  // textTransform: opts.isValue ? undefined : "uppercase",
+  textTransform: opts.isValue ? undefined : "uppercase",
 });
 
 // Extra luft till vänster i huvudet för redigerbara kolumner utanför redigeringsläget.
@@ -293,7 +309,7 @@ const td = (borderLeft = false, align: CSSProperties["textAlign"] = "left"): CSS
   textAlign: align,
 });
 
-export function PrislistekalkylView({ priceListId, onCreatePriceRow }: PrislistekalkylViewProps) {
+export function PrislistekalkylView({ priceListId }: PrislistekalkylViewProps) {
   const [frakt, setFrakt] = useState("12,50");
   const [provision, setProvision] = useState("3,00");
   const [bonus, setBonus] = useState("1,50");
@@ -306,23 +322,18 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
   const [impregnering, setImpregnering] = useState(false);
   const [malning, setMalning] = useState(false);
   const [pakettyp, setPakettyp] = useState(false);
-  const losRad = "";
-  const [filterTradslag, setFilterTradslag] = useState("");
-  const [filterUnderproduktgrupp, setFilterUnderproduktgrupp] = useState<string[]>([]);
-  const [filterPakettyp, setFilterPakettyp] = useState<string[]>([]);
-  const [filterLangdMin, setFilterLangdMin] = useState("");
-  const [filterLangdMax, setFilterLangdMax] = useState("");
-  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
-  const filterMenuRef = useRef<HTMLDivElement>(null);
-  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const [filterLangd, setFilterLangd] = useState<ColumnFilterValue | undefined>();
+  const [filterGrupp, setFilterGrupp] = useState<ColumnFilterValue | undefined>();
+  const [filterTradslag, setFilterTradslag] = useState<ColumnFilterValue | undefined>();
+  const [filterPakettyp, setFilterPakettyp] = useState<ColumnFilterValue | undefined>();
 
   const rowMatchesFilters = (row: KalkylRow): boolean => {
-    if (filterTradslag && !row.fakturatext.toLowerCase().includes(filterTradslag)) return false;
-    if (filterUnderproduktgrupp.length > 0 && !filterUnderproduktgrupp.includes(getUnderproduktgrupp(row))) return false;
-    if (filterPakettyp.length > 0 && !filterPakettyp.includes(getPakettypLabel(row))) return false;
-    const langd = parseSwedishNumber(row.langd);
-    if (filterLangdMin.trim() && langd < parseSwedishNumber(filterLangdMin)) return false;
-    if (filterLangdMax.trim() && langd > parseSwedishNumber(filterLangdMax)) return false;
+    if (filterLangd && isColumnFilterActive(filterLangd)
+      && !matchesColumnFilter(toDecimalString(row.langd), { ...filterLangd, value: toDecimalString(filterLangd.value) }, "number")) return false;
+    if (filterGrupp && isColumnFilterActive(filterGrupp) && !matchesColumnFilter(getUnderproduktgrupp(row), filterGrupp, "enum")) return false;
+    if (filterTradslag && isColumnFilterActive(filterTradslag) && !matchesColumnFilter(getTradslag(row), filterTradslag, "enum")) return false;
+    if (filterPakettyp && isColumnFilterActive(filterPakettyp)
+      && !matchesColumnFilter(getPakettypLabel(row) || PAKETTYP_EMPTY_LABEL, filterPakettyp, "enum")) return false;
     return true;
   };
   const filteredRows = KALKYL_ROWS.filter(rowMatchesFilters);
@@ -485,24 +496,6 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
     </th>
   );
 
-  const kalkylkursNum = parseSwedishNumber(kalkylkurs);
-  const harAnnanValuta = kalkylkursNum !== 0 && kalkylkursNum !== 1;
-
-  type FooterItem = { key: string; label: string; value: string; unit: string };
-  const footerItems: FooterItem[] = [
-    { key: "antalRader", label: "Antal rader i prislista", value: "", unit: "st" },
-    { key: "totalVolym", label: "Total kalkylerad volym", value: "", unit: "m3" },
-    { key: "vinstSek", label: "Vinst för kalkylerad volym", value: losRad, unit: "SEK" },
-    ...(harAnnanValuta
-      ? [{
-        key: "vinstAnnanValuta",
-        label: "Vinst för kalkylerad volym (annan valuta)",
-        value: formatSwedishNumber(parseSwedishNumber(losRad) * kalkylkursNum),
-        unit: "",
-      }]
-      : []),
-  ];
-
   const getKplVal = (row: KalkylRow): boolean => (rowEdits[row.id]?.kpl as boolean | undefined) ?? row.kpl;
   const allKplChecked = filteredRows.every(getKplVal);
   const someKplChecked = filteredRows.some(getKplVal);
@@ -539,7 +532,6 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
     setSavedRowEdits(rowEdits);
     setPrisM3Drafts({});
     setHeaderDeltas(EMPTY_HEADER_DELTAS);
-    setIsFilterMenuOpen(false);
     setIsEditing(true);
   };
 
@@ -586,25 +578,8 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
     isEditing && parseSwedishNumber(getRowVal(row.id, field, row[field])) !== parseSwedishNumber(getSavedVal(row, field));
   const changedCellProps = (row: KalkylRow, field: EditableRowField) =>
     isCellChanged(row, field)
-      ? { title: `Tidigare: ${getSavedVal(row, field)}`, style: { fontWeight: 700, color: "#002d72" } }
+      ? { title: `Tidigare: ${getSavedVal(row, field)}`, style: { fontWeight: 700, color: "#000000" } }
       : { title: undefined, style: {} };
-
-  const activeFilterCount =
-    (filterTradslag ? 1 : 0) +
-    (filterUnderproduktgrupp.length > 0 ? 1 : 0) +
-    (filterPakettyp.length > 0 ? 1 : 0) +
-    (filterLangdMin.trim() || filterLangdMax.trim() ? 1 : 0);
-
-  useEffect(() => {
-    if (!isFilterMenuOpen) return;
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (filterMenuRef.current?.contains(target) || filterButtonRef.current?.contains(target)) return;
-      setIsFilterMenuOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isFilterMenuOpen]);
 
   const selectedRow = KALKYL_ROWS.find((r) => r.id === selectedRowId) ?? null;
   const editInitial: RedigeraPrislisteradInitial | null = selectedRow
@@ -658,11 +633,6 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
           <Button className={styles.contractQuickActionButton} size="small" disabled={!isEditing} onClick={() => setNollstallVinstConfirmOpen(true)}>
             Nollställ vinst
           </Button>
-          <Tooltip title="Skriv ut">
-            <IconButton size="small" className={styles.contractHeaderDotsButton} style={{ marginLeft: "auto" }}>
-              <PrintOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
         </>
         }
       />
@@ -692,13 +662,6 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
           <ActionRow
             items={[
               {
-                label: "Prislisterad",
-                icon: <AddIcon fontSize="small" />,
-                tone: "primary",
-                enabled: !isEditing,
-                onClick: onCreatePriceRow,
-              },
-              {
                 label: "Redigera rad",
                 icon: <EditOutlinedIcon fontSize="small" />,
                 enabled: !isEditing && selectedRowId !== null,
@@ -724,137 +687,6 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
             ]}
             rightSlot={
               <>
-                <div className={styles.lagerFilterMenuWrapper}>
-                  <Tooltip title={isEditing ? "Filtret är låst under redigering" : ""}>
-                    <span style={isEditing ? { cursor: "not-allowed" } : undefined}>
-                      <Button
-                        ref={filterButtonRef}
-                        size="small"
-                        variant="outlined"
-                        color="inherit"
-                        disabled={isEditing}
-                        startIcon={<FilterAltOutlinedIcon fontSize="small" />}
-                        className={`${styles.lineItemsToggleButton} ${activeFilterCount > 0 ? styles.columnsIconButtonActive : ""}`}
-                        onClick={() => setIsFilterMenuOpen((prev) => !prev)}
-                      >
-                        Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-                      </Button>
-                    </span>
-                  </Tooltip>
-                  {isFilterMenuOpen ? (
-                    <div className={styles.lagerFilterDropdown} ref={filterMenuRef}>
-                      <div className={styles.lagerFilterDropdownRow}>
-                        <span className={styles.lagerFilterLabel}>Trädslag</span>
-                        <Select
-                          size="small"
-                          value={filterTradslag}
-                          displayEmpty
-                          className={styles.lagerFilterRangeInput}
-                          onChange={(e) => setFilterTradslag(e.target.value)}
-                          MenuProps={{ disablePortal: true }}
-                        >
-                          <MenuItem value=""><em>Alla</em></MenuItem>
-                          <MenuItem value="gran">Gran</MenuItem>
-                          <MenuItem value="furu">Furu</MenuItem>
-                        </Select>
-                      </div>
-
-                      <Autocomplete
-                        multiple
-                        size="small"
-                        disablePortal
-                        className={styles.lagerFilterRangeInput}
-                        options={["Konstruktion", "Panel", "Trall"]}
-                        value={filterUnderproduktgrupp}
-                        onChange={(_e, newValue) => setFilterUnderproduktgrupp(newValue)}
-                        disableCloseOnSelect
-                        sx={{ "& .MuiAutocomplete-inputRoot": { flexWrap: "nowrap" } }}
-                        renderValue={(selectedOptions) => (
-                          <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {(selectedOptions as string[]).join(", ")}
-                          </span>
-                        )}
-                        renderOption={(props, option, { selected: isSelected }) => {
-                          const { key, ...optionProps } = props;
-                          return (
-                            <li key={key} {...optionProps}>
-                              <Checkbox size="small" checked={isSelected} style={{ marginRight: 8 }} />
-                              {option}
-                            </li>
-                          );
-                        }}
-                        renderInput={(params) => <TextField {...params} label="Underproduktgrupp" />}
-                      />
-
-                      <Autocomplete
-                        multiple
-                        size="small"
-                        disablePortal
-                        className={styles.lagerFilterRangeInput}
-                        options={["Lp", "Pk"]}
-                        value={filterPakettyp}
-                        onChange={(_e, newValue) => setFilterPakettyp(newValue)}
-                        disableCloseOnSelect
-                        sx={{ "& .MuiAutocomplete-inputRoot": { flexWrap: "nowrap" } }}
-                        renderValue={(selectedOptions) => (
-                          <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {(selectedOptions as string[]).join(", ")}
-                          </span>
-                        )}
-                        renderOption={(props, option, { selected: isSelected }) => {
-                          const { key, ...optionProps } = props;
-                          return (
-                            <li key={key} {...optionProps}>
-                              <Checkbox size="small" checked={isSelected} style={{ marginRight: 8 }} />
-                              {option}
-                            </li>
-                          );
-                        }}
-                        renderInput={(params) => <TextField {...params} label="Pakettyp" />}
-                      />
-
-                      <div className={styles.lagerFilterDropdownRow}>
-                        <span className={styles.lagerFilterLabel}>Längd (m)</span>
-                        <div className={styles.lagerFilterRangeGroup}>
-                          <TextField
-                            size="small"
-                            placeholder="Min"
-                            value={filterLangdMin}
-                            onChange={(e) => setFilterLangdMin(e.target.value)}
-                            className={styles.lagerFilterRangeInput}
-                            slotProps={{ htmlInput: { inputMode: "decimal" } }}
-                          />
-                          <span className={styles.lagerFilterSeparator}>–</span>
-                          <TextField
-                            size="small"
-                            placeholder="Max"
-                            value={filterLangdMax}
-                            onChange={(e) => setFilterLangdMax(e.target.value)}
-                            className={styles.lagerFilterRangeInput}
-                            slotProps={{ htmlInput: { inputMode: "decimal" } }}
-                          />
-                        </div>
-                      </div>
-                      <div className={styles.lagerFilterDropdownDivider} />
-                      <div className={styles.lagerFilterDropdownFooter}>
-                        <Button
-                          size="small"
-                          variant="text"
-                          disabled={activeFilterCount === 0}
-                          onClick={() => {
-                            setFilterTradslag("");
-                            setFilterUnderproduktgrupp([]);
-                            setFilterPakettyp([]);
-                            setFilterLangdMin("");
-                            setFilterLangdMax("");
-                          }}
-                        >
-                          Rensa filter
-                        </Button>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
                 <Button
                   size="small"
                   variant="outlined"
@@ -884,7 +716,7 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
             <thead style={{ position: "sticky", top: 0, zIndex: 6 }}>
               {/* Group header row */}
               <tr>
-                <th colSpan={showGruppKplKolumner ? 5 : 3} style={thGroup("left")}>Produkt</th>
+                <th colSpan={showGruppKplKolumner ? 7 : 5} style={thGroup("left")}>Produkt</th>
                 <th colSpan={showKostnadKolumner ? 7 : 2} style={thGroup("left", { borderLeft: true })}>Kostnad tillverkning</th>
                 <th colSpan={2} style={thGroup("left", { borderLeft: true })}>Affärsparametrar</th>
                 <th colSpan={4} style={thGroup("left", { borderLeft: true })}>Aktuell prislista</th>
@@ -897,7 +729,12 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
               <tr>
                 {showGruppKplKolumner && (
                   <>
-                    <th style={thCol()}>Grupp</th>
+                    <th style={thCol()}>
+                      <div className={styles.prislistekalkylHeaderLabel}>
+                        Grupp
+                        <ColumnFilterButton config={GRUPP_FILTER} filter={filterGrupp} onApply={(f) => setFilterGrupp(f ?? undefined)} disabled={isEditing} />
+                      </div>
+                    </th>
                     <th style={{ ...thCol(), background: COL_ORANGE }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         {isEditing && (
@@ -915,8 +752,25 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
                   </>
                 )}
                 <th style={thCol()}>Nom.dim</th>
-                <th style={thCol()}>Längd</th>
+                <th style={thCol()}>
+                  <div className={styles.prislistekalkylHeaderLabel}>
+                    Längd
+                    <ColumnFilterButton config={LANGD_FILTER} filter={filterLangd} onApply={(f) => setFilterLangd(f ?? undefined)} disabled={isEditing} />
+                  </div>
+                </th>
                 <th style={{ ...thCol(), minWidth: 200 }}>Fakturatext</th>
+                <th style={thCol()}>
+                  <div className={styles.prislistekalkylHeaderLabel}>
+                    Trädslag
+                    <ColumnFilterButton config={TRADSLAG_FILTER} filter={filterTradslag} onApply={(f) => setFilterTradslag(f ?? undefined)} disabled={isEditing} />
+                  </div>
+                </th>
+                <th style={thCol()}>
+                  <div className={styles.prislistekalkylHeaderLabel}>
+                    Pakettyp
+                    <ColumnFilterButton config={PAKETTYP_FILTER} filter={filterPakettyp} onApply={(f) => setFilterPakettyp(f ?? undefined)} disabled={isEditing} />
+                  </div>
+                </th>
                 <th style={thCol(true, "right")}>Råvara</th>
                 {showKostnadKolumner && (
                   <>
@@ -986,6 +840,8 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
                     <td style={td()}>{row.nom}</td>
                     <td style={td()}>{row.langd || "–"}</td>
                     <td style={{ ...td(), minWidth: 200 }}>{row.fakturatext}</td>
+                    <td style={td()}>{getTradslag(row)}</td>
+                    <td style={td()}>{getPakettypLabel(row) || "–"}</td>
                     <td style={td(true, "right")}>{row.rawara}</td>
                     {showKostnadKolumner && (
                       <>
@@ -1039,7 +895,7 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
                           onClick={(e) => e.stopPropagation()}
                           inputMode="decimal"
                           title={isPrisM3Changed ? `Tidigare: ${formatSwedishInteger(savedPrisM3)}` : undefined}
-                          style={{ width: 64, border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box", ...(isPrisM3Changed ? { fontWeight: 700, color: "#002d72" } : {}) }}
+                          style={{ width: 64, border: `1px solid ${COL_ORANGE_BORDER}`, borderRadius: 3, background: "transparent", fontSize: 13, color: "#404753", textAlign: "right", outline: "none", padding: "2px 4px", boxSizing: "border-box", ...(isPrisM3Changed ? { fontWeight: 700, color: "#000000" } : {}) }}
                         />
                       ) : formatSwedishInteger(prisM3)}
                     </td>
@@ -1057,31 +913,6 @@ export function PrislistekalkylView({ priceListId, onCreatePriceRow }: Prisliste
           </table>
         </div>
 
-      </div>
-
-      {/* ── Ekonomi sammanställning (footer, alltid synlig) ── */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 18,
-          flexWrap: "wrap",
-          padding: "6px 14px",
-          borderTop: "1px solid #dfe3ea",
-          background: "#f9fafb",
-          flexShrink: 0,
-        }}
-      >
-        <span style={{ fontSize: 10, fontWeight: 600, color: "#696969", letterSpacing: "0.2px" }}>
-          Ekonomi sammanställning
-        </span>
-        <Divider orientation="vertical" flexItem style={{ margin: "2px 0" }} />
-        {footerItems.map((item) => (
-          <div key={item.key} style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-            <span style={{ fontSize: 10, fontWeight: 500, color: "#6a7483", letterSpacing: "0.1px" }}>{item.label}</span>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "#2f3743" }}>{item.value || "–"} {item.unit}</span>
-          </div>
-        ))}
       </div>
 
       <Popover

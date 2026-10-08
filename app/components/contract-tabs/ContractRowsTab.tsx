@@ -311,7 +311,7 @@ export function ContractRowsTab({
               column.key === "idRad" ? (
                 <button
                   type="button"
-                  className={styles.lineItemLinkButton}
+                  className={`${styles.lineItemLinkButton} ${styles.lineItemLinkButtonStretched}`}
                   tabIndex={isPriceEditMode ? -1 : 0}
                   onClick={(event) => {
                     event.stopPropagation();

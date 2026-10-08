@@ -2,7 +2,7 @@
 
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
-import { Button, IconButton, MenuItem, Popover, TextField } from "@mui/material";
+import { Autocomplete, Button, Checkbox, IconButton, MenuItem, Popover, TextField } from "@mui/material";
 import { useState } from "react";
 import type React from "react";
 import styles from "../../page.module.scss";
@@ -18,9 +18,11 @@ export type ColumnFilterConfig = {
   defaultOperator?: string;
   /** Begränsar vilka operatorer som går att välja (default: alla för kolumntypen). */
   operators?: readonly string[];
+  /** Enum-kolumn där flera värden kan väljas (matchar om cellen är något av dem). */
+  multiple?: boolean;
 };
 
-export type ColumnFilterValue = { operator: string; value: string };
+export type ColumnFilterValue = { operator: string; value: string; values?: string[] };
 
 const OPERATORS: Record<ColumnFilterKind, Array<{ value: string; label: string }>> = {
   text: [
@@ -51,18 +53,25 @@ const OPERATORS: Record<ColumnFilterKind, Array<{ value: string; label: string }
 
 const OPERATORS_WITHOUT_VALUE = new Set(["isEmpty", "isNotEmpty"]);
 
+const MULTIPLE_ENUM_OPERATORS = [
+  { value: "is", label: "är något av" },
+  { value: "isNot", label: "är inget av" },
+];
+
 function operatorsFor(config: ColumnFilterConfig) {
-  const all = OPERATORS[config.kind];
+  const all = config.kind === "enum" && config.multiple ? MULTIPLE_ENUM_OPERATORS : OPERATORS[config.kind];
   return config.operators ? all.filter((op) => config.operators!.includes(op.value)) : all;
 }
 
 function defaultFilter(config: ColumnFilterConfig): ColumnFilterValue {
-  return { operator: config.defaultOperator ?? operatorsFor(config)[0]!.value, value: "" };
+  const operator = config.defaultOperator ?? operatorsFor(config)[0]!.value;
+  return config.multiple ? { operator, value: "", values: [] } : { operator, value: "" };
 }
 
 export function isColumnFilterActive(filter: ColumnFilterValue | undefined): boolean {
   if (!filter) return false;
   if (OPERATORS_WITHOUT_VALUE.has(filter.operator)) return true;
+  if (filter.values) return filter.values.length > 0;
   return filter.value.trim() !== "";
 }
 
@@ -70,6 +79,11 @@ export function matchesColumnFilter(cellValue: string, filter: ColumnFilterValue
   const cell = cellValue.trim();
   if (filter.operator === "isEmpty") return cell === "";
   if (filter.operator === "isNotEmpty") return cell !== "";
+
+  if (filter.values) {
+    const isMatch = filter.values.some((v) => v.toLowerCase() === cell.toLowerCase());
+    return filter.operator === "isNot" ? !isMatch : isMatch;
+  }
 
   if (kind === "number") {
     if (cell === "") return false;
@@ -106,9 +120,10 @@ type ColumnFilterButtonProps = {
   config: ColumnFilterConfig;
   filter: ColumnFilterValue | undefined;
   onApply: (filter: ColumnFilterValue | null) => void;
+  disabled?: boolean;
 };
 
-export function ColumnFilterButton({ config, filter, onApply }: ColumnFilterButtonProps) {
+export function ColumnFilterButton({ config, filter, onApply, disabled }: ColumnFilterButtonProps) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [draft, setDraft] = useState<ColumnFilterValue>(() => filter ?? defaultFilter(config));
   const isActive = isColumnFilterActive(filter);
@@ -137,6 +152,7 @@ export function ColumnFilterButton({ config, filter, onApply }: ColumnFilterButt
       <IconButton
         size="small"
         aria-label="Filtrera"
+        disabled={disabled}
         className={`${styles.stocknotaFilterButton} ${isActive || anchorEl ? styles.stocknotaFilterButtonActive : ""}`}
         onClick={open}
       >
@@ -166,7 +182,33 @@ export function ColumnFilterButton({ config, filter, onApply }: ColumnFilterButt
             ))}
           </TextField>
           {needsValue ? (
-            config.kind === "enum" ? (
+            config.kind === "enum" && config.multiple ? (
+              <Autocomplete
+                multiple
+                size="small"
+                options={[...(config.options ?? [])]}
+                value={draft.values ?? []}
+                onChange={(_e, newValue) => setDraft((prev) => ({ ...prev, values: newValue }))}
+                disableCloseOnSelect
+                sx={{ "& .MuiAutocomplete-inputRoot": { flexWrap: "nowrap" } }}
+                renderValue={(selectedOptions) => (
+                  <span style={{ flex: "1 1 auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {(selectedOptions as string[]).join(", ")}
+                  </span>
+                )}
+                renderOption={(props, option, { selected: isSelected }) => {
+                  const { key, ...optionProps } = props;
+                  return (
+                    <li key={key} {...optionProps}>
+                      <Checkbox size="small" checked={isSelected} style={{ marginRight: 8 }} />
+                      {option}
+                    </li>
+                  );
+                }}
+                renderInput={(params) => <TextField {...params} variant="standard" label="Värde" />}
+                fullWidth
+              />
+            ) : config.kind === "enum" ? (
               <TextField
                 select
                 variant="standard"
@@ -196,7 +238,7 @@ export function ColumnFilterButton({ config, filter, onApply }: ColumnFilterButt
           ) : null}
         </div>
         <div className={styles.stocknotaFilterActions}>
-          <Button size="small" onClick={clear}>Rensa</Button>
+          <Button size="small" color="inherit" onClick={clear}>Rensa</Button>
           <Button size="small" color="primary" onClick={apply}>Filtrera</Button>
         </div>
       </Popover>
