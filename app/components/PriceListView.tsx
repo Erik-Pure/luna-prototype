@@ -130,6 +130,7 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
   const [isTableSearchOpen, setIsTableSearchOpen] = useState(false);
   const [tableSearchValue, setTableSearchValue] = useState("");
   const [avregistreraOpen, setAvregistreraOpen] = useState(false);
+  const [kopieraOpen, setKopieraOpen] = useState(false);
   const tableSearchWrapperRef = useRef<HTMLDivElement>(null);
   const tableSearchInputRef = useRef<HTMLInputElement>(null);
   const columnsMenuRef = useRef<HTMLDivElement | null>(null);
@@ -230,6 +231,7 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
             label: "Kopiera",
             icon: <ContentCopyIcon fontSize="small" />,
             enabled: rowSelection.hasSelectedRow,
+            onClick: () => setKopieraOpen(true),
           },
           {
             label: "Avregistrera",
@@ -345,6 +347,30 @@ export function PriceListView({ onOpenPriceListDetail, onCreatePriceList }: Pric
           <div className={styles.tableFiller} />
         </div>
       </div>
+
+      <Dialog open={kopieraOpen} onClose={() => setKopieraOpen(false)} maxWidth="xs" fullWidth slotProps={{ paper: { className: styles.freightDialogPaper } }}>
+        <DialogTitle className={styles.freightDialogTitle}>
+          <div className={styles.freightDialogTitleRow}>
+            <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Kopiera prislista</Typography>
+            <IconButton size="small" onClick={() => setKopieraOpen(false)} style={{ color: "#6a7483" }}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </div>
+        </DialogTitle>
+        <DialogContent className={styles.freightDialogContent}>
+          <Typography style={{ fontSize: 14, color: "#404753", paddingTop: 4 }}>
+            Vill du kopiera prislista {rowSelection.selectedRowIndex !== null ? tableRows[rowSelection.selectedRowIndex]?.prislistenr : ""}?
+          </Typography>
+        </DialogContent>
+        <DialogActions className={styles.freightDialogActions}>
+          <Button variant="contained" size="small" className={styles.bytPrislistaOkButton} onClick={() => setKopieraOpen(false)}>
+            Ja
+          </Button>
+          <Button variant="outlined" size="small" className={styles.bytPrislistaAvbrytButton} onClick={() => setKopieraOpen(false)}>
+            Avbryt
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={avregistreraOpen} onClose={() => setAvregistreraOpen(false)} maxWidth="xs" fullWidth slotProps={{ paper: { className: styles.freightDialogPaper } }}>
         <DialogTitle className={styles.freightDialogTitle}>

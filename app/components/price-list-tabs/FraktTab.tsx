@@ -58,16 +58,16 @@ const INITIAL_ROWS: FraktRow[] = ENHETER.map((enhet, i) => ({
 }));
 
 const COLUMNS = [
-  { key: "enhet", label: "Enhet", pinned: true },
-  { key: "snittprisCLoad", label: "Snittpris i C-Load" },
-  { key: "bilJvgFrakt", label: "BilJvgFrakt" },
-  { key: "valutaBilJvg", label: "Valuta" },
-  { key: "spedTermkostn", label: "Sped/Termkostn." },
-  { key: "valutaSped", label: "Valuta" },
-  { key: "sjofr", label: "Sjöfrakt" },
-  { key: "valutaSjofr", label: "Valuta" },
-  { key: "fraktNetoSek", label: "Total fraktkostnad" },
-  { key: "kalkylgrundande", label: "Kalkylgrundande" },
+  { key: "enhet", label: "Enhet", pinned: true, width: 210 },
+  { key: "snittprisCLoad", label: "Snittpris i C-Load", width: 145 },
+  { key: "bilJvgFrakt", label: "BilJvgFrakt", width: 100 },
+  { key: "valutaBilJvg", label: "Valuta", width: 72 },
+  { key: "spedTermkostn", label: "Sped/Termkostn.", width: 135 },
+  { key: "valutaSped", label: "Valuta", width: 72 },
+  { key: "sjofr", label: "Sjöfrakt", width: 90 },
+  { key: "valutaSjofr", label: "Valuta", width: 72 },
+  { key: "fraktNetoSek", label: "Total fraktkostnad", width: 150 },
+  { key: "kalkylgrundande", label: "Kalkylgrundande", width: 140 },
   { key: "_actions", label: "", pinnedRight: true, width: 44 },
 ] satisfies Array<{ key: string; label: string; pinned?: boolean; pinnedRight?: boolean; width?: number }>;
 
@@ -114,7 +114,7 @@ export function FraktTab() {
   return (
     <>
       <div className={styles.tablesLayout}>
-        <div className={styles.tableContainer}>
+        <div className={`${styles.tableContainer} ${styles.contractTableCompact} ${styles.fraktTable}`}>
           <div className={styles.tableScrollWrap}>
             <div className={styles.tableInner}>
               <DataTable
@@ -122,11 +122,12 @@ export function FraktTab() {
                 columns={COLUMNS}
                 rows={rows}
                 rowKey={(row) => row._id}
+                fillRemainingSpace
                 renderCell={(row, col) => {
                   if (col.key === "_actions") {
                     return (
                       <Tooltip title="Redigera">
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
+                        <IconButton size="small" sx={{ p: "4px" }} onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
                           <EditOutlinedIcon style={{ fontSize: 15 }} />
                         </IconButton>
                       </Tooltip>
