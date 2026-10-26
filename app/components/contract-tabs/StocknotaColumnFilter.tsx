@@ -1,5 +1,7 @@
 "use client";
 
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import FilterAltOutlinedIcon from "@mui/icons-material/FilterAltOutlined";
 import { Autocomplete, Button, Checkbox, IconButton, MenuItem, Popover, TextField } from "@mui/material";
@@ -246,5 +248,32 @@ export function ColumnFilterButton({ config, filter, onApply, disabled }: Column
         </div>
       </Popover>
     </>
+  );
+}
+
+export type ColumnSortDirection = "asc" | "desc";
+
+type ColumnSortButtonProps = {
+  direction: ColumnSortDirection | null;
+  onChange: (direction: ColumnSortDirection | null) => void;
+  disabled?: boolean;
+};
+
+// Sorteringspil i kolumnhuvudet: osorterad → stigande → fallande → osorterad (som ColumnHeaderCell).
+export function ColumnSortButton({ direction, onChange, disabled }: ColumnSortButtonProps) {
+  const next = direction === null ? "asc" : direction === "asc" ? "desc" : null;
+  return (
+    <IconButton
+      size="small"
+      aria-label="Sortera"
+      disabled={disabled}
+      className={`${styles.stocknotaFilterButton} ${direction ? styles.stocknotaFilterButtonActive : ""}`}
+      onClick={(event) => {
+        event.stopPropagation();
+        onChange(next);
+      }}
+    >
+      {direction === "desc" ? <ArrowDownwardIcon fontSize="inherit" /> : <ArrowUpwardIcon fontSize="inherit" />}
+    </IconButton>
   );
 }

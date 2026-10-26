@@ -30,10 +30,12 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import {
   ColumnFilterButton,
+  ColumnSortButton,
   isColumnFilterActive,
   matchesColumnFilter,
   type ColumnFilterConfig,
   type ColumnFilterValue,
+  type ColumnSortDirection,
 } from "../contract-tabs/StocknotaColumnFilter";
 import { ActionRow } from "../shared/ActionRow";
 import { getPriceListKund } from "../shared/priceListCustomers";
@@ -227,7 +229,7 @@ const formatSwedishNumber = (value: number): string =>
 const formatSwedishInteger = (value: number): string =>
   (Math.round(value) + 0).toLocaleString("sv-SE", { maximumFractionDigits: 0 }); // + 0 undviker "−0"
 
-// Default sort: Fakturatext first, then ascending Längd within each fakturatext (no user-facing sort controls).
+// Default sort: Fakturatext first, then ascending Längd within each fakturatext. Användaren kan sortera om på Längd/Fakturatext.
 KALKYL_ROWS.sort((a, b) =>
   a.fakturatext.localeCompare(b.fakturatext, "sv", { numeric: true }) || parseSwedishNumber(a.langd) - parseSwedishNumber(b.langd)
 );
@@ -266,6 +268,7 @@ const LANGD_FILTER: ColumnFilterConfig = {
     isNotEmpty: "Är inte tom",
   },
 };
+const FAKTURATEXT_FILTER: ColumnFilterConfig = { kind: "text" };
 const GRUPP_FILTER: ColumnFilterConfig = { kind: "enum", multiple: true, options: ["Konstruktion", "Panel", "Trall"] };
 const TRADSLAG_FILTER: ColumnFilterConfig = { kind: "enum", options: ["Gran", "Furu"] };
 const PAKETTYP_EMPTY_LABEL = "(Tom)";
@@ -339,10 +342,17 @@ export function PrislistekalkylView({ priceListId }: PrislistekalkylViewProps) {
   const [filterGrupp, setFilterGrupp] = useState<ColumnFilterValue | undefined>();
   const [filterTradslag, setFilterTradslag] = useState<ColumnFilterValue | undefined>();
   const [filterPakettyp, setFilterPakettyp] = useState<ColumnFilterValue | undefined>();
+  const [filterFakturatext, setFilterFakturatext] = useState<ColumnFilterValue | undefined>();
+  const [columnSort, setColumnSort] = useState<{ key: "langd" | "fakturatext"; direction: ColumnSortDirection } | null>(null);
+  const sortDirectionFor = (key: "langd" | "fakturatext") => (columnSort?.key === key ? columnSort.direction : null);
+  const setSortFor = (key: "langd" | "fakturatext") => (direction: ColumnSortDirection | null) =>
+    setColumnSort(direction ? { key, direction } : null);
 
   const rowMatchesFilters = (row: KalkylRow): boolean => {
     if (filterLangd && isColumnFilterActive(filterLangd)
       && !matchesColumnFilter(toDecimalString(row.langd), { ...filterLangd, value: toDecimalString(filterLangd.value) }, "number")) return false;
+    if (filterFakturatext && isColumnFilterActive(filterFakturatext)
+      && !matchesColumnFilter(row.fakturatext, filterFakturatext, "text")) return false;
     if (filterGrupp && isColumnFilterActive(filterGrupp) && !matchesColumnFilter(getUnderproduktgrupp(row), filterGrupp, "enum")) return false;
     if (filterTradslag && isColumnFilterActive(filterTradslag) && !matchesColumnFilter(getTradslag(row), filterTradslag, "enum")) return false;
     if (filterPakettyp && isColumnFilterActive(filterPakettyp)
@@ -350,6 +360,15 @@ export function PrislistekalkylView({ priceListId }: PrislistekalkylViewProps) {
     return true;
   };
   const filteredRows = KALKYL_ROWS.filter(rowMatchesFilters);
+  if (columnSort) {
+    // Stabil sortering ovanpå standardordningen, så likvärdiga rader behåller fakturatext/längd-ordningen.
+    const sign = columnSort.direction === "asc" ? 1 : -1;
+    filteredRows.sort((a, b) =>
+      sign * (columnSort.key === "langd"
+        ? parseSwedishNumber(a.langd) - parseSwedishNumber(b.langd)
+        : a.fakturatext.localeCompare(b.fakturatext, "sv", { numeric: true }))
+    );
+  }
   const [isEditing, setIsEditing] = useState(false);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -639,7 +658,7 @@ export function PrislistekalkylView({ priceListId }: PrislistekalkylViewProps) {
             </>
           ) : (
             <Button variant="contained" size="small" startIcon={<EditOutlinedIcon fontSize="small" />} onClick={handleRedigera}>
-              Redigera
+              Redigera urval
             </Button>
           )}
           <Divider orientation="vertical" flexItem style={{ margin: "4px 0" }} />
@@ -768,10 +787,17 @@ export function PrislistekalkylView({ priceListId }: PrislistekalkylViewProps) {
                 <th style={thCol()}>
                   <div className={styles.prislistekalkylHeaderLabel}>
                     Längd
+                    <ColumnSortButton direction={sortDirectionFor("langd")} onChange={setSortFor("langd")} disabled={isEditing} />
                     <ColumnFilterButton config={LANGD_FILTER} filter={filterLangd} onApply={(f) => setFilterLangd(f ?? undefined)} disabled={isEditing} />
                   </div>
                 </th>
-                <th style={{ ...thCol(), minWidth: 200 }}>Fakturatext</th>
+                <th style={{ ...thCol(), minWidth: 200 }}>
+                  <div className={styles.prislistekalkylHeaderLabel}>
+                    Fakturatext
+                    <ColumnSortButton direction={sortDirectionFor("fakturatext")} onChange={setSortFor("fakturatext")} disabled={isEditing} />
+                    <ColumnFilterButton config={FAKTURATEXT_FILTER} filter={filterFakturatext} onApply={(f) => setFilterFakturatext(f ?? undefined)} disabled={isEditing} />
+                  </div>
+                </th>
                 <th style={thCol()}>
                   <div className={styles.prislistekalkylHeaderLabel}>
                     Trädslag
