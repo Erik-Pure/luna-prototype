@@ -447,20 +447,6 @@ export function PriceListRowDetailView({ priceListId, priceRowId, onClose }: Pri
                   </TextField>
 
                   <TextField
-                    fullWidth size="small"
-                    label="Intern kommentar"
-                    value={draft.internKommentar}
-                    onChange={(e) => update("internKommentar", e.target.value)}
-                  />
-
-                  <TextField
-                    fullWidth size="small"
-                    label="Extern kommentar"
-                    value={draft.externKommentar}
-                    onChange={(e) => update("externKommentar", e.target.value)}
-                  />
-
-                  <TextField
                     select fullWidth size="small"
                     label="Certifiering"
                     value={draft.certifiering}
@@ -472,36 +458,55 @@ export function PriceListRowDetailView({ priceListId, priceRowId, onClose }: Pri
                     <MenuItem value="FSC & PEFC">FSC &amp; PEFC</MenuItem>
                   </TextField>
 
-                  <div
-                    style={{
-                      border: "1px solid rgba(0,0,0,0.23)",
-                      borderRadius: 7,
-                      padding: "5px 14px",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          size="small"
-                          checked={draft.visaKund}
-                          onChange={(e) => update("visaKund", e.target.checked)}
-                          style={{ paddingTop: 2, paddingBottom: 2 }}
-                        />
-                      }
-                      label={<Typography style={{ fontSize: 13 }}>Visa kund</Typography>}
+                  <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, alignItems: "start" }}>
+                    <div
+                      style={{
+                        border: "1px solid rgba(0,0,0,0.23)",
+                        borderRadius: 7,
+                        padding: "5px 14px",
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            size="small"
+                            checked={draft.visaKund}
+                            onChange={(e) => update("visaKund", e.target.checked)}
+                            style={{ paddingTop: 2, paddingBottom: 2 }}
+                          />
+                        }
+                        label={<Typography style={{ fontSize: 13 }}>Visa kund</Typography>}
+                      />
+                    </div>
+
+                    <TextField
+                      fullWidth size="small"
+                      label="Kundens ArtNr"
+                      value={draft.kundensArtNr}
+                      onChange={(e) => update("kundensArtNr", e.target.value)}
+                      helperText="Endast vid ehandel för att skilja prislisterader åt med samma produkt/pakettyp"
                     />
                   </div>
 
-                  <TextField
-                    fullWidth size="small"
-                    label="Kundens ArtNr"
-                    value={draft.kundensArtNr}
-                    onChange={(e) => update("kundensArtNr", e.target.value)}
-                    helperText="Endast vid ehandel för att skilja prislisterader åt med samma produkt/pakettyp"
-                    style={{ gridColumn: "1 / -1" }}
-                  />
+                  <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                    <TextField
+                      fullWidth size="small"
+                      multiline rows={3}
+                      label="Intern kommentar"
+                      value={draft.internKommentar}
+                      onChange={(e) => update("internKommentar", e.target.value)}
+                    />
+
+                    <TextField
+                      fullWidth size="small"
+                      multiline rows={3}
+                      label="Extern kommentar"
+                      value={draft.externKommentar}
+                      onChange={(e) => update("externKommentar", e.target.value)}
+                    />
+                  </div>
 
 
 
@@ -545,7 +550,6 @@ export function PriceListRowDetailView({ priceListId, priceRowId, onClose }: Pri
                       <Button variant="outlined" size="small" startIcon={<AttachFileOutlinedIcon />} onClick={handleAddFile}>
                         Välj filer
                       </Button>
-                      <Typography variant="caption" sx={{ color: "text.disabled" }}>PDF, Word, Excel, bilder — max 20 MB per fil</Typography>
                     </Stack>
                   </Paper>
                   {uploadedFiles.length > 0 && (

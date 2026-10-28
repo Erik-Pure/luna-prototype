@@ -163,7 +163,8 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
   const set = (key: keyof PriceListDraft, value: string | boolean) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
 
-  const kursAdornment = draft.valuta ? `${draft.valuta} = 1 SEK` : "valuta = 1 SEK";
+  const kursAdornment = draft.valuta ? `SEK = 1 ${draft.valuta}` : "SEK = 1 valuta";
+  const valutaLabel = draft.valuta || "SEK";
 
   return (
     <div className={styles.contractDetailPanel}>
@@ -357,7 +358,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                   <Divider className={styles.contractSectionDivider} />
                   <Typography className={styles.contractSectionGroupLabel}>Klassificering</Typography>
                   <div className={styles.contractModernFormGrid}>
-                    <TextField select fullWidth size="small" label="Kontaktbolag" value={draft.kontaktbolag} onChange={(e) => set("kontaktbolag", e.target.value)}>
+                    <TextField select fullWidth size="small" label="Kontaktenhet" value={draft.kontaktbolag} onChange={(e) => set("kontaktbolag", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
                       <MenuItem value="Pure Wood AB">Pure Wood AB</MenuItem>
                       <MenuItem value="Nordic Timber AS">Nordic Timber AS</MenuItem>
@@ -523,15 +524,15 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                   </div>
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Plocktillägg, minst" value={draft.plocktillaggMinst} onChange={(e) => set("plocktillaggMinst", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK/avropsrad</InputAdornment> } }} />
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">{`${valutaLabel}/avropsrad`}</InputAdornment> } }} />
                     <TextField fullWidth size="small" label="Plocktillägg" value={draft.plocktillagg} onChange={(e) => set("plocktillagg", e.target.value)}
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">%/avropsrad</InputAdornment> } }} />
                     <TextField fullWidth size="small" label="Målningstillägg" value={draft.malningstilagg} onChange={(e) => set("malningstilagg", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK/avropsrad</InputAdornment> } }} />
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">{`${valutaLabel}/avropsrad`}</InputAdornment> } }} />
                     <TextField fullWidth size="small" label="Målningstillägg tröskel" value={draft.malningstilaggTroskel} onChange={(e) => set("malningstilaggTroskel", e.target.value)}
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">lpm</InputAdornment> } }} />
                     <TextField fullWidth size="small" label="Införselavgift" value={draft.inforseavgift} onChange={(e) => set("inforseavgift", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">SEK</InputAdornment> } }} />
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">{valutaLabel}</InputAdornment> } }} />
                   </div>
                 </AccordionDetails>
               </Accordion>

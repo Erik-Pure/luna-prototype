@@ -8,6 +8,7 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Autocomplete,
   Button,
   Checkbox,
   Divider,
@@ -68,6 +69,8 @@ export type NewPriceListDraft = {
   visaM3Pris: boolean;
   visaNamnAdress: boolean;
 };
+
+const kundOptions = ["Martinsons", "Skogmo Bruk", "Hernes", "JäTre", "Moelv Tre"];
 
 const emptyDraft: NewPriceListDraft = {
   prislistenr: "",
@@ -184,7 +187,8 @@ export function PriceListCreateView({
     draft.utskriftstyp !== ""
   );
 
-  const kursAdornment = draft.valuta ? `${draft.valuta} = 1 SEK` : "valuta = 1 SEK";
+  const kursAdornment = draft.valuta ? `SEK = 1 ${draft.valuta}` : "SEK = 1 valuta";
+  const valutaLabel = draft.valuta || "SEK";
 
   return (
     <>
@@ -264,20 +268,7 @@ export function PriceListCreateView({
                 </AccordionSummary>
                 <AccordionDetails className={styles.contractSectionDetailsArea}>
 
-                  <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
                   <div className={styles.contractModernFormGrid}>
-                    <TextField
-                      fullWidth size="small"
-                      label="Prislistenr"
-                      value={draft.prislistenr}
-                      onChange={(e) => update("prislistenr", e.target.value)}
-                    />
-                    <TextField
-                      fullWidth size="small"
-                      label="Kopierat från"
-                      value={draft.kopieratFran}
-                      onChange={(e) => update("kopieratFran", e.target.value)}
-                    />
                     <TextField
                       select fullWidth size="small"
                       label="Status"
@@ -302,20 +293,14 @@ export function PriceListCreateView({
                       <MenuItem value="Erik Högbom">Erik Högbom</MenuItem>
                       <MenuItem value="Hans Hemström">Hans Hemström</MenuItem>
                     </TextField>
-                    <TextField
-                      select fullWidth size="small"
-                      label="Kund"
-                      value={draft.kund}
-                      onChange={(e) => update("kund", e.target.value)}
+                    <Autocomplete
+                      size="small"
+                      options={kundOptions}
+                      value={draft.kund || null}
+                      onChange={(_event, newValue) => update("kund", newValue ?? "")}
                       className={styles.lineItemRequiredControl}
-                    >
-                      <MenuItem value="">— Välj —</MenuItem>
-                      <MenuItem value="Martinsons">Martinsons</MenuItem>
-                      <MenuItem value="Skogmo Bruk">Skogmo Bruk</MenuItem>
-                      <MenuItem value="Hernes">Hernes</MenuItem>
-                      <MenuItem value="JäTre">JäTre</MenuItem>
-                      <MenuItem value="Moelv Tre">Moelv Tre</MenuItem>
-                    </TextField>
+                      renderInput={(params) => <TextField {...params} label="Kund" />}
+                    />
                     <TextField
                       fullWidth size="small"
                       label="Prislistedatum"
@@ -327,8 +312,7 @@ export function PriceListCreateView({
                     />
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Giltighetstid</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
                     <TextField
                       fullWidth size="small"
@@ -348,12 +332,11 @@ export function PriceListCreateView({
                     />
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Klassificering</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
-                      label="Kontaktbolag"
+                      label="Kontaktenhet"
                       value={draft.kontaktbolag}
                       onChange={(e) => update("kontaktbolag", e.target.value)}
                     >
@@ -414,8 +397,7 @@ export function PriceListCreateView({
                     </TextField>
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       fullWidth size="small" multiline rows={3}
@@ -460,7 +442,6 @@ export function PriceListCreateView({
                 </AccordionSummary>
                 <AccordionDetails className={styles.contractSectionDetailsArea}>
 
-                  <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; kurs</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -496,8 +477,7 @@ export function PriceListCreateView({
                     />
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Betalning</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -540,11 +520,6 @@ export function PriceListCreateView({
                         endAdornment: <InputAdornment position="end">%</InputAdornment>
                       }}
                     />
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Bonus</Typography>
-                  <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
                     <TextField
                       fullWidth size="small"
                       label="Bonus"
@@ -567,8 +542,7 @@ export function PriceListCreateView({
                     </TextField>
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Leverans</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -630,8 +604,7 @@ export function PriceListCreateView({
                     </TextField>
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Agent</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
                     <TextField
                       select fullWidth size="small"
@@ -655,8 +628,7 @@ export function PriceListCreateView({
                     />
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Tillägg</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div style={{ marginTop: 4, marginBottom: 8 }}>
                     <FormControlLabel
                       control={
@@ -677,7 +649,7 @@ export function PriceListCreateView({
                       onChange={(e) => update("plocktillaggMinst", e.target.value)}
                       className={styles.lineItemRequiredControl}
                       InputProps={{
-                        endAdornment: <InputAdornment position="end">SEK/avropsrad</InputAdornment>
+                        endAdornment: <InputAdornment position="end">{`${valutaLabel}/avropsrad`}</InputAdornment>
                       }}
                     />
                     <TextField
@@ -697,7 +669,7 @@ export function PriceListCreateView({
                       onChange={(e) => update("malningstilagg", e.target.value)}
                       className={styles.lineItemRequiredControl}
                       InputProps={{
-                        endAdornment: <InputAdornment position="end">SEK/avropsrad</InputAdornment>
+                        endAdornment: <InputAdornment position="end">{`${valutaLabel}/avropsrad`}</InputAdornment>
                       }}
                     />
                     <TextField
@@ -717,7 +689,7 @@ export function PriceListCreateView({
                       onChange={(e) => update("inforseavgift", e.target.value)}
                       className={styles.lineItemRequiredControl}
                       InputProps={{
-                        endAdornment: <InputAdornment position="end">SEK</InputAdornment>
+                        endAdornment: <InputAdornment position="end">{valutaLabel}</InputAdornment>
                       }}
                     />
                   </div>
