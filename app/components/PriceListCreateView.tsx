@@ -310,10 +310,6 @@ export function PriceListCreateView({
                       onChange={(e) => update("prislistedatum", e.target.value)}
                       className={styles.lineItemRequiredControl}
                     />
-                  </div>
-
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
-                  <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
                     <TextField
                       fullWidth size="small"
                       label="Giltig från"
