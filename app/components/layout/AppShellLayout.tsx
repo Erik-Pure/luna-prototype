@@ -80,6 +80,7 @@ type AppShellLayoutProps = {
   lineItemDetailHref: string | null;
   isContainerRoute: boolean;
   isStocknotaRoute: boolean;
+  isPlocklistaRoute: boolean;
   isStocknotaVersionOpen: boolean;
   stocknotaVersionLabel: string | null;
   stocknotaHref: string | null;
@@ -133,6 +134,7 @@ export function AppShellLayout({
   lineItemDetailHref,
   isContainerRoute,
   isStocknotaRoute,
+  isPlocklistaRoute,
   isStocknotaVersionOpen,
   stocknotaVersionLabel,
   stocknotaHref,
@@ -346,6 +348,14 @@ export function AppShellLayout({
                     </Typography>
                     <ChevronRightIcon className={styles.breadcrumbArrow} />
                     <Typography className={styles.breadcrumbActive}>Container</Typography>
+                  </>
+                ) : isPlocklistaRoute ? (
+                  <>
+                    <Typography component={Link} href={contractDetailHref ?? contractListHref} className={styles.breadcrumbLinkButton}>
+                      Kontrakt {selectedContractId}
+                    </Typography>
+                    <ChevronRightIcon className={styles.breadcrumbArrow} />
+                    <Typography className={styles.breadcrumbActive}>Läs in plocklista</Typography>
                   </>
                 ) : isStocknotaRoute ? (
                   <>

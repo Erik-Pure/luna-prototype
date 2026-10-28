@@ -8463,6 +8463,17 @@ body button {
   box-shadow: inset -1px 0 0 #9aa5b5;
 }
 
+// Plocklista: ljus linje till höger om sista kolumnen, samma färg som övriga kolumnlinjer.
+// Ritas som inre skugga av samma skäl som stocknotaLastCell ovan.
+.stocknotaTable .plocklistaLastCell,
+.plocklistaLastCell .stocknotaHeaderLabel {
+  box-shadow: inset -1px 0 0 #e8ecf2;
+}
+
+.stocknotaTable .plocklistaLastCell.stocknotaSummaryCell {
+  box-shadow: inset 0 2px 0 #cbd3df, inset -1px 0 0 #e8ecf2;
+}
+
 .stocknotaTable .stocknotaLastCell.stocknotaSummaryCell {
   box-shadow: inset 0 2px 0 #cbd3df, inset -1px 0 0 #9aa5b5;
 }
@@ -8656,13 +8667,19 @@ body button {
   background: rgba(196, 121, 0, 0.04);
 }
 
-.stocknotaLandingVersions {
-  width: 100%;
-  margin-top: 28px;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+// Dropzonen är låst tills det som styr inläsningen är valt (t.ex. lagerställe för plocklista).
+.contractDropZoneDisabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+
+  &:hover {
+    border-color: #dfe3ea;
+    background: transparent;
+  }
+
+  .contractDropZoneButton {
+    cursor: not-allowed;
+  }
 }
 
 // Endast versionsnamnet (länk) och radera-knappen är klickbara, inte hela raden.

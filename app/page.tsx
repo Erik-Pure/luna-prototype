@@ -62,6 +62,7 @@ import { AvropsradDetailView } from "./components/contract-tabs/AvropsradDetailV
 import { ContainerView } from "./components/contract-tabs/ContainerView";
 import { getContractDetails } from "./components/contract-tabs/contractDetails";
 import { StocknotaView, type StocknotaVersion, createSeedStocknotaVersions } from "./components/contract-tabs/StocknotaView";
+import { PlocklistaView } from "./components/contract-tabs/PlocklistaView";
 import { PrislistekalkylView } from "./components/price-list-tabs/PrislistekalkylView";
 import { SearchFiltersPanel } from "./components/shared/SearchFiltersPanel";
 import { getPriceListKund } from "./components/shared/priceListCustomers";
@@ -1689,6 +1690,7 @@ export default function Home() {
   const isAvropRoute = isContractDetailRoute && rawSegment3 === "avrop";
   const isContainerRoute = isContractDetailRoute && rawSegment3 === "container";
   const isStocknotaRoute = isContractDetailRoute && rawSegment3 === "stocknota";
+  const isPlocklistaRoute = isContractDetailRoute && rawSegment3 === "plocklista";
   const stocknotaVersionSegment = isStocknotaRoute ? (pathParts[4] ?? null) : null;
   const isStocknotaVersionOpen = isStocknotaRoute && Boolean(stocknotaVersionSegment);
   const selectedAvropsradId = isAvropRoute ? (pathParts[4] ?? null) : null;
@@ -2683,6 +2685,11 @@ export default function Home() {
     navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/container`);
   };
 
+  const openPlocklistaView = () => {
+    if (!selectedContractId) return;
+    navigateWithLoading(`/${sectionSlug}/${menuSlug}/${selectedContractId}/plocklista`);
+  };
+
   const [stocknotaVersions, setStocknotaVersions] = useState<StocknotaVersion[]>(_stocknotaVersions);
 
   const saveStocknotaVersion = (version: StocknotaVersion) => {
@@ -2851,6 +2858,10 @@ export default function Home() {
       return "Container";
     }
 
+    if (isPlocklistaRoute && selectedContractId) {
+      return "Läs in plocklista";
+    }
+
     if (isStocknotaRoute && selectedContractId) {
       return stocknotaVersionLabel ? `Stocknota - ${stocknotaVersionLabel}` : "Stocknota";
     }
@@ -3014,6 +3025,7 @@ export default function Home() {
         lineItemDetailHref={_savedReturnLineItemId && selectedContractId ? `/${sectionSlug}/${menuSlug}/${selectedContractId}/${_savedReturnLineItemId}` : null}
         isContainerRoute={isContainerRoute}
         isStocknotaRoute={isStocknotaRoute}
+        isPlocklistaRoute={isPlocklistaRoute}
         isStocknotaVersionOpen={isStocknotaVersionOpen}
         stocknotaVersionLabel={stocknotaVersionLabel}
         stocknotaHref={selectedContractId ? `/${sectionSlug}/${menuSlug}/${selectedContractId}/stocknota` : null}
@@ -3217,6 +3229,13 @@ export default function Home() {
                 }}
               />
             </div>
+          ) : isPlocklistaRoute && selectedContractId ? (
+            <div className={styles.contractDetailPanel}>
+              <PlocklistaView
+                contractId={selectedContractId}
+                customerName={getContractDetails(selectedContractId).summary.customer}
+              />
+            </div>
           ) : isStocknotaRoute && selectedContractId ? (
             <div className={styles.contractDetailPanel}>
               <StocknotaView
@@ -3280,6 +3299,7 @@ export default function Home() {
               onCreateLineItem={openNewLineItem}
               onOpenContainer={openContainerView}
               onOpenStocknota={openStocknotaView}
+              onOpenPlocklista={openPlocklistaView}
               onCreateAvropsrad={openNewAvropsrad}
               onOpenAvropsrad={openAvropsradDetail}
               onCancelNewContract={() => navigateWithLoading(`/${sectionSlug}/${menuSlug}`)}

@@ -137,6 +137,7 @@ type ContractDetailViewProps = {
   onCreateLineItem: () => void;
   onOpenContainer: () => void;
   onOpenStocknota: () => void;
+  onOpenPlocklista: () => void;
   onCreateAvropsrad: () => void;
   onOpenAvropsrad: (id: string, data?: Record<string, string>) => void;
   onCancelNewContract: () => void;
@@ -185,6 +186,7 @@ export function ContractDetailView({
   onCreateLineItem,
   onOpenContainer,
   onOpenStocknota,
+  onOpenPlocklista,
   onCreateAvropsrad,
   onOpenAvropsrad,
   onCancelNewContract,
@@ -364,7 +366,7 @@ export function ContractDetailView({
                 <MenuItem className={styles.contractMoreMenuItem} onClick={closeMoreMenu}>
                   Skapa plocklista
                 </MenuItem>
-                <MenuItem className={styles.contractMoreMenuItem} onClick={closeMoreMenu}>
+                <MenuItem className={styles.contractMoreMenuItem} onClick={() => { closeMoreMenu(); onOpenPlocklista(); }}>
                   Läs in plocklista
                 </MenuItem>
                 <Divider className={styles.contractMoreMenuDivider} />
