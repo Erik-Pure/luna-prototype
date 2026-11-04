@@ -62,7 +62,7 @@ const COLUMNS = [
   { key: "snittprisCLoad", label: "Snittpris i C-Load", width: 145 },
   { key: "bilJvgFrakt", label: "BilJvgFrakt", width: 100 },
   { key: "valutaBilJvg", label: "Valuta", width: 72 },
-  { key: "spedTermkostn", label: "Sped/Termkostn.", width: 135 },
+  { key: "spedTermkostn", label: "Sped + Termkostn.", width: 135 },
   { key: "valutaSped", label: "Valuta", width: 72 },
   { key: "sjofr", label: "Sjöfrakt", width: 90 },
   { key: "valutaSjofr", label: "Valuta", width: 72 },
@@ -160,7 +160,7 @@ export function FraktTab() {
                   </TextField>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <TextField fullWidth size="small" label="Sped/Termkostn." value={editing.draft.spedTermkostn} onChange={(e) => setDraftStr("spedTermkostn", e.target.value)} />
+                  <TextField fullWidth size="small" label="Sped + Termkostn." value={editing.draft.spedTermkostn} onChange={(e) => setDraftStr("spedTermkostn", e.target.value)} />
                   <TextField select size="small" label="Valuta" value={editing.draft.valutaSped} onChange={(e) => setDraftStr("valutaSped", e.target.value)} sx={{ minWidth: 88 }}>
                     {VALUTA_OPTIONS.map((v) => <MenuItem key={v} value={v}>{v}</MenuItem>)}
                   </TextField>

@@ -47,13 +47,10 @@ export type NewPriceListDraft = {
   kalkylkurs: string;
   moms: string;
   betvillkor: string;
-  betvillkorDag: string;
-  kassarabatt: string;
   bonus: string;
   bonusgrund: string;
   kontraktsformular: string;
   leveransvillkor: string;
-  leveransvillkor2: string;
   levvillkorOrt: string;
   leveranssatt: string;
   agent: string;
@@ -95,13 +92,10 @@ const emptyDraft: NewPriceListDraft = {
   kalkylkurs: "",
   moms: "",
   betvillkor: "",
-  betvillkorDag: "",
-  kassarabatt: "",
   bonus: "",
   bonusgrund: "",
   kontraktsformular: "",
   leveransvillkor: "",
-  leveransvillkor2: "",
   levvillkorOrt: "",
   leveranssatt: "",
   agent: "",
@@ -412,7 +406,7 @@ export function PriceListCreateView({
                     />
                     <TextField
                       fullWidth size="small" multiline rows={3}
-                      label="Kommentar kund"
+                      label="Kommentar (kund)"
                       value={draft.kommentarKund}
                       onChange={(e) => update("kommentarKund", e.target.value)}
                       style={{ gridColumn: "1 / -1" }}
@@ -502,22 +496,6 @@ export function PriceListCreateView({
                     </TextField>
                     <TextField
                       fullWidth size="small"
-                      label="Bet.villkor.dag"
-                      type="number"
-                      value={draft.betvillkorDag}
-                      onChange={(e) => update("betvillkorDag", e.target.value)}
-                    />
-                    <TextField
-                      fullWidth size="small"
-                      label="Kassarabatt"
-                      value={draft.kassarabatt}
-                      onChange={(e) => update("kassarabatt", e.target.value)}
-                      InputProps={{
-                        endAdornment: <InputAdornment position="end">%</InputAdornment>
-                      }}
-                    />
-                    <TextField
-                      fullWidth size="small"
                       label="Bonus"
                       value={draft.bonus}
                       onChange={(e) => update("bonus", e.target.value)}
@@ -557,20 +535,6 @@ export function PriceListCreateView({
                       label="Leveransvillkor"
                       value={draft.leveransvillkor}
                       onChange={(e) => update("leveransvillkor", e.target.value)}
-                      className={styles.lineItemRequiredControl}
-                    >
-                      <MenuItem value="">— Välj —</MenuItem>
-                      <MenuItem value="DAP">DAP</MenuItem>
-                      <MenuItem value="EXW">EXW</MenuItem>
-                      <MenuItem value="FCA">FCA</MenuItem>
-                      <MenuItem value="CIF">CIF</MenuItem>
-                      <MenuItem value="DDP">DDP</MenuItem>
-                    </TextField>
-                    <TextField
-                      select fullWidth size="small"
-                      label="Leveransvillkor"
-                      value={draft.leveransvillkor2}
-                      onChange={(e) => update("leveransvillkor2", e.target.value)}
                       className={styles.lineItemRequiredControl}
                     >
                       <MenuItem value="">— Välj —</MenuItem>

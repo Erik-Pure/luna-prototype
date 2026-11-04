@@ -66,13 +66,10 @@ const MOCK_DRAFT: PriceListDraft = {
   kalkylkurs: "",
   moms: "25",
   betvillkor: "30",
-  betvillkorDag: "",
-  kassarabatt: "",
   bonus: "",
   bonusgrund: "",
   kontraktsformular: "Standard",
   leveransvillkor: "DAP",
-  leveransvillkor2: "",
   levvillkorOrt: "",
   leveranssatt: "Bil",
   agent: "",
@@ -321,7 +318,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                   </span>
                 </AccordionSummary>
                 <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                  <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Prislistenr" value={draft.prislistenr} onChange={(e) => set("prislistenr", e.target.value)} />
                     <TextField fullWidth size="small" label="Kopierat från" value={draft.kopieratFran} onChange={(e) => set("kopieratFran", e.target.value)} />
@@ -346,17 +342,11 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                       <MenuItem value="Moelv Tre">Moelv Tre</MenuItem>
                     </TextField>
                     <TextField fullWidth size="small" label="Prislistedatum" type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.prislistedatum} onChange={(e) => set("prislistedatum", e.target.value)} />
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Giltighetstid</Typography>
-                  <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Giltig från" type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.giltigFran} onChange={(e) => set("giltigFran", e.target.value)} />
                     <TextField fullWidth size="small" label="Giltig till" type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.giltigTill} onChange={(e) => set("giltigTill", e.target.value)} />
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Klassificering</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Kontaktenhet" value={draft.kontaktbolag} onChange={(e) => set("kontaktbolag", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -390,12 +380,11 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     </TextField>
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" multiline rows={3} label="Övrigt" value={draft.ovrigt} onChange={(e) => set("ovrigt", e.target.value)} helperText="Visas på utskrift av prislista" style={{ gridColumn: "1 / -1" }} />
                     <TextField fullWidth size="small" multiline rows={3} label="Egen anmärkning" value={draft.egenAnmarkning} onChange={(e) => set("egenAnmarkning", e.target.value)} style={{ gridColumn: "1 / -1" }} />
-                    <TextField fullWidth size="small" multiline rows={3} label="Kommentar kund" value={draft.kommentarKund} onChange={(e) => set("kommentarKund", e.target.value)} style={{ gridColumn: "1 / -1" }} />
+                    <TextField fullWidth size="small" multiline rows={3} label="Kommentar (kund)" value={draft.kommentarKund} onChange={(e) => set("kommentarKund", e.target.value)} style={{ gridColumn: "1 / -1" }} />
                   </div>
                 </AccordionDetails>
               </Accordion>
@@ -416,7 +405,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                   </span>
                 </AccordionSummary>
                 <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                  <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; kurs</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Valuta" value={draft.valuta} onChange={(e) => set("valuta", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -432,8 +420,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">{kursAdornment}</InputAdornment> } }} />
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Betalning</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Moms" value={draft.moms} onChange={(e) => set("moms", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -449,14 +436,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                       <MenuItem value="10">10 dagar netto</MenuItem>
                       <MenuItem value="0">Förskott</MenuItem>
                     </TextField>
-                    <TextField fullWidth size="small" label="Bet.villkor.dag" type="number" value={draft.betvillkorDag} onChange={(e) => set("betvillkorDag", e.target.value)} />
-                    <TextField fullWidth size="small" label="Kassarabatt" value={draft.kassarabatt} onChange={(e) => set("kassarabatt", e.target.value)}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Bonus</Typography>
-                  <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Bonus" value={draft.bonus} onChange={(e) => set("bonus", e.target.value)}
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
                     <TextField select fullWidth size="small" label="Bonusgrund" value={draft.bonusgrund} onChange={(e) => set("bonusgrund", e.target.value)}>
@@ -467,8 +446,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     </TextField>
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Leverans</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Kontraktsformulär" value={draft.kontraktsformular} onChange={(e) => set("kontraktsformular", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -477,14 +455,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                       <MenuItem value="Industri">Industri</MenuItem>
                     </TextField>
                     <TextField select fullWidth size="small" label="Leveransvillkor" value={draft.leveransvillkor} onChange={(e) => set("leveransvillkor", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="DAP">DAP</MenuItem>
-                      <MenuItem value="EXW">EXW</MenuItem>
-                      <MenuItem value="FCA">FCA</MenuItem>
-                      <MenuItem value="CIF">CIF</MenuItem>
-                      <MenuItem value="DDP">DDP</MenuItem>
-                    </TextField>
-                    <TextField select fullWidth size="small" label="Leveransvillkor" value={draft.leveransvillkor2} onChange={(e) => set("leveransvillkor2", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
                       <MenuItem value="DAP">DAP</MenuItem>
                       <MenuItem value="EXW">EXW</MenuItem>
@@ -502,8 +472,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     </TextField>
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Agent</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Agent" value={draft.agent} onChange={(e) => set("agent", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -514,8 +483,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
                   </div>
 
-                  <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Tillägg</Typography>
+                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
                   <div style={{ marginTop: 4, marginBottom: 8 }}>
                     <FormControlLabel
                       control={<Checkbox size="small" checked={draft.konsignationslager} onChange={(e) => set("konsignationslager", e.target.checked)} />}

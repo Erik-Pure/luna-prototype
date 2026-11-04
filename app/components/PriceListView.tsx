@@ -64,12 +64,12 @@ type PriceListViewProps = {
 const defaultSearchFields: PriceListSearchField[] = [
   { key: "prislistenr", label: "Prislistenr", control: "text", visible: true, favorite: true },
   { key: "artNr", label: "ArtNr", control: "text", visible: true, favorite: false },
-  { key: "kund", label: "Kund", control: "select", visible: true, favorite: true },
+  { key: "kund", label: "Kortnamn", control: "select", visible: true, favorite: true },
   { key: "upprattatAv", label: "Upprättat av", control: "select", visible: true, favorite: true },
   { key: "status", label: "Status", control: "select", visible: true, favorite: true },
   { key: "externPrislistenr", label: "Externt prislistenr", control: "text", visible: true, favorite: true },
-  { key: "prisdatumFran", label: "Prisdatum från", control: "date", visible: true, favorite: false },
-  { key: "prisdatumTill", label: "Prisdatum till", control: "date", visible: true, favorite: false },
+  { key: "prisdatumFran", label: "Prislistedatum från", control: "date", visible: true, favorite: false },
+  { key: "prisdatumTill", label: "Prislistedatum till", control: "date", visible: true, favorite: false },
   { key: "land", label: "Land", control: "select", visible: true, favorite: true },
   { key: "tillhor", label: "Tillhör", control: "text", visible: true, favorite: false },
 ];
@@ -97,9 +97,9 @@ const initialSearchValues: Record<PriceListSearchFieldKey, string | boolean> = {
 const defaultColumns = [
   { key: "prislistenr" as PriceListColumnKey, label: "Prislistenr", visible: true, pinned: true, width: 100 },
   { key: "externPrislistenr" as PriceListColumnKey, label: "Externt prislistenr", visible: true, pinned: false, width: 148 },
-  { key: "kund" as PriceListColumnKey, label: "Kund", visible: true, pinned: false, width: 118 },
+  { key: "kund" as PriceListColumnKey, label: "Kortnamn", visible: true, pinned: false, width: 118 },
   { key: "land" as PriceListColumnKey, label: "Land", visible: true, pinned: false, width: 66 },
-  { key: "prisdatum" as PriceListColumnKey, label: "Prisdatum", visible: true, pinned: false, width: 112 },
+  { key: "prisdatum" as PriceListColumnKey, label: "Prislistedatum", visible: true, pinned: false, width: 112 },
   { key: "giltigFrom" as PriceListColumnKey, label: "Giltig från", visible: true, pinned: false, width: 104 },
   { key: "giltigTom" as PriceListColumnKey, label: "Giltig till", visible: true, pinned: false, width: 104 },
   { key: "egenAnmarkning" as PriceListColumnKey, label: "Egen anmärkning", visible: true, pinned: false, width: 164 },
