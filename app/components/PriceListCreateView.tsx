@@ -322,7 +322,7 @@ export function PriceListCreateView({
                     />
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -387,7 +387,7 @@ export function PriceListCreateView({
                     </TextField>
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       fullWidth size="small" multiline rows={3}
@@ -467,7 +467,7 @@ export function PriceListCreateView({
                     />
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -516,7 +516,7 @@ export function PriceListCreateView({
                     </TextField>
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -564,7 +564,7 @@ export function PriceListCreateView({
                     </TextField>
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
                     <TextField
                       select fullWidth size="small"
@@ -588,7 +588,7 @@ export function PriceListCreateView({
                     />
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div style={{ marginTop: 4, marginBottom: 8 }}>
                     <FormControlLabel
                       control={

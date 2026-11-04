@@ -346,7 +346,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     <TextField fullWidth size="small" label="Giltig till" type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.giltigTill} onChange={(e) => set("giltigTill", e.target.value)} />
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Kontaktenhet" value={draft.kontaktbolag} onChange={(e) => set("kontaktbolag", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -380,7 +380,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     </TextField>
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" multiline rows={3} label="Övrigt" value={draft.ovrigt} onChange={(e) => set("ovrigt", e.target.value)} helperText="Visas på utskrift av prislista" style={{ gridColumn: "1 / -1" }} />
                     <TextField fullWidth size="small" multiline rows={3} label="Egen anmärkning" value={draft.egenAnmarkning} onChange={(e) => set("egenAnmarkning", e.target.value)} style={{ gridColumn: "1 / -1" }} />
@@ -420,7 +420,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">{kursAdornment}</InputAdornment> } }} />
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Moms" value={draft.moms} onChange={(e) => set("moms", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -446,7 +446,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     </TextField>
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Kontraktsformulär" value={draft.kontraktsformular} onChange={(e) => set("kontraktsformular", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -472,7 +472,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                     </TextField>
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
                     <TextField select fullWidth size="small" label="Agent" value={draft.agent} onChange={(e) => set("agent", e.target.value)}>
                       <MenuItem value="">—</MenuItem>
@@ -483,7 +483,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
                   </div>
 
-                  <Divider className={`${styles.contractSectionDivider} ${styles.priceListCreateDivider}`} />
+                  <Divider className={styles.contractSectionDivider} />
                   <div style={{ marginTop: 4, marginBottom: 8 }}>
                     <FormControlLabel
                       control={<Checkbox size="small" checked={draft.konsignationslager} onChange={(e) => set("konsignationslager", e.target.checked)} />}

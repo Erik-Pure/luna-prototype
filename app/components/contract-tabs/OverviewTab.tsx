@@ -10,7 +10,6 @@ type OverviewTabProps = {
 export function OverviewTab({ contractId }: OverviewTabProps) {
   return (
     <div className={styles.contractFlatSection}>
-      <Typography className={styles.contractSectionGroupLabel}>Allmänt</Typography>
 
       <div className={styles.contractFormGrid}>
         <div className={styles.contractFormItem}>
@@ -66,7 +65,6 @@ export function OverviewTab({ contractId }: OverviewTabProps) {
       </div>
 
       <hr className={styles.contractFlatDivider} />
-      <Typography className={styles.contractSectionGroupLabel}>Systeminformation</Typography>
 
       <div className={styles.contractDataGrid} style={{ marginBottom: 4 }}>
         <div className={styles.contractDataItem}>
@@ -96,7 +94,6 @@ export function OverviewTab({ contractId }: OverviewTabProps) {
       </div>
 
       <hr className={styles.contractFlatDivider} />
-      <Typography className={styles.contractSectionGroupLabel}>Anteckningar</Typography>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <div className={styles.contractFormItem}>

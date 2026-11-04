@@ -300,7 +300,7 @@ type DeliveryListViewProps = {
 };
 
 export function DeliveryListView({ onAndraStatus }: DeliveryListViewProps = {}) {
-  const [langdspecOpen, setLangdspecOpen] = useState(true);
+  const [langdspecOpen, setLangdspecOpen] = useState(false);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   const hasSelection = selectedRowIndex !== null;
   const toggleRow = (i: number) => setSelectedRowIndex((prev) => (prev === i ? null : i));

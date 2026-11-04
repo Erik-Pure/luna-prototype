@@ -410,7 +410,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </span>
                             </AccordionSummary>
                             <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                                <Typography className={styles.contractSectionGroupLabel} style={{ marginTop: 0 }}>Grunduppgifter</Typography>
 
                                 <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
                                     <TextField
@@ -520,7 +519,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </div>
 
                                 <Divider className={styles.contractSectionDivider} />
-                                <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
                                 <div className={styles.contractModernFormGrid} style={{ marginBottom: 10 }}>
                                     <div>
                                         <Typography variant="caption" style={{ display: "block", marginBottom: 3, color: "#6b7585" }}>Kommentar från kund</Typography>
@@ -537,7 +535,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </div>
 
                                 <Divider className={styles.contractSectionDivider} />
-                                <Typography className={styles.contractSectionGroupLabel}>Anteckningar</Typography>
                                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                     <TextField fullWidth multiline rows={3} value={draft.miscNote} onChange={(e) => updateDraftField("miscNote", e.target.value)} label="Övrigt" size="small"
                                         helperText="Visas på utskrift av kontrakt och orderbekräftelse. Skickas även vid orderbekräftelse till PRI Handel" />
@@ -555,7 +552,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </span>
                             </AccordionSummary>
                             <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                                <Typography className={styles.contractSectionGroupLabel} style={{ marginTop: 0 }}>Valuta &amp; Betalning</Typography>
                                 <div className={styles.contractModernFormGrid} style={{ marginBottom: 10 }}>
                                     <TextField select fullWidth label="Valuta *" value={draft.currency} onChange={(e) => updateDraftField("currency", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
                                         <MenuItem value="SEK">SEK</MenuItem>
@@ -580,7 +576,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </div>
 
                                 <Divider className={styles.contractSectionDivider} />
-                                <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; Leverans</Typography>
                                 <div className={styles.contractModernFormGrid} style={{ marginBottom: 10 }}>
                                     <TextField select fullWidth label="Certifiering *" value={draft.certification} onChange={(e) => updateDraftField("certification", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
                                         <MenuItem value="">— Välj —</MenuItem>
@@ -613,7 +608,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </div>
 
                                 <Divider className={styles.contractSectionDivider} />
-                                <Typography className={styles.contractSectionGroupLabel}>Agent</Typography>
                                 <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
                                     <TextField select fullWidth label="Agent *" value={draft.agent1} onChange={(e) => updateDraftField("agent1", e.target.value)} size="small" className={styles.lineItemRequiredControl}>
                                         <MenuItem value="">— Välj —</MenuItem>
@@ -626,7 +620,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </div>
 
                                 <Divider className={styles.contractSectionDivider} />
-                                <Typography className={styles.contractSectionGroupLabel}>Rabatter &amp; Avgifter</Typography>
                                 <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
                                     <TextField fullWidth type="number" value={draft.cashDiscount} onChange={(e) => updateDraftField("cashDiscount", e.target.value)} label="Kassarabatt"
                                         size="small" InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
@@ -651,7 +644,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </div>
 
                                 <Divider className={styles.contractSectionDivider} />
-                                <Typography className={styles.contractSectionGroupLabel}>Lager</Typography>
                                 <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", marginBottom: 10 }}>
                                     <Checkbox checked={draft.consignmentStock} onChange={(e) => updateDraftField("consignmentStock", e.target.checked)} size="small" />
                                     <Typography variant="body2">Konsignationslager</Typography>
@@ -668,7 +660,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </span>
                             </AccordionSummary>
                             <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditing ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                                <Typography className={styles.contractSectionGroupLabel} style={{ marginTop: 0 }}>Allmänt</Typography>
 
                                 <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
                                     <TextField select fullWidth label="Leveransort *" value={draft.deliveryLocation} onChange={(e) => handleDeliveryLocationChange(e.target.value)} size="small" className={styles.lineItemRequiredControl}>
@@ -706,7 +697,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 )}
 
                                 <Divider className={styles.contractSectionDivider} />
-                                <Typography className={styles.contractSectionGroupLabel}>Lossning</Typography>
                                 <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 10 }}>
                                     <TextField fullWidth value={draft.unloadingPhone} onChange={(e) => updateDraftField("unloadingPhone", e.target.value)} label="Telefon" type="tel" size="small" />
                                     <TextField fullWidth value={draft.unloadingHours} onChange={(e) => updateDraftField("unloadingHours", e.target.value)} label="Öppettider" size="small" helperText="Visas på fraktsedel" />
@@ -715,7 +705,6 @@ export function ContractCreateView({ onSave, onCancel, initialDraft, initialFile
                                 </div>
 
                                 <Divider className={styles.contractSectionDivider} />
-                                <Typography className={styles.contractSectionGroupLabel}>Sjöfrakt</Typography>
                                 <div className={styles.contractModernFormGrid} style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
                                     <TextField fullWidth size="small" label="Utlastande hamn" value="" InputProps={{ readOnly: true }} />
                                     <TextField fullWidth size="small" label="Speditör" value="" InputProps={{ readOnly: true }} />

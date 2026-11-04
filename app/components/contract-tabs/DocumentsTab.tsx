@@ -30,7 +30,6 @@ export function DocumentsTab({ contractDetails, compact = false }: DocumentsTabP
 
   return (
     <div className={styles.contractFlatSection} style={compact ? { gap: 0 } : undefined}>
-      <Typography className={styles.contractSectionGroupLabel}>Dokument</Typography>
 
       <div className={styles.contractDropZone}>
         <p className={styles.contractDropZoneTitle}>Dra och släpp filer här</p>

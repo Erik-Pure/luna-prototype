@@ -65,7 +65,6 @@ export function TermsTab({ contractDetails }: TermsTabProps) {
 
   return (
     <div className={styles.contractFlatSection}>
-      <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; Betalning</Typography>
       <div className={styles.contractDataGrid}>
         {betalningFields.map((field) => (
           <div key={field.label} className={styles.contractDataItem}>
@@ -78,7 +77,6 @@ export function TermsTab({ contractDetails }: TermsTabProps) {
       {kontraktFields.length > 0 && (
         <>
           <hr className={styles.contractFlatDivider} />
-          <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; Leverans</Typography>
           <div className={styles.contractDataGrid}>
             {kontraktFields.map((field) => (
               <div key={field.label} className={styles.contractDataItem}>
@@ -93,7 +91,6 @@ export function TermsTab({ contractDetails }: TermsTabProps) {
       {agentFields.length > 0 && (
         <>
           <hr className={styles.contractFlatDivider} />
-          <Typography className={styles.contractSectionGroupLabel}>Agenter</Typography>
           <div className={styles.contractDataGrid}>
             {agentFields.map((field) => (
               <div key={field.label} className={styles.contractDataItem}>
@@ -108,7 +105,6 @@ export function TermsTab({ contractDetails }: TermsTabProps) {
       {rabattFields.length > 0 && (
         <>
           <hr className={styles.contractFlatDivider} />
-          <Typography className={styles.contractSectionGroupLabel}>Rabatter &amp; Avgifter</Typography>
           <div className={styles.contractDataGrid}>
             {rabattFields.map((field) => (
               <div key={field.label} className={styles.contractDataItem}>
@@ -123,7 +119,6 @@ export function TermsTab({ contractDetails }: TermsTabProps) {
       {lagerFields.length > 0 && (
         <>
           <hr className={styles.contractFlatDivider} />
-          <Typography className={styles.contractSectionGroupLabel}>Lager</Typography>
           <div className={styles.contractDataGrid}>
             {lagerFields.map((field) => (
               <div key={field.label} className={styles.contractDataItem}>
@@ -138,7 +133,6 @@ export function TermsTab({ contractDetails }: TermsTabProps) {
       {ovrigaFields.length > 0 && (
         <>
           <hr className={styles.contractFlatDivider} />
-          <Typography className={styles.contractSectionGroupLabel}>Övrigt</Typography>
           <div className={styles.contractDataGrid}>
             {ovrigaFields.map((field) => (
               <div key={field.label} className={styles.contractDataItem}>
@@ -151,7 +145,6 @@ export function TermsTab({ contractDetails }: TermsTabProps) {
       )}
 
       <hr className={styles.contractFlatDivider} />
-      <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
       <div className={styles.contractDataGrid}>
         {contractDetails.kommentarer.map((field) => (
           <div key={field.label} className={`${styles.contractDataItem} ${styles.contractDataItemWide}`}>

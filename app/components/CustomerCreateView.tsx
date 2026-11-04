@@ -297,7 +297,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                 </AccordionSummary>
                 <AccordionDetails className={styles.contractSectionDetailsArea}>
 
-                  <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -376,7 +375,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Identifierare</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="EORInr" value={draft.eorInr} onChange={(e) => update("eorInr", e.target.value)} />
                     <TextField fullWidth size="small" label="Kedjans kundnr" value={draft.kedjansKundnr} onChange={(e) => update("kedjansKundnr", e.target.value)} />
@@ -389,7 +387,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Ansvar &amp; klassificering</Typography>
 
                   <div className={styles.contractModernFormGrid}>
                     <TextField
@@ -456,7 +453,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Leveransfönster</Typography>
 
                   <div className={styles.contractModernFormGrid}>
                     <TextField
@@ -491,7 +487,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
 
                   <div className={styles.contractModernFormGrid}>
                     <TextField
@@ -546,7 +541,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                 </AccordionSummary>
                 <AccordionDetails className={styles.contractSectionDetailsArea}>
 
-                  <Typography className={styles.contractSectionGroupLabel}>Fakturaadress</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Namn *" value={draft.faktNamn} onChange={(e) => update("faktNamn", e.target.value)} style={{ gridColumn: "1 / -1" }} className={styles.lineItemRequiredControl} />
                     <TextField fullWidth size="small" label="Adress" value={draft.faktAdress1} onChange={(e) => update("faktAdress1", e.target.value)} style={{ gridColumn: "1 / -1" }} />
@@ -570,7 +564,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Kontakt</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Telefon" value={draft.telefon} onChange={(e) => update("telefon", e.target.value)} />
                     <TextField fullWidth size="small" label="E-post" type="email" value={draft.epost} onChange={(e) => update("epost", e.target.value)} />
@@ -598,7 +591,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                 </AccordionSummary>
                 <AccordionDetails className={styles.contractSectionDetailsArea}>
 
-                  <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; betalning</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -653,7 +645,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Rabatt &amp; bonus</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       fullWidth size="small"
@@ -691,7 +682,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Ränta &amp; påminnelse</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -729,7 +719,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; leverans</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
@@ -817,7 +806,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <Typography className={styles.contractSectionGroupLabel}>Agent</Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"

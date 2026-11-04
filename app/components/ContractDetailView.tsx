@@ -212,7 +212,7 @@ export function ContractDetailView({
   ];
   const [moreMenuAnchor, setMoreMenuAnchor] = useState<HTMLElement | null>(null);
   const [sectionsPanelWidth, setSectionsPanelWidth] = useState<number | null>(null);
-  const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
+  const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(true);
   const [isBytPrislistaOpen, setIsBytPrislistaOpen] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [expandedDialogOpen, setExpandedDialogOpen] = useState(false);
@@ -489,7 +489,6 @@ export function ContractDetailView({
                     </span>
                   </AccordionSummary>
                   <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                    <Typography className={styles.contractSectionGroupLabel}>Grunduppgifter</Typography>
                     <div className={styles.contractModernFormGrid}>
                       <TextField select fullWidth size="small" label="Kund" value={draft.customer} onChange={(e) => set("customer", e.target.value)}>
                         <MenuItem value="">—</MenuItem>
@@ -555,7 +554,6 @@ export function ContractDetailView({
                     {contractDetails.kommentarer.length > 0 ? (
                       <>
                         <Divider className={styles.contractSectionDivider} />
-                        <Typography className={styles.contractSectionGroupLabel}>Kommentarer</Typography>
                         <div className={styles.contractModernFormGrid}>
                           {contractDetails.kommentarer.map((field) => (
                             <TextField
@@ -593,7 +591,6 @@ export function ContractDetailView({
                   </AccordionSummary>
                   <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
                     {/* Valuta & Betalning */}
-                    <Typography className={styles.contractSectionGroupLabel}>Valuta &amp; Betalning</Typography>
                     <div className={styles.contractModernFormGrid}>
                       <TextField select fullWidth size="small" label="Valuta" value={draft.currency} onChange={(e) => set("currency", e.target.value)}>
                         <MenuItem value="SEK">SEK</MenuItem>
@@ -615,7 +612,6 @@ export function ContractDetailView({
                     </div>
                     {/* Kontrakt & Leverans */}
                     <Divider className={styles.contractSectionDivider} />
-                    <Typography className={styles.contractSectionGroupLabel}>Kontrakt &amp; Leverans</Typography>
                     <div className={styles.contractModernFormGrid}>
                       <TextField select fullWidth size="small" label="Certifiering" value={draft.certification} onChange={(e) => set("certification", e.target.value)}>
                         <MenuItem value="">—</MenuItem>
@@ -650,7 +646,6 @@ export function ContractDetailView({
                     {contractDetails.villkor.some((f) => f.label.startsWith("Agent")) ? (
                       <>
                         <Divider className={styles.contractSectionDivider} />
-                        <Typography className={styles.contractSectionGroupLabel}>Agenter</Typography>
                         <div className={styles.contractModernFormGrid}>
                           <TextField select fullWidth size="small" label="Agent 1" value={draft.agent1} onChange={(e) => set("agent1", e.target.value)}>
                             <MenuItem value="">—</MenuItem>
@@ -670,7 +665,6 @@ export function ContractDetailView({
                     {contractDetails.villkor.some((f) => ["Kassarabatt", "Bonus", "Plocktillagg", "Plocktillägg", "Malningstillagg", "Målningstillägg", "Inforselavgift", "Införselavgift"].includes(f.label)) ? (
                       <>
                         <Divider className={styles.contractSectionDivider} />
-                        <Typography className={styles.contractSectionGroupLabel}>Rabatter &amp; Avgifter</Typography>
                         <div className={styles.contractModernFormGrid}>
                           <TextField fullWidth size="small" label="Kassarabatt" type="number" value={draft.cashDiscount} onChange={(e) => set("cashDiscount", e.target.value)}
                             slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }} />
@@ -694,7 +688,6 @@ export function ContractDetailView({
                     {contractDetails.villkor.some((f) => f.label === "Konsignationslager") ? (
                       <>
                         <Divider className={styles.contractSectionDivider} />
-                        <Typography className={styles.contractSectionGroupLabel}>Lager</Typography>
                         <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: isEditingInfo ? "pointer" : "default" }}>
                           <Checkbox checked={draft.consignmentStock} onChange={(e) => set("consignmentStock", e.target.checked)} size="small" disabled={!isEditingInfo} />
                           <Typography variant="body2">Konsignationslager</Typography>
@@ -720,7 +713,6 @@ export function ContractDetailView({
                     </span>
                   </AccordionSummary>
                   <AccordionDetails className={`${styles.contractSectionDetailsArea} ${!isEditingInfo ? styles.contractSectionDetailsAreaLocked : ""}`}>
-                    <Typography className={styles.contractSectionGroupLabel}>Allmänt</Typography>
                     <div className={styles.contractModernFormGrid}>
                       <TextField select fullWidth size="small" label="Leveransort" value={draft.deliveryLocation} onChange={(e) => handleDeliveryLocationChange(e.target.value)}>
                         <MenuItem value="">—</MenuItem>
@@ -746,7 +738,6 @@ export function ContractDetailView({
                       </TextField>
                     </div>
                     <Divider className={styles.contractSectionDivider} />
-                    <Typography className={styles.contractSectionGroupLabel}>Lossning</Typography>
                     <div className={styles.contractModernFormGrid}>
                       <TextField fullWidth size="small" label="Telefon lossning" type="tel" value={draft.unloadingPhone} onChange={(e) => set("unloadingPhone", e.target.value)} />
                       <TextField fullWidth size="small" label="Öppettider" value={draft.unloadingHours} onChange={(e) => set("unloadingHours", e.target.value)} />
@@ -754,7 +745,6 @@ export function ContractDetailView({
                       <TextField fullWidth size="small" label="Aviseringsinformation" multiline rows={3} value={draft.notificationInfo} onChange={(e) => set("notificationInfo", e.target.value)} style={{ gridColumn: "1 / -1" }} />
                     </div>
                     <Divider className={styles.contractSectionDivider} />
-                    <Typography className={styles.contractSectionGroupLabel}>Sjöfrakt</Typography>
                     <div className={styles.contractModernFormGrid}>
                       {leveransSjofrakt.map((field) => (
                         <TextField key={field.label} fullWidth size="small" label={field.label} value={field.value} disabled />

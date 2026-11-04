@@ -43,7 +43,6 @@ export function DeliveryTab({ contractDetails, compact = false }: DeliveryTabPro
 
   return (
     <div className={styles.contractFlatSection} style={compact ? { gap: 0 } : undefined}>
-      <Typography className={styles.contractSectionGroupLabel}>Allmänt</Typography>
       <div className={styles.contractDataGrid}>
         {generalFields.map((field) => (
           <div
@@ -57,7 +56,6 @@ export function DeliveryTab({ contractDetails, compact = false }: DeliveryTabPro
       </div>
 
       <hr className={styles.contractFlatDivider} />
-      <Typography className={styles.contractSectionGroupLabel}>Lossning</Typography>
       <div className={styles.contractDataGrid}>
         {unloadingFields.map((field) => (
           <div key={field.label} className={styles.contractDataItem}>
@@ -68,7 +66,6 @@ export function DeliveryTab({ contractDetails, compact = false }: DeliveryTabPro
       </div>
 
       <hr className={styles.contractFlatDivider} />
-      <Typography className={styles.contractSectionGroupLabel}>Sjöfrakt</Typography>
       <div className={styles.contractDataGrid}>
         {seaFreightFields.map((field) => (
           <div key={field.label} className={styles.contractDataItem}>
