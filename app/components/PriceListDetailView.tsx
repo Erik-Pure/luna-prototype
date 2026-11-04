@@ -104,7 +104,7 @@ const PRICE_LIST_SECTIONS: QuickNavSection[] = [
 export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail, onCreatePriceRow, onOpenPrislistekalkyl }: PriceListDetailViewProps) {
   const [activeTab, setActiveTab] = useState<PriceListTab>("Prislisterader");
   const [draft, setDraft] = useState<PriceListDraft>({ ...MOCK_DRAFT, prislistenr: selectedPriceListId });
-  const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
+  const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(true);
   const [sectionsPanelWidth, setSectionsPanelWidth] = useState<number | null>(null);
   const [expandedDialogOpen, setExpandedDialogOpen] = useState(false);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
