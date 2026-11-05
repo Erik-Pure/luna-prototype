@@ -9838,205 +9838,96 @@ body button {
 
 /* ── Byt prislista dialog ── */
 
-.bytPrislistaDialogPaper {
-  border-radius: 12px !important;
-  border: 1px solid #dde3ec;
-}
-
-.bytPrislistaSelectorRow {
+.bytPrislistaSection {
   display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.bytPrislistaSelectorLabel {
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: #2f3743;
-  white-space: nowrap;
-}
-
-.bytPrislistaSelect {
-  min-width: 340px;
-  font-size: 13px !important;
-}
-
-.bytPrislistaSectionTitle {
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: #2f3743;
-  margin-bottom: 10px !important;
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
 }
 
-.bytPrislistaSectionHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 10px;
-}
-
-.bytPrislistaSelectAllRow {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.bytPrislistaSelectAllLabel {
-  font-size: 12px !important;
+.bytPrislistaEmpty:global(.MuiTypography-root) {
+  font-size: 13px !important;
   color: #6a7483;
-  margin-right: 2px !important;
 }
 
-.bytPrislistaSelectAllBtn {
-  font-size: 12px !important;
-  text-transform: none !important;
-  font-weight: 500 !important;
-  min-width: 0 !important;
-  color: #4f5968 !important;
-  border-color: #c8d0da !important;
-
-  &:hover {
-    border-color: #8a93a0 !important;
-    background: #f5f7fa !important;
-  }
-}
-
-.bytPrislistaSectionCount {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #e8ecf1;
-  color: #4f5968;
-  border-radius: 10px;
-  font-size: 11px;
-  font-weight: 600;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-}
-
-.bytPrislistaEmpty {
-  font-size: 13px;
-  color: #9ba4b0;
-  font-style: italic;
-  margin: 0;
-  padding: 8px 0;
-}
-
-.bytPrislistaTableWrap {
-  overflow-x: auto;
-  border: 1px solid #e8ecf1;
+.bytPrislistaTableContainer {
   border-radius: 8px;
 }
 
 .bytPrislistaTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+  table-layout: fixed;
 
-  th {
-    text-align: left;
-    font-size: 11px;
-    font-weight: 600;
-    color: #6a7483;
-    padding: 8px 14px;
-    border-bottom: 1px solid #e8ecf1;
-    white-space: nowrap;
-    background: #f8f9fb;
-
-    &:first-child {
-      border-radius: 8px 0 0 0;
-    }
-    &:last-child {
-      border-radius: 0 8px 0 0;
-    }
+  :global(.MuiTableCell-root) {
+    padding: 4px 12px;
+    font-size: 12.5px;
+    color: #3f4754;
   }
 
-  td {
-    padding: 8px 14px;
-    border-bottom: 1px solid #f0f2f5;
-    color: #2f3743;
-    vertical-align: middle;
-
-    &:first-child {
-      color: #6a7483;
-      font-size: 12px;
-      white-space: nowrap;
-    }
+  :global(.MuiTableHead-root .MuiTableCell-root) {
+    height: 38px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #2f343b;
+    background-color: #f4f6f9;
   }
 
-  tbody tr:last-child td {
+  :global(.MuiTableHead-root) .bytPrislistaPriceOption :global(.MuiFormControlLabel-label) {
+    font-size: 12px !important;
+    font-weight: 800;
+    color: inherit;
+  }
+
+  :global(.MuiTableBody-root .MuiTableRow-root:last-child .MuiTableCell-root) {
     border-bottom: none;
   }
 }
 
-.bytPrislistaMonoCell {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.bytPrislastaPriceInput {
+.bytPrislistaPriceInput {
   width: 160px;
 
+  :global(.MuiInputBase-root) {
+    height: 30px;
+  }
+
   :global(.MuiInputBase-input) {
-    font-size: 13px;
-    padding: 5px 8px;
+    font-size: 12.5px !important;
+    font-variant-numeric: tabular-nums;
   }
 
   :global(.MuiInputAdornment-root p) {
-    font-size: 12px;
-    color: #6a7483;
+    font-size: 12px !important;
   }
 }
 
-.bytPrislastaPriceToggle {
-  :global(.MuiToggleButtonGroup-root) {
-    gap: 0;
+.bytPrislistaPriceOption:global(.MuiFormControlLabel-root) {
+  margin: 0 0 0 -5px;
+
+  :global(.MuiRadio-root) {
+    padding: 5px;
+  }
+
+  :global(.MuiFormControlLabel-label) {
+    margin-left: 3px;
+    font-size: 12.5px !important;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 }
 
-.bytPrislastaPriceToggleBtn {
-  font-size: 11px !important;
-  font-weight: 500 !important;
-  text-transform: none !important;
-  padding: 3px 10px !important;
-  line-height: 1.4 !important;
-  border-color: #c8d0da !important;
-  color: #6a7483 !important;
+:global(html[data-color-mode="dark"]) .bytPrislistaTable {
+  :global(.MuiTableCell-root) {
+    border-color: #313641;
+    color: #d8dde6;
+  }
 
-  &:global(.Mui-selected) {
-    background: #1976d2 !important;
-    color: #fff !important;
-    border-color: #1976d2 !important;
+  :global(.MuiTableHead-root .MuiTableCell-root) {
+    border-color: #3a3f4a;
+    color: #dbe1ea;
+    background-color: #282c34;
   }
 }
 
-.bytPrislistaRadioLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  cursor: pointer;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  user-select: none;
-  color: #2f3743;
-
-  &:hover {
-    color: #1553a8;
-  }
-}
-
-.bytPrislistaRadio {
-  accent-color: #1976d2;
-  width: 15px;
-  height: 15px;
-  cursor: pointer;
-  flex-shrink: 0;
+:global(html[data-color-mode="dark"]) .bytPrislistaEmpty:global(.MuiTypography-root) {
+  color: #c7ccd5;
 }
 
 .bytPrislistaOkButton {

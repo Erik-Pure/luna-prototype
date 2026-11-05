@@ -1,7 +1,32 @@
 "use client";
 
 import CloseIcon from "@mui/icons-material/Close";
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, MenuItem, Select, TextField, Typography } from "@mui/material";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Radio,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { useState } from "react";
 import styles from "../../page.module.scss";
 
@@ -10,6 +35,8 @@ type PriceListOption = {
   externalNr: string;
   customer: string;
 };
+
+type PriceChoice = "kontrakt" | "prislista";
 
 type MissingRow = {
   rowId: string;
@@ -53,10 +80,14 @@ const PRICE_LIST_PRICES: Record<string, Record<string, string>> = {
   },
 };
 
+const PRICE_UNIT = "SEK/m³";
+
+const formatAmount = (amount: number) => String(amount).replace(/\B(?=(\d{3})+$)/g, " ");
+
 const ALL_CONTRACT_ROWS = Array.from({ length: 12 }).map((_, idx) => ({
   rowId: `${idx + 1}`,
   produkt: ["Gran flisad spå", "Furu hyvlad", "Gran v-styrp"][idx % 3],
-  currentPris: `${800 + idx * 70} SEK/m³`,
+  currentPris: formatAmount(800 + idx * 70),
 }));
 
 function buildRows(priceListId: string): { missing: MissingRow[]; existing: ExistingRow[] } {
@@ -66,7 +97,7 @@ function buildRows(priceListId: string): { missing: MissingRow[]; existing: Exis
   const existing: ExistingRow[] = [];
   for (const row of ALL_CONTRACT_ROWS) {
     if (inList.has(row.rowId)) {
-      existing.push({ rowId: row.rowId, produkt: row.produkt, kontraktsPris: row.currentPris, prislistePris: prices[row.rowId] ?? "—" });
+      existing.push({ rowId: row.rowId, produkt: row.produkt, kontraktsPris: `${row.currentPris} ${PRICE_UNIT}`, prislistePris: prices[row.rowId] ?? "—" });
     } else {
       missing.push({ rowId: row.rowId, produkt: row.produkt, currentPris: row.currentPris });
     }
@@ -80,10 +111,24 @@ type BytPrislistaDialogProps = {
   onConfirm: () => void;
 };
 
+function formatPriceList(priceList: PriceListOption) {
+  return `${priceList.id} — ${priceList.externalNr} — ${priceList.customer}`;
+}
+
 export function BytPrislistaDialog({ open, onClose, onConfirm }: BytPrislistaDialogProps) {
   const [selectedPriceListId, setSelectedPriceListId] = useState(AVAILABLE_PRICE_LISTS[0].id);
   const [missingPrices, setMissingPrices] = useState<Record<string, string>>({});
-  const [priceChoices, setPriceChoices] = useState<Record<string, "kontrakt" | "prislista">>({});
+  const [priceChoices, setPriceChoices] = useState<Record<string, PriceChoice>>({});
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setSelectedPriceListId(AVAILABLE_PRICE_LISTS[0].id);
+      setMissingPrices({});
+      setPriceChoices({});
+    }
+  }
 
   const { missing, existing } = buildRows(selectedPriceListId);
 
@@ -93,18 +138,42 @@ export function BytPrislistaDialog({ open, onClose, onConfirm }: BytPrislistaDia
     setPriceChoices({});
   };
 
-  const handlePriceChoice = (rowId: string, choice: "kontrakt" | "prislista") => {
+  const handlePriceChoice = (rowId: string, choice: PriceChoice) => {
     setPriceChoices((prev) => ({ ...prev, [rowId]: choice }));
   };
 
-  const selectAll = (choice: "kontrakt" | "prislista") => {
-    const next: Record<string, "kontrakt" | "prislista"> = {};
+  const selectAll = (choice: PriceChoice) => {
+    const next: Record<string, PriceChoice> = {};
     for (const row of existing) next[row.rowId] = choice;
     setPriceChoices(next);
   };
 
+  const renderPriceOption = (rowId: string, choice: PriceChoice, price: string) => (
+    <FormControlLabel
+      className={styles.bytPrislistaPriceOption}
+      value={choice}
+      checked={(priceChoices[rowId] ?? "kontrakt") === choice}
+      onChange={() => handlePriceChoice(rowId, choice)}
+      control={<Radio size="small" name={`byt-prislista-${rowId}`} />}
+      label={price}
+    />
+  );
+
+  const renderSelectAllOption = (choice: PriceChoice, label: string) => (
+    <Tooltip title={`Välj ${label.toLowerCase()} på alla rader`} placement="top">
+      <FormControlLabel
+        className={styles.bytPrislistaPriceOption}
+        value={choice}
+        checked={existing.every((row) => (priceChoices[row.rowId] ?? "kontrakt") === choice)}
+        onChange={() => selectAll(choice)}
+        control={<Radio size="small" name="byt-prislista-alla" />}
+        label={label}
+      />
+    </Tooltip>
+  );
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ className: styles.bytPrislistaDialogPaper }}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth slotProps={{ paper: { className: styles.freightDialogPaper } }}>
       <DialogTitle className={styles.freightDialogTitle}>
         <div className={styles.freightDialogTitleRow}>
           <Typography style={{ fontSize: 16, fontWeight: 700, color: "#2f3743" }}>Byt prislista</Typography>
@@ -114,146 +183,89 @@ export function BytPrislistaDialog({ open, onClose, onConfirm }: BytPrislistaDia
         </div>
       </DialogTitle>
 
-      <DialogContent className={styles.freightDialogContent} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <DialogContent className={styles.freightDialogContent} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {/* Price list selector */}
-        <div className={styles.bytPrislistaSelectorRow}>
-          <Typography className={styles.bytPrislistaSelectorLabel}>Byt till prislista</Typography>
+        <FormControl size="small" fullWidth>
+          <InputLabel id="byt-prislista-label">Byt till prislista</InputLabel>
           <Select
-            size="small"
+            labelId="byt-prislista-label"
+            label="Byt till prislista"
             value={selectedPriceListId}
+            IconComponent={KeyboardArrowDownIcon}
             onChange={(e) => handlePriceListChange(e.target.value)}
-            className={styles.bytPrislistaSelect}
-            renderValue={(id) => {
-              const pl = AVAILABLE_PRICE_LISTS.find((p) => p.id === id);
-              return pl ? `${pl.id} — ${pl.externalNr} — ${pl.customer}` : id;
-            }}
           >
             {AVAILABLE_PRICE_LISTS.map((pl) => (
-              <MenuItem key={pl.id} value={pl.id}>
-                <span style={{ fontWeight: 600, marginRight: 8 }}>{pl.id}</span>
-                <span style={{ color: "#4f5968", marginRight: 8 }}>{pl.externalNr}</span>
-                <span style={{ color: "#6a7483" }}>{pl.customer}</span>
-              </MenuItem>
+              <MenuItem key={pl.id} value={pl.id}>{formatPriceList(pl)}</MenuItem>
             ))}
           </Select>
-        </div>
+        </FormControl>
 
         {/* Missing rows */}
-        <div>
-          <Typography className={styles.bytPrislistaSectionTitle}>
-            Saknas i vald prislista
-            {missing.length > 0 && <span className={styles.bytPrislistaSectionCount}>{missing.length}</span>}
-          </Typography>
+        <section className={styles.bytPrislistaSection}>
+          <Typography className={styles.contractSectionTitle}>Saknas i vald prislista</Typography>
           {missing.length === 0 ? (
-            <p className={styles.bytPrislistaEmpty}>Alla produkter finns i den valda prislistan.</p>
+            <Typography className={styles.bytPrislistaEmpty}>Alla produkter finns i den valda prislistan.</Typography>
           ) : (
-            <div className={styles.bytPrislistaTableWrap}>
-              <table className={styles.bytPrislistaTable}>
-                <thead>
-                  <tr>
-                    <th>Produkt</th>
-                    <th>Pris på kontraktsrad</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {missing.map((row) => {
-                    const [defaultAmount, ...unitParts] = row.currentPris.split(" ");
-                    const unit = unitParts.join(" ");
-                    const value = missingPrices[row.rowId] ?? defaultAmount;
-                    return (
-                      <tr key={row.rowId}>
-                        <td>{row.produkt}</td>
-                        <td>
-                          <TextField
-                            size="small"
-                            value={value}
-                            onChange={(e) => setMissingPrices((prev) => ({ ...prev, [row.rowId]: e.target.value }))}
-                            className={styles.bytPrislastaPriceInput}
-                            InputProps={{
-                              endAdornment: <InputAdornment position="end">{unit}</InputAdornment>,
-                            }}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <TableContainer component={Paper} variant="outlined" className={styles.bytPrislistaTableContainer}>
+              <Table size="small" className={styles.bytPrislistaTable}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell style={{ width: "40%" }}>Produkt</TableCell>
+                    <TableCell>Pris på kontraktsrad</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {missing.map((row) => (
+                    <TableRow key={row.rowId}>
+                      <TableCell>{row.produkt}</TableCell>
+                      <TableCell>
+                        <TextField
+                          size="small"
+                          value={missingPrices[row.rowId] ?? row.currentPris}
+                          onChange={(e) => setMissingPrices((prev) => ({ ...prev, [row.rowId]: e.target.value }))}
+                          className={styles.bytPrislistaPriceInput}
+                          slotProps={{
+                            htmlInput: { "aria-label": `Pris för ${row.produkt}` },
+                            input: { endAdornment: <InputAdornment position="end">{PRICE_UNIT}</InputAdornment> },
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
-        </div>
+        </section>
 
         {/* Existing rows – radio price selection */}
-        <div>
-          <div className={styles.bytPrislistaSectionHeader}>
-            <Typography className={styles.bytPrislistaSectionTitle} style={{ marginBottom: 0 }}>
-              Välj pris
-              {existing.length > 0 && <span className={styles.bytPrislistaSectionCount}>{existing.length}</span>}
-            </Typography>
-            {existing.length > 0 && (
-              <div className={styles.bytPrislistaSelectAllRow}>
-                <Typography className={styles.bytPrislistaSelectAllLabel}>Välj alla: </Typography>
-                <Button variant="outlined" size="small" className={styles.bytPrislistaSelectAllBtn} onClick={() => selectAll("kontrakt")}>
-                  Kontraktspris
-                </Button>
-                <Button variant="outlined" size="small" className={styles.bytPrislistaSelectAllBtn} onClick={() => selectAll("prislista")}>
-                  Prislistepris
-                </Button>
-              </div>
-            )}
-          </div>
+        <section className={styles.bytPrislistaSection}>
+          <Typography className={styles.contractSectionTitle}>Välj pris</Typography>
           {existing.length === 0 ? (
-            <p className={styles.bytPrislistaEmpty}>Inga kontraktsrader matchar den valda prislistan.</p>
+            <Typography className={styles.bytPrislistaEmpty}>Inga kontraktsrader matchar den valda prislistan.</Typography>
           ) : (
-            <div className={styles.bytPrislistaTableWrap} style={{ marginTop: 10 }}>
-              <table className={styles.bytPrislistaTable}>
-                <thead>
-                  <tr>
-                    <th>Produkt</th>
-                    <th>Kontraktspris</th>
-                    <th>Prislistepris</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {existing.map((row) => {
-                    const choice = priceChoices[row.rowId] ?? "kontrakt";
-                    return (
-                      <tr key={row.rowId}>
-                        <td>{row.produkt}</td>
-                        <td>
-                          <label className={styles.bytPrislistaRadioLabel}>
-                            <input
-                              type="radio"
-                              name={row.rowId}
-                              value="kontrakt"
-                              checked={choice === "kontrakt"}
-                              onChange={() => handlePriceChoice(row.rowId, "kontrakt")}
-                              className={styles.bytPrislistaRadio}
-                            />
-                            {row.kontraktsPris}
-                          </label>
-                        </td>
-                        <td>
-                          <label className={styles.bytPrislistaRadioLabel}>
-                            <input
-                              type="radio"
-                              name={row.rowId}
-                              value="prislista"
-                              checked={choice === "prislista"}
-                              onChange={() => handlePriceChoice(row.rowId, "prislista")}
-                              className={styles.bytPrislistaRadio}
-                            />
-                            {row.prislistePris}
-                          </label>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <TableContainer component={Paper} variant="outlined" className={styles.bytPrislistaTableContainer}>
+              <Table size="small" className={styles.bytPrislistaTable}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell style={{ width: "40%" }}>Produkt</TableCell>
+                    <TableCell style={{ width: "30%" }}>{renderSelectAllOption("kontrakt", "Kontraktspris")}</TableCell>
+                    <TableCell style={{ width: "30%" }}>{renderSelectAllOption("prislista", "Prislistepris")}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {existing.map((row) => (
+                    <TableRow key={row.rowId}>
+                      <TableCell>{row.produkt}</TableCell>
+                      <TableCell>{renderPriceOption(row.rowId, "kontrakt", row.kontraktsPris)}</TableCell>
+                      <TableCell>{renderPriceOption(row.rowId, "prislista", row.prislistePris)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           )}
-        </div>
+        </section>
       </DialogContent>
 
       <DialogActions className={styles.freightDialogActions}>
