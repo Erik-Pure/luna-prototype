@@ -4,10 +4,11 @@ import AddIcon from "@mui/icons-material/Add";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import RefreshOutlinedIcon from "@mui/icons-material/RefreshOutlined";
 import SearchIcon from "@mui/icons-material/Search";
-import { Button, IconButton, Tooltip } from "@mui/material";
+import { Alert, Button, IconButton, Snackbar, Tooltip } from "@mui/material";
 import { useRef, useState } from "react";
 import { ActionRow } from "../shared/ActionRow";
 import { DataTable } from "../shared/DataTable";
+import { KopieraPrislisteraderDialog } from "./KopieraPrislisteraderDialog";
 import styles from "../../page.module.scss";
 
 type PrislisteradRow = {
@@ -80,20 +81,21 @@ INITIAL_ROWS.sort((a, b) =>
 );
 
 type PrislisteraderTabProps = {
+  priceListId: string;
   onOpenPriceRowDetail: (priceRowId: string) => void;
   onCreatePriceRow: () => void;
   onOpenPrislistekalkyl: () => void;
 };
 
-export function PrislisteraderTab({ onOpenPriceRowDetail, onCreatePriceRow, onOpenPrislistekalkyl }: PrislisteraderTabProps) {
+export function PrislisteraderTab({ priceListId, onOpenPriceRowDetail, onCreatePriceRow, onOpenPrislistekalkyl }: PrislisteraderTabProps) {
   const [rows] = useState<PrislisteradRow[]>(INITIAL_ROWS);
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [filterValue, setFilterValue] = useState("");
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const hasSelectedRow = selectedRowIndex !== null;
+  const [isKopieraOpen, setIsKopieraOpen] = useState(false);
+  const [copyToast, setCopyToast] = useState({ open: false, message: "" });
 
   const handleToggleSearch = () => {
     setIsSearchOpen((prev) => {
@@ -121,7 +123,7 @@ export function PrislisteraderTab({ onOpenPriceRowDetail, onCreatePriceRow, onOp
           {
             label: "Kopiera",
             icon: <ContentCopyIcon fontSize="small" />,
-            enabled: hasSelectedRow,
+            onClick: () => setIsKopieraOpen(true),
           },
           { kind: "divider" },
           {
@@ -209,6 +211,27 @@ export function PrislisteraderTab({ onOpenPriceRowDetail, onCreatePriceRow, onOp
           <div className={styles.tableFiller} />
         </div>
       </div>
+
+      <KopieraPrislisteraderDialog
+        open={isKopieraOpen}
+        targetPriceListId={priceListId}
+        onClose={() => setIsKopieraOpen(false)}
+        onCopy={({ count, fromPriceListId }) => {
+          setIsKopieraOpen(false);
+          setCopyToast({ open: true, message: `${count} prislisterader kopierade från prislista ${fromPriceListId}` });
+        }}
+      />
+
+      <Snackbar
+        open={copyToast.open}
+        autoHideDuration={2600}
+        onClose={() => setCopyToast((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert severity="success" variant="filled" onClose={() => setCopyToast((prev) => ({ ...prev, open: false }))}>
+          {copyToast.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

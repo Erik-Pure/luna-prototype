@@ -8535,6 +8535,12 @@ body button {
   font-size: 14px;
 }
 
+.columnFilterDescribedOption:global(.MuiMenuItem-root) {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+}
+
 .stocknotaFilterActions {
   display: flex;
   justify-content: flex-end;
@@ -9928,6 +9934,138 @@ body button {
 
 :global(html[data-color-mode="dark"]) .bytPrislistaEmpty:global(.MuiTypography-root) {
   color: #c7ccd5;
+}
+
+/* ── Kopiera prislisterader dialog ── */
+
+.kopieraDialogPaper {
+  height: calc(100% - 64px);
+}
+
+.kopieraDialogContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.kopieraSourceRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 6px;
+}
+
+// Samma höjd på alla fält i raden (select blir annars 40px och autocomplete/textfält 37px).
+.kopieraSourceRow :global(.MuiOutlinedInput-root) {
+  height: 40px;
+}
+
+// Centrera etiketten i tomt fält efter höjdökningen (MUI small: 9px vid 37px höjd).
+.kopieraSourceRow :global(.MuiInputLabel-sizeSmall:not(.MuiInputLabel-shrink)) {
+  transform: translate(14px, 10.5px) scale(1);
+}
+
+.kopieraKundField {
+  width: 300px;
+}
+
+.kopieraPrislistaField {
+  width: 380px;
+}
+
+:global(.MuiAutocomplete-listbox) .kopieraPrislistaOption:global(.MuiAutocomplete-option) {
+  display: grid;
+  grid-template-columns: 56px 170px minmax(0, 1fr);
+  gap: 16px;
+  justify-content: stretch;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.kopieraTillField {
+  width: 160px;
+  margin-left: auto !important;
+}
+
+.kopieraStatusField {
+  width: 250px;
+}
+
+.kopieraPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.kopieraTableContainer {
+  flex: 1;
+  min-height: 0;
+  border-radius: 8px;
+}
+
+.kopieraArticleTable {
+  table-layout: fixed;
+
+  :global(.MuiTableCell-root) {
+    padding: 4px 8px;
+    font-size: 12.5px;
+    color: #3f4754;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  :global(.MuiTableCell-paddingCheckbox) {
+    padding: 0 0 0 4px;
+    text-overflow: clip;
+  }
+
+  :global(.MuiTableHead-root .MuiTableCell-root) {
+    height: 38px;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 12px;
+    font-weight: 800;
+    color: #2f343b;
+    background-color: #f4f6f9;
+  }
+
+  :global(.MuiTableHead-root .MuiTableCell-root):hover .stocknotaFilterButton {
+    opacity: 1;
+  }
+}
+
+.kopieraArticleRow {
+  cursor: pointer;
+  user-select: none;
+}
+
+.kopieraNumericCell {
+  font-variant-numeric: tabular-nums;
+}
+
+.kopieraArticleTable .kopieraEmptyCell:global(.MuiTableCell-root) {
+  padding: 32px 16px;
+  text-align: center;
+  white-space: normal;
+  color: #6a7483;
+  border-bottom: none;
+}
+
+.kopieraSelectionSummary:global(.MuiTypography-root) {
+  margin-right: auto;
+  padding-left: 8px;
+  font-size: 13px !important;
+  color: #6a7483;
 }
 
 .bytPrislistaOkButton {

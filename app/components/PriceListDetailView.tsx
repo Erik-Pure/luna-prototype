@@ -557,6 +557,7 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
             <div className={styles.contractDetailMainContent}>
               {activeTab === "Prislisterader" ? (
                 <PrislisteraderTab
+                  priceListId={selectedPriceListId}
                   onOpenPriceRowDetail={onOpenPriceRowDetail}
                   onCreatePriceRow={onCreatePriceRow}
                   onOpenPrislistekalkyl={onOpenPrislistekalkyl}

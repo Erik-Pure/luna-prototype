@@ -24,6 +24,8 @@ export type ColumnFilterConfig = {
   multiple?: boolean;
   /** Ersätter operatorernas visningsnamn, t.ex. "Större än" i stället för ">". */
   operatorLabels?: Readonly<Record<string, string>>;
+  /** Beskrivning som visas efter koden i ett enum-val, t.ex. "2400" → "Ytterpanelbräder Finsågad". */
+  optionDescriptions?: Readonly<Record<string, string>>;
 };
 
 export type ColumnFilterValue = { operator: string; value: string; values?: string[] };
@@ -221,11 +223,28 @@ export function ColumnFilterButton({ config, filter, onApply, disabled }: Column
                 label="Värde"
                 value={draft.value}
                 onChange={(e) => setDraft((prev) => ({ ...prev, value: e.target.value }))}
+                slotProps={
+                  config.optionDescriptions
+                    ? {
+                        select: {
+                          renderValue: (value) => `${value} ${config.optionDescriptions?.[value as string] ?? ""}`.trim(),
+                          MenuProps: { slotProps: { paper: { style: { maxHeight: 360 } } } },
+                        },
+                      }
+                    : undefined
+                }
                 fullWidth
               >
-                {(config.options ?? []).map((opt) => (
-                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                ))}
+                {(config.options ?? []).map((opt) =>
+                  config.optionDescriptions ? (
+                    <MenuItem key={opt} value={opt} className={styles.columnFilterDescribedOption}>
+                      <span>{opt}</span>
+                      <span>{config.optionDescriptions[opt]}</span>
+                    </MenuItem>
+                  ) : (
+                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  )
+                )}
               </TextField>
             ) : (
               <TextField
