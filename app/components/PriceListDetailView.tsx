@@ -52,7 +52,6 @@ const MOCK_DRAFT: PriceListDraft = {
   prislistedatum: "2025-10-15",
   giltigFran: "2025-10-01",
   giltigTill: "2025-12-31",
-  kontaktbolag: "Pure Wood AB",
   kundensReferens: "",
   externPrislistenr: "2025/10 Region 3",
   kategori: "Bygghandel",
@@ -348,11 +347,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
 
                   <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
-                    <TextField select fullWidth size="small" label="Kontaktenhet" value={draft.kontaktbolag} onChange={(e) => set("kontaktbolag", e.target.value)}>
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Pure Wood AB">Pure Wood AB</MenuItem>
-                      <MenuItem value="Nordic Timber AS">Nordic Timber AS</MenuItem>
-                    </TextField>
                     <TextField fullWidth size="small" label="Kundens referens" value={draft.kundensReferens} onChange={(e) => set("kundensReferens", e.target.value)} />
                     <TextField fullWidth size="small" label="Externt prislistenr" value={draft.externPrislistenr} onChange={(e) => set("externPrislistenr", e.target.value)} />
                     <TextField select fullWidth size="small" label="Kategori" value={draft.kategori} onChange={(e) => set("kategori", e.target.value)}>

@@ -32,7 +32,6 @@ export type NewPriceListDraft = {
   prislistedatum: string;
   giltigFran: string;
   giltigTill: string;
-  kontaktbolag: string;
   kundensReferens: string;
   externPrislistenr: string;
   kategori: string;
@@ -78,7 +77,6 @@ const emptyDraft: NewPriceListDraft = {
   prislistedatum: "",
   giltigFran: "",
   giltigTill: "",
-  kontaktbolag: "",
   kundensReferens: "",
   externPrislistenr: "",
   kategori: "",
@@ -324,16 +322,6 @@ export function PriceListCreateView({
 
                   <Divider className={styles.contractSectionDivider} />
                   <div className={styles.contractModernFormGrid}>
-                    <TextField
-                      select fullWidth size="small"
-                      label="Kontaktenhet"
-                      value={draft.kontaktbolag}
-                      onChange={(e) => update("kontaktbolag", e.target.value)}
-                    >
-                      <MenuItem value="">—</MenuItem>
-                      <MenuItem value="Pure Wood AB">Pure Wood AB</MenuItem>
-                      <MenuItem value="Nordic Timber AS">Nordic Timber AS</MenuItem>
-                    </TextField>
                     <TextField
                       fullWidth size="small"
                       label="Kundens referens"
