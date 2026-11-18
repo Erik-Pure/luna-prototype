@@ -3,6 +3,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import ClearIcon from "@mui/icons-material/Clear";
 import CloseIcon from "@mui/icons-material/Close";
+import ContentCopyOutlinedIcon from "@mui/icons-material/ContentCopyOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
@@ -47,6 +48,18 @@ type AltAdressDraft = {
 
 type AltAdressRow = AltAdressDraft & { _id: string };
 
+export type KundhuvudAdress = {
+  namn: string;
+  adress1: string;
+  adress2: string;
+  postadress: string;
+  land: string;
+  telefon: string;
+  epost: string;
+  leveransort: string;
+  postnummer: string;
+};
+
 type LeveransDraft = {
   leveransort: string;
   postnr: string;
@@ -85,6 +98,14 @@ const LEVERANSORTER: LeveransortOption[] = [
   { ort: "Helsinki", postnr: "00100", land: "FI" },
 ];
 
+// Samma höjd på rubrikraden oavsett om den har en knapp, så avståndet ner till fälten blir lika
+const SECTION_HEADER_ROW = { display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: 31, marginBottom: 10 } as const;
+
+const AVISERING_ROWS = 2;
+
+// Aviseringsinformation och Tillfällig aviseringsinformation bredvid varandra
+const TWO_COL_SPAN = { gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16, alignItems: "start" } as const;
+
 const THREE_COL = { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, alignItems: "start" } as const;
 
 const EMPTY_ALT_DRAFT: AltAdressDraft = {
@@ -95,36 +116,18 @@ const EMPTY_ALT_DRAFT: AltAdressDraft = {
   giltigFran: "", giltigTom: "",
 };
 
-const INITIAL_ALT_ROWS: AltAdressRow[] = [
-  {
-    _id: "0",
-    namn: "Leveransadress",
-    adress1: "Industrivägen 5",
-    adress2: "",
-    postadress: "456 78 Göteborg",
-    land: "SE",
-    telefon: "",
-    leveransort: "",
-    postnr: "",
-    oppettider: "",
-    aviseringstelefon: "",
-    aviseringsinformation: "",
-    tillfalligAviseringsinformation: "",
-    tillfalligFran: "",
-    tillfalligTom: "",
-    giltigFran: "",
-    giltigTom: "",
-  },
-];
+const INITIAL_ALT_ROWS: AltAdressRow[] = [];
 
 const LAND_OPTIONS = [
-  { value: "SE", label: "SE — Sverige" },
-  { value: "NO", label: "NO — Norge" },
-  { value: "FI", label: "FI — Finland" },
-  { value: "DK", label: "DK — Danmark" },
-  { value: "DE", label: "DE — Tyskland" },
-  { value: "EE", label: "EE — Estland" },
+  { value: "SE", label: "Sverige" },
+  { value: "NO", label: "Norge" },
+  { value: "FI", label: "Finland" },
+  { value: "DK", label: "Danmark" },
+  { value: "DE", label: "Tyskland" },
+  { value: "EE", label: "Estland" },
 ];
+
+const landLabel = (code: string) => LAND_OPTIONS.find((o) => o.value === code)?.label ?? code;
 
 const ALT_ADRESS_COLUMNS = [
   { key: "namn", label: "Namn" },
@@ -142,12 +145,12 @@ const ALT_ADRESS_COLUMNS = [
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-const ROField = ({ label, value, helperText, style }: {
-  label: string; value: string; helperText?: string; style?: React.CSSProperties;
+const ROField = ({ label, value, helperText, style, rows }: {
+  label: string; value: string; helperText?: string; style?: React.CSSProperties; rows?: number;
 }) => (
   <TextField
     fullWidth size="small" label={label} value={value} helperText={helperText}
-    style={style}
+    style={style} multiline={rows !== undefined} rows={rows}
     slotProps={{ input: { readOnly: true }, inputLabel: { shrink: true } }}
     sx={{
       "& .MuiOutlinedInput-root": {
@@ -208,6 +211,49 @@ function LeveransortSelect({ value, onChange }: { value: string; onChange: (ort:
   );
 }
 
+type LossningValues = Pick<LeveransDraft,
+  "oppettider" | "aviseringstelefon" | "aviseringsinformation" |
+  "tillfalligAviseringsinformation" | "tillfalligFran" | "tillfalligTom">;
+
+function LossningFields({ values, onChange }: {
+  values: LossningValues;
+  onChange: (key: keyof LossningValues, value: string) => void;
+}) {
+  return (
+    <div style={THREE_COL}>
+      <TextField fullWidth size="small" label="Öppettider" helperText="Visas på fraktsedeln"
+        value={values.oppettider} onChange={(e) => onChange("oppettider", e.target.value)} />
+      <TextField fullWidth size="small" label="Aviseringstelefon"
+        value={values.aviseringstelefon} onChange={(e) => onChange("aviseringstelefon", e.target.value)} />
+      <div style={TWO_COL_SPAN}>
+        <TextField fullWidth size="small" label="Aviseringsinformation" multiline rows={AVISERING_ROWS}
+          helperText="Visas på fraktsedel, skickas till C-Load"
+          value={values.aviseringsinformation} onChange={(e) => onChange("aviseringsinformation", e.target.value)} />
+        <div>
+          <TextField fullWidth size="small" label="Tillfällig aviseringsinformation" multiline rows={AVISERING_ROWS}
+            value={values.tillfalligAviseringsinformation} onChange={(e) => onChange("tillfalligAviseringsinformation", e.target.value)} />
+          <Button
+            size="small"
+            variant="text"
+            startIcon={<ContentCopyOutlinedIcon fontSize="small" />}
+            disabled={values.aviseringsinformation.trim() === ""}
+            onClick={() => onChange("tillfalligAviseringsinformation", values.aviseringsinformation)}
+            sx={{ textTransform: "none", mt: 0.25, px: 1 }}
+          >
+            Kopiera aviseringsinformation
+          </Button>
+        </div>
+      </div>
+      <TextField fullWidth size="small" label="Tillfällig aviseringsinformation giltig från"
+        type="date" slotProps={{ inputLabel: { shrink: true } }}
+        value={values.tillfalligFran} onChange={(e) => onChange("tillfalligFran", e.target.value)} />
+      <TextField fullWidth size="small" label="Tillfällig aviseringsinformation giltig till"
+        type="date" slotProps={{ inputLabel: { shrink: true } }}
+        value={values.tillfalligTom} onChange={(e) => onChange("tillfalligTom", e.target.value)} />
+    </div>
+  );
+}
+
 function NyAlternativAdressDialog({ open, onClose, onSave, initialDraft, title = "Ny alternativ leveransadress" }: {
   open: boolean; onClose: () => void; onSave: (d: AltAdressDraft) => void;
   initialDraft?: AltAdressDraft; title?: string;
@@ -222,7 +268,7 @@ function NyAlternativAdressDialog({ open, onClose, onSave, initialDraft, title =
     setDraft((prev) => ({ ...prev, leveransort: ort, postnr: option?.postnr ?? "" }));
   };
 
-  const canSave = draft.namn.trim() !== "";
+  const canSave = draft.namn.trim() !== "" && draft.postadress.trim() !== "" && draft.land !== "";
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth slotProps={{ paper: { className: styles.freightDialogPaper } }}>
@@ -240,17 +286,19 @@ function NyAlternativAdressDialog({ open, onClose, onSave, initialDraft, title =
           <div>
             <SectionLabel>Allmänt</SectionLabel>
             <div style={THREE_COL}>
-              <TextField fullWidth size="small" label="Namn" value={draft.namn}
+              <TextField fullWidth size="small" label="Namn *" value={draft.namn}
                 onChange={(e) => set("namn", e.target.value)}
                 className={styles.lineItemRequiredControl} />
               <TextField fullWidth size="small" label="Adress" value={draft.adress1}
                 onChange={(e) => set("adress1", e.target.value)} />
               <TextField fullWidth size="small" label="Adress 2" value={draft.adress2}
                 onChange={(e) => set("adress2", e.target.value)} />
-              <TextField fullWidth size="small" label="Postadress" value={draft.postadress}
-                onChange={(e) => set("postadress", e.target.value)} />
-              <TextField select fullWidth size="small" label="Land" value={draft.land}
-                onChange={(e) => set("land", e.target.value)}>
+              <TextField fullWidth size="small" label="Postadress *" value={draft.postadress}
+                onChange={(e) => set("postadress", e.target.value)}
+                className={styles.lineItemRequiredControl} />
+              <TextField select fullWidth size="small" label="Land *" value={draft.land}
+                onChange={(e) => set("land", e.target.value)}
+                className={styles.lineItemRequiredControl}>
                 <MenuItem value="">—</MenuItem>
                 {LAND_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
               </TextField>
@@ -265,15 +313,7 @@ function NyAlternativAdressDialog({ open, onClose, onSave, initialDraft, title =
             <SectionLabel>Transport</SectionLabel>
             <div style={THREE_COL}>
               <LeveransortSelect value={draft.leveransort} onChange={handleOrtChange} />
-              <TextField fullWidth size="small" label="Postnr" value={draft.postnr}
-                slotProps={{ input: { readOnly: true }, inputLabel: { shrink: true } }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(0,0,0,0.23)" },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(0,0,0,0.23)", borderWidth: 1 },
-                  },
-                  "& .MuiInputBase-input": { cursor: "default", color: "#2f3743" },
-                }} />
+              <ROField label="Postnr" value={draft.postnr} />
             </div>
           </div>
 
@@ -281,25 +321,7 @@ function NyAlternativAdressDialog({ open, onClose, onSave, initialDraft, title =
 
           <div>
             <SectionLabel>Lossning</SectionLabel>
-            <div style={THREE_COL}>
-              <TextField fullWidth size="small" label="Öppettider" helperText="Visas på fraktsedeln"
-                value={draft.oppettider} onChange={(e) => set("oppettider", e.target.value)} />
-              <TextField fullWidth size="small" label="Aviseringstelefon"
-                value={draft.aviseringstelefon} onChange={(e) => set("aviseringstelefon", e.target.value)} />
-              <TextField fullWidth size="small" label="Aviseringsinformation" multiline rows={3}
-                helperText="Visas på fraktsedel, skickas till C-Load"
-                value={draft.aviseringsinformation} onChange={(e) => set("aviseringsinformation", e.target.value)}
-                style={{ gridColumn: "1 / -1" }} />
-              <TextField fullWidth size="small" label="Tillfällig aviseringsinformation" multiline rows={3}
-                value={draft.tillfalligAviseringsinformation} onChange={(e) => set("tillfalligAviseringsinformation", e.target.value)}
-                style={{ gridColumn: "1 / -1" }} />
-              <TextField fullWidth size="small" label="Tillfällig aviseringsinformation giltig från"
-                type="date" slotProps={{ inputLabel: { shrink: true } }}
-                value={draft.tillfalligFran} onChange={(e) => set("tillfalligFran", e.target.value)} />
-              <TextField fullWidth size="small" label="Tillfällig aviseringsinformation giltig till"
-                type="date" slotProps={{ inputLabel: { shrink: true } }}
-                value={draft.tillfalligTom} onChange={(e) => set("tillfalligTom", e.target.value)} />
-            </div>
+            <LossningFields values={draft} onChange={set} />
           </div>
 
           <Divider />
@@ -319,9 +341,9 @@ function NyAlternativAdressDialog({ open, onClose, onSave, initialDraft, title =
         </div>
       </DialogContent>
       <DialogActions className={styles.freightDialogActions}>
-        <Button size="small" className={styles.freightSaveButton} disabled={!canSave}
+        <Button size="small" variant="contained" className={styles.contractSaveButton} disabled={!canSave}
           onClick={() => { onSave(draft); onClose(); }}>Spara</Button>
-        <Button size="small" className={styles.freightCancelButton} onClick={onClose}>Avbryt</Button>
+        <Button size="small" className={styles.contractQuickActionButton} onClick={onClose}>Avbryt</Button>
       </DialogActions>
     </Dialog>
   );
@@ -365,33 +387,15 @@ function TransportLossningDialog({ open, onClose, onSave, initialDraft }: {
 
           <div>
             <SectionLabel>Lossning</SectionLabel>
-            <div style={THREE_COL}>
-              <TextField fullWidth size="small" label="Öppettider" helperText="Visas på fraktsedeln"
-                value={draft.oppettider} onChange={(e) => set("oppettider", e.target.value)} />
-              <TextField fullWidth size="small" label="Aviseringstelefon"
-                value={draft.aviseringstelefon} onChange={(e) => set("aviseringstelefon", e.target.value)} />
-              <TextField fullWidth size="small" label="Aviseringsinformation" multiline rows={3}
-                helperText="Visas på fraktsedel, skickas till C-Load"
-                value={draft.aviseringsinformation} onChange={(e) => set("aviseringsinformation", e.target.value)}
-                style={{ gridColumn: "1 / -1" }} />
-              <TextField fullWidth size="small" label="Tillfällig aviseringsinformation" multiline rows={3}
-                value={draft.tillfalligAviseringsinformation} onChange={(e) => set("tillfalligAviseringsinformation", e.target.value)}
-                style={{ gridColumn: "1 / -1" }} />
-              <TextField fullWidth size="small" label="Tillfällig aviseringsinformation giltig från"
-                type="date" slotProps={{ inputLabel: { shrink: true } }}
-                value={draft.tillfalligFran} onChange={(e) => set("tillfalligFran", e.target.value)} />
-              <TextField fullWidth size="small" label="Tillfällig aviseringsinformation giltig till"
-                type="date" slotProps={{ inputLabel: { shrink: true } }}
-                value={draft.tillfalligTom} onChange={(e) => set("tillfalligTom", e.target.value)} />
-            </div>
+            <LossningFields values={draft} onChange={set} />
           </div>
 
         </div>
       </DialogContent>
       <DialogActions className={styles.freightDialogActions}>
-        <Button size="small" className={styles.freightSaveButton}
+        <Button size="small" variant="contained" className={styles.contractSaveButton}
           onClick={() => { onSave(draft); onClose(); }}>Spara</Button>
-        <Button size="small" className={styles.freightCancelButton} onClick={onClose}>Avbryt</Button>
+        <Button size="small" className={styles.contractQuickActionButton} onClick={onClose}>Avbryt</Button>
       </DialogActions>
     </Dialog>
   );
@@ -420,7 +424,7 @@ function ViewAltAdressDialog({ open, onClose, row }: {
               <ROField label="Adress" value={row.adress1} />
               <ROField label="Adress 2" value={row.adress2} />
               <ROField label="Postadress" value={row.postadress} />
-              <ROField label="Land" value={row.land} />
+              <ROField label="Land" value={landLabel(row.land)} />
               <ROField label="Telefon" value={row.telefon} />
             </div>
           </div>
@@ -438,8 +442,10 @@ function ViewAltAdressDialog({ open, onClose, row }: {
             <div style={THREE_COL}>
               <ROField label="Öppettider" value={row.oppettider} helperText="Visas på fraktsedeln" />
               <ROField label="Aviseringstelefon" value={row.aviseringstelefon} />
-              <ROField label="Aviseringsinformation" value={row.aviseringsinformation} helperText="Visas på fraktsedel, skickas till C-Load" style={{ gridColumn: "1 / -1" }} />
-              <ROField label="Tillfällig aviseringsinformation" value={row.tillfalligAviseringsinformation} style={{ gridColumn: "1 / -1" }} />
+              <div style={TWO_COL_SPAN}>
+                <ROField label="Aviseringsinformation" value={row.aviseringsinformation} helperText="Visas på fraktsedel, skickas till C-Load" rows={AVISERING_ROWS} />
+                <ROField label="Tillfällig aviseringsinformation" value={row.tillfalligAviseringsinformation} rows={AVISERING_ROWS} />
+              </div>
               <ROField label="Tillfällig aviseringsinformation giltig från" value={row.tillfalligFran} />
               <ROField label="Tillfällig aviseringsinformation giltig till" value={row.tillfalligTom} />
             </div>
@@ -455,7 +461,7 @@ function ViewAltAdressDialog({ open, onClose, row }: {
         </div>
       </DialogContent>
       <DialogActions className={styles.freightDialogActions}>
-        <Button size="small" className={styles.freightCancelButton} onClick={onClose}>Stäng</Button>
+        <Button size="small" className={styles.contractQuickActionButton} onClick={onClose}>Stäng</Button>
       </DialogActions>
     </Dialog>
   );
@@ -463,7 +469,7 @@ function ViewAltAdressDialog({ open, onClose, row }: {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function LeveransTab() {
+export function LeveransTab({ kundhuvudAdress }: { kundhuvudAdress: KundhuvudAdress }) {
   const [saved, setSaved] = useState<LeveransDraft>(EMPTY_DRAFT);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [altRows, setAltRows] = useState<AltAdressRow[]>(INITIAL_ALT_ROWS);
@@ -473,33 +479,56 @@ export function LeveransTab() {
   const [viewRow, setViewRow] = useState<AltAdressRow | null>(null);
   const [editRow, setEditRow] = useState<AltAdressRow | null>(null);
 
-  const fmt = (val: string) => val || "";
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 0, height: "100%", minHeight: 0, overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 0, height: "100%", minHeight: 0, overflowY: "auto" }}>
       <div className={styles.contractFlatSection} style={{ maxWidth: 1000, margin: "0 auto", width: "100%", gap: 16, flexShrink: 0 }}>
+
+        {/* ── Leveransadress (från kundens kontaktuppgifter, ej redigerbar här) ── */}
+        <div className={styles.contractDataSection} style={{ padding: 16 }}>
+          <div style={{ marginBottom: 12 }}>
+            <Typography className={styles.contractSectionTitle}>Leveransadress</Typography>
+            <Typography style={{ fontSize: 12, color: "#6a7483" }}>Ändras i kundens kontaktuppgifter</Typography>
+          </div>
+          <div style={THREE_COL}>
+            <ROField label="Namn" value={kundhuvudAdress.namn} />
+            <ROField label="Adress" value={kundhuvudAdress.adress1} />
+            <ROField label="Adress 2" value={kundhuvudAdress.adress2} />
+            <ROField label="Postadress" value={kundhuvudAdress.postadress} />
+            <ROField label="Land" value={landLabel(kundhuvudAdress.land)} />
+            <ROField label="Telefon" value={kundhuvudAdress.telefon} />
+            <ROField label="E-post" value={kundhuvudAdress.epost} />
+            <ROField label="Leveransort" value={kundhuvudAdress.leveransort} />
+            <ROField label="Postnummer" value={kundhuvudAdress.postnummer} />
+          </div>
+        </div>
 
         {/* ── Transport & Lossning ── */}
         <div className={styles.contractDataSection} style={{ padding: 16, background: "#fafafa" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-            <Typography className={styles.contractSectionTitle}>Transport &amp; Lossning</Typography>
+          <div style={SECTION_HEADER_ROW}>
+            <Typography className={styles.contractSectionTitle}>Transport</Typography>
             <Button variant="contained" size="small" startIcon={<EditOutlinedIcon fontSize="small" />} onClick={() => setEditDialogOpen(true)}>
               Redigera
             </Button>
           </div>
-
           <div style={THREE_COL}>
-            <ROField label="Leveransort" value={fmt(saved.leveransort)} />
-            <ROField label="Postnr" value={fmt(saved.postnr)} />
-            <ROField label="Öppettider" value={fmt(saved.oppettider)} helperText="Visas på fraktsedeln" />
+            <ROField label="Leveransort" value={saved.leveransort} />
+            <ROField label="Postnr" value={saved.postnr} />
           </div>
 
-          <div style={{ ...THREE_COL, marginTop: 8 }}>
-            <ROField label="Aviseringstelefon" value={fmt(saved.aviseringstelefon)} />
-            <ROField label="Aviseringsinformation" value={fmt(saved.aviseringsinformation)} helperText="Visas på fraktsedel, skickas till C-Load" style={{ gridColumn: "1 / -1" }} />
-            <ROField label="Tillfällig aviseringsinformation" value={fmt(saved.tillfalligAviseringsinformation)} style={{ gridColumn: "1 / -1" }} />
-            <ROField label="Tillfällig aviseringsinformation giltig från" value={fmt(saved.tillfalligFran)} />
-            <ROField label="Tillfällig aviseringsinformation giltig till" value={fmt(saved.tillfalligTom)} />
+          <hr className={styles.contractFlatDivider} />
+
+          <div style={SECTION_HEADER_ROW}>
+            <Typography className={styles.contractSectionTitle}>Lossning</Typography>
+          </div>
+          <div style={THREE_COL}>
+            <ROField label="Öppettider" value={saved.oppettider} helperText="Visas på fraktsedeln" />
+            <ROField label="Aviseringstelefon" value={saved.aviseringstelefon} />
+            <div style={TWO_COL_SPAN}>
+              <ROField label="Aviseringsinformation" value={saved.aviseringsinformation} helperText="Visas på fraktsedel, skickas till C-Load" rows={AVISERING_ROWS} />
+              <ROField label="Tillfällig aviseringsinformation" value={saved.tillfalligAviseringsinformation} rows={AVISERING_ROWS} />
+            </div>
+            <ROField label="Tillfällig aviseringsinformation giltig från" value={saved.tillfalligFran} />
+            <ROField label="Tillfällig aviseringsinformation giltig till" value={saved.tillfalligTom} />
           </div>
         </div>
 
@@ -514,7 +543,7 @@ export function LeveransTab() {
       />
 
       {/* ── Alternativa leveransadresser ── */}
-      <div className={`${styles.lineItemsSection} ${styles.lineItemsSectionFill}`}>
+      <div className={`${styles.lineItemsSection} ${styles.lineItemsSectionFill}`} style={{ minHeight: 320 }}>
         {/* <Typography className={styles.contractSectionTitle} style={{ padding: "4px 12px 4px 0" }}>
           Alternativa leveransadresser
         </Typography> */}
@@ -537,9 +566,6 @@ export function LeveransTab() {
               onRowClick={(i) => setSelectedAltRow(i === selectedAltRow ? null : i)}
               fillRemainingSpace
               renderCell={(row, col) => {
-                if (col.key === "namn" && row.namn === "Leveransadress") {
-                  return <span style={{ fontWeight: 700 }}>{row.namn}</span>;
-                }
                 if (col.key === "_actions") {
                   return (
                     <span className={styles.freightActionCell}>
@@ -561,6 +587,7 @@ export function LeveransTab() {
                     </span>
                   );
                 }
+                if (col.key === "land") return landLabel(row.land);
                 return row[col.key as keyof AltAdressRow] ?? "";
               }}
             />

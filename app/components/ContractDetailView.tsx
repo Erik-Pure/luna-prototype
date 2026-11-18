@@ -34,7 +34,7 @@ import { TilläggsTab } from "./contract-tabs/TilläggsTab";
 import { getContractDetails, type ContractDetails, type FieldValue } from "./contract-tabs/contractDetails";
 import { BytPrislistaDialog } from "./contract-tabs/BytPrislistaDialog";
 import { ContractCreateView, mockCustomers, mockDeliveryLocations, mockDeliveryAddresses, type NewContractDraft } from "./ContractCreateView";
-import { SectionQuickNav, scrollSectionIntoView, type QuickNavSection } from "./shared/SectionQuickNav";
+import type { QuickNavSection } from "./shared/SectionQuickNav";
 import { useMediaQuery, WIDE_LAYOUT_QUERY, EXTRA_WIDE_LAYOUT_QUERY } from "../hooks/useMediaQuery";
 import { DetailHeader } from "./shared/DetailHeader";
 import styles from "../page.module.scss";
@@ -220,7 +220,6 @@ export function ContractDetailView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     () => new Set(CONTRACT_SECTIONS.map((section) => section.key))
   );
-  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const sectionsHeaderRef = useRef<HTMLDivElement | null>(null);
 
   const toggleSection = (key: string, isExpanded: boolean) => {
@@ -232,13 +231,6 @@ export function ContractDetailView({
     });
   };
 
-  const jumpToSection = (key: string) => {
-    setExpandedSections((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
-    requestAnimationFrame(() => {
-      const target = sectionRefs.current[key];
-      if (target) scrollSectionIntoView(target, sectionsHeaderRef.current);
-    });
-  };
 
   const set = (key: keyof NewContractDraft, value: string | boolean) =>
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -410,9 +402,6 @@ export function ContractDetailView({
                   </Tooltip>
                 </div>
                 {!isSectionsPanelCollapsed ? (
-                  <SectionQuickNav sections={CONTRACT_SECTIONS} onSelect={jumpToSection} />
-                ) : null}
-                {!isSectionsPanelCollapsed ? (
                   <div className={styles.contractSectionsPanelHeaderActionsRow}>
                     {isEditingInfo ? (
                       <>
@@ -477,7 +466,6 @@ export function ContractDetailView({
                 <Accordion
                   expanded={expandedSections.has("allmant")}
                   onChange={(_, isExpanded) => toggleSection("allmant", isExpanded)}
-                  ref={(el) => { sectionRefs.current.allmant = el; }}
                   disableGutters
                   elevation={0}
                   className={styles.contractSectionAccordion}
@@ -578,7 +566,6 @@ export function ContractDetailView({
                 <Accordion
                   expanded={expandedSections.has("villkor")}
                   onChange={(_, isExpanded) => toggleSection("villkor", isExpanded)}
-                  ref={(el) => { sectionRefs.current.villkor = el; }}
                   disableGutters
                   elevation={0}
                   className={styles.contractSectionAccordion}
@@ -701,7 +688,6 @@ export function ContractDetailView({
                 <Accordion
                   expanded={expandedSections.has("leverans")}
                   onChange={(_, isExpanded) => toggleSection("leverans", isExpanded)}
-                  ref={(el) => { sectionRefs.current.leverans = el; }}
                   disableGutters
                   elevation={0}
                   className={styles.contractSectionAccordion}
@@ -757,7 +743,6 @@ export function ContractDetailView({
                 <Accordion
                   expanded={expandedSections.has("dokument")}
                   onChange={(_, isExpanded) => toggleSection("dokument", isExpanded)}
-                  ref={(el) => { sectionRefs.current.dokument = el; }}
                   disableGutters
                   elevation={0}
                   className={styles.contractSectionAccordion}

@@ -1,5 +1,7 @@
 "use client";
 
+import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
+import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
 import ContactsOutlinedIcon from "@mui/icons-material/ContactsOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import GavelOutlinedIcon from "@mui/icons-material/GavelOutlined";
@@ -13,6 +15,7 @@ import {
   Checkbox,
   Divider,
   FormControlLabel,
+  FormHelperText,
   IconButton,
   InputAdornment,
   MenuItem,
@@ -21,16 +24,22 @@ import {
 } from "@mui/material";
 import { useRef, useState } from "react";
 import { DetailHeader } from "./shared/DetailHeader";
+import { TillhorSelect } from "./shared/TillhorSelect";
+import { LeveransadressFields } from "./shared/LeveransadressFields";
 import styles from "../page.module.scss";
 
 export type NewCustomerDraft = {
+  land: string;
+  kortnamn: string;
+  tillhor: string;
+  giltigFrom: string;
+  giltigTom: string;
   kategori: string;
   sprak: string;
   orgnr: string;
   vatnr: string;
   eorInr: string;
   maerskKundNr: string;
-  nordekKundNr: string;
   controlledWoodCode: string;
   cwCodeGiltigTom: string;
   priIdentitet: string;
@@ -63,18 +72,20 @@ export type NewCustomerDraft = {
   levAdress2: string;
   levPostadress: string;
   levLand: string;
+  levTelefon: string;
+  levEpost: string;
+  levLeveransort: string;
+  levPostnummer: string;
+  samLeveransadress: boolean;
   // Kontakt
   telefon: string;
   epost: string;
-  web: string;
   leveransort: string;
   postnummer: string;
   // Villkor
   valuta: string;
   moms: string;
   betvillkor: string;
-  betvillkorDag: string;
-  kassarabatt: string;
   bonus: string;
   bonusgrund: string;
   ranterutin: string;
@@ -92,13 +103,17 @@ export type NewCustomerDraft = {
 };
 
 const emptyDraft: NewCustomerDraft = {
+  land: "",
+  kortnamn: "",
+  tillhor: "",
+  giltigFrom: "",
+  giltigTom: "",
   kategori: "",
   sprak: "",
   orgnr: "",
   vatnr: "",
   eorInr: "",
   maerskKundNr: "",
-  nordekKundNr: "",
   controlledWoodCode: "",
   cwCodeGiltigTom: "",
   priIdentitet: "",
@@ -129,16 +144,18 @@ const emptyDraft: NewCustomerDraft = {
   levAdress2: "",
   levPostadress: "",
   levLand: "",
+  levTelefon: "",
+  levEpost: "",
+  levLeveransort: "",
+  levPostnummer: "",
+  samLeveransadress: true,
   telefon: "",
   epost: "",
-  web: "",
   leveransort: "",
   postnummer: "",
   valuta: "",
   moms: "",
   betvillkor: "",
-  betvillkorDag: "",
-  kassarabatt: "",
   bonus: "",
   bonusgrund: "",
   ranterutin: "",
@@ -163,12 +180,11 @@ type CustomerCreateViewProps = {
   mode?: "create" | "edit";
 };
 
-const LEV_FORE_HELP = "Antal dagar före angiven leveransdag. Om leveransdag saknas är leveransfönstret måndag – fredag i angiven leveransvecka.";
-const LEV_EFTER_HELP = "Antal dagar efter angiven leveransdag. Om leveransdag saknas är leveransfönstret måndag – fredag i angiven leveransvecka.";
+export const LEV_FONSTER_HELP = "Antal dagar före respektive efter angiven leveransdag. Om leveransdag saknas är leveransfönstret måndag – fredag i angiven leveransvecka.";
 
 export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny kund", mode = "create" }: CustomerCreateViewProps) {
   const [draft, setDraft] = useState<NewCustomerDraft>(initialDraft ?? emptyDraft);
-  const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant", "kontakt", "villkor"]);
+  const [expandedPanels, setExpandedPanels] = useState<string[]>(["allmant", "kundegenskaper", "kommentarer", "kontakt", "villkor"]);
   const [isEditing, setIsEditing] = useState(true);
   const accordionWrapRef = useRef<HTMLDivElement | null>(null);
 
@@ -203,6 +219,8 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
   const bonusIsSet = Number(draft.bonus) > 0;
 
   const canSave = isEdit || (
+    draft.land !== "" &&
+    draft.kortnamn.trim() !== "" &&
     draft.kategori !== "" &&
     draft.sprak !== "" &&
     draft.kundansvarig !== "" &&
@@ -210,6 +228,7 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
     draft.faktNamn !== "" &&
     draft.faktPostadress !== "" &&
     draft.faktLand !== "" &&
+    (draft.samLeveransadress || (draft.levNamn.trim() !== "" && draft.levPostadress.trim() !== "" && draft.levLand !== "")) &&
     draft.valuta !== "" &&
     draft.moms !== "" &&
     draft.betvillkor !== "" &&
@@ -300,7 +319,44 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       select fullWidth size="small"
-                      label="Kategori *"
+                      label="Land *"
+                      value={draft.land}
+                      onChange={(e) => update("land", e.target.value)}
+                      className={styles.lineItemRequiredControl}
+                    >
+                      <MenuItem value="">— Välj —</MenuItem>
+                      <MenuItem value="SE">Sverige</MenuItem>
+                      <MenuItem value="NO">Norge</MenuItem>
+                      <MenuItem value="FI">Finland</MenuItem>
+                      <MenuItem value="DK">Danmark</MenuItem>
+                      <MenuItem value="DE">Tyskland</MenuItem>
+                      <MenuItem value="EE">Estland</MenuItem>
+                    </TextField>
+
+                    <TextField
+                      fullWidth size="small"
+                      label="Kortnamn *"
+                      value={draft.kortnamn}
+                      onChange={(e) => update("kortnamn", e.target.value)}
+                      className={styles.lineItemRequiredControl}
+                    />
+
+                    <TillhorSelect value={draft.tillhor} onChange={(v) => update("tillhor", v)} />
+
+                    <TextField fullWidth size="small" label="Giltig fr.o.m." type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.giltigFrom} onChange={(e) => update("giltigFrom", e.target.value)} />
+
+                    <TextField fullWidth size="small" label="Giltig t.o.m." type="date" slotProps={{ inputLabel: { shrink: true } }} value={draft.giltigTom} onChange={(e) => update("giltigTom", e.target.value)} />
+
+                    <TextField
+                      fullWidth size="small"
+                      label="Orgnr/Personnr"
+                      value={draft.orgnr}
+                      onChange={(e) => update("orgnr", e.target.value)}
+                    />
+
+                    <TextField
+                      select fullWidth size="small"
+                      label="Kundkategori *"
                       value={draft.kategori}
                       onChange={(e) => update("kategori", e.target.value)}
                       className={styles.lineItemRequiredControl}
@@ -328,13 +384,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
 
                     <TextField
                       fullWidth size="small"
-                      label="Orgnr/Personnr"
-                      value={draft.orgnr}
-                      onChange={(e) => update("orgnr", e.target.value)}
-                    />
-
-                    <TextField
-                      fullWidth size="small"
                       label="VATnr"
                       value={draft.vatnr}
                       onChange={(e) => update("vatnr", e.target.value)}
@@ -347,13 +396,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                           </InputAdornment>
                         )
                       }}
-                    />
-
-                    <TextField
-                      fullWidth size="small"
-                      label="Nordek kundNr"
-                      value={draft.nordekKundNr}
-                      onChange={(e) => update("nordekKundNr", e.target.value)}
                     />
 
                     <TextField
@@ -372,18 +414,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                       onChange={(e) => update("cwCodeGiltigTom", e.target.value)}
                     />
 
-                  </div>
-
-                  <Divider className={styles.contractSectionDivider} />
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField fullWidth size="small" label="EORInr" value={draft.eorInr} onChange={(e) => update("eorInr", e.target.value)} />
-                    <TextField fullWidth size="small" label="Kedjans kundnr" value={draft.kedjansKundnr} onChange={(e) => update("kedjansKundnr", e.target.value)} />
-                    <TextField fullWidth size="small" label="KVK" value={draft.kvk} onChange={(e) => update("kvk", e.target.value)} />
-                    <TextField fullWidth size="small" label="Maersk kundnr" value={draft.maerskKundNr} onChange={(e) => update("maerskKundNr", e.target.value)} />
-                    <TextField fullWidth size="small" label="Medlemsnummer" value={draft.medlemsnummer} onChange={(e) => update("medlemsnummer", e.target.value)} />
-                    <TextField fullWidth size="small" label="NTN" value={draft.ntn} onChange={(e) => update("ntn", e.target.value)} />
-                    <TextField fullWidth size="small" label="PRI identitet" value={draft.priIdentitet} onChange={(e) => update("priIdentitet", e.target.value)} />
-                    <TextField fullWidth size="small" label="USCI" value={draft.usci} onChange={(e) => update("usci", e.target.value)} />
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
@@ -461,7 +491,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                       type="number"
                       value={draft.levFonsterFore}
                       onChange={(e) => update("levFonsterFore", e.target.value)}
-                      helperText={LEV_FORE_HELP}
                     />
                     <TextField
                       fullWidth size="small"
@@ -469,8 +498,8 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                       type="number"
                       value={draft.levFonsterEfter}
                       onChange={(e) => update("levFonsterEfter", e.target.value)}
-                      helperText={LEV_EFTER_HELP}
                     />
+                    <FormHelperText sx={{ gridColumn: "1 / -1", mt: -0.5, mx: 0 }}>{LEV_FONSTER_HELP}</FormHelperText>
                   </div>
 
                   <div style={{ marginTop: 8 }}>
@@ -485,9 +514,52 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                       label={<Typography style={{ fontSize: 13 }}>Automatfaktura</Typography>}
                     />
                   </div>
+                </AccordionDetails>
+              </Accordion>
 
-                  <Divider className={styles.contractSectionDivider} />
+              {/* ── Kundegenskapstyper ── */}
+              <Accordion
+                expanded={expandedPanels.includes("kundegenskaper")}
+                onChange={() => togglePanel("kundegenskaper")}
+                disableGutters
+                elevation={0}
+                className={styles.contractSectionAccordion}
+              >
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                  <span className={styles.contractSectionTitleRow}>
+                    <BadgeOutlinedIcon className={styles.contractSectionIcon} />
+                    <Typography className={styles.contractSectionTitle}>Kundegenskapstyper</Typography>
+                  </span>
+                </AccordionSummary>
+                <AccordionDetails className={styles.contractSectionDetailsArea}>
+                  <div className={styles.contractModernFormGrid}>
+                    <TextField fullWidth size="small" label="EORInr" value={draft.eorInr} onChange={(e) => update("eorInr", e.target.value)} />
+                    <TextField fullWidth size="small" label="Kedjans kundnr" value={draft.kedjansKundnr} onChange={(e) => update("kedjansKundnr", e.target.value)} />
+                    <TextField fullWidth size="small" label="KVK" value={draft.kvk} onChange={(e) => update("kvk", e.target.value)} />
+                    <TextField fullWidth size="small" label="Maersk kundnr" value={draft.maerskKundNr} onChange={(e) => update("maerskKundNr", e.target.value)} />
+                    <TextField fullWidth size="small" label="Medlemsnummer Norra Skog" value={draft.medlemsnummer} onChange={(e) => update("medlemsnummer", e.target.value)} />
+                    <TextField fullWidth size="small" label="NTN" value={draft.ntn} onChange={(e) => update("ntn", e.target.value)} />
+                    <TextField fullWidth size="small" label="PRI identitet" value={draft.priIdentitet} onChange={(e) => update("priIdentitet", e.target.value)} />
+                    <TextField fullWidth size="small" label="USCI" value={draft.usci} onChange={(e) => update("usci", e.target.value)} />
+                  </div>
+                </AccordionDetails>
+              </Accordion>
 
+              {/* ── Kommentarer ── */}
+              <Accordion
+                expanded={expandedPanels.includes("kommentarer")}
+                onChange={() => togglePanel("kommentarer")}
+                disableGutters
+                elevation={0}
+                className={styles.contractSectionAccordion}
+              >
+                <AccordionSummary expandIcon={<ExpandMoreIcon />} className={styles.contractSectionSummary}>
+                  <span className={styles.contractSectionTitleRow}>
+                    <CommentOutlinedIcon className={styles.contractSectionIcon} />
+                    <Typography className={styles.contractSectionTitle}>Kommentarer</Typography>
+                  </span>
+                </AccordionSummary>
+                <AccordionDetails className={styles.contractSectionDetailsArea}>
                   <div className={styles.contractModernFormGrid}>
                     <TextField
                       fullWidth size="small" multiline rows={3}
@@ -521,7 +593,6 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                       style={{ gridColumn: "1 / -1" }}
                     />
                   </div>
-
                 </AccordionDetails>
               </Accordion>
 
@@ -541,6 +612,9 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                 </AccordionSummary>
                 <AccordionDetails className={styles.contractSectionDetailsArea}>
 
+                  <Typography style={{ fontSize: 13, fontWeight: 600, color: "#2f3743", marginBottom: 10 }}>
+                    Fakturaadress
+                  </Typography>
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Namn *" value={draft.faktNamn} onChange={(e) => update("faktNamn", e.target.value)} style={{ gridColumn: "1 / -1" }} className={styles.lineItemRequiredControl} />
                     <TextField fullWidth size="small" label="Adress" value={draft.faktAdress1} onChange={(e) => update("faktAdress1", e.target.value)} style={{ gridColumn: "1 / -1" }} />
@@ -567,10 +641,20 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                   <div className={styles.contractModernFormGrid}>
                     <TextField fullWidth size="small" label="Telefon" value={draft.telefon} onChange={(e) => update("telefon", e.target.value)} />
                     <TextField fullWidth size="small" label="E-post" type="email" value={draft.epost} onChange={(e) => update("epost", e.target.value)} />
-                    <TextField fullWidth size="small" label="Web" value={draft.web} onChange={(e) => update("web", e.target.value)} />
                     <TextField fullWidth size="small" label="Leveransort" value={draft.leveransort} onChange={(e) => update("leveransort", e.target.value)} />
                     <TextField fullWidth size="small" label="Postnummer" value={draft.postnummer} onChange={(e) => update("postnummer", e.target.value)} />
                   </div>
+
+                  <div style={{ marginTop: 8 }}>
+                    <FormControlLabel
+                      control={<Checkbox size="small" checked={draft.samLeveransadress} onChange={(e) => update("samLeveransadress", e.target.checked)} />}
+                      label={<Typography style={{ fontSize: 13 }}>Använd samma leveransadress</Typography>}
+                    />
+                  </div>
+
+                  {!draft.samLeveransadress ? (
+                    <LeveransadressFields values={draft} onChange={update} markRequired />
+                  ) : null}
 
                 </AccordionDetails>
               </Accordion>
@@ -635,26 +719,10 @@ export function CustomerCreateView({ onSave, onCancel, initialDraft, title = "Ny
                       <MenuItem value="0">Förskott</MenuItem>
                     </TextField>
 
-                    <TextField
-                      fullWidth size="small"
-                      label="Bet.villkor.dag"
-                      type="number"
-                      value={draft.betvillkorDag}
-                      onChange={(e) => update("betvillkorDag", e.target.value)}
-                    />
                   </div>
 
                   <Divider className={styles.contractSectionDivider} />
-                  <div className={styles.contractModernFormGrid}>
-                    <TextField
-                      fullWidth size="small"
-                      label="Kassarabatt"
-                      value={draft.kassarabatt}
-                      onChange={(e) => update("kassarabatt", e.target.value)}
-                      InputProps={{
-                        endAdornment: <InputAdornment position="end">%</InputAdornment>
-                      }}
-                    />
+                  <div className={`${styles.contractModernFormGrid} ${styles.contractModernFormGridThirds}`}>
 
                     <TextField
                       fullWidth size="small"

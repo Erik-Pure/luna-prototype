@@ -35,7 +35,7 @@ import styles from "../page.module.scss";
 import { PriceListCreateView, type NewPriceListDraft } from "./PriceListCreateView";
 import { FraktTab } from "./price-list-tabs/FraktTab";
 import { PrislisteraderTab } from "./price-list-tabs/PrislisteraderTab";
-import { SectionQuickNav, scrollSectionIntoView, type QuickNavSection } from "./shared/SectionQuickNav";
+import type { QuickNavSection } from "./shared/SectionQuickNav";
 import { useMediaQuery, WIDE_LAYOUT_QUERY, EXTRA_WIDE_LAYOUT_QUERY } from "../hooks/useMediaQuery";
 
 const priceListTabs = ["Prislisterader", "Frakt"] as const;
@@ -111,7 +111,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     () => new Set(PRICE_LIST_SECTIONS.map((section) => section.key))
   );
-  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const sectionsHeaderRef = useRef<HTMLDivElement | null>(null);
 
   const toggleSection = (key: string, isExpanded: boolean) => {
@@ -123,13 +122,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
     });
   };
 
-  const jumpToSection = (key: string) => {
-    setExpandedSections((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
-    requestAnimationFrame(() => {
-      const target = sectionRefs.current[key];
-      if (target) scrollSectionIntoView(target, sectionsHeaderRef.current);
-    });
-  };
 
   const isWide = useMediaQuery(WIDE_LAYOUT_QUERY);
   const isExtraWide = useMediaQuery(EXTRA_WIDE_LAYOUT_QUERY);
@@ -231,9 +223,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
               </Tooltip>
             </div>
             {!isSectionsPanelCollapsed ? (
-              <SectionQuickNav sections={PRICE_LIST_SECTIONS} onSelect={jumpToSection} />
-            ) : null}
-            {!isSectionsPanelCollapsed ? (
               <div className={styles.contractSectionsPanelHeaderActionsRow}>
                 {isEditingInfo ? (
                   <>
@@ -305,7 +294,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
               <Accordion
                 expanded={expandedSections.has("allmant")}
                 onChange={(_, isExpanded) => toggleSection("allmant", isExpanded)}
-                ref={(el) => { sectionRefs.current.allmant = el; }}
                 disableGutters
                 elevation={0}
                 className={styles.contractSectionAccordion}
@@ -387,7 +375,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
               <Accordion
                 expanded={expandedSections.has("villkor")}
                 onChange={(_, isExpanded) => toggleSection("villkor", isExpanded)}
-                ref={(el) => { sectionRefs.current.villkor = el; }}
                 disableGutters
                 elevation={0}
                 className={styles.contractSectionAccordion}
@@ -503,7 +490,6 @@ export function PriceListDetailView({ selectedPriceListId, onOpenPriceRowDetail,
               <Accordion
                 expanded={expandedSections.has("utskrift")}
                 onChange={(_, isExpanded) => toggleSection("utskrift", isExpanded)}
-                ref={(el) => { sectionRefs.current.utskrift = el; }}
                 disableGutters
                 elevation={0}
                 className={styles.contractSectionAccordion}

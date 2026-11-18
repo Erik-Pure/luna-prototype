@@ -24,7 +24,7 @@ import WarningIcon from "@mui/icons-material/WarningAmberOutlined";
 import { useRef, useState, type ComponentType, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, TextField, Tooltip, Typography } from "@mui/material";
 import { DetailHeader } from "../shared/DetailHeader";
-import { SectionQuickNav, scrollSectionIntoView, type QuickNavSection } from "../shared/SectionQuickNav";
+import type { QuickNavSection } from "../shared/SectionQuickNav";
 import { useMediaQuery, WIDE_LAYOUT_QUERY, EXTRA_WIDE_LAYOUT_QUERY } from "../../hooks/useMediaQuery";
 import { LineItemAvropsraderTab } from "./line-item-tabs/LineItemAvropsraderTab";
 import { LineItemLangdspecifikationTab } from "./line-item-tabs/LineItemLangdspecifikationTab";
@@ -396,7 +396,6 @@ export function LineItemDetailView({
   const draftSnapshotRef = useRef<NewLineItemDraft | null>(null);
   const [isSectionsPanelCollapsed, setIsSectionsPanelCollapsed] = useState(false);
   const [sectionsPanelWidth, setSectionsPanelWidth] = useState<number | null>(null);
-  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const sectionsHeaderRef = useRef<HTMLDivElement | null>(null);
   const isWide = useMediaQuery(WIDE_LAYOUT_QUERY);
   const isExtraWide = useMediaQuery(EXTRA_WIDE_LAYOUT_QUERY);
@@ -601,13 +600,6 @@ export function LineItemDetailView({
   };
 
 
-  const jumpToSection = (key: string) => {
-    setExpandedPanels((previous) => (previous.includes(key) ? previous : [...previous, key]));
-    requestAnimationFrame(() => {
-      const target = sectionRefs.current[key];
-      if (target) scrollSectionIntoView(target, sectionsHeaderRef.current);
-    });
-  };
 
   const startResizeSections = (mouseDownEvent: React.MouseEvent) => {
     mouseDownEvent.preventDefault();
@@ -1070,7 +1062,6 @@ export function LineItemDetailView({
       key={id}
       expanded={expandedPanels.includes(id)}
       onChange={() => togglePanel(id)}
-      ref={(el) => { sectionRefs.current[id] = el; }}
       disableGutters
       elevation={0}
       className={styles.contractSectionAccordion}
@@ -1395,9 +1386,6 @@ export function LineItemDetailView({
                 </IconButton>
               </Tooltip>
             </div>
-            {!isSectionsPanelCollapsed ? (
-              <SectionQuickNav sections={LINE_ITEM_SECTIONS} onSelect={jumpToSection} />
-            ) : null}
             {!isSectionsPanelCollapsed ? (
               <div className={styles.contractSectionsPanelHeaderActionsRow}>
                 {isEditingInfo ? (
